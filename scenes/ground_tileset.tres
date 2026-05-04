@@ -1,9 +1,8 @@
-[gd_resource type="TileSet" format=3 uid="uid://c1wwgfq26ung3"]
+[gd_resource type="TileSet" format=3 uid="uid://d32fgvbcb8ci8"]
 
 [ext_resource type="Texture2D" uid="uid://baahypuvn88sh" path="res://assets/tiles/tile_test.png" id="1_tiles"]
 [ext_resource type="Texture2D" uid="uid://b7ncwsay3r0ji" path="res://assets/tiles/tile_animation_poca.png" id="2_puddle"]
 [ext_resource type="Texture2D" uid="uid://ciyuturlth0og" path="res://assets/tiles/tile_animation_poca_2.png" id="3_puddle2"]
-[ext_resource type="Texture2D" uid="uid://d1508lf6yqitv" path="res://assets/tiles/tile 2-export.png" id="4_tile2"]
 
 [sub_resource type="TileSetAtlasSource" id="Atlas_ground"]
 texture = ExtResource("1_tiles")
@@ -110,36 +109,7 @@ texture = ExtResource("3_puddle2")
 3:4/animation_frame_2/duration = 1.0
 3:4/0 = 0
 
-[sub_resource type="TileSetAtlasSource" id="Atlas_tile2"]
-texture = ExtResource("4_tile2")
-0:0/0 = 0
-1:0/0 = 0
-2:0/0 = 0
-3:0/0 = 0
-4:0/0 = 0
-0:1/0 = 0
-1:1/0 = 0
-2:1/0 = 0
-3:1/0 = 0
-4:1/0 = 0
-0:2/0 = 0
-1:2/0 = 0
-2:2/0 = 0
-3:2/0 = 0
-4:2/0 = 0
-0:3/0 = 0
-1:3/0 = 0
-2:3/0 = 0
-3:3/0 = 0
-4:3/0 = 0
-0:4/0 = 0
-1:4/0 = 0
-2:4/0 = 0
-3:4/0 = 0
-4:4/0 = 0
-
 [resource]
 sources/0 = SubResource("Atlas_ground")
 sources/1 = SubResource("Atlas_puddle")
 sources/2 = SubResource("Atlas_puddle2")
-sources/3 = SubResource("Atlas_tile2")

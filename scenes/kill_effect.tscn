@@ -26,8 +26,8 @@ animations = [{
 }]
 
 [node name="KillEffect" type="AnimatedSprite2D"]
-z_index = 1
 texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_kill")
 autoplay = "default"
 script = ExtResource("1_effect")
+frame_alphas = PackedFloat32Array(1, 0.5, 0.27)

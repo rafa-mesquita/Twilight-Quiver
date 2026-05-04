@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://b1tqjmx0me8hl"]
+
+[ext_resource type="Texture2D" uid="uid://nkbaln8pyfw6" path="res://assets/obecjts map/poço.png" id="1_tex"]
+[ext_resource type="Script" uid="uid://c3p0eddeak72a" path="res://scripts/tree_fade.gd" id="2_fade"]
+
+[sub_resource type="RectangleShape2D" id="RectShape_poco"]
+size = Vector2(24, 12)
+
+[sub_resource type="RectangleShape2D" id="RectShape_fadearea"]
+size = Vector2(28, 28)
+
+[node name="Poco" type="Node2D" unique_id=121143123]
+
+[node name="Shadow" type="Node2D" parent="." unique_id=1050013317]
+position = Vector2(0, -2)
+
+[node name="Outer" type="Polygon2D" parent="Shadow" unique_id=1756828011]
+color = Color(0, 0, 0, 0.15)
+polygon = PackedVector2Array(18, 0, 16, 1, 12, 2, 6, 3, 0, 3, -6, 3, -12, 2, -16, 1, -18, 0, -16, -1, -12, -2, -6, -3, 0, -3, 6, -3, 12, -2, 16, -1)
+
+[node name="Middle" type="Polygon2D" parent="Shadow" unique_id=453514938]
+color = Color(0, 0, 0, 0.22)
+polygon = PackedVector2Array(12, 0, 10, 1, 6, 2, 0, 2, -6, 2, -10, 1, -12, 0, -10, -1, -6, -2, 0, -2, 6, -2, 10, -1)
+
+[node name="Inner" type="Polygon2D" parent="Shadow" unique_id=2015492420]
+color = Color(0, 0, 0, 0.32)
+polygon = PackedVector2Array(6, 0, 4, 1, 0, 1, -4, 1, -6, 0, -4, -1, 0, -1, 4, -1)
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1138854301]
+texture_filter = 1
+texture = ExtResource("1_tex")
+centered = false
+offset = Vector2(-16, -32)
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=250151343]
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=1637104761]
+position = Vector2(0, -6)
+shape = SubResource("RectShape_poco")
+
+[node name="FadeArea" type="Area2D" parent="." unique_id=1710743389]
+collision_layer = 0
+collision_mask = 5
+script = ExtResource("2_fade")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="FadeArea" unique_id=641188140]
+position = Vector2(0, -16)
+shape = SubResource("RectShape_fadearea")

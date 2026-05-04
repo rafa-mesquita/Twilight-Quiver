@@ -112,7 +112,6 @@ centered = false
 offset = Vector2(-24, -11)
 
 [node name="Canopy" type="AnimatedSprite2D" parent="." unique_id=1176384791]
-z_index = 1
 texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_canopy")
 animation = &"idle"

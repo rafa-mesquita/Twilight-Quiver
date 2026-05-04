@@ -68,6 +68,13 @@ func _on_hit(body: Node) -> void:
 func _stick_in_place(visible_duration: float) -> void:
 	_begin_stick()
 	_spawn_hit_effect()
+	# Z-index direcional: se a flecha voava p/ sul (bateu na parede NORTE do objeto),
+	# fica atrás. Se voava p/ norte ou lateral (bateu na parede sul/leste/oeste),
+	# fica na frente do objeto. Threshold 0.5 = mais de ~30° de inclinação sul.
+	if direction.y > 0.5:
+		pass  # mantém z_index = -1 do voo (atrás)
+	else:
+		z_index = 1  # na frente
 	# Recua na direção oposta ao movimento pra:
 	# 1. A flecha ficar "encostada" na superfície em vez de enterrada
 	# 2. Garantir que arrow.y fique consistentemente do lado certo do alvo pro y-sort
@@ -78,6 +85,7 @@ func _stick_in_place(visible_duration: float) -> void:
 func _stick_in_body(body: Node, visible_duration: float) -> void:
 	_begin_stick()
 	_spawn_hit_effect()
+	z_index = 1
 	# Defer reparent pra evitar mexer na árvore de cenas durante callback de física.
 	_reparent_to.call_deferred(body)
 	_schedule_fade_out(visible_duration)

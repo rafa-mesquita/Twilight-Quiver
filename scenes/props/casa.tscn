@@ -1,0 +1,73 @@
+[gd_scene format=3 uid="uid://cn07phmkuy745"]
+
+[ext_resource type="Texture2D" uid="uid://bo28c8et1oknt" path="res://assets/obecjts map/casa.png" id="1_tex"]
+[ext_resource type="Script" uid="uid://c3p0eddeak72a" path="res://scripts/tree_fade.gd" id="2_fade"]
+
+[sub_resource type="RectangleShape2D" id="RectShape_casa"]
+size = Vector2(105, 101)
+
+[sub_resource type="RectangleShape2D" id="RectShape_fadearea_casa"]
+size = Vector2(105, 101)
+
+[sub_resource type="Gradient" id="Grad_window"]
+offsets = PackedFloat32Array(0, 0.55, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 0.85, 0.55, 0.5, 1, 0.7, 0.3, 0)
+
+[sub_resource type="GradientTexture2D" id="GradTex_window"]
+gradient = SubResource("Grad_window")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[node name="Casa" type="Node2D" unique_id=940634812]
+
+[node name="Shadow" type="Node2D" parent="." unique_id=215767957]
+position = Vector2(0, -4)
+
+[node name="Outer" type="Polygon2D" parent="Shadow" unique_id=394638610]
+position = Vector2(-0.99999726, 4.7683716e-07)
+scale = Vector2(0.8333333, 0.9999999)
+color = Color(0, 0, 0, 0.15)
+polygon = PackedVector2Array(72, 0, 68, 2, 58, 4, 0, 5, -58, 4, -68, 2, -72, 0, -66.09836, -5.000001, -44.852463, -21.000004, -2.3606586, -27.000004, 31.86885, -21.000004, 56.655735, -11.000002)
+
+[node name="Middle" type="Polygon2D" parent="Shadow" unique_id=1580910028]
+position = Vector2(-0.5000008, 2.3841858e-07)
+scale = Vector2(0.925, 1)
+color = Color(0, 0, 0, 0.22)
+polygon = PackedVector2Array(60, 0, 55, 2, -2.3841858e-07, 2.9999998, -55, 2, -60, 0, -51.428574, -8, -7.5, -16, 53.571426, -5)
+
+[node name="Inner" type="Polygon2D" parent="Shadow" unique_id=1981707887]
+color = Color(0, 0, 0, 0.32)
+polygon = PackedVector2Array(50, 0, 0, 2, -50, 0, 0, -2)
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1605112617]
+texture_filter = 1
+texture = ExtResource("1_tex")
+centered = false
+offset = Vector2(-60, -120)
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=524550113]
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=640887060]
+position = Vector2(-0.5, -54.5)
+shape = SubResource("RectShape_casa")
+
+[node name="FadeArea" type="Area2D" parent="." unique_id=2097432078]
+collision_layer = 0
+collision_mask = 5
+script = ExtResource("2_fade")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="FadeArea" unique_id=888199016]
+position = Vector2(-0.5, -54.5)
+shape = SubResource("RectShape_fadearea_casa")
+
+[node name="WindowLight" type="PointLight2D" parent="." unique_id=1624530398]
+position = Vector2(32, -20)
+color = Color(1, 0.85, 0.5, 1)
+energy = 0.7
+texture = SubResource("GradTex_window")
+texture_scale = 0.25

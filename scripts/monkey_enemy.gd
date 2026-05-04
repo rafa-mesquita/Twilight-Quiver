@@ -147,26 +147,27 @@ func take_damage(amount: float) -> void:
 	_flash_damage()
 	_spawn_damage_effect()
 	_spawn_damage_number(amount)
-	_play_damage_sound()
-	if hp <= 0.0:
+	var died := hp <= 0.0
+	_play_damage_sound(1.5 if died else 0.7)
+	if died:
 		_spawn_kill_effect()
 		_spawn_death_silhouette()
 		queue_free()
 
 
-func _play_damage_sound() -> void:
+func _play_damage_sound(duration: float = 0.7) -> void:
 	if damage_sound == null:
 		return
 	var player := AudioStreamPlayer2D.new()
 	player.stream = damage_sound
 	player.volume_db = damage_sound_volume_db
-	player.pitch_scale = 1.5
+	player.pitch_scale = 0.8
 	_get_world().add_child(player)
 	player.global_position = global_position
 	player.play()
-	# Lambda captura a ref direto — sobrevive mesmo se o macaco morrer/sumir antes dos 0.7s.
+	# Lambda captura a ref direto — sobrevive mesmo se o macaco morrer/sumir antes do timeout.
 	var ref: AudioStreamPlayer2D = player
-	get_tree().create_timer(0.9).timeout.connect(func() -> void:
+	get_tree().create_timer(duration).timeout.connect(func() -> void:
 		if is_instance_valid(ref):
 			ref.stop()
 			ref.queue_free()
@@ -200,6 +201,7 @@ func _spawn_death_silhouette() -> void:
 	ghost.material = mat
 	_get_world().add_child(ghost)
 	ghost.global_position = global_position
+	ghost.modulate.a = 0.5
 	# Fade out até sumir.
 	var t := ghost.create_tween()
 	t.tween_property(ghost, "modulate:a", 0.0, death_silhouette_duration)

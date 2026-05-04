@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3]
+[gd_scene load_steps=29 format=3]
 
 [ext_resource type="Script" path="res://scripts/player.gd" id="1_player"]
 [ext_resource type="Texture2D" path="res://assets/player/player.png" id="2_sheet"]
@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" path="res://scenes/hp_bar.tscn" id="5_hpbar"]
 [ext_resource type="PackedScene" path="res://scenes/damage_number.tscn" id="6_dmgnum"]
 [ext_resource type="Texture2D" path="res://assets/ui/indicador.png" id="7_ind"]
+[ext_resource type="AudioStream" uid="uid://bwcmdrpa806yk" path="res://audios/effects/damage/player damage taken.mp3" id="8_dmg_sfx"]
 
 [sub_resource type="AtlasTexture" id="A_idle_0"]
 atlas = ExtResource("2_sheet")
@@ -183,3 +184,7 @@ position = Vector2(0, -18)
 texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_indicator")
 autoplay = "default"
+
+[node name="DamageAudio" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("8_dmg_sfx")
+volume_db = -20.0

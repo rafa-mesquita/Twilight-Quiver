@@ -11,6 +11,7 @@ offsets = PackedFloat32Array(0, 1)
 colors = PackedColorArray(1, 0.4, 0.35, 0, 1, 0.4, 0.35, 0.4)
 
 [node name="EnemyArrow" type="Area2D"]
+z_index = -1
 collision_layer = 0
 collision_mask = 11
 script = ExtResource("1_arrow")
@@ -20,6 +21,7 @@ hit_effect_scene = ExtResource("2_hit")
 
 [node name="Trail" type="Line2D" parent="."]
 top_level = true
+z_index = -1
 width = 1.5
 default_color = Color(0.95, 0.35, 0.3, 1)
 gradient = SubResource("Gradient_trail_enemy")

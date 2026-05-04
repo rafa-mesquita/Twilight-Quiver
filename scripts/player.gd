@@ -15,6 +15,7 @@ signal died
 @onready var muzzle: Marker2D = $Muzzle
 @onready var attack_timer: Timer = $AttackTimer
 @onready var hp_bar: Node2D = $HpBar
+@onready var damage_audio: AudioStreamPlayer2D = $DamageAudio
 
 const RELEASE_FRAME: int = 4
 
@@ -133,6 +134,8 @@ func take_damage(amount: float) -> void:
 	_flash_damage()
 	_spawn_damage_effect()
 	_spawn_damage_number(amount)
+	if damage_audio != null:
+		damage_audio.play()
 	if hp == 0.0:
 		died.emit()
 		print("player morreu")
