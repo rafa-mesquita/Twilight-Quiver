@@ -1,10 +1,11 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/archer_enemy.gd" id="1_archer"]
 [ext_resource type="PackedScene" path="res://scenes/enemy_arrow.tscn" id="2_arrow"]
 [ext_resource type="PackedScene" path="res://scenes/damage_effect.tscn" id="3_dmg"]
 [ext_resource type="PackedScene" path="res://scenes/hp_bar.tscn" id="4_hpbar"]
 [ext_resource type="PackedScene" path="res://scenes/damage_number.tscn" id="5_dmgnum"]
+[ext_resource type="PackedScene" path="res://scenes/kill_effect.tscn" id="6_kill"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_archer"]
 radius = 6.0
@@ -16,6 +17,7 @@ script = ExtResource("1_archer")
 enemy_arrow_scene = ExtResource("2_arrow")
 damage_effect_scene = ExtResource("3_dmg")
 damage_number_scene = ExtResource("5_dmgnum")
+kill_effect_scene = ExtResource("6_kill")
 
 [node name="Shadow" type="Polygon2D" parent="."]
 position = Vector2(0, 7)

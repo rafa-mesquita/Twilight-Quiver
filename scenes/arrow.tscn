@@ -1,8 +1,11 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/arrow.gd" id="1_arrow"]
 [ext_resource type="Texture2D" path="res://assets/projectiles/arrow.png" id="2_arrow_tex"]
 [ext_resource type="PackedScene" path="res://scenes/arrow_hit.tscn" id="3_hit"]
+[ext_resource type="AudioStream" path="res://audios/effects/player arrow/ES_Weapons, Arrow, Impact, Wood Hit, Woosh, Rattle - Epidemic Sound.mp3" id="4_shoot_sfx"]
+[ext_resource type="AudioStream" path="res://audios/effects/player arrow/enemy impact.mp3" id="5_impact_sfx"]
+[ext_resource type="AudioStream" path="res://audios/effects/player arrow/impact object.mp3" id="6_obj_impact_sfx"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_arrow"]
 radius = 2.0
@@ -16,6 +19,9 @@ collision_layer = 0
 collision_mask = 14
 script = ExtResource("1_arrow")
 hit_effect_scene = ExtResource("3_hit")
+impact_sound = ExtResource("5_impact_sfx")
+object_impact_sound = ExtResource("6_obj_impact_sfx")
+sound_volume_db = -18.0
 
 [node name="Trail" type="Line2D" parent="."]
 top_level = true
@@ -32,3 +38,7 @@ texture = ExtResource("2_arrow_tex")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_arrow")
+
+[node name="ShootSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("4_shoot_sfx")
+volume_db = -18.0

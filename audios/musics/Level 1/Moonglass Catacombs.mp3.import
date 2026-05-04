@@ -12,7 +12,7 @@ dest_files=["res://.godot/imported/Moonglass Catacombs.mp3-6eb4484c4a1b9a40ac631
 
 [params]
 
-loop=false
+loop=true
 loop_offset=0
 bpm=0
 beat_count=0

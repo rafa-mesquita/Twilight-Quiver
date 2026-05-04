@@ -9,13 +9,16 @@ extends CharacterBody2D
 @export var enemy_arrow_scene: PackedScene
 @export var damage_effect_scene: PackedScene
 @export var damage_number_scene: PackedScene
+@export var kill_effect_scene: PackedScene
 
 @onready var hp_bar: Node2D = $HpBar
 @onready var muzzle: Marker2D = $Muzzle
 @onready var shoot_timer: Timer = $ShootTimer
+@onready var body_visual: Polygon2D = $Body
 
 var hp: float
 var player: Node2D
+var _flash_tween: Tween
 
 
 func _ready() -> void:
@@ -56,10 +59,14 @@ func _try_shoot() -> void:
 	if dist > detection_range:
 		return
 
-	var dir := (player.global_position - global_position).normalized()
+	# Mira no centro de colisão do player (12px acima dos pés, devido ao refator do pivô).
+	var target := player.global_position + Vector2(0, -12)
+	# Direção é calculada do MUZZLE (não do centro do inimigo) pra evitar parallax.
+	var muzzle_world := muzzle.global_position
+	var dir := (target - muzzle_world).normalized()
 	var arrow := enemy_arrow_scene.instantiate()
 	_get_world().add_child(arrow)
-	arrow.global_position = muzzle.global_position
+	arrow.global_position = muzzle_world
 	if arrow.has_method("set_direction"):
 		arrow.set_direction(dir)
 
@@ -67,10 +74,30 @@ func _try_shoot() -> void:
 func take_damage(amount: float) -> void:
 	hp = maxf(hp - amount, 0.0)
 	hp_bar.set_ratio(hp / max_hp)
+	_flash_damage()
 	_spawn_damage_effect()
 	_spawn_damage_number(amount)
 	if hp <= 0.0:
+		_spawn_kill_effect()
 		queue_free()
+
+
+func _spawn_kill_effect() -> void:
+	if kill_effect_scene == null:
+		return
+	var fx := kill_effect_scene.instantiate()
+	_get_world().add_child(fx)
+	fx.global_position = global_position
+
+
+func _flash_damage() -> void:
+	if body_visual == null:
+		return
+	if _flash_tween != null and _flash_tween.is_valid():
+		_flash_tween.kill()
+	body_visual.modulate = Color(1.5, 0.3, 0.3, 1.0)
+	_flash_tween = create_tween()
+	_flash_tween.tween_property(body_visual, "modulate", Color.WHITE, 0.2)
 
 
 func _spawn_damage_effect() -> void:

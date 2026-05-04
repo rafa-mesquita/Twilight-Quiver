@@ -130,6 +130,7 @@ func take_damage(amount: float) -> void:
 	hp = maxf(hp - amount, 0.0)
 	hp_changed.emit(hp, max_hp)
 	hp_bar.set_ratio(hp / max_hp)
+	_flash_damage()
 	_spawn_damage_effect()
 	_spawn_damage_number(amount)
 	if hp == 0.0:
@@ -144,6 +145,18 @@ func _spawn_damage_effect() -> void:
 	_get_world().add_child(fx)
 	# global_position do player = pés (refator do pivô). Sobe 16 pra centro do sprite.
 	fx.global_position = global_position + Vector2(0, -16)
+
+
+var _flash_tween: Tween
+
+func _flash_damage() -> void:
+	if sprite == null:
+		return
+	if _flash_tween != null and _flash_tween.is_valid():
+		_flash_tween.kill()
+	sprite.modulate = Color(1.5, 0.3, 0.3, 1.0)
+	_flash_tween = create_tween()
+	_flash_tween.tween_property(sprite, "modulate", Color.WHITE, 0.2)
 
 
 func _spawn_damage_number(amount: float) -> void:

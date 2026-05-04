@@ -1,9 +1,10 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/melee_enemy.gd" id="1_melee"]
 [ext_resource type="PackedScene" path="res://scenes/damage_effect.tscn" id="2_dmg"]
 [ext_resource type="PackedScene" path="res://scenes/hp_bar.tscn" id="3_hpbar"]
 [ext_resource type="PackedScene" path="res://scenes/damage_number.tscn" id="4_dmgnum"]
+[ext_resource type="PackedScene" path="res://scenes/kill_effect.tscn" id="5_kill"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_melee"]
 radius = 6.0
@@ -14,6 +15,7 @@ collision_mask = 2
 script = ExtResource("1_melee")
 damage_effect_scene = ExtResource("2_dmg")
 damage_number_scene = ExtResource("4_dmgnum")
+kill_effect_scene = ExtResource("5_kill")
 
 [node name="Shadow" type="Polygon2D" parent="."]
 position = Vector2(0, 7)

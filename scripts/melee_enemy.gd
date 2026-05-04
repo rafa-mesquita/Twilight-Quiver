@@ -7,12 +7,15 @@ extends CharacterBody2D
 @export var attack_cooldown: float = 0.9
 @export var damage_effect_scene: PackedScene
 @export var damage_number_scene: PackedScene
+@export var kill_effect_scene: PackedScene
 
 @onready var hp_bar: Node2D = $HpBar
+@onready var body_visual: Polygon2D = $Body
 
 var hp: float
 var can_hit: bool = true
 var player: Node2D
+var _flash_tween: Tween
 
 
 func _ready() -> void:
@@ -50,10 +53,30 @@ func _attack() -> void:
 func take_damage(amount: float) -> void:
 	hp = maxf(hp - amount, 0.0)
 	hp_bar.set_ratio(hp / max_hp)
+	_flash_damage()
 	_spawn_damage_effect()
 	_spawn_damage_number(amount)
 	if hp <= 0.0:
+		_spawn_kill_effect()
 		queue_free()
+
+
+func _spawn_kill_effect() -> void:
+	if kill_effect_scene == null:
+		return
+	var fx := kill_effect_scene.instantiate()
+	_get_world().add_child(fx)
+	fx.global_position = global_position
+
+
+func _flash_damage() -> void:
+	if body_visual == null:
+		return
+	if _flash_tween != null and _flash_tween.is_valid():
+		_flash_tween.kill()
+	body_visual.modulate = Color(1.5, 0.3, 0.3, 1.0)
+	_flash_tween = create_tween()
+	_flash_tween.tween_property(body_visual, "modulate", Color.WHITE, 0.2)
 
 
 func _spawn_damage_effect() -> void:

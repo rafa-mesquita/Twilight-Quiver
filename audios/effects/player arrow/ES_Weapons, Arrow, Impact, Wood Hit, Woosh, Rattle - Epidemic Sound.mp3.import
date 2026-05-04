@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://g02xrygyl26x"
+path="res://.godot/imported/ES_Weapons, Arrow, Impact, Wood Hit, Woosh, Rattle - Epidemic Sound.mp3-4b6e0f994d0cff21cb9dcd3817c316e1.mp3str"
+
+[deps]
+
+source_file="res://audios/effects/player arrow/ES_Weapons, Arrow, Impact, Wood Hit, Woosh, Rattle - Epidemic Sound.mp3"
+dest_files=["res://.godot/imported/ES_Weapons, Arrow, Impact, Wood Hit, Woosh, Rattle - Epidemic Sound.mp3-4b6e0f994d0cff21cb9dcd3817c316e1.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
