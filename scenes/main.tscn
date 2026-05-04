@@ -1,7 +1,6 @@
 [gd_scene format=4 uid="uid://dc0jveqgo8lx0"]
 
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="1_player"]
-[ext_resource type="PackedScene" path="res://scenes/archer_enemy.tscn" id="3_archer"]
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="4_hud"]
 [ext_resource type="PackedScene" path="res://scenes/cursor.tscn" id="5_cursor"]
 [ext_resource type="PackedScene" uid="uid://c7gfheerosuai" path="res://scenes/props/arvore.tscn" id="6_o6xl0"]
@@ -14,6 +13,7 @@
 [ext_resource type="PackedScene" uid="uid://d4fysorobynwq" path="res://scenes/props/poste.tscn" id="13_poste"]
 [ext_resource type="PackedScene" path="res://scenes/props/cerca.tscn" id="14_cerca"]
 [ext_resource type="PackedScene" uid="uid://cn07phmkuy745" path="res://scenes/props/casa.tscn" id="15_casa"]
+[ext_resource type="PackedScene" path="res://scenes/mage_enemy.tscn" id="15_jbj1t"]
 [ext_resource type="PackedScene" path="res://grass.tscn" id="15_jkv2x"]
 
 [sub_resource type="RectangleShape2D" id="RectShape_bound_h"]
@@ -45,12 +45,6 @@ limit_left = -157
 limit_top = -112
 limit_right = 656
 limit_bottom = 414
-
-[node name="Archer1" parent="World" unique_id=175644618 instance=ExtResource("3_archer")]
-position = Vector2(111, 245)
-
-[node name="Archer2" parent="World" unique_id=237351452 instance=ExtResource("3_archer")]
-position = Vector2(368, 260)
 
 [node name="Arvore" parent="World" unique_id=871485261 instance=ExtResource("6_o6xl0")]
 position = Vector2(-110, 125)
@@ -463,3 +457,9 @@ position = Vector2(388, -43)
 
 [node name="Grass4" parent="." unique_id=1586442085 instance=ExtResource("15_jkv2x")]
 position = Vector2(442, -63)
+
+[node name="MageEnemy" parent="." unique_id=1796061024 instance=ExtResource("15_jbj1t")]
+position = Vector2(40, 246)
+
+[node name="MageEnemy2" parent="." unique_id=534588343 instance=ExtResource("15_jbj1t")]
+position = Vector2(435, 239)

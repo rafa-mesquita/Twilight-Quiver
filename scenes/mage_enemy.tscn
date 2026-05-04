@@ -1,0 +1,99 @@
+[gd_scene load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://scripts/mage_enemy.gd" id="1_mage"]
+[ext_resource type="Texture2D" uid="uid://b5j32bxp8kphc" path="res://assets/enemies/mage/mage-Sheet.png" id="2_sheet"]
+[ext_resource type="PackedScene" path="res://scenes/mage_projectile.tscn" id="3_proj"]
+[ext_resource type="PackedScene" path="res://scenes/damage_effect.tscn" id="4_dmg"]
+[ext_resource type="PackedScene" path="res://scenes/hp_bar.tscn" id="5_hpbar"]
+[ext_resource type="PackedScene" path="res://scenes/damage_number.tscn" id="6_dmgnum"]
+[ext_resource type="PackedScene" path="res://scenes/kill_effect.tscn" id="7_kill"]
+
+[sub_resource type="AtlasTexture" id="A_walk_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_walk_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_walk_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_atk_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_atk_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_atk_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(64, 32, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_mage"]
+animations = [{
+"frames": [{"duration": 1.0, "texture": SubResource("A_walk_0")},
+{"duration": 1.0, "texture": SubResource("A_walk_1")},
+{"duration": 1.0, "texture": SubResource("A_walk_2")}],
+"loop": true,
+"name": &"walk",
+"speed": 6.0
+}, {
+"frames": [{"duration": 1.0, "texture": SubResource("A_atk_0")},
+{"duration": 1.0, "texture": SubResource("A_atk_1")},
+{"duration": 1.0, "texture": SubResource("A_atk_2")}],
+"loop": false,
+"name": &"attack",
+"speed": 8.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_mage"]
+height = 22.0
+radius = 6.0
+
+[node name="MageEnemy" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_mage")
+projectile_scene = ExtResource("3_proj")
+damage_effect_scene = ExtResource("4_dmg")
+damage_number_scene = ExtResource("6_dmgnum")
+kill_effect_scene = ExtResource("7_kill")
+
+[node name="Shadow" type="Node2D" parent="."]
+position = Vector2(0, 0)
+
+[node name="Outer" type="Polygon2D" parent="Shadow"]
+color = Color(0, 0, 0, 0.15)
+polygon = PackedVector2Array(8, 0, 7, 1, 5, 2, 3, 3, 0, 3, -3, 3, -5, 2, -7, 1, -8, 0, -7, -1, -5, -2, -3, -3, 0, -3, 3, -3, 5, -2, 7, -1)
+
+[node name="Middle" type="Polygon2D" parent="Shadow"]
+color = Color(0, 0, 0, 0.22)
+polygon = PackedVector2Array(5, 0, 4, 1, 2, 2, 0, 2, -2, 2, -4, 1, -5, 0, -4, -1, -2, -2, 0, -2, 2, -2, 4, -1)
+
+[node name="Inner" type="Polygon2D" parent="Shadow"]
+color = Color(0, 0, 0, 0.32)
+polygon = PackedVector2Array(3, 0, 2, 1, 0, 1, -2, 1, -3, 0, -2, -1, 0, -1, 2, -1)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_mage")
+animation = &"walk"
+autoplay = "walk"
+offset = Vector2(0, -16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -12)
+shape = SubResource("CapsuleShape2D_mage")
+
+[node name="Muzzle" type="Marker2D" parent="."]
+position = Vector2(8, -22)
+
+[node name="ShootTimer" type="Timer" parent="."]
+wait_time = 2.0
+
+[node name="HpBar" parent="." instance=ExtResource("5_hpbar")]
+position = Vector2(-8, -34)
+fg_color = Color(0.55, 0.3, 0.75, 1)
