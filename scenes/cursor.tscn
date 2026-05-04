@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/cursor.gd" id="1_cursor"]
+[ext_resource type="Texture2D" path="res://assets/cursor/Cursor2t.png" id="2_sheet"]
+
+[node name="Cursor" type="CanvasLayer"]
+layer = 100
+script = ExtResource("1_cursor")
+frame_size = Vector2i(15, 15)
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_sheet")
+region_enabled = true
+region_rect = Rect2(0, 0, 15, 15)

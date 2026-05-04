@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\(\"c:\\\\Users\\\\rafam\\\\Desktop\\\\Rpositórios Github - claude\\\\Pessoal\\\\Jogo novo\\\\Cursor-Sheet.png\"\\); \"$\\($img.Width\\)x$\\($img.Height\\)\"; $img.Dispose\\(\\))",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $files = @\\(\"arrow hit.png\", \"damage sprite.png\", \"arrow.png\"\\); foreach \\($f in $files\\) { $img = [System.Drawing.Image]::FromFile\\(\\(Resolve-Path $f\\)\\); Write-Output \"$f : $\\($img.Width\\) x $\\($img.Height\\)\"; $img.Dispose\\(\\) })",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\(\\(Resolve-Path \"Cursor2t.png\"\\)\\); Write-Output \"Cursor2t.png : $\\($img.Width\\) x $\\($img.Height\\)\"; $img.Dispose\\(\\))",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\(\\(Resolve-Path \"assets/props/arvore idle-Sheet.png\"\\)\\); Write-Output \"arvore idle-Sheet.png : $\\($img.Width\\) x $\\($img.Height\\)\"; $img.Dispose\\(\\))"
+    ]
+  }
+}

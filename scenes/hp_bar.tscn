@@ -1,0 +1,18 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/hp_bar.gd" id="1_hpbar"]
+
+[node name="HpBar" type="Node2D"]
+script = ExtResource("1_hpbar")
+
+[node name="Bg" type="Polygon2D" parent="."]
+color = Color(0.08, 0.04, 0.04, 1)
+polygon = PackedVector2Array(0, 0, 16, 0, 16, 2, 0, 2)
+
+[node name="Trail" type="Polygon2D" parent="."]
+color = Color(1, 1, 1, 1)
+polygon = PackedVector2Array(0, 0, 16, 0, 16, 2, 0, 2)
+
+[node name="Fg" type="Polygon2D" parent="."]
+color = Color(0.463, 0.655, 0.298, 1)
+polygon = PackedVector2Array(0, 0, 16, 0, 16, 2, 0, 2)

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://ngcahy32o3gk"
+path="res://.godot/imported/Moonglass Catacombs.mp3-6eb4484c4a1b9a40ac63112b3536e9b2.mp3str"
+
+[deps]
+
+source_file="res://audios/musics/Level 1/Moonglass Catacombs.mp3"
+dest_files=["res://.godot/imported/Moonglass Catacombs.mp3-6eb4484c4a1b9a40ac63112b3536e9b2.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

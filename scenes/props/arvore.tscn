@@ -1,0 +1,136 @@
+[gd_scene load_steps=15 format=3 uid="uid://c7gfheerosuai"]
+
+[ext_resource type="Texture2D" uid="uid://dulfs2plg2jvt" path="res://assets/props/arvore idle-Sheet.png" id="1_tex"]
+[ext_resource type="Script" path="res://scripts/tree_fade.gd" id="2_fade"]
+
+[sub_resource type="AtlasTexture" id="A_trunk_0"]
+atlas = ExtResource("1_tex")
+region = Rect2(0, 47, 48, 17)
+
+[sub_resource type="AtlasTexture" id="A_trunk_1"]
+atlas = ExtResource("1_tex")
+region = Rect2(48, 47, 48, 17)
+
+[sub_resource type="AtlasTexture" id="A_trunk_2"]
+atlas = ExtResource("1_tex")
+region = Rect2(96, 47, 48, 17)
+
+[sub_resource type="AtlasTexture" id="A_trunk_3"]
+atlas = ExtResource("1_tex")
+region = Rect2(144, 47, 48, 17)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_trunk"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_trunk_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_trunk_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_trunk_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_trunk_3")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 2.5
+}]
+
+[sub_resource type="AtlasTexture" id="A_canopy_0"]
+atlas = ExtResource("1_tex")
+region = Rect2(0, 5, 48, 42)
+
+[sub_resource type="AtlasTexture" id="A_canopy_1"]
+atlas = ExtResource("1_tex")
+region = Rect2(48, 5, 48, 42)
+
+[sub_resource type="AtlasTexture" id="A_canopy_2"]
+atlas = ExtResource("1_tex")
+region = Rect2(96, 5, 48, 42)
+
+[sub_resource type="AtlasTexture" id="A_canopy_3"]
+atlas = ExtResource("1_tex")
+region = Rect2(144, 5, 48, 42)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_canopy"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_canopy_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_canopy_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_canopy_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_canopy_3")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 2.5
+}]
+
+[sub_resource type="RectangleShape2D" id="RectShape_trunk"]
+size = Vector2(8, 5)
+
+[sub_resource type="RectangleShape2D" id="RectShape_canopy"]
+size = Vector2(9, 15)
+
+[sub_resource type="RectangleShape2D" id="RectShape_fadearea"]
+size = Vector2(36, 55)
+
+[node name="Arvore" type="Node2D" unique_id=846606422]
+
+[node name="Shadow" type="Node2D" parent="."]
+position = Vector2(1, 3)
+
+[node name="Outer" type="Polygon2D" parent="Shadow"]
+color = Color(0, 0, 0, 0.15)
+polygon = PackedVector2Array(16, 0, 14, 1, 10, 2, 6, 3, 0, 3, -6, 3, -10, 2, -14, 1, -16, 0, -14, -1, -10, -2, -6, -3, 0, -3, 6, -3, 10, -2, 14, -1)
+
+[node name="Middle" type="Polygon2D" parent="Shadow"]
+color = Color(0, 0, 0, 0.22)
+polygon = PackedVector2Array(10, 0, 8, 1, 4, 2, 0, 2, -4, 2, -8, 1, -10, 0, -8, -1, -4, -2, 0, -2, 4, -2, 8, -1)
+
+[node name="Inner" type="Polygon2D" parent="Shadow"]
+color = Color(0, 0, 0, 0.32)
+polygon = PackedVector2Array(6, 0, 4, 1, 0, 1, -4, 1, -6, 0, -4, -1, 0, -1, 4, -1)
+
+[node name="Trunk" type="AnimatedSprite2D" parent="." unique_id=1448853915]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_trunk")
+animation = &"idle"
+autoplay = "idle"
+centered = false
+offset = Vector2(-24, -11)
+
+[node name="Canopy" type="AnimatedSprite2D" parent="." unique_id=1176384791]
+z_index = 1
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_canopy")
+animation = &"idle"
+autoplay = "idle"
+centered = false
+offset = Vector2(-24, -53)
+
+[node name="TrunkBody" type="StaticBody2D" parent="." unique_id=1230220957]
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TrunkBody" unique_id=97107805]
+position = Vector2(1, -3.5)
+shape = SubResource("RectShape_trunk")
+
+[node name="FadeArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 5
+script = ExtResource("2_fade")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="FadeArea"]
+position = Vector2(0, -25)
+shape = SubResource("RectShape_fadearea")
