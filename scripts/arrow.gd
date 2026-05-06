@@ -19,6 +19,15 @@ extends Area2D
 
 var direction: Vector2 = Vector2.RIGHT
 var is_stuck: bool = false
+# Flecha perfurante: atravessa todos os inimigos E objetos sem cravar.
+# Setado pelo player ANTES de add_child quando proca (a cada 3 ataques).
+var is_piercing: bool = false
+var hitbox_scale: float = 1.0  # > 1 aumenta colisão e sprite (level 2+ da perfuração)
+# Quem disparou a flecha. Usado pra ignorar colisão com o próprio shooter
+# (ex: torre não atira em si mesma, mas colide com flecha do player).
+var source: Node = null
+var _hit_bodies: Array[Node] = []
+var _pierce_hits: int = 0  # quantos targets a flecha perfurante já atravessou
 
 
 func _ready() -> void:
@@ -28,6 +37,36 @@ func _ready() -> void:
 	# Defer pra detachar/tocar o som DEPOIS do spawner setar a posição da flecha.
 	if shoot_sound != null:
 		_setup_shoot_sound.call_deferred()
+	if is_piercing:
+		_apply_piercing_visuals()
+	if hitbox_scale != 1.0:
+		_apply_hitbox_scale()
+
+
+const PIERCING_BASE_SCALE: float = 1.1
+
+
+func _apply_piercing_visuals() -> void:
+	# Tint dourado + trail laranja + sprite/trail 1.1× pra destacar.
+	var sprite_node := get_node_or_null("Sprite2D")
+	if sprite_node is CanvasItem:
+		(sprite_node as CanvasItem).modulate = Color(1.7, 1.25, 0.45, 1.0)
+	if sprite_node is Node2D:
+		(sprite_node as Node2D).scale = Vector2.ONE * PIERCING_BASE_SCALE
+	if trail != null:
+		trail.default_color = Color(1.0, 0.7, 0.2, 1.0)
+		trail.width *= PIERCING_BASE_SCALE
+
+
+func _apply_hitbox_scale() -> void:
+	# Multiplica sobre o scale base do piercing (1.1) se já foi aplicado.
+	var col := get_node_or_null("CollisionShape2D")
+	if col is Node2D:
+		(col as Node2D).scale = Vector2(hitbox_scale, hitbox_scale)
+	var sprite_node := get_node_or_null("Sprite2D")
+	if sprite_node is Node2D:
+		var current: Vector2 = (sprite_node as Node2D).scale
+		(sprite_node as Node2D).scale = current * hitbox_scale
 
 
 func set_direction(dir: Vector2) -> void:
@@ -51,17 +90,45 @@ func _physics_process(delta: float) -> void:
 func _on_hit(body: Node) -> void:
 	if is_stuck:
 		return
-	if body.has_method("take_damage"):
-		# Inimigo: dá dano e crava NO corpo (segue o movimento) por stick_enemy_duration.
-		body.take_damage(damage)
-		# Empurra o corpo na direção que a flecha estava indo.
-		if body.has_method("apply_knockback"):
-			body.apply_knockback(direction, knockback_strength)
+	# Ignora colisão SÓ com o próprio shooter (ex: flecha da torre passa pela torre).
+	# Outras flechas (ex: do player) colidem normalmente com aliados.
+	if source != null and _is_descendant_of(body, source):
+		return
+	# Evita re-acertar o mesmo body enquanto perfurando.
+	if body in _hit_bodies:
+		return
+	_hit_bodies.append(body)
+
+	# Sobe o parent chain pra achar quem tem take_damage — o body que entra na
+	# colisão pode ser um StaticBody2D filho (caso da torre).
+	var target: Node = _find_damageable(body)
+	# Aliados (torres, futuras estruturas amigas): flecha do player/torre é uma
+	# arrow.gd — friendly fire bloqueado. Bate como parede sem causar dano.
+	if target != null and target.is_in_group("ally"):
+		_play_oneshot(object_impact_sound, global_position, sound_volume_db, 0.7)
+		if is_piercing:
+			_pierce_hits += 1
+			_spawn_pierce_hit_effect(_pierce_hits == 3)
+			return
+		_stick_in_place(stick_surface_duration)
+		return
+	if target != null:
+		target.take_damage(damage)
+		if target.has_method("apply_knockback"):
+			target.apply_knockback(direction, knockback_strength)
 		_play_oneshot(impact_sound, global_position, sound_volume_db, 0.7)
+		if is_piercing:
+			_pierce_hits += 1
+			_spawn_pierce_hit_effect(_pierce_hits == 3)
+			return
 		_stick_in_body(body, stick_enemy_duration)
 	else:
-		# Superfície sólida (parede, tronco): crava no lugar por stick_surface_duration.
+		# Superfície sólida sem take_damage (parede, tronco).
 		_play_oneshot(object_impact_sound, global_position, sound_volume_db, 0.7)
+		if is_piercing:
+			_pierce_hits += 1
+			_spawn_pierce_hit_effect(_pierce_hits == 3)
+			return
 		_stick_in_place(stick_surface_duration)
 
 
@@ -118,12 +185,44 @@ func _schedule_fade_out(visible_duration: float) -> void:
 	t.tween_callback(_die)
 
 
+func _is_descendant_of(node: Node, ancestor: Node) -> bool:
+	var n: Node = node
+	while n != null:
+		if n == ancestor:
+			return true
+		n = n.get_parent()
+	return false
+
+
+func _find_damageable(node: Node) -> Node:
+	var n: Node = node
+	while n != null:
+		if n.has_method("take_damage"):
+			return n
+		n = n.get_parent()
+	return null
+
+
 func _spawn_hit_effect() -> void:
 	if hit_effect_scene == null:
 		return
 	var fx := hit_effect_scene.instantiate()
 	_get_world().add_child(fx)
 	fx.global_position = global_position
+
+
+# Efeito específico de perfuração. No 3º hit, fica maior e dourado pra
+# sinalizar que foi uma perfuração "potente".
+func _spawn_pierce_hit_effect(is_third: bool) -> void:
+	if hit_effect_scene == null:
+		return
+	var fx := hit_effect_scene.instantiate()
+	_get_world().add_child(fx)
+	fx.global_position = global_position
+	if is_third and fx is Node2D:
+		var fx2d: Node2D = fx
+		fx2d.scale = Vector2(2.2, 2.2)
+		fx2d.modulate = Color(1.6, 1.1, 0.3, 1.0)
 
 
 func _get_world() -> Node:

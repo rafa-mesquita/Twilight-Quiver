@@ -1,7 +1,9 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scripts/mage_projectile.gd" id="1_proj"]
 [ext_resource type="Texture2D" uid="uid://b7vmwomsoef1y" path="res://assets/enemies/mage/projetil.png" id="2_tex"]
+[ext_resource type="AudioStream" uid="uid://b5q4rvhdiwqup" path="res://audios/effects/mage/mage projetil.mp3" id="3_sfx"]
+[ext_resource type="PackedScene" path="res://scenes/arrow_hit.tscn" id="4_hit"]
 
 [sub_resource type="AtlasTexture" id="A_proj_0"]
 atlas = ExtResource("2_tex")
@@ -32,14 +34,30 @@ radius = 3.0
 offsets = PackedFloat32Array(0, 1)
 colors = PackedColorArray(0.78, 0.55, 0.95, 0, 0.78, 0.55, 0.95, 0.7)
 
+[sub_resource type="CanvasItemMaterial" id="CIM_glow_proj"]
+blend_mode = 1
+
+[sub_resource type="Gradient" id="Grad_glow_proj"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(1, 1, 1, 1, 0.85, 0.6, 1, 0.6, 0.78, 0.55, 0.95, 0)
+
+[sub_resource type="GradientTexture2D" id="GradTex_glow_proj"]
+gradient = SubResource("Grad_glow_proj")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
 [node name="MageProjectile" type="Area2D"]
-z_index = -1
 collision_layer = 0
 collision_mask = 3
 script = ExtResource("1_proj")
+hit_effect_scene = ExtResource("4_hit")
 
 [node name="Trail" type="Line2D" parent="."]
 top_level = true
+material = SubResource("CIM_glow_proj")
 z_index = -1
 width = 2.0
 default_color = Color(0.85, 0.65, 1, 1)
@@ -50,9 +68,23 @@ end_cap_mode = 2
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
+material = SubResource("CIM_glow_proj")
+position = Vector2(0, -24)
 sprite_frames = SubResource("SpriteFrames_proj")
 animation = &"default"
 autoplay = "default"
 
+[node name="GlowLight" type="PointLight2D" parent="."]
+position = Vector2(0, -24)
+color = Color(0.78, 0.55, 0.95, 1)
+energy = 1.1
+texture = SubResource("GradTex_glow_proj")
+texture_scale = 0.25
+
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -24)
 shape = SubResource("CircleShape2D_proj")
+
+[node name="ShootSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("3_sfx")
+volume_db = -24.0

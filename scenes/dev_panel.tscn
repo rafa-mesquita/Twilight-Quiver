@@ -1,0 +1,174 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/dev_panel.gd" id="1_dev"]
+[ext_resource type="FontFile" uid="uid://b13jsxnoofsxm" path="res://font/at01.ttf" id="2_font"]
+
+[node name="DevPanel" type="CanvasLayer"]
+layer = 100
+script = ExtResource("1_dev")
+
+[node name="Content" type="PanelContainer" parent="."]
+visible = false
+modulate = Color(1, 1, 1, 0.94)
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -320.0
+offset_top = -880.0
+offset_right = -16.0
+offset_bottom = -56.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="Scroll" type="ScrollContainer" parent="Content"]
+
+[node name="VBox" type="VBoxContainer" parent="Content/Scroll"]
+custom_minimum_size = Vector2(280, 0)
+theme_override_constants/separation = 6
+
+[node name="EnemySection" type="VBoxContainer" parent="Content/Scroll/VBox"]
+theme_override_constants/separation = 4
+
+[node name="EnemyHeader" type="Button" parent="Content/Scroll/VBox/EnemySection"]
+custom_minimum_size = Vector2(0, 30)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "[+] Spawn enemy"
+alignment = 0
+
+[node name="EnemyContent" type="VBoxContainer" parent="Content/Scroll/VBox/EnemySection"]
+visible = false
+theme_override_constants/separation = 4
+
+[node name="MonkeyBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Monkey"
+
+[node name="MageBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Mage"
+
+[node name="SummonerBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Summoner Mage"
+
+[node name="InsectBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Insect"
+
+[node name="PlayerSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
+theme_override_constants/separation = 4
+
+[node name="PlayerHeader" type="Button" parent="Content/Scroll/VBox/PlayerSection"]
+custom_minimum_size = Vector2(0, 30)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "[+] Player / world"
+alignment = 0
+
+[node name="PlayerContent" type="VBoxContainer" parent="Content/Scroll/VBox/PlayerSection"]
+visible = false
+theme_override_constants/separation = 4
+
+[node name="ResetHpBtn" type="Button" parent="Content/Scroll/VBox/PlayerSection/PlayerContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Reset HP"
+
+[node name="ClearBtn" type="Button" parent="Content/Scroll/VBox/PlayerSection/PlayerContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Clear Enemies"
+
+[node name="ShopSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
+theme_override_constants/separation = 4
+
+[node name="ShopHeader" type="Button" parent="Content/Scroll/VBox/ShopSection"]
+custom_minimum_size = Vector2(0, 30)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "[+] Shop / Test"
+alignment = 0
+
+[node name="ShopContent" type="VBoxContainer" parent="Content/Scroll/VBox/ShopSection"]
+visible = false
+theme_override_constants/separation = 4
+
+[node name="OpenShopBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Abrir Shop"
+
+[node name="AddGoldBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "+50 coins"
+
+[node name="SpawnTowerBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Spawn Torre"
+
+[node name="UpgradesLabel" type="Label" parent="Content/Scroll/VBox/ShopSection/ShopContent"]
+theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "Aplicar upgrade:"
+
+[node name="UpgHpBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "+1 HP"
+
+[node name="UpgDamageBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "+1 Dano"
+
+[node name="UpgPerfBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "+1 Perfuracao"
+
+[node name="Sep" type="HSeparator" parent="Content/Scroll/VBox"]
+
+[node name="MenuBtn" type="Button" parent="Content/Scroll/VBox"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Back to Menu"
+
+[node name="MainToggle" type="Button" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -320.0
+offset_top = -48.0
+offset_right = -16.0
+offset_bottom = -8.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 0.6, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "DEV MODE ▲"

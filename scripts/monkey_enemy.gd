@@ -11,6 +11,12 @@ extends CharacterBody2D
 @export var death_silhouette_duration: float = 1.0
 @export var damage_sound: AudioStream
 @export var damage_sound_volume_db: float = -18.0
+@export var gold_scene: PackedScene
+@export var gold_drop_chance: float = 0.25
+@export var gold_drop_min: int = 1
+@export var gold_drop_max: int = 2
+@export var separation_radius: float = 14.0
+@export var separation_strength: float = 25.0
 
 const SILHOUETTE_SHADER: Shader = preload("res://shaders/silhouette.gdshader")
 # Knockback: decai linearmente até zero. Maior valor = decai mais rápido.
@@ -22,6 +28,8 @@ const SILHOUETTE_SHADER: Shader = preload("res://shaders/silhouette.gdshader")
 @export var stuck_check_interval: float = 0.25
 @export var stuck_step_duration: float = 0.4
 @export var stuck_min_progress: float = 3.0
+# Se player está mais longe que isso (ou morto), inimigo troca pra atacar torre.
+@export var tower_target_switch_distance: float = 220.0
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var hp_bar: Node2D = $HpBar
@@ -42,10 +50,12 @@ var _last_position: Vector2 = Vector2.ZERO
 var _stuck_check_timer: float = 0.0
 var _stuck_step_timer: float = 0.0
 var _stuck_step_dir: Vector2 = Vector2.ZERO
+var current_target: Node2D = null
 
 
 func _ready() -> void:
 	add_to_group("enemy")
+	add_to_group("monkey")
 	hp = max_hp
 	player = get_tree().get_first_node_in_group("player")
 	sprite.animation_finished.connect(_on_animation_finished)
@@ -58,15 +68,16 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	# Calcula a velocidade da AI separadamente, depois soma o knockback.
 	var ai_velocity: Vector2 = Vector2.ZERO
+	current_target = _pick_target()
 
-	if player != null and is_instance_valid(player) and not is_attacking:
-		var to_player: Vector2 = player.global_position - global_position
-		var dist: float = to_player.length()
-		var dir: Vector2 = to_player.normalized()
+	if current_target != null and is_instance_valid(current_target) and not is_attacking:
+		var to_target: Vector2 = current_target.global_position - global_position
+		var dist: float = to_target.length()
+		var dir: Vector2 = to_target.normalized()
 
 		if dist > attack_range:
 			# Direção de movimento — se está em "stuck step", usa direção lateral
-			# pra contornar obstáculos; senão direto pro player.
+			# pra contornar obstáculos; senão direto pro alvo.
 			var move_dir: Vector2 = dir
 			if _stuck_step_timer > 0.0:
 				move_dir = _stuck_step_dir
@@ -83,8 +94,10 @@ func _physics_process(delta: float) -> void:
 		if absf(dir.x) > 0.001:
 			sprite.flip_h = dir.x < 0.0
 
+	# Separação contra outros inimigos pra não empilhar.
+	var separation: Vector2 = EnemySeparation.compute(self, separation_radius, separation_strength)
 	# Aplica knockback em cima da movimentação da AI; decai até zero.
-	velocity = ai_velocity + knockback_velocity
+	velocity = ai_velocity + knockback_velocity + separation
 	knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, knockback_decay * delta)
 	move_and_slide()
 
@@ -113,13 +126,13 @@ func _attack() -> void:
 
 
 func _on_frame_changed() -> void:
-	# Aplica dano no frame específico do ataque.
+	# Aplica dano no frame específico do ataque, no current_target (player ou torre).
 	if is_attacking and sprite.frame == HIT_FRAME and not hit_applied:
 		hit_applied = true
-		if player != null and is_instance_valid(player):
-			var dist: float = global_position.distance_to(player.global_position)
-			if dist <= attack_range + 6.0 and player.has_method("take_damage"):
-				player.take_damage(damage)
+		if current_target != null and is_instance_valid(current_target):
+			var dist: float = global_position.distance_to(current_target.global_position)
+			if dist <= attack_range + 6.0 and current_target.has_method("take_damage"):
+				current_target.take_damage(damage)
 
 	# Pulinho do walk: sprite sobe nos frames pares (visual de saltitar).
 	# Sombra fica intacta porque é um node separado, não filho do sprite.
@@ -150,6 +163,8 @@ func take_damage(amount: float) -> void:
 	var died := hp <= 0.0
 	_play_damage_sound(1.5 if died else 0.7)
 	if died:
+		GoldDrop.try_drop(_get_world(), gold_scene, global_position,
+			gold_drop_chance, gold_drop_min, gold_drop_max)
 		_spawn_kill_effect()
 		_spawn_death_silhouette()
 		queue_free()
@@ -242,6 +257,30 @@ func _spawn_damage_number(amount: float) -> void:
 	# Acima da cabeça (cabeça por volta de y=-24, número 4px acima).
 	num.position = global_position + Vector2(0, -28)
 	get_tree().current_scene.add_child(num)
+
+
+func _pick_target() -> Node2D:
+	# Default: player. Se player muito longe (ou morto), troca pra torre mais próxima.
+	var player_alive: bool = player != null and is_instance_valid(player) and not (("is_dead" in player) and player.is_dead)
+	var player_dist: float = INF
+	if player_alive:
+		player_dist = global_position.distance_to(player.global_position)
+		if player_dist <= tower_target_switch_distance:
+			return player
+	# Procura torre mais próxima.
+	var nearest_tower: Node2D = null
+	var nearest_dist: float = INF
+	for s in get_tree().get_nodes_in_group("structure"):
+		if not is_instance_valid(s):
+			continue
+		var d: float = global_position.distance_to((s as Node2D).global_position)
+		if d < nearest_dist:
+			nearest_tower = s
+			nearest_dist = d
+	if nearest_tower != null:
+		return nearest_tower
+	# Sem torre disponível — volta pro player se ele existir.
+	return player if player_alive else null
 
 
 func _get_world() -> Node:

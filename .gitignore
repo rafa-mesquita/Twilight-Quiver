@@ -25,3 +25,8 @@ desktop.ini
 
 # Aseprite backups
 *.aseprite-bak
+
+# Secrets / API tokens
+miro key.md
+.miro_token
+miro_response.json

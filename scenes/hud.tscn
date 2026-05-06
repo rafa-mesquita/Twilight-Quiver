@@ -1,6 +1,229 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://chr12mlbamcyu"]
 
-[ext_resource type="Script" path="res://scripts/hud.gd" id="1_hud"]
+[ext_resource type="Script" uid="uid://b0y5u2kyxjf7a" path="res://scripts/hud.gd" id="1_hud"]
+[ext_resource type="Texture2D" uid="uid://ccwrnjj1eliq5" path="res://assets/Hud/hud.png" id="2_hud_sheet"]
+[ext_resource type="FontFile" uid="uid://b13jsxnoofsxm" path="res://font/at01.ttf" id="3_font"]
+[ext_resource type="Texture2D" uid="uid://43kh6plt35ba" path="res://assets/obecjts map/coins.png" id="4_coin_tex"]
 
-[node name="HUD" type="CanvasLayer"]
+[sub_resource type="AtlasTexture" id="AtlasTex_hud_frame"]
+atlas = ExtResource("2_hud_sheet")
+region = Rect2(0, 0, 45, 145)
+
+[sub_resource type="AtlasTexture" id="AtlasTex_coin_hud"]
+atlas = ExtResource("4_coin_tex")
+region = Rect2(0, 0, 8, 8)
+
+[node name="HUD" type="CanvasLayer" unique_id=637727249]
 script = ExtResource("1_hud")
+
+[node name="HudFrame" type="TextureRect" parent="." unique_id=1616014517]
+texture_filter = 1
+offset_right = 45.0
+offset_bottom = 145.0
+texture = SubResource("AtlasTex_hud_frame")
+expand_mode = 1
+
+[node name="WaveNumberLabel" type="Label" parent="HudFrame" unique_id=1158425271]
+z_index = 1
+layout_mode = 0
+offset_left = 18.75
+offset_top = 25.25
+offset_right = 35.0
+offset_bottom = 45.25
+theme_override_colors/font_color = Color(0.64705884, 0.6431373, 0.7921569, 1)
+theme_override_font_sizes/font_size = 11
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="GoldDisplay" type="Control" parent="." unique_id=2014247811]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 150.0
+offset_top = 80.0
+offset_right = 380.0
+offset_bottom = 132.0
+
+[node name="CoinIcon" type="Sprite2D" parent="GoldDisplay" unique_id=2077715300]
+texture_filter = 1
+position = Vector2(23, 24)
+scale = Vector2(4, 4)
+texture = SubResource("AtlasTex_coin_hud")
+
+[node name="CountLabel" type="Label" parent="GoldDisplay" unique_id=1534236412]
+layout_mode = 0
+offset_left = 51.0
+offset_right = 231.0
+offset_bottom = 52.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 36
+text = "0"
+vertical_alignment = 1
+
+[node name="IntroOverlay" type="Control" parent="." unique_id=1019720001]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Bg" type="ColorRect" parent="IntroOverlay" unique_id=290688395]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="Label" type="Label" parent="IntroOverlay" unique_id=1994898764]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -800.0
+offset_top = -160.0
+offset_right = 800.0
+offset_bottom = 160.0
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 128
+text = "Raid 1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ClearedOverlay" type="Control" parent="." unique_id=22436525]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Bg" type="ColorRect" parent="ClearedOverlay" unique_id=902792640]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="Label" type="Label" parent="ClearedOverlay" unique_id=401351470]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -800.0
+offset_top = -240.0
+offset_right = 800.0
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 96
+text = "Wave 1 Limpa"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ContinueButton" type="Button" parent="ClearedOverlay" unique_id=1045747826]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = 80.0
+offset_right = 200.0
+offset_bottom = 144.0
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 48
+text = "Continuar"
+
+[node name="DeathOverlay" type="ColorRect" parent="." unique_id=1586489956]
+modulate = Color(1, 1, 1, 0)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1.0
+offset_right = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="DeathTopLayer" type="CanvasLayer" parent="." unique_id=458340236]
+layer = 10
+
+[node name="SurvivalLabel" type="Label" parent="DeathTopLayer" unique_id=1575490639]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -600.0
+offset_top = -40.0
+offset_right = 600.0
+offset_bottom = 60.0
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 56
+text = "Você sobreviveu a 1 wave"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RestartButton" type="Button" parent="DeathTopLayer" unique_id=1324660885]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = 80.0
+offset_right = 200.0
+offset_bottom = 144.0
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 48
+text = "Jogar Novamente"
+
+[node name="MenuButton" type="Button" parent="DeathTopLayer" unique_id=1050982719]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = 168.0
+offset_right = 200.0
+offset_bottom = 220.0
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 32
+text = "Voltar ao Menu"
+
+[node name="TowerAlertIndicator" type="Control" parent="." unique_id=1810989981]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+
+[node name="Arrow" type="Polygon2D" parent="TowerAlertIndicator" unique_id=1475009617]
+color = Color(1, 0.35, 0.35, 1)
+polygon = PackedVector2Array(28, 0, -14, -18, -14, 18)
+
+[node name="ArrowOutline" type="Polygon2D" parent="TowerAlertIndicator" unique_id=1630052758]
+show_behind_parent = true
+color = Color(0.1, 0.05, 0.08, 0.85)
+polygon = PackedVector2Array(34, 0, -18, -22, -18, 22)
+
+[node name="AlertLabel" type="Label" parent="TowerAlertIndicator" unique_id=1801479624]
+layout_mode = 0
+offset_left = 40.0
+offset_top = -16.0
+offset_right = 320.0
+offset_bottom = 24.0
+theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 22
+text = "Torre sob ataque"

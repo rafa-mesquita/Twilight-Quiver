@@ -1,0 +1,70 @@
+extends Area2D
+
+@export var speed: float = 140.0
+@export var lifetime: float = 3.0
+@export var damage: float = 6.0
+@export var poison_damage_total: float = 8.0
+@export var poison_duration: float = 3.0
+@export var slow_multiplier: float = 0.5
+@export var slow_duration: float = 2.0
+@export var trail_max_points: int = 12
+@export var hit_effect_scene: PackedScene
+
+# Origem no chão pra Y-sort certo; visual fica acima.
+const VISUAL_OFFSET: Vector2 = Vector2(0, -22)
+const PLAYER_NODE_TARGET_OFFSET: Vector2 = Vector2(0, 12)
+
+@onready var sprite: AnimatedSprite2D = get_node_or_null("AnimatedSprite2D")
+@onready var trail: Line2D = get_node_or_null("Trail")
+
+var direction: Vector2 = Vector2.RIGHT
+
+
+func _ready() -> void:
+	body_entered.connect(_on_body_entered)
+	get_tree().create_timer(lifetime).timeout.connect(_die)
+
+
+func set_direction(dir: Vector2) -> void:
+	direction = dir.normalized()
+	if sprite != null:
+		sprite.rotation = direction.angle()
+	if trail != null:
+		trail.clear_points()
+		trail.add_point(global_position + VISUAL_OFFSET)
+
+
+func _physics_process(delta: float) -> void:
+	position += direction * speed * delta
+	if trail != null:
+		trail.add_point(global_position + VISUAL_OFFSET)
+		while trail.get_point_count() > trail_max_points:
+			trail.remove_point(0)
+
+
+func _on_body_entered(body: Node) -> void:
+	if body.is_in_group("player"):
+		if body.has_method("take_damage"):
+			body.take_damage(damage)
+		if body.has_method("apply_slow"):
+			body.apply_slow(slow_multiplier, slow_duration)
+		if body.has_method("apply_poison"):
+			body.apply_poison(poison_damage_total, poison_duration)
+	_spawn_hit_effect()
+	_die()
+
+
+func _spawn_hit_effect() -> void:
+	if hit_effect_scene == null:
+		return
+	var fx := hit_effect_scene.instantiate()
+	var world := get_tree().get_first_node_in_group("world")
+	if world == null:
+		world = get_tree().current_scene
+	world.add_child(fx)
+	fx.global_position = global_position + VISUAL_OFFSET
+
+
+func _die() -> void:
+	if is_inside_tree():
+		queue_free()

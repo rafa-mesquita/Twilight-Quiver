@@ -55,6 +55,7 @@ animations = [{
 
 [node name="DamageEffect" type="AnimatedSprite2D"]
 texture_filter = 1
+z_index = 1
 sprite_frames = SubResource("SpriteFrames_dmg")
 autoplay = "default"
 script = ExtResource("1_effect")

@@ -1,7 +1,7 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3]
 
-[ext_resource type="Texture2D" uid="uid://b3so465ilwjqp" path="res://assets/obecjts map/cerca.png" id="1_tex"]
-[ext_resource type="Script" path="res://scripts/tree_fade.gd" id="2_fade"]
+[ext_resource type="Texture2D" uid="uid://6vdfi70onr1g" path="res://assets/obecjts map/cerca-export.png" id="1_tex"]
+[ext_resource type="Script" uid="uid://c3p0eddeak72a" path="res://scripts/tree_fade.gd" id="2_fade"]
 
 [sub_resource type="RectangleShape2D" id="RectShape_cerca"]
 size = Vector2(32, 6)

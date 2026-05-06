@@ -7,7 +7,7 @@
 size = Vector2(24, 12)
 
 [sub_resource type="RectangleShape2D" id="RectShape_fadearea"]
-size = Vector2(28, 28)
+size = Vector2(22, 21)
 
 [node name="Poco" type="Node2D" unique_id=121143123]
 
@@ -15,10 +15,14 @@ size = Vector2(28, 28)
 position = Vector2(0, -2)
 
 [node name="Outer" type="Polygon2D" parent="Shadow" unique_id=1756828011]
+position = Vector2(0, -1)
+scale = Vector2(0.77500004, 1.5833333)
 color = Color(0, 0, 0, 0.15)
-polygon = PackedVector2Array(18, 0, 16, 1, 12, 2, 6, 3, 0, 3, -6, 3, -12, 2, -16, 1, -18, 0, -16, -1, -12, -2, -6, -3, 0, -3, 6, -3, 12, -2, 16, -1)
+polygon = PackedVector2Array(17.419353, 0, 16, 1, 12, 2, 6, 3, 0, 3, -6, 3, -12, 2, -16, 1, -17.419353, 0, -16, -1, -12, -2, -6, -3, 0, -3, 6, -3, 12, -2, 16, -1)
 
 [node name="Middle" type="Polygon2D" parent="Shadow" unique_id=453514938]
+position = Vector2(5.9604645e-08, -1)
+scale = Vector2(0.9583333, 1.7500001)
 color = Color(0, 0, 0, 0.22)
 polygon = PackedVector2Array(12, 0, 10, 1, 6, 2, 0, 2, -6, 2, -10, 1, -12, 0, -10, -1, -6, -2, 0, -2, 6, -2, 10, -1)
 
@@ -37,7 +41,7 @@ collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=1637104761]
-position = Vector2(0, -6)
+position = Vector2(0, -7)
 shape = SubResource("RectShape_poco")
 
 [node name="FadeArea" type="Area2D" parent="." unique_id=1710743389]
@@ -46,5 +50,5 @@ collision_mask = 5
 script = ExtResource("2_fade")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="FadeArea" unique_id=641188140]
-position = Vector2(0, -16)
+position = Vector2(0, -21.5)
 shape = SubResource("RectShape_fadearea")

@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://scripts/monkey_enemy.gd" id="1_monkey"]
 [ext_resource type="Texture2D" path="res://assets/enemies/monkey/enemy monkey-Sheet.png" id="2_sheet"]
@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" path="res://scenes/damage_number.tscn" id="5_dmgnum"]
 [ext_resource type="PackedScene" path="res://scenes/kill_effect.tscn" id="6_kill"]
 [ext_resource type="AudioStream" path="res://audios/effects/macaco/monkey damage.mp3" id="7_dmg_sfx"]
+[ext_resource type="PackedScene" path="res://scenes/gold.tscn" id="8_gold"]
 
 [sub_resource type="AtlasTexture" id="A_idle_0"]
 atlas = ExtResource("2_sheet")
@@ -80,6 +81,7 @@ damage_effect_scene = ExtResource("3_dmg")
 damage_number_scene = ExtResource("5_dmgnum")
 kill_effect_scene = ExtResource("6_kill")
 damage_sound = ExtResource("7_dmg_sfx")
+gold_scene = ExtResource("8_gold")
 
 [node name="Shadow" type="Node2D" parent="."]
 position = Vector2(0, 0)

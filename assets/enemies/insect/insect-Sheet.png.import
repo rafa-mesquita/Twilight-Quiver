@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b3so465ilwjqp"
-path="res://.godot/imported/cerca.png-d2076cdee81e89c53a51799bf7f9cc1c.ctex"
+uid="uid://cmggmejn3up0u"
+path="res://.godot/imported/insect-Sheet.png-324d3f792b7f8a1754d7794d63abd1bd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/obecjts map/cerca.png"
-dest_files=["res://.godot/imported/cerca.png-d2076cdee81e89c53a51799bf7f9cc1c.ctex"]
+source_file="res://assets/enemies/insect/insect-Sheet.png"
+dest_files=["res://.godot/imported/insect-Sheet.png-324d3f792b7f8a1754d7794d63abd1bd.ctex"]
 
 [params]
 

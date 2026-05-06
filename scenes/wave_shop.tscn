@@ -1,0 +1,385 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/wave_shop.gd" id="1_shop"]
+[ext_resource type="FontFile" uid="uid://b13jsxnoofsxm" path="res://font/at01.ttf" id="2_font"]
+
+[sub_resource type="StyleBoxFlat" id="SBF_card"]
+bg_color = Color(0.13, 0.1, 0.18, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.45, 0.32, 0.6, 1)
+
+[sub_resource type="StyleBoxFlat" id="SBF_btn_normal"]
+bg_color = Color(0.18, 0.14, 0.24, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.4, 0.7, 1)
+
+[sub_resource type="StyleBoxFlat" id="SBF_btn_hover"]
+bg_color = Color(0.28, 0.2, 0.38, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.75, 1, 1)
+
+[sub_resource type="StyleBoxFlat" id="SBF_btn_disabled"]
+bg_color = Color(0.1, 0.08, 0.13, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.25, 0.2, 0.3, 1)
+
+[sub_resource type="StyleBoxFlat" id="SBF_btn_pressed"]
+bg_color = Color(0.08, 0.05, 0.12, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.85, 1, 1)
+
+[node name="WaveShop" type="CanvasLayer"]
+layer = 50
+script = ExtResource("1_shop")
+
+[node name="Bg" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.04, 0.04, 0.08, 0.85)
+
+[node name="Root" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="HBox" type="HBoxContainer" parent="Root"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 60.0
+offset_top = 60.0
+offset_right = -60.0
+offset_bottom = -60.0
+theme_override_constants/separation = 40
+
+[node name="LeftCol" type="VBoxContainer" parent="Root/HBox"]
+custom_minimum_size = Vector2(560, 0)
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="LeftHeader" type="Label" parent="Root/HBox/LeftCol"]
+theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 36
+text = "ESTRUTURAS"
+horizontal_alignment = 1
+
+[node name="StructList" type="VBoxContainer" parent="Root/HBox/LeftCol"]
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="Card1" type="PanelContainer" parent="Root/HBox/LeftCol/StructList"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("SBF_card")
+
+[node name="VBox" type="VBoxContainer" parent="Root/HBox/LeftCol/StructList/Card1"]
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card1/VBox"]
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "—"
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card1/VBox"]
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "—"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PriceLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card1/VBox"]
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "—"
+horizontal_alignment = 1
+
+[node name="BuyBtn" type="Button" parent="Root/HBox/LeftCol/StructList/Card1/VBox"]
+custom_minimum_size = Vector2(0, 36)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/pressed = SubResource("SBF_btn_pressed")
+theme_override_styles/disabled = SubResource("SBF_btn_disabled")
+text = "Comprar"
+
+[node name="Card2" type="PanelContainer" parent="Root/HBox/LeftCol/StructList"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("SBF_card")
+
+[node name="VBox" type="VBoxContainer" parent="Root/HBox/LeftCol/StructList/Card2"]
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card2/VBox"]
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "—"
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card2/VBox"]
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "—"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PriceLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card2/VBox"]
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "—"
+horizontal_alignment = 1
+
+[node name="BuyBtn" type="Button" parent="Root/HBox/LeftCol/StructList/Card2/VBox"]
+custom_minimum_size = Vector2(0, 36)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/pressed = SubResource("SBF_btn_pressed")
+theme_override_styles/disabled = SubResource("SBF_btn_disabled")
+text = "Comprar"
+
+[node name="Card3" type="PanelContainer" parent="Root/HBox/LeftCol/StructList"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("SBF_card")
+
+[node name="VBox" type="VBoxContainer" parent="Root/HBox/LeftCol/StructList/Card3"]
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card3/VBox"]
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "—"
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card3/VBox"]
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "—"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PriceLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card3/VBox"]
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "—"
+horizontal_alignment = 1
+
+[node name="BuyBtn" type="Button" parent="Root/HBox/LeftCol/StructList/Card3/VBox"]
+custom_minimum_size = Vector2(0, 36)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/pressed = SubResource("SBF_btn_pressed")
+theme_override_styles/disabled = SubResource("SBF_btn_disabled")
+text = "Comprar"
+
+[node name="RightCol" type="VBoxContainer" parent="Root/HBox"]
+custom_minimum_size = Vector2(900, 0)
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="Header" type="HBoxContainer" parent="Root/HBox/RightCol"]
+
+[node name="UpgHeader" type="Label" parent="Root/HBox/RightCol/Header"]
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 36
+text = "UPGRADES"
+
+[node name="GoldLabel" type="Label" parent="Root/HBox/RightCol/Header"]
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+text = "0 coins"
+
+[node name="UpgRow" type="HBoxContainer" parent="Root/HBox/RightCol"]
+size_flags_vertical = 3
+theme_override_constants/separation = 20
+
+[node name="Card1" type="PanelContainer" parent="Root/HBox/RightCol/UpgRow"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("SBF_card")
+
+[node name="VBox" type="VBoxContainer" parent="Root/HBox/RightCol/UpgRow/Card1"]
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card1/VBox"]
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "—"
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card1/VBox"]
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "—"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PriceLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card1/VBox"]
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "—"
+horizontal_alignment = 1
+
+[node name="BuyBtn" type="Button" parent="Root/HBox/RightCol/UpgRow/Card1/VBox"]
+custom_minimum_size = Vector2(0, 40)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/pressed = SubResource("SBF_btn_pressed")
+theme_override_styles/disabled = SubResource("SBF_btn_disabled")
+text = "Comprar"
+
+[node name="Card2" type="PanelContainer" parent="Root/HBox/RightCol/UpgRow"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("SBF_card")
+
+[node name="VBox" type="VBoxContainer" parent="Root/HBox/RightCol/UpgRow/Card2"]
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card2/VBox"]
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "—"
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card2/VBox"]
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "—"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PriceLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card2/VBox"]
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "—"
+horizontal_alignment = 1
+
+[node name="BuyBtn" type="Button" parent="Root/HBox/RightCol/UpgRow/Card2/VBox"]
+custom_minimum_size = Vector2(0, 40)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/pressed = SubResource("SBF_btn_pressed")
+theme_override_styles/disabled = SubResource("SBF_btn_disabled")
+text = "Comprar"
+
+[node name="Card3" type="PanelContainer" parent="Root/HBox/RightCol/UpgRow"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("SBF_card")
+
+[node name="VBox" type="VBoxContainer" parent="Root/HBox/RightCol/UpgRow/Card3"]
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card3/VBox"]
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "—"
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card3/VBox"]
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "—"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PriceLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card3/VBox"]
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "—"
+horizontal_alignment = 1
+
+[node name="BuyBtn" type="Button" parent="Root/HBox/RightCol/UpgRow/Card3/VBox"]
+custom_minimum_size = Vector2(0, 40)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/pressed = SubResource("SBF_btn_pressed")
+theme_override_styles/disabled = SubResource("SBF_btn_disabled")
+text = "Comprar"
+
+[node name="ContinueBtn" type="Button" parent="Root/HBox/RightCol"]
+custom_minimum_size = Vector2(0, 60)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/pressed = SubResource("SBF_btn_pressed")
+theme_override_styles/disabled = SubResource("SBF_btn_disabled")
+text = "Proxima Wave"
+
+[node name="PlacementHint" type="Label" parent="."]
+visible = false
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -400.0
+offset_top = -100.0
+offset_right = 400.0
+offset_bottom = -40.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "Escolha um dos 5 pontos para posicionar a torre  -  Aperte Z para voltar"
+horizontal_alignment = 1
+vertical_alignment = 1

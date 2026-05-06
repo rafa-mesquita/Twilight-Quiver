@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scripts/mage_enemy.gd" id="1_mage"]
 [ext_resource type="Texture2D" uid="uid://b5j32bxp8kphc" path="res://assets/enemies/mage/mage-Sheet.png" id="2_sheet"]
@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" path="res://scenes/hp_bar.tscn" id="5_hpbar"]
 [ext_resource type="PackedScene" path="res://scenes/damage_number.tscn" id="6_dmgnum"]
 [ext_resource type="PackedScene" path="res://scenes/kill_effect.tscn" id="7_kill"]
+[ext_resource type="PackedScene" path="res://scenes/gold.tscn" id="8_gold"]
 
 [sub_resource type="AtlasTexture" id="A_walk_0"]
 atlas = ExtResource("2_sheet")
@@ -61,9 +62,10 @@ projectile_scene = ExtResource("3_proj")
 damage_effect_scene = ExtResource("4_dmg")
 damage_number_scene = ExtResource("6_dmgnum")
 kill_effect_scene = ExtResource("7_kill")
+gold_scene = ExtResource("8_gold")
 
 [node name="Shadow" type="Node2D" parent="."]
-position = Vector2(0, 0)
+position = Vector2(0, -2)
 
 [node name="Outer" type="Polygon2D" parent="Shadow"]
 color = Color(0, 0, 0, 0.15)
@@ -89,11 +91,11 @@ position = Vector2(0, -12)
 shape = SubResource("CapsuleShape2D_mage")
 
 [node name="Muzzle" type="Marker2D" parent="."]
-position = Vector2(8, -22)
+position = Vector2(-8, -22)
 
 [node name="ShootTimer" type="Timer" parent="."]
 wait_time = 2.0
 
 [node name="HpBar" parent="." instance=ExtResource("5_hpbar")]
 position = Vector2(-8, -34)
-fg_color = Color(0.55, 0.3, 0.75, 1)
+fg_color = Color(0.431, 0.129, 0.129, 1)

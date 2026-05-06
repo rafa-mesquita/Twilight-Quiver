@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://b5q4rvhdiwqup"
+path="res://.godot/imported/mage projetil.mp3-fc036f6a1d141c8ac7a8587e9f770a7b.mp3str"
+
+[deps]
+
+source_file="res://audios/effects/mage/mage projetil.mp3"
+dest_files=["res://.godot/imported/mage projetil.mp3-fc036f6a1d141c8ac7a8587e9f770a7b.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

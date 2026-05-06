@@ -1,0 +1,18 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/mage_enemy.tscn" id="1_base"]
+[ext_resource type="PackedScene" path="res://scenes/insect_enemy.tscn" id="2_insect"]
+[ext_resource type="PackedScene" path="res://scenes/summon_effect.tscn" id="3_summon"]
+
+[node name="MageEnemy" instance=ExtResource("1_base")]
+insect_scene = ExtResource("2_insect")
+summon_effect_scene = ExtResource("3_summon")
+summon_chance = 0.45
+summon_check_every = 2
+summon_min_wave = 1
+gold_drop_chance = 0.7
+gold_drop_min = 1
+gold_drop_max = 2
+
+[node name="AnimatedSprite2D" parent="." index="1"]
+self_modulate = Color(0.9, 0.7, 1.05, 1)

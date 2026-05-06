@@ -1,63 +1,391 @@
 extends Node2D
 
+# Wave manager: spawn de hordas a partir dos N spawn points mais longe do player.
+# Cada wave tem uma config (tipo de inimigo → alive_target + total). Inimigos são
+# escolhidos aleatoriamente dentre os tipos que ainda têm cota disponível, e
+# spawnados em pontos aleatórios dos N mais longes (offscreen porque a câmera
+# segue o player).
+
 @export var monkey_scene: PackedScene
-@export var enemies_per_wave: int = 2
-@export var spawn_delay: float = 1.0
-# Limites do mapa onde inimigos podem spawnar.
-@export var spawn_min_x: float = 32.0
-@export var spawn_max_x: float = 448.0
-@export var spawn_min_y: float = 32.0
-@export var spawn_max_y: float = 240.0
-@export var min_distance_from_player: float = 80.0
+@export var mage_scene: PackedScene
+@export var summoner_mage_scene: PackedScene
+@export var spawn_delay: float = 0.5
+@export var inter_wave_delay: float = 2.0
+@export var pre_cleared_hold: float = 2.0  # tempo segurando 100% antes da tela "Wave Limpa"
+@export var spawn_points_path: NodePath
+@export var farthest_count: int = 3  # quantos spawn points ativos por wave (top N mais longe do player)
+# Scaling por wave: cada wave acima da 1ª aumenta HP e dano dos inimigos linearmente.
+@export var hp_growth_per_wave: float = 0.12  # +12% HP por wave
+@export var damage_growth_per_wave: float = 0.08  # +8% dano por wave
 
 var wave_number: int = 0
-var spawning: bool = false
+var spawn_points: Array[Marker2D] = []
+var spawn_cooldown: float = 0.0
+var wave_active: bool = false
+var stopped: bool = false
+
+# Per-wave state
+var wave_config: Dictionary = {}  # {type_key: {"alive_target": int, "total": int}}
+var spawned_this_wave: Dictionary = {}  # {type_key: int}
+var total_to_spawn_this_wave: int = 0
+var last_progress_killed: int = -1  # cache pra evitar spam de update na HUD
+
+# Registro de tipos: associa uma chave de string a (PackedScene, group_name).
+# Pra adicionar um novo tipo de inimigo: registra aqui + adiciona group no script dele.
+var type_registry: Dictionary = {}
+
+# Estruturas que o player já comprou. Cada entrada: {scene_path: String, position: Vector2}.
+# Usado pra renascer torres destruídas no início da próxima wave.
+var owned_structures: Array = []
 
 
 func _ready() -> void:
-	_spawn_wave.call_deferred()
-
-
-func _process(_delta: float) -> void:
-	if spawning:
+	add_to_group("wave_manager")
+	# HUD e Cursor são instanciados em runtime (não estão no main.tscn) pra editor
+	# do mapa ficar limpo — sem CanvasLayers cobrindo a view de edição.
+	_instantiate_overlays()
+	_collect_spawn_points()
+	type_registry = {
+		"monkey": {"scene": monkey_scene, "group": "monkey"},
+		"mage": {"scene": mage_scene, "group": "mage"},
+		"summoner_mage": {"scene": summoner_mage_scene, "group": "summoner_mage"},
+	}
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null and player.has_signal("died"):
+		player.died.connect(_on_player_died)
+	# Dev mode: não dispara waves automáticas — DevPanel controla spawn manual.
+	if _is_dev_mode():
+		stopped = true
+		_spawn_dev_panel.call_deferred()
 		return
-	var enemies := get_tree().get_nodes_in_group("enemy")
-	if enemies.size() == 0:
-		_spawn_wave()
+	_start_next_wave.call_deferred()
 
 
-func _spawn_wave() -> void:
-	if spawning:
+func _instantiate_overlays() -> void:
+	var hud_scene: PackedScene = load("res://scenes/hud.tscn")
+	if hud_scene != null:
+		add_child(hud_scene.instantiate())
+	var cursor_scene: PackedScene = load("res://scenes/cursor.tscn")
+	if cursor_scene != null:
+		add_child(cursor_scene.instantiate())
+
+
+func _spawn_dev_panel() -> void:
+	var panel_scene: PackedScene = load("res://scenes/dev_panel.tscn")
+	if panel_scene != null:
+		var panel := panel_scene.instantiate()
+		get_tree().current_scene.add_child(panel)
+	# HUD editor lateral esquerdo pra ajustar HUD ao vivo.
+	var editor_scene: PackedScene = load("res://scenes/hud_editor.tscn")
+	if editor_scene != null:
+		var editor := editor_scene.instantiate()
+		get_tree().current_scene.add_child(editor)
+
+
+func _is_dev_mode() -> bool:
+	var gs := get_node_or_null("/root/GameState")
+	if gs != null and "dev_mode" in gs:
+		return bool(gs.dev_mode)
+	return false
+
+
+func spawn_enemy_at(type_key: String, pos: Vector2) -> Node:
+	# Usado pelo DevPanel pra spawnar inimigos de qualquer tipo registrado.
+	var info: Dictionary = type_registry.get(type_key, {})
+	if info.is_empty() or info["scene"] == null:
+		return null
+	var world := get_tree().get_first_node_in_group("world")
+	if world == null:
+		return null
+	var enemy: Node2D = info["scene"].instantiate()
+	world.add_child(enemy)
+	enemy.global_position = pos
+	return enemy
+
+
+func _collect_spawn_points() -> void:
+	spawn_points.clear()
+	var container := get_node_or_null(spawn_points_path)
+	if container == null:
 		return
-	spawning = true
+	for child in container.get_children():
+		if child is Marker2D:
+			spawn_points.append(child)
+
+
+func _process(delta: float) -> void:
+	if stopped or not wave_active:
+		return
+	_emit_progress()
+	spawn_cooldown = maxf(spawn_cooldown - delta, 0.0)
+	if spawn_cooldown > 0.0:
+		return
+
+	# Tenta spawnar um inimigo de um tipo que precisa (alive < target AND spawned < total).
+	var picked_type: String = _pick_type_to_spawn()
+	if picked_type != "":
+		_spawn_one(picked_type)
+		spawn_cooldown = spawn_delay
+		return
+
+	# Nenhum tipo precisando spawnar — wave acaba quando todos os inimigos morrerem.
+	if _total_alive() == 0:
+		_finish_wave()
+
+
+func _start_next_wave() -> void:
+	if stopped:
+		return
 	wave_number += 1
-	if spawn_delay > 0.0:
-		await get_tree().create_timer(spawn_delay).timeout
-	if monkey_scene == null:
-		spawning = false
+	wave_config = _build_wave_config(wave_number)
+	spawned_this_wave.clear()
+	for k: String in wave_config.keys():
+		spawned_this_wave[k] = 0
+	total_to_spawn_this_wave = _calc_total_to_spawn()
+	last_progress_killed = -1
+	spawn_cooldown = 0.0
+
+	# Reseta HP e posição do player antes da nova wave (camera segue → player no centro).
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null:
+		if player.has_method("reset_hp"):
+			player.reset_hp()
+		if player.has_method("reset_position"):
+			player.reset_position()
+		if player.has_method("reset_perf_counter"):
+			player.reset_perf_counter()
+	# Renasce torres/aliados destruídos na wave anterior na mesma posição.
+	_respawn_owned_structures()
+
+	# Intro "Raid X" antes de spawnar nada.
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud != null and hud.has_method("play_raid_intro"):
+		await hud.play_raid_intro(wave_number)
+	if stopped:
+		return
+	wave_active = true
+	_emit_progress()
+
+
+func _calc_total_to_spawn() -> int:
+	var t: int = 0
+	for k: String in wave_config.keys():
+		t += int(wave_config[k]["total"])
+	return t
+
+
+func _emit_progress() -> void:
+	var killed: int = _killed_count()
+	if killed == last_progress_killed:
+		return
+	last_progress_killed = killed
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud != null and hud.has_method("update_wave_progress"):
+		hud.update_wave_progress(killed, total_to_spawn_this_wave, wave_number)
+
+
+func _killed_count() -> int:
+	var spawned_total: int = 0
+	for k: String in wave_config.keys():
+		spawned_total += int(spawned_this_wave.get(k, 0))
+	return spawned_total - _total_alive()
+
+
+func _build_wave_config(num: int) -> Dictionary:
+	# Wave 1: introdutória — sem invocador, poucos macacos.
+	if num == 1:
+		return {
+			"monkey": {"alive_target": 3, "total": 8},
+			"mage": {"alive_target": 2, "total": 4},
+		}
+	# Wave 2: invocador entra com cota mínima, escala leve sobre wave 1.
+	if num == 2:
+		return {
+			"monkey": {"alive_target": 4, "total": 12},
+			"mage": {"alive_target": 3, "total": 6},
+			"summoner_mage": {"alive_target": 1, "total": 2},
+		}
+	# Waves 2+: escala automática + um pouco de aleatoriedade.
+	# Quanto maior o wave_number, mais inimigos vivos e mais total.
+	# Ratio macaco/mago varia entre ~70/30 e ~50/50 conforme a wave avança.
+	var scale: float = 1.0 + (num - 1) * 0.35  # +35% por wave
+	var monkey_alive: int = int(round(5 * scale + randf_range(-1.0, 2.0)))
+	var monkey_total: int = int(round(15 * scale + randf_range(0.0, 4.0)))
+	var mage_alive: int = int(round(3 * scale + randf_range(0.0, 2.0)))
+	var mage_total: int = int(round(6 * scale + randf_range(0.0, 3.0)))
+	# Invocadores entram com força a partir da wave 2.
+	var summ_alive: int = int(round(1 * scale + randf_range(0.0, 1.0)))
+	var summ_total: int = int(round(3 * scale + randf_range(0.0, 2.0)))
+	return {
+		"monkey": {"alive_target": maxi(monkey_alive, 1), "total": maxi(monkey_total, monkey_alive)},
+		"mage": {"alive_target": maxi(mage_alive, 1), "total": maxi(mage_total, mage_alive)},
+		"summoner_mage": {"alive_target": maxi(summ_alive, 1), "total": maxi(summ_total, summ_alive)},
+	}
+
+
+func _pick_type_to_spawn() -> String:
+	# Lista os tipos que ainda têm cota disponível (precisam de mais spawn).
+	var candidates: Array[String] = []
+	for type_key: String in wave_config.keys():
+		var cfg: Dictionary = wave_config[type_key]
+		var spawned: int = spawned_this_wave.get(type_key, 0)
+		var alive: int = _alive_count_of(type_key)
+		if spawned < cfg["total"] and alive < cfg["alive_target"]:
+			candidates.append(type_key)
+	if candidates.is_empty():
+		return ""
+	return candidates[randi() % candidates.size()]
+
+
+func _alive_count_of(type_key: String) -> int:
+	var info: Dictionary = type_registry.get(type_key, {})
+	if info.is_empty():
+		return 0
+	return get_tree().get_nodes_in_group(info["group"]).size()
+
+
+func _total_alive() -> int:
+	return get_tree().get_nodes_in_group("enemy").size()
+
+
+func _spawn_one(type_key: String) -> void:
+	var info: Dictionary = type_registry.get(type_key, {})
+	if info.is_empty() or info["scene"] == null:
 		return
 	var world := get_tree().get_first_node_in_group("world")
 	if world == null:
-		spawning = false
 		return
-	var player := get_tree().get_first_node_in_group("player")
-	for i in range(enemies_per_wave):
-		var spawn_pos: Vector2 = _pick_spawn_position(player)
-		var monkey := monkey_scene.instantiate()
-		world.add_child(monkey)
-		monkey.global_position = spawn_pos
-	spawning = false
+	var pos: Vector2 = _pick_random_far_spawn_point()
+	var enemy: Node2D = info["scene"].instantiate()
+	# Aplica scaling de wave ANTES de add_child pra _ready do inimigo já usar max_hp escalado.
+	_apply_wave_scaling(enemy)
+	world.add_child(enemy)
+	enemy.global_position = pos
+	spawned_this_wave[type_key] = spawned_this_wave.get(type_key, 0) + 1
 
 
-func _pick_spawn_position(player: Node) -> Vector2:
-	# Tenta achar uma posição longe do player. Se não conseguir em 20 tentativas, usa qualquer.
-	for _attempt in range(20):
-		var x: float = randf_range(spawn_min_x, spawn_max_x)
-		var y: float = randf_range(spawn_min_y, spawn_max_y)
-		var pos: Vector2 = Vector2(x, y)
-		if player == null or not is_instance_valid(player):
-			return pos
-		var player_pos: Vector2 = (player as Node2D).global_position
-		if pos.distance_to(player_pos) >= min_distance_from_player:
-			return pos
-	return Vector2(spawn_min_x, spawn_min_y)
+func _apply_wave_scaling(enemy: Node) -> void:
+	var hp_mult: float = 1.0 + maxf(wave_number - 1, 0) * hp_growth_per_wave
+	var dmg_mult: float = 1.0 + maxf(wave_number - 1, 0) * damage_growth_per_wave
+	if "max_hp" in enemy:
+		enemy.max_hp = enemy.max_hp * hp_mult
+	# Inimigos melee guardam dano em "damage" direto. Ranged (mage/insect) usam
+	# "damage_mult" pra aplicar no projectile na hora do disparo.
+	if "damage" in enemy:
+		enemy.damage = enemy.damage * dmg_mult
+	if "damage_mult" in enemy:
+		enemy.damage_mult = dmg_mult
+	if "hp_mult" in enemy:
+		enemy.hp_mult = hp_mult
+
+
+func _pick_random_far_spawn_point() -> Vector2:
+	# Pega os N spawn points mais longe do player, escolhe um deles aleatoriamente.
+	if spawn_points.is_empty():
+		return Vector2.ZERO
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player == null or not is_instance_valid(player):
+		return spawn_points[randi() % spawn_points.size()].global_position
+
+	var sorted: Array[Marker2D] = spawn_points.duplicate()
+	sorted.sort_custom(func(a: Marker2D, b: Marker2D) -> bool:
+		var da: float = a.global_position.distance_squared_to(player.global_position)
+		var db: float = b.global_position.distance_squared_to(player.global_position)
+		return da > db
+	)
+	var top_n: int = mini(farthest_count, sorted.size())
+	return sorted[randi() % top_n].global_position
+
+
+func _finish_wave() -> void:
+	wave_active = false
+	# Garante que a barra mostra 100% antes da tela de "Wave Limpa".
+	_emit_progress()
+	# Suga todas as moedas restantes do mapa pro player (auto-coleta).
+	_magnet_remaining_gold()
+	# Mostra HUD em 100% por alguns segundos pro player ver o progresso completo.
+	if pre_cleared_hold > 0.0:
+		await get_tree().create_timer(pre_cleared_hold).timeout
+	if stopped:
+		return
+	# Tela "Wave X Limpa" + botão "Continuar". Aguarda o player clicar.
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud != null and hud.has_method("play_wave_cleared"):
+		await hud.play_wave_cleared(wave_number)
+	if stopped:
+		return
+	# Loja pós-wave: 1 estrutura + 1 upgrade max.
+	await _open_shop()
+	if stopped:
+		return
+	# Pequeno delay e próxima wave (que vai disparar o intro).
+	if inter_wave_delay > 0.0:
+		await get_tree().create_timer(inter_wave_delay).timeout
+	_start_next_wave()
+
+
+func _magnet_remaining_gold() -> void:
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player == null:
+		return
+	var get_player_pos: Callable = func() -> Vector2:
+		return player.global_position if is_instance_valid(player) else Vector2.ZERO
+	for coin in get_tree().get_nodes_in_group("gold"):
+		if not is_instance_valid(coin):
+			continue
+		if coin.has_method("magnet_to_player"):
+			coin.magnet_to_player(get_player_pos)
+
+
+func _open_shop() -> void:
+	var shop_scene: PackedScene = load("res://scenes/wave_shop.tscn")
+	if shop_scene == null:
+		return
+	var shop = shop_scene.instantiate()
+	get_tree().current_scene.add_child(shop)
+	if shop.has_signal("closed"):
+		await shop.closed
+	if is_instance_valid(shop):
+		shop.queue_free()
+
+
+func _on_player_died() -> void:
+	stopped = true
+	wave_active = false
+
+
+# Chamado pelo wave_shop quando o player confirma o placement de uma estrutura.
+# Salva pra renascer entre waves se for destruída.
+func register_structure(scene_path: String, pos: Vector2) -> void:
+	owned_structures.append({"scene_path": scene_path, "position": pos})
+
+
+func _respawn_owned_structures() -> void:
+	if owned_structures.is_empty():
+		return
+	var world := get_tree().get_first_node_in_group("world")
+	if world == null:
+		return
+	# Pra cada estrutura registrada, checa se ainda há uma viva próxima do spot.
+	# Se não houver, instancia uma nova ali.
+	var alive_positions: Array[Vector2] = []
+	for s in get_tree().get_nodes_in_group("structure"):
+		if s is Node2D and is_instance_valid(s):
+			alive_positions.append((s as Node2D).global_position)
+	for entry in owned_structures:
+		var pos: Vector2 = entry["position"]
+		var still_alive: bool = false
+		for ap in alive_positions:
+			if ap.distance_to(pos) < 8.0:
+				still_alive = true
+				break
+		if still_alive:
+			continue
+		var scene: PackedScene = load(entry["scene_path"])
+		if scene == null:
+			continue
+		var inst: Node2D = scene.instantiate()
+		world.add_child(inst)
+		inst.global_position = pos
+
+

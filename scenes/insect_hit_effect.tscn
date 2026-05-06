@@ -1,0 +1,34 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/effect.gd" id="1_effect"]
+[ext_resource type="Texture2D" uid="uid://bb4ttr0ld4y6e" path="res://assets/enemies/insect/insect-projetil-hit.png" id="2_tex"]
+
+[sub_resource type="AtlasTexture" id="A_hit_0"]
+atlas = ExtResource("2_tex")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_hit_1"]
+atlas = ExtResource("2_tex")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_hit_2"]
+atlas = ExtResource("2_tex")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_hit"]
+animations = [{
+"frames": [{"duration": 1.0, "texture": SubResource("A_hit_0")},
+{"duration": 1.0, "texture": SubResource("A_hit_1")},
+{"duration": 1.0, "texture": SubResource("A_hit_2")}],
+"loop": false,
+"name": &"default",
+"speed": 14.0
+}]
+
+[node name="InsectHitEffect" type="AnimatedSprite2D"]
+texture_filter = 1
+modulate = Color(1, 1, 1, 0.6)
+sprite_frames = SubResource("SpriteFrames_hit")
+autoplay = "default"
+script = ExtResource("1_effect")
+frame_alphas = PackedFloat32Array(0.55, 0.35, 0.15)

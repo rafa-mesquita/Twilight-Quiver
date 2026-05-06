@@ -1,0 +1,107 @@
+[gd_scene format=3 uid="uid://cbme3hv2e6j43"]
+
+[ext_resource type="Script" uid="uid://2ytlccypvm8e" path="res://scripts/arrow_tower.gd" id="1_tower"]
+[ext_resource type="Texture2D" uid="uid://djk20gkrhl7wr" path="res://assets/estruturas/torre de flechas.png" id="2_tower_tex"]
+[ext_resource type="PackedScene" path="res://scenes/arrow.tscn" id="3_arrow"]
+[ext_resource type="Script" uid="uid://c3p0eddeak72a" path="res://scripts/tree_fade.gd" id="4_fade"]
+[ext_resource type="PackedScene" path="res://scenes/hp_bar.tscn" id="5_hpbar"]
+[ext_resource type="PackedScene" path="res://scenes/damage_effect.tscn" id="6_dmg"]
+[ext_resource type="PackedScene" path="res://scenes/damage_number.tscn" id="7_dmgnum"]
+[ext_resource type="PackedScene" path="res://scenes/kill_effect.tscn" id="8_kill"]
+
+[sub_resource type="AtlasTexture" id="A_tower_0"]
+atlas = ExtResource("2_tower_tex")
+region = Rect2(0, 0, 64, 75)
+
+[sub_resource type="AtlasTexture" id="A_tower_1"]
+atlas = ExtResource("2_tower_tex")
+region = Rect2(64, 0, 64, 75)
+
+[sub_resource type="AtlasTexture" id="A_tower_2"]
+atlas = ExtResource("2_tower_tex")
+region = Rect2(128, 0, 64, 75)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_tower"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_tower_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_tower_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_tower_2")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 4.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectShape_tower_base"]
+size = Vector2(54, 35)
+
+[sub_resource type="RectangleShape2D" id="RectShape_tower_fade"]
+size = Vector2(50, 82)
+
+[node name="ArrowTower" type="Node2D" unique_id=27893351]
+script = ExtResource("1_tower")
+arrow_scene = ExtResource("3_arrow")
+damage_effect_scene = ExtResource("6_dmg")
+damage_number_scene = ExtResource("7_dmgnum")
+kill_effect_scene = ExtResource("8_kill")
+
+[node name="Shadow" type="Polygon2D" parent="." unique_id=699004699]
+position = Vector2(-1, -8)
+scale = Vector2(1.5851663, 2.4)
+color = Color(0, 0, 0, 0.32)
+polygon = PackedVector2Array(20, 0, 15, 3.5, 8.187801, 4.181219, 0, 5, -15.714286, 3, -19.285715, -1.5, -16, -4, 0, -5, 16, -4)
+
+[node name="Shadow" type="Polygon2D" parent="Shadow" unique_id=1187464339]
+position = Vector2(-3.8146973e-06, -0.41666603)
+scale = Vector2(1.0815207, 1.1750001)
+color = Color(0, 0, 0, 0.32)
+polygon = PackedVector2Array(20, 0, 15, 3.5, 11.333504, 3.8666515, 3.0276947, 4.697235, 0, 5, -15.714286, 3, -19.285715, -1.5, -16, -4, 0, -5, 16, -4)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=50692680]
+texture_filter = 1
+scale = Vector2(1.15, 1.15)
+sprite_frames = SubResource("SpriteFrames_tower")
+animation = &"idle"
+autoplay = "idle"
+offset = Vector2(0, -38)
+
+[node name="MuzzleLeft" type="Marker2D" parent="." unique_id=216663302]
+position = Vector2(-13, -41)
+
+[node name="MuzzleRight" type="Marker2D" parent="." unique_id=1088189923]
+position = Vector2(15, -46)
+
+[node name="TimerLeft" type="Timer" parent="." unique_id=964525600]
+wait_time = 3.0
+one_shot = true
+
+[node name="TimerRight" type="Timer" parent="." unique_id=1264721383]
+wait_time = 3.0
+one_shot = true
+
+[node name="Body" type="StaticBody2D" parent="." unique_id=1521357834]
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Body" unique_id=372710479]
+position = Vector2(-1, -17.5)
+shape = SubResource("RectShape_tower_base")
+
+[node name="FadeArea" type="Area2D" parent="." unique_id=411272606]
+collision_layer = 0
+collision_mask = 5
+script = ExtResource("4_fade")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="FadeArea" unique_id=469074098]
+position = Vector2(0, -43)
+shape = SubResource("RectShape_tower_fade")
+
+[node name="HpBar" parent="." unique_id=583692210 instance=ExtResource("5_hpbar")]
+position = Vector2(-8, -90)
+fg_color = Color(0.4627451, 0.654902, 0.29803923, 1)

@@ -14,6 +14,23 @@ extends CharacterBody2D
 @export var damage_sound: AudioStream
 @export var damage_sound_volume_db: float = -18.0
 @export var knockback_decay: float = 400.0
+@export var gold_scene: PackedScene
+@export var gold_drop_chance: float = 0.45
+@export var gold_drop_min: int = 1
+@export var gold_drop_max: int = 2
+@export var separation_radius: float = 14.0
+@export var separation_strength: float = 25.0
+@export var tower_target_switch_distance: float = 240.0
+
+# Habilidade de invocação: a cada `summon_check_every` ataques, rola `summon_chance`
+# pra trocar o ataque por uma invocação de inseto. Só ativo a partir da wave configurada.
+@export var insect_scene: PackedScene
+@export var summon_effect_scene: PackedScene
+@export var summon_chance: float = 0.45
+@export var summon_check_every: int = 2
+@export var summon_min_wave: int = 1
+@export var summon_distance_tiles: int = 3
+@export var summon_tile_size: float = 16.0
 
 const SILHOUETTE_SHADER: Shader = preload("res://shaders/silhouette.gdshader")
 const MUZZLE_OFFSET_X: float = 8.0
@@ -25,8 +42,13 @@ const BODY_CENTER_OFFSET: Vector2 = Vector2(0, -16)
 @onready var shoot_timer: Timer = $ShootTimer
 
 var hp: float
+var damage_mult: float = 1.0  # setado pelo wave_manager — aplica no projectile no disparo
+var hp_mult: float = 1.0  # setado pelo wave_manager — propaga pro inseto invocado
 var player: Node2D
+var current_target: Node2D = null
 var is_attacking: bool = false
+var is_summoning: bool = false
+var attack_count: int = 0
 var locked_attack_dir: Vector2 = Vector2.RIGHT
 var knockback_velocity: Vector2 = Vector2.ZERO
 var _flash_tween: Tween
@@ -34,6 +56,12 @@ var _flash_tween: Tween
 
 func _ready() -> void:
 	add_to_group("enemy")
+	# Mago invocador (insect_scene setado) entra num grupo separado pra wave_manager
+	# poder balancear quantos de cada tipo aparecem na horda.
+	if insect_scene != null:
+		add_to_group("summoner_mage")
+	else:
+		add_to_group("mage")
 	hp = max_hp
 	player = get_tree().get_first_node_in_group("player")
 	shoot_timer.wait_time = shoot_interval
@@ -45,11 +73,12 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	var ai_velocity: Vector2 = Vector2.ZERO
+	current_target = _pick_target()
 
-	if player != null and is_instance_valid(player):
-		var to_player: Vector2 = player.global_position - global_position
-		var dist: float = to_player.length()
-		var dir: Vector2 = to_player.normalized()
+	if current_target != null and is_instance_valid(current_target):
+		var to_target: Vector2 = current_target.global_position - global_position
+		var dist: float = to_target.length()
+		var dir: Vector2 = to_target.normalized()
 
 		if not is_attacking:
 			if dist < preferred_distance - distance_tolerance:
@@ -57,53 +86,112 @@ func _physics_process(delta: float) -> void:
 			elif dist > preferred_distance + distance_tolerance:
 				ai_velocity = dir * speed
 
-		_update_facing(to_player)
+		_update_facing(to_target)
 
+	# Separação contra outros inimigos pra não empilhar.
+	var separation: Vector2 = EnemySeparation.compute(self, separation_radius, separation_strength)
 	# Knockback soma sobre AI velocity e decai linearmente até zero.
-	velocity = ai_velocity + knockback_velocity
+	velocity = ai_velocity + knockback_velocity + separation
 	knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, knockback_decay * delta)
 	move_and_slide()
 
 
 func _update_facing(to_player: Vector2) -> void:
+	# Cajado fica à esquerda do mago no sprite original; quando flipa, vai pra direita.
 	if to_player.x < 0:
 		sprite.flip_h = true
-		muzzle.position.x = -MUZZLE_OFFSET_X
+		muzzle.position.x = MUZZLE_OFFSET_X
 	elif to_player.x > 0:
 		sprite.flip_h = false
-		muzzle.position.x = MUZZLE_OFFSET_X
+		muzzle.position.x = -MUZZLE_OFFSET_X
 
 
 func _try_shoot() -> void:
 	if is_attacking:
 		return
-	if player == null or not is_instance_valid(player):
+	if current_target == null or not is_instance_valid(current_target):
 		return
-	if projectile_scene == null:
-		return
-	var dist := global_position.distance_to(player.global_position)
+	var dist := global_position.distance_to(current_target.global_position)
 	if dist > detection_range:
 		return
 
-	var target := player.global_position + Vector2(0, -12)
+	attack_count += 1
+
+	# Roll de invocação: a cada `summon_check_every` ataques, chance de virar summon.
+	# Só faz sentido invocar quando alvo é o player.
+	if current_target == player and _can_summon() and attack_count % summon_check_every == 0 and randf() < summon_chance:
+		is_summoning = true
+		is_attacking = true
+		sprite.play("attack")
+		return
+
+	if projectile_scene == null:
+		return
+	var target := current_target.global_position + Vector2(0, -12)
 	locked_attack_dir = (target - muzzle.global_position).normalized()
 	is_attacking = true
 	sprite.play("attack")
 
 
+func _can_summon() -> bool:
+	if insect_scene == null:
+		return false
+	return _current_wave_number() >= summon_min_wave
+
+
+func _current_wave_number() -> int:
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm != null and "wave_number" in wm:
+		return int(wm.wave_number)
+	return 1
+
+
 func _on_animation_finished() -> void:
 	if sprite.animation == "attack":
-		_fire_projectile()
+		if is_summoning:
+			_do_summon()
+			is_summoning = false
+		else:
+			_fire_projectile()
 		is_attacking = false
 		sprite.play("walk")
+
+
+func _do_summon() -> void:
+	# Posição alvo: 3 tiles do mago em direção aleatória (com pequena variação no raio).
+	var angle: float = randf() * TAU
+	var radius: float = summon_distance_tiles * summon_tile_size + randf_range(-4.0, 4.0)
+	var spawn_pos: Vector2 = global_position + Vector2(cos(angle), sin(angle)) * radius
+
+	if summon_effect_scene != null:
+		var fx := summon_effect_scene.instantiate()
+		_get_world().add_child(fx)
+		fx.global_position = spawn_pos
+
+	if insect_scene == null:
+		return
+	var insect := insect_scene.instantiate()
+	# Propaga scaling do mago invocador pro inseto.
+	if "max_hp" in insect:
+		insect.max_hp = insect.max_hp * hp_mult
+	if "damage_mult" in insect:
+		insect.damage_mult = damage_mult
+	_get_world().add_child(insect)
+	insect.global_position = spawn_pos
+	if insect.has_method("play_spawn_in"):
+		insect.play_spawn_in()
 
 
 func _fire_projectile() -> void:
 	if projectile_scene == null:
 		return
 	var proj := projectile_scene.instantiate()
+	if "damage" in proj and damage_mult != 1.0:
+		proj.damage = proj.damage * damage_mult
 	_get_world().add_child(proj)
-	proj.global_position = muzzle.global_position
+	# Origem do projétil 2px abaixo dos pés do mago: garante que sorteia DEPOIS do mago
+	# (mesmo Y empata; +2 força projétil na frente). Visual sobe 24px pra ficar no cajado.
+	proj.global_position = Vector2(muzzle.global_position.x, global_position.y + 2)
 	if proj.has_method("set_direction"):
 		proj.set_direction(locked_attack_dir)
 
@@ -117,6 +205,8 @@ func take_damage(amount: float) -> void:
 	var died := hp <= 0.0
 	_play_damage_sound(1.5 if died else 0.7)
 	if died:
+		GoldDrop.try_drop(_get_world(), gold_scene, global_position,
+			gold_drop_chance, gold_drop_min, gold_drop_max)
 		_spawn_kill_effect()
 		_spawn_death_silhouette()
 		queue_free()
@@ -199,6 +289,26 @@ func _spawn_damage_number(amount: float) -> void:
 	num.amount = int(round(amount))
 	num.position = global_position + Vector2(0, -32)
 	get_tree().current_scene.add_child(num)
+
+
+func _pick_target() -> Node2D:
+	var player_alive: bool = player != null and is_instance_valid(player) and not (("is_dead" in player) and player.is_dead)
+	if player_alive:
+		var pdist: float = global_position.distance_to(player.global_position)
+		if pdist <= tower_target_switch_distance:
+			return player
+	var nearest_tower: Node2D = null
+	var nearest_dist: float = INF
+	for s in get_tree().get_nodes_in_group("structure"):
+		if not is_instance_valid(s):
+			continue
+		var d: float = global_position.distance_to((s as Node2D).global_position)
+		if d < nearest_dist:
+			nearest_tower = s
+			nearest_dist = d
+	if nearest_tower != null:
+		return nearest_tower
+	return player if player_alive else null
 
 
 func _get_world() -> Node:
