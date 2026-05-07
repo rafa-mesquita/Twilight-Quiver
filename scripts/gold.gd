@@ -53,7 +53,7 @@ func _create_occlusion_indicator() -> void:
 	ind.z_index = 100
 	ind.position = Vector2(0, VISUAL_OFFSET_Y - 12.0)
 	var pts := PackedVector2Array()
-	var radius: float = 2.5
+	var radius: float = 1.5
 	var segments: int = 10
 	for i in segments:
 		var ang: float = TAU * float(i) / float(segments)
@@ -61,11 +61,12 @@ func _create_occlusion_indicator() -> void:
 	ind.polygon = pts
 	ind.color = Color(1.0, 0.85, 0.35, 1.0)  # dourado igual à moeda
 	add_child(ind)
-	# Pulse de alpha — fade out + in suave pra chamar atenção sem ser irritante.
+	# Pulse de alpha — swing menor pra indicador ficar mais consistente/opaco
+	# (antes ia até 0.25 = quase sumia; agora mínimo 0.6 = sempre visível).
 	# Fase random pra moedas próximas não piscarem em sync.
-	ind.modulate.a = randf_range(0.4, 1.0)
+	ind.modulate.a = randf_range(0.7, 1.0)
 	var tw := ind.create_tween().set_loops()
-	tw.tween_property(ind, "modulate:a", 0.25, 0.55).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(ind, "modulate:a", 0.6, 0.55).set_trans(Tween.TRANS_SINE)
 	tw.tween_property(ind, "modulate:a", 1.0, 0.55).set_trans(Tween.TRANS_SINE)
 
 
