@@ -1001,6 +1001,9 @@ func _setup_bonus_label() -> void:
 	var bonus := Label.new()
 	bonus.name = "BonusUpgradeLabel"
 	bonus.text = "BONUS +1!"
+	var at01_font: Font = load("res://font/at01.ttf")
+	if at01_font != null:
+		bonus.add_theme_font_override("font", at01_font)
 	bonus.add_theme_font_size_override("font_size", 22)
 	bonus.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3, 1.0))
 	bonus.position = Vector2(720, 4)
@@ -1075,10 +1078,13 @@ func _setup_layout_editor() -> void:
 	bg.color = Color(0.08, 0.08, 0.12, 0.85)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_layout_edit_panel.add_child(bg)
+	var at01: Font = load("res://font/at01.ttf")
 	var toggle := Button.new()
 	toggle.position = Vector2(10, 10)
 	toggle.size = Vector2(320, 60)
 	toggle.text = "EDIT LAYOUT: OFF"
+	if at01 != null:
+		toggle.add_theme_font_override("font", at01)
 	toggle.add_theme_font_size_override("font_size", 24)
 	toggle.pressed.connect(_toggle_layout_edit.bind(toggle))
 	_layout_edit_panel.add_child(toggle)
@@ -1086,6 +1092,8 @@ func _setup_layout_editor() -> void:
 	print_btn.position = Vector2(10, 80)
 	print_btn.size = Vector2(320, 60)
 	print_btn.text = "PRINT VALUES"
+	if at01 != null:
+		print_btn.add_theme_font_override("font", at01)
 	print_btn.add_theme_font_size_override("font_size", 24)
 	print_btn.pressed.connect(_print_layout_values)
 	_layout_edit_panel.add_child(print_btn)
