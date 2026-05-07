@@ -17,11 +17,13 @@ const WOODWARDEN_PRICE_TABLE: Array[int] = [6, 10, 14, 18, 24, 30]
 const STRUCTURE_SURCHARGE_PER_OWNED: int = 3
 
 # Pool dos cards de status (passive stats — escalonáveis ilimitadamente).
+# `name` é o título do card (descrição breve, já que a card paisagem não tem
+# DescLabel). Ex: "+15 HP" em vez de "Mais HP".
 const STATUS_POOL: Array = [
-	{"id": "hp", "name": "Mais HP"},
-	{"id": "damage", "name": "Dano"},
-	{"id": "attack_speed", "name": "Atack Speed"},
-	{"id": "move_speed", "name": "Move Speed"},
+	{"id": "hp", "name": "+15 HP"},
+	{"id": "damage", "name": "+20% dano"},
+	{"id": "attack_speed", "name": "+30% atk speed"},
+	{"id": "move_speed", "name": "+17% move speed"},
 ]
 
 # Pool dos cards de upgrade (gameplay-changing items, com requirements).
@@ -309,11 +311,13 @@ func _roll_status_slots() -> void:
 		})
 
 
-func _status_price_for(id: String, current_level: int) -> int:
-	# HP escala 1G, 2G, 3G... — outros stats usam PRICE_TABLE.
-	if id == "hp":
-		return current_level + 1
-	return _get_upgrade_price(id, current_level)
+const STATUS_BASE_PRICE: int = 5
+
+
+func _status_price_for(_id: String, current_level: int) -> int:
+	# Todos os status: 5G base, dobra a cada nível (5, 10, 20, 40, 80, ...).
+	var lvl: int = maxi(current_level, 0)
+	return STATUS_BASE_PRICE * int(pow(2, lvl))
 
 
 func _roll_estrutura_slots() -> void:
@@ -321,7 +325,7 @@ func _roll_estrutura_slots() -> void:
 	var surcharge: int = STRUCTURE_SURCHARGE_PER_OWNED * _total_structures_bought()
 	estrutura_slots.append({
 		"id": "arrow_tower",
-		"name": "Torre de Flechas",
+		"name": "Torre 80% dano",
 		"desc": "Atira em inimigos\nproximos. 80% dano.",
 		"price": TOWER_PRICE + surcharge,
 		"available": true,
@@ -516,12 +520,13 @@ const _CARD_FRAME_SIZES: Dictionary = {
 # ainda). Cinza escuro pra avisar visualmente "card temporário".
 const PLACEHOLDER_TEXT_COLOR: Color = Color(0.35, 0.35, 0.35, 1.0)
 # Posição default do CoinIcon por categoria (relativo ao card). User pode
-# ajustar via layout editor.
+# ajustar via layout editor. Tamanho reduzido pra não competir visualmente
+# com o número do preço.
 const _COIN_ICON_DEFAULTS: Dictionary = {
-	"status": Rect2(351.0, 41.0, 32.0, 48.0),
-	"estrutura": Rect2(351.0, 41.0, 32.0, 48.0),
-	"aliado": Rect2(104.0, 297.0, 32.0, 32.0),
-	"upgrade": Rect2(104.0, 297.0, 32.0, 32.0),
+	"status": Rect2(360.0, 51.0, 24.0, 24.0),
+	"estrutura": Rect2(360.0, 51.0, 24.0, 24.0),
+	"aliado": Rect2(120.0, 305.0, 20.0, 20.0),
+	"upgrade": Rect2(120.0, 305.0, 20.0, 20.0),
 }
 
 

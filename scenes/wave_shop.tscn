@@ -4,15 +4,17 @@
 [ext_resource type="FontFile" uid="uid://b13jsxnoofsxm" path="res://font/at01.ttf" id="2_font"]
 [ext_resource type="Texture2D" uid="uid://pbobd2sl3nlo" path="res://assets/Hud/shop/card_status.png" id="3_card_wide"]
 [ext_resource type="Texture2D" uid="uid://sjprly1pcqg6" path="res://assets/Hud/shop/card_upgrade.png" id="4_card_tall"]
-[ext_resource type="Texture2D" path="res://assets/Hud/shop/reroll.png" id="5_reroll"]
+[ext_resource type="Texture2D" uid="uid://biljghc02e8hc" path="res://assets/Hud/shop/reroll.png" id="5_reroll"]
+[ext_resource type="Texture2D" path="res://assets/Hud/shop/upgrade/placeholder.png" id="6_upg_ph"]
+[ext_resource type="Texture2D" path="res://assets/Hud/shop/aliado/placeholder.png" id="7_ali_ph"]
 
-[sub_resource type="AtlasTexture" id="ATX_reroll_normal"]
-atlas = ExtResource("5_reroll")
-region = Rect2(0, 0, 17, 16)
+[sub_resource type="AtlasTexture" id="ATX_upg_ph"]
+atlas = ExtResource("6_upg_ph")
+region = Rect2(0, 0, 38, 47)
 
-[sub_resource type="AtlasTexture" id="ATX_reroll_pressed"]
-atlas = ExtResource("5_reroll")
-region = Rect2(17, 0, 17, 16)
+[sub_resource type="AtlasTexture" id="ATX_ali_ph"]
+atlas = ExtResource("7_ali_ph")
+region = Rect2(0, 0, 38, 47)
 
 [sub_resource type="StyleBoxFlat" id="SBF_btn_disabled"]
 bg_color = Color(0.1, 0.08, 0.13, 0.85)
@@ -37,6 +39,14 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.55, 0.4, 0.7, 1)
+
+[sub_resource type="AtlasTexture" id="ATX_reroll_normal"]
+atlas = ExtResource("5_reroll")
+region = Rect2(0, 0, 17, 16)
+
+[sub_resource type="AtlasTexture" id="ATX_reroll_pressed"]
+atlas = ExtResource("5_reroll")
+region = Rect2(17, 0, 17, 16)
 
 [node name="WaveShop" type="CanvasLayer" unique_id=240698062]
 layer = 50
@@ -81,7 +91,6 @@ theme_override_font_sizes/font_size = 48
 text = "ESTRUTURAS"
 vertical_alignment = 1
 
-
 [node name="EstrutCard1" type="Control" parent="Root" unique_id=1735365319]
 anchors_preset = 0
 offset_left = 60.0
@@ -112,15 +121,14 @@ vertical_alignment = 1
 
 [node name="PriceLabel" type="Label" parent="Root/EstrutCard1" unique_id=176611714]
 layout_mode = 0
-offset_left = 391.0
+offset_left = 458.0
 offset_top = 37.0
-offset_right = 487.0
+offset_right = 554.0
 offset_bottom = 94.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
 text = "5"
-horizontal_alignment = 2
 vertical_alignment = 1
 
 [node name="BuyBtn" type="Button" parent="Root/EstrutCard1" unique_id=1106766686]
@@ -162,18 +170,16 @@ theme_override_font_sizes/font_size = 28
 text = "—"
 vertical_alignment = 1
 
-
 [node name="PriceLabel" type="Label" parent="Root/EstrutCard2" unique_id=84008440]
 layout_mode = 0
-offset_left = 391.0
+offset_left = 458.0
 offset_top = 37.0
-offset_right = 487.0
+offset_right = 554.0
 offset_bottom = 94.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
 text = "—"
-horizontal_alignment = 2
 vertical_alignment = 1
 
 [node name="BuyBtn" type="Button" parent="Root/EstrutCard2" unique_id=1693976863]
@@ -198,7 +204,6 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 48
 text = "STATUS"
 vertical_alignment = 1
-
 
 [node name="StatusCard1" type="Control" parent="Root" unique_id=765996937]
 anchors_preset = 0
@@ -228,18 +233,16 @@ theme_override_font_sizes/font_size = 28
 text = "—"
 vertical_alignment = 1
 
-
 [node name="PriceLabel" type="Label" parent="Root/StatusCard1" unique_id=124575548]
 layout_mode = 0
-offset_left = 391.0
+offset_left = 458.0
 offset_top = 37.0
-offset_right = 487.0
+offset_right = 554.0
 offset_bottom = 94.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
 text = "—"
-horizontal_alignment = 2
 vertical_alignment = 1
 
 [node name="BuyBtn" type="Button" parent="Root/StatusCard1" unique_id=60940745]
@@ -281,18 +284,16 @@ theme_override_font_sizes/font_size = 28
 text = "—"
 vertical_alignment = 1
 
-
 [node name="PriceLabel" type="Label" parent="Root/StatusCard2" unique_id=837961443]
 layout_mode = 0
-offset_left = 391.0
+offset_left = 458.0
 offset_top = 37.0
-offset_right = 487.0
+offset_right = 554.0
 offset_bottom = 94.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
 text = "—"
-horizontal_alignment = 2
 vertical_alignment = 1
 
 [node name="BuyBtn" type="Button" parent="Root/StatusCard2" unique_id=497875442]
@@ -318,7 +319,6 @@ theme_override_font_sizes/font_size = 48
 text = "ALIADOS"
 vertical_alignment = 1
 
-
 [node name="AliadoRow" type="Control" parent="Root" unique_id=38431779]
 anchors_preset = 0
 offset_left = 620.0
@@ -336,7 +336,7 @@ texture_filter = 1
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-texture = ExtResource("4_card_tall")
+texture = SubResource("ATX_ali_ph")
 expand_mode = 1
 stretch_mode = 6
 
@@ -368,9 +368,9 @@ autowrap_mode = 2
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard1" unique_id=1468004879]
 layout_mode = 0
 offset_left = 16.0
-offset_top = 297.0
+offset_top = 234.0
 offset_right = 288.0
-offset_bottom = 337.0
+offset_bottom = 274.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
@@ -401,7 +401,7 @@ texture_filter = 1
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-texture = ExtResource("4_card_tall")
+texture = SubResource("ATX_ali_ph")
 expand_mode = 1
 stretch_mode = 6
 
@@ -415,7 +415,6 @@ theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 26
 text = "—"
-
 
 [node name="DescLabel" type="Label" parent="Root/AliadoRow/AliadoCard2" unique_id=82308045]
 layout_mode = 0
@@ -434,9 +433,9 @@ autowrap_mode = 2
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard2" unique_id=538757896]
 layout_mode = 0
 offset_left = 16.0
-offset_top = 297.0
+offset_top = 234.0
 offset_right = 288.0
-offset_bottom = 337.0
+offset_bottom = 283.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
@@ -467,7 +466,7 @@ texture_filter = 1
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-texture = ExtResource("4_card_tall")
+texture = SubResource("ATX_ali_ph")
 expand_mode = 1
 stretch_mode = 6
 
@@ -481,7 +480,6 @@ theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 26
 text = "—"
-
 
 [node name="DescLabel" type="Label" parent="Root/AliadoRow/AliadoCard3" unique_id=1406948037]
 layout_mode = 0
@@ -500,9 +498,9 @@ autowrap_mode = 2
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard3" unique_id=1791183174]
 layout_mode = 0
 offset_left = 16.0
-offset_top = 297.0
+offset_top = 234.0
 offset_right = 288.0
-offset_bottom = 337.0
+offset_bottom = 283.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
@@ -534,7 +532,6 @@ theme_override_font_sizes/font_size = 48
 text = "UPGRADES"
 vertical_alignment = 1
 
-
 [node name="UpgRow" type="Control" parent="Root" unique_id=2130246383]
 anchors_preset = 0
 offset_left = 620.0
@@ -552,7 +549,7 @@ texture_filter = 1
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-texture = ExtResource("4_card_tall")
+texture = SubResource("ATX_upg_ph")
 expand_mode = 1
 stretch_mode = 6
 
@@ -566,7 +563,6 @@ theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 26
 text = "—"
-
 
 [node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard1" unique_id=189410968]
 layout_mode = 0
@@ -585,9 +581,9 @@ autowrap_mode = 2
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard1" unique_id=821493539]
 layout_mode = 0
 offset_left = 16.0
-offset_top = 297.0
+offset_top = 234.0
 offset_right = 288.0
-offset_bottom = 337.0
+offset_bottom = 283.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
@@ -618,7 +614,7 @@ texture_filter = 1
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-texture = ExtResource("4_card_tall")
+texture = SubResource("ATX_upg_ph")
 expand_mode = 1
 stretch_mode = 6
 
@@ -632,7 +628,6 @@ theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 26
 text = "—"
-
 
 [node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard2" unique_id=153398373]
 layout_mode = 0
@@ -651,9 +646,9 @@ autowrap_mode = 2
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard2" unique_id=47973896]
 layout_mode = 0
 offset_left = 16.0
-offset_top = 297.0
+offset_top = 234.0
 offset_right = 288.0
-offset_bottom = 337.0
+offset_bottom = 283.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
@@ -684,7 +679,7 @@ texture_filter = 1
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-texture = ExtResource("4_card_tall")
+texture = SubResource("ATX_upg_ph")
 expand_mode = 1
 stretch_mode = 6
 
@@ -698,7 +693,6 @@ theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 26
 text = "—"
-
 
 [node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard3" unique_id=951410516]
 layout_mode = 0
@@ -717,9 +711,9 @@ autowrap_mode = 2
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard3" unique_id=9334886]
 layout_mode = 0
 offset_left = 16.0
-offset_top = 297.0
+offset_top = 234.0
 offset_right = 288.0
-offset_bottom = 337.0
+offset_bottom = 283.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
@@ -752,14 +746,14 @@ theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/disabled = SubResource("SBF_btn_disabled")
 text = "Proxima Wave"
 
-[node name="GlobalReroll" type="Control" parent="Root"]
+[node name="GlobalReroll" type="Control" parent="Root" unique_id=707134856]
 anchors_preset = 0
 offset_left = 1640.0
 offset_top = 700.0
 offset_right = 1860.0
 offset_bottom = 880.0
 
-[node name="Btn" type="TextureButton" parent="Root/GlobalReroll"]
+[node name="Btn" type="TextureButton" parent="Root/GlobalReroll" unique_id=2071134746]
 texture_filter = 1
 layout_mode = 0
 offset_right = 142.0
@@ -769,7 +763,7 @@ texture_pressed = SubResource("ATX_reroll_pressed")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="CostLabel" type="Label" parent="Root/GlobalReroll"]
+[node name="CostLabel" type="Label" parent="Root/GlobalReroll" unique_id=1797799376]
 layout_mode = 0
 offset_top = 132.0
 offset_right = 142.0
