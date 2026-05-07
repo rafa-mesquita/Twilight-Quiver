@@ -145,21 +145,13 @@ var _selected_estrut_idx: int = -1
 var _selected_aliado_idx: int = -1
 var _selected_upgrade_idxs: Array[int] = []
 
-# Reroll: até N por categoria. Custo escala 1, 2, 3.
-const REROLL_COSTS: Array[int] = [1, 2, 3]
-const MAX_REROLLS_PER_CATEGORY: int = 3
-var _status_rerolls_used: int = 0
-var _estrut_rerolls_used: int = 0
-var _upg_rerolls_used: int = 0
-var _aliado_rerolls_used: int = 0
-var _status_reroll_btn: TextureButton
-var _estrut_reroll_btn: TextureButton
-var _upg_reroll_btn: TextureButton
-var _aliado_reroll_btn: TextureButton
-var _status_reroll_widget: Control
-var _estrut_reroll_widget: Control
-var _upg_reroll_widget: Control
-var _aliado_reroll_widget: Control
+# Reroll global: 1 botão reroll TUDO (status + estrutura + aliado + upgrade) ao
+# mesmo tempo. Custo escalonado e cap em N rerolls por shop.
+const GLOBAL_REROLL_COSTS: Array[int] = [3, 6, 10]
+const MAX_GLOBAL_REROLLS: int = 3
+var _global_rerolls_used: int = 0
+@onready var global_reroll_btn: TextureButton = $Root/GlobalReroll/Btn
+@onready var global_reroll_cost: Label = $Root/GlobalReroll/CostLabel
 
 const BUY_SOUND: AudioStream = preload("res://audios/effects/buy_1.mp3")
 
@@ -191,7 +183,7 @@ func _ready() -> void:
 	if wm != null and "wave_number" in wm and int(wm.wave_number) % 2 == 0:
 		max_upgrades_this_round = 2
 	continue_btn.pressed.connect(_on_continue_pressed)
-	_setup_reroll_buttons()
+	global_reroll_btn.pressed.connect(_on_global_reroll)
 	_setup_bonus_label()
 	_refresh_gold_label()
 	_roll_all_slots()
@@ -471,27 +463,37 @@ func _build_all_cards() -> void:
 
 func _build_card(card: Control, slot: Dictionary, target_level: int) -> void:
 	var available: bool = slot.get("available", false)
-	var title_label: Label = card.get_node("TitleLabel")
-	title_label.text = slot.get("name", "—")
-	title_label.modulate = _level_tint_for_label(target_level) if (available and target_level > 0) else Color.WHITE
-	card.get_node("DescLabel").text = slot.get("desc", "—")
-	card.get_node("PriceLabel").text = ("%d coins" % int(slot.get("price", 0))) if available else "—"
-	var stars_label: Label = card.get_node_or_null("StarsLabel")
+	# Title é obrigatório; Desc / Stars / Price são opcionais (cards paisagem
+	# tipicamente não têm Desc, e StarsLabel foi removido de todos — fica
+	# defensivo pra .tscn permitir ajustes livres).
+	var title_label: Label = card.get_node_or_null("TitleLabel") as Label
+	if title_label != null:
+		title_label.text = slot.get("name", "—")
+		title_label.modulate = _level_tint_for_label(target_level) if (available and target_level > 0) else Color.WHITE
+	var desc_label: Label = card.get_node_or_null("DescLabel") as Label
+	if desc_label != null:
+		desc_label.text = slot.get("desc", "—")
+	var price_label: Label = card.get_node_or_null("PriceLabel") as Label
+	if price_label != null:
+		price_label.text = ("%d" % int(slot.get("price", 0))) if available else "—"
+	var stars_label: Label = card.get_node_or_null("StarsLabel") as Label
 	if stars_label != null:
-		var stars_str: String = _stars_text(target_level) if (available and target_level > 0) else ""
-		stars_label.text = stars_str
-		stars_label.modulate = _level_tint_for_label(target_level) if (available and target_level > 0) else Color.WHITE
+		stars_label.text = ""
 
 
 func _connect_card_buttons() -> void:
 	for i in 2:
 		_connect_button(estrut_cards[i].get_node("BuyBtn"), Callable(self, "_buy_estrutura").bind(i))
+		_setup_card_hover(estrut_cards[i])
 	for i in 2:
 		_connect_button(status_cards[i].get_node("BuyBtn"), Callable(self, "_buy_status").bind(i))
+		_setup_card_hover(status_cards[i])
 	for i in 3:
 		_connect_button(upg_cards[i].get_node("BuyBtn"), Callable(self, "_buy_upgrade").bind(i))
+		_setup_card_hover(upg_cards[i])
 	for i in 3:
 		_connect_button(aliado_cards[i].get_node("BuyBtn"), Callable(self, "_buy_aliado").bind(i))
+		_setup_card_hover(aliado_cards[i])
 
 
 func _connect_button(btn_node: Node, target: Callable) -> void:
@@ -501,6 +503,41 @@ func _connect_button(btn_node: Node, target: Callable) -> void:
 	for c in btn.pressed.get_connections():
 		btn.pressed.disconnect(c["callable"])
 	btn.pressed.connect(target)
+
+
+# ---------- Hover animation ----------
+
+const HOVER_SCALE: Vector2 = Vector2(1.04, 1.04)
+const HOVER_TWEEN_DURATION: float = 0.12
+
+
+func _setup_card_hover(card: Control) -> void:
+	var btn := card.get_node_or_null("BuyBtn") as Button
+	if btn == null:
+		return
+	# Pivot no centro pra escalar de dentro pra fora.
+	var sz := Vector2(card.offset_right - card.offset_left, card.offset_bottom - card.offset_top)
+	card.pivot_offset = sz * 0.5
+	# Conexões só uma vez (evita duplicação se _connect_card_buttons rerodar).
+	if not btn.mouse_entered.is_connected(_on_card_mouse_entered):
+		btn.mouse_entered.connect(_on_card_mouse_entered.bind(card))
+	if not btn.mouse_exited.is_connected(_on_card_mouse_exited):
+		btn.mouse_exited.connect(_on_card_mouse_exited.bind(card))
+
+
+func _on_card_mouse_entered(card: Control) -> void:
+	if _layout_edit_active or _placement_active:
+		return
+	var btn := card.get_node_or_null("BuyBtn") as Button
+	if btn != null and btn.disabled:
+		return
+	var tw := create_tween()
+	tw.tween_property(card, "scale", HOVER_SCALE, HOVER_TWEEN_DURATION).set_trans(Tween.TRANS_SINE)
+
+
+func _on_card_mouse_exited(card: Control) -> void:
+	var tw := create_tween()
+	tw.tween_property(card, "scale", Vector2.ONE, HOVER_TWEEN_DURATION).set_trans(Tween.TRANS_SINE)
 
 
 # ---------- Compra (toggle) ----------
@@ -643,10 +680,7 @@ func _refresh_button_states() -> void:
 	var current_gold: int = player.gold if player != null else 0
 	var pending_cost: int = _selected_total_cost()
 	var available_gold: int = current_gold - pending_cost
-	_refresh_reroll(_status_reroll_btn, _status_reroll_widget, _status_rerolls_used, available_gold)
-	_refresh_reroll(_estrut_reroll_btn, _estrut_reroll_widget, _estrut_rerolls_used, available_gold)
-	_refresh_reroll(_upg_reroll_btn, _upg_reroll_widget, _upg_rerolls_used, available_gold)
-	_refresh_reroll(_aliado_reroll_btn, _aliado_reroll_widget, _aliado_rerolls_used, available_gold)
+	_refresh_global_reroll()
 	_refresh_gold_label()
 	# Status (single-select com swap).
 	for i in 2:
@@ -678,17 +712,6 @@ func _refresh_button_states() -> void:
 		var blocked: bool = _is_elemental_blocked_by_selection(slot.get("id", ""))
 		var can_select: bool = not limit_reached and available_gold >= price and not blocked
 		_apply_card_state(upg_cards[i], slot, is_selected, can_select or is_selected)
-
-
-func _refresh_reroll(btn: TextureButton, widget: Control, used: int, available_gold: int) -> void:
-	if btn == null:
-		return
-	var maxed: bool = used >= MAX_REROLLS_PER_CATEGORY
-	var cost: int = _next_reroll_cost(used)
-	var disabled: bool = maxed or available_gold < cost
-	btn.disabled = disabled
-	_set_reroll_widget_dim(widget, disabled)
-	_update_reroll_price_label(widget, cost, maxed)
 
 
 func _apply_card_state(card: Control, slot: Dictionary, is_selected: bool, can_buy: bool) -> void:
@@ -855,18 +878,6 @@ func _set_camera_overview(active: bool) -> void:
 
 # ---------- Tier visuals ----------
 
-func _stars_text(level: int) -> String:
-	if level <= 0:
-		return ""
-	var n: int = mini(level, 4)
-	var s: String = ""
-	for i in n:
-		s += "★"
-	if level > 4:
-		s += " +%d" % (level - 4)
-	return s
-
-
 func _level_tint_for_label(level: int) -> Color:
 	match level:
 		1: return Color(1.0, 1.0, 1.0, 1.0)
@@ -930,167 +941,48 @@ func _setup_bonus_label() -> void:
 	tw.tween_property(bonus, "modulate:a", 1.0, 0.6)
 
 
-# ---------- Reroll (4 categorias) ----------
+# ---------- Global Reroll ----------
+# 1 botão único faz reroll de TUDO (status, estrutura, aliado, upgrade) ao
+# mesmo tempo. Mais simples e mais limpo visualmente.
 
-func _setup_reroll_buttons() -> void:
-	_status_reroll_widget = _attach_reroll_to("Root/StatusReroll")
-	if _status_reroll_widget != null:
-		_status_reroll_btn = _status_reroll_widget.get_node("IconWrap/Btn") as TextureButton
-		if _status_reroll_btn != null:
-			_status_reroll_btn.pressed.connect(_on_status_reroll)
-	_estrut_reroll_widget = _attach_reroll_to("Root/EstrutReroll")
-	if _estrut_reroll_widget != null:
-		_estrut_reroll_btn = _estrut_reroll_widget.get_node("IconWrap/Btn") as TextureButton
-		if _estrut_reroll_btn != null:
-			_estrut_reroll_btn.pressed.connect(_on_estrut_reroll)
-	_upg_reroll_widget = _attach_reroll_to("Root/UpgReroll")
-	if _upg_reroll_widget != null:
-		_upg_reroll_btn = _upg_reroll_widget.get_node("IconWrap/Btn") as TextureButton
-		if _upg_reroll_btn != null:
-			_upg_reroll_btn.pressed.connect(_on_upg_reroll)
-	_aliado_reroll_widget = _attach_reroll_to("Root/AliadoReroll")
-	if _aliado_reroll_widget != null:
-		_aliado_reroll_btn = _aliado_reroll_widget.get_node("IconWrap/Btn") as TextureButton
-		if _aliado_reroll_btn != null:
-			_aliado_reroll_btn.pressed.connect(_on_aliado_reroll)
+func _next_global_reroll_cost() -> int:
+	var idx: int = clampi(_global_rerolls_used, 0, GLOBAL_REROLL_COSTS.size() - 1)
+	return GLOBAL_REROLL_COSTS[idx]
 
 
-func _attach_reroll_to(anchor_path: String) -> Control:
-	var anchor := get_node_or_null(anchor_path) as Control
-	if anchor == null:
-		return null
-	var widget := _make_reroll_pair()
-	widget.name = "RerollPair"
-	anchor.add_child(widget)
-	widget.position = Vector2.ZERO
-	return widget
-
-
-func _on_status_reroll() -> void:
-	if _status_rerolls_used >= MAX_REROLLS_PER_CATEGORY:
+func _on_global_reroll() -> void:
+	if _global_rerolls_used >= MAX_GLOBAL_REROLLS:
 		return
-	var cost: int = _next_reroll_cost(_status_rerolls_used)
+	var cost: int = _next_global_reroll_cost()
 	var player := _get_player()
 	if player == null or not player.spend_gold(cost):
 		return
-	_status_rerolls_used += 1
+	_global_rerolls_used += 1
+	# Limpa todas as seleções pendentes (vão sair do roll).
 	_selected_status_idx = -1
-	_play_buy_sound()
-	_roll_status_slots()
-	_build_all_cards()
-	_refresh_button_states()
-
-
-func _on_estrut_reroll() -> void:
-	if _estrut_rerolls_used >= MAX_REROLLS_PER_CATEGORY:
-		return
-	var cost: int = _next_reroll_cost(_estrut_rerolls_used)
-	var player := _get_player()
-	if player == null or not player.spend_gold(cost):
-		return
-	_estrut_rerolls_used += 1
 	_selected_estrut_idx = -1
-	_play_buy_sound()
-	_roll_estrutura_slots()
-	_build_all_cards()
-	_refresh_button_states()
-
-
-func _on_upg_reroll() -> void:
-	if _upg_rerolls_used >= MAX_REROLLS_PER_CATEGORY:
-		return
-	var cost: int = _next_reroll_cost(_upg_rerolls_used)
-	var player := _get_player()
-	if player == null or not player.spend_gold(cost):
-		return
-	_upg_rerolls_used += 1
+	_selected_aliado_idx = -1
 	_selected_upgrade_idxs.clear()
 	_play_buy_sound()
-	_roll_upg_slots()
+	_roll_all_slots()
 	_build_all_cards()
 	_refresh_button_states()
 
 
-func _on_aliado_reroll() -> void:
-	if _aliado_rerolls_used >= MAX_REROLLS_PER_CATEGORY:
+func _refresh_global_reroll() -> void:
+	if global_reroll_btn == null:
 		return
-	var cost: int = _next_reroll_cost(_aliado_rerolls_used)
+	var maxed: bool = _global_rerolls_used >= MAX_GLOBAL_REROLLS
+	var cost: int = _next_global_reroll_cost()
 	var player := _get_player()
-	if player == null or not player.spend_gold(cost):
-		return
-	_aliado_rerolls_used += 1
-	_selected_aliado_idx = -1
-	_play_buy_sound()
-	_roll_aliado_slots()
-	_build_all_cards()
-	_refresh_button_states()
-
-
-func _next_reroll_cost(rerolls_used: int) -> int:
-	var idx: int = clampi(rerolls_used, 0, REROLL_COSTS.size() - 1)
-	return REROLL_COSTS[idx]
-
-
-func _set_reroll_widget_dim(widget: Control, dim: bool) -> void:
-	if widget == null or not is_instance_valid(widget):
-		return
-	var icon_wrap: Node = widget.get_node_or_null("IconWrap")
-	if icon_wrap != null:
-		var btn := icon_wrap.get_node_or_null("Btn") as TextureButton
-		if btn != null:
-			btn.modulate = Color(0.55, 0.55, 0.55, 0.65) if dim else Color.WHITE
-	var price: Label = widget.get_node_or_null("Price") as Label
-	if price != null:
-		price.modulate = Color(0.55, 0.55, 0.55, 0.65) if dim else Color.WHITE
-
-
-func _update_reroll_price_label(widget: Control, cost: int, maxed: bool) -> void:
-	if widget == null or not is_instance_valid(widget):
-		return
-	var price: Label = widget.get_node_or_null("Price") as Label
-	if price == null:
-		return
-	price.text = "—" if maxed else "%d" % cost
-
-
-const REROLL_BUTTON_SIZE: Vector2 = Vector2(48, 48)
-
-
-func _make_reroll_pair() -> HBoxContainer:
-	var pair := HBoxContainer.new()
-	pair.add_theme_constant_override("separation", 6)
-	pair.alignment = BoxContainer.ALIGNMENT_CENTER
-	var icon_wrap := _make_reroll_widget()
-	icon_wrap.name = "IconWrap"
-	pair.add_child(icon_wrap)
-	var price := Label.new()
-	price.name = "Price"
-	price.text = "%d" % REROLL_COSTS[0]
-	var at01_font: Font = load("res://font/at01.ttf")
-	if at01_font != null:
-		price.add_theme_font_override("font", at01_font)
-	price.add_theme_font_size_override("font_size", 22)
-	price.add_theme_color_override("font_color", Color(1, 0.85, 0.35, 1))
-	pair.add_child(price)
-	return pair
-
-
-func _make_reroll_widget() -> Control:
-	var tex: Texture2D = load("res://assets/Hud/new reroll.png")
-	var container := Control.new()
-	container.custom_minimum_size = REROLL_BUTTON_SIZE
-	container.size = REROLL_BUTTON_SIZE
-	container.tooltip_text = "Re-roll (1: 1 coin, 2: 2 coins, 3: 3 coins)"
-	var btn := TextureButton.new()
-	btn.name = "Btn"
-	btn.texture_normal = tex
-	btn.ignore_texture_size = true
-	btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-	btn.set_anchors_preset(Control.PRESET_FULL_RECT)
-	btn.pivot_offset = REROLL_BUTTON_SIZE * 0.5
-	btn.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	container.add_child(btn)
-	return container
+	var current_gold: int = player.gold if player != null else 0
+	var available_gold: int = current_gold - _selected_total_cost()
+	var disabled: bool = maxed or available_gold < cost
+	global_reroll_btn.disabled = disabled
+	global_reroll_btn.modulate = Color(0.55, 0.55, 0.55, 0.65) if disabled else Color.WHITE
+	if global_reroll_cost != null:
+		global_reroll_cost.text = "—" if maxed else "%d" % cost
+		global_reroll_cost.modulate = Color(0.55, 0.55, 0.55, 0.65) if disabled else Color.WHITE
 
 
 # ---------- Layout Editor (dev) ----------
