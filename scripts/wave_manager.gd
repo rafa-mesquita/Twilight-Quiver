@@ -17,6 +17,9 @@ extends Node2D
 # Scaling por wave: cada wave acima da 1ª aumenta HP e dano dos inimigos linearmente.
 @export var hp_growth_per_wave: float = 0.12  # +12% HP por wave
 @export var damage_growth_per_wave: float = 0.08  # +8% dano por wave
+# Wave 1: primeira impressão. Garante mínimo de N gold drops pra player ter coins
+# pra primeira shop. Setado nos N primeiros spawns via guaranteed_gold_drop=true.
+@export var wave1_min_guaranteed_drops: int = 4
 
 var wave_number: int = 0
 var spawn_points: Array[Marker2D] = []
@@ -29,6 +32,7 @@ var wave_config: Dictionary = {}  # {type_key: {"alive_target": int, "total": in
 var spawned_this_wave: Dictionary = {}  # {type_key: int}
 var total_to_spawn_this_wave: int = 0
 var last_progress_killed: int = -1  # cache pra evitar spam de update na HUD
+var _guaranteed_drops_remaining: int = 0  # contagem regressiva de spawns flagados pra dropar gold (wave 1)
 
 # Registro de tipos: associa uma chave de string a (PackedScene, group_name).
 # Pra adicionar um novo tipo de inimigo: registra aqui + adiciona group no script dele.
@@ -144,6 +148,8 @@ func _start_next_wave() -> void:
 	total_to_spawn_this_wave = _calc_total_to_spawn()
 	last_progress_killed = -1
 	spawn_cooldown = 0.0
+	# Wave 1: primeiros N spawns dropam gold garantido. Wave 2+ usa só chance normal.
+	_guaranteed_drops_remaining = wave1_min_guaranteed_drops if wave_number == 1 else 0
 
 	# Reseta HP e posição do player antes da nova wave (camera segue → player no centro).
 	var player := get_tree().get_first_node_in_group("player")
@@ -263,6 +269,11 @@ func _spawn_one(type_key: String) -> void:
 	var enemy: Node2D = info["scene"].instantiate()
 	# Aplica scaling de wave ANTES de add_child pra _ready do inimigo já usar max_hp escalado.
 	_apply_wave_scaling(enemy)
+	# Wave 1: marca os primeiros N spawns pra dropar gold garantido (mínimo de
+	# moedas pro player ter o que comprar na 1ª shop).
+	if _guaranteed_drops_remaining > 0 and "guaranteed_gold_drop" in enemy:
+		enemy.guaranteed_gold_drop = true
+		_guaranteed_drops_remaining -= 1
 	world.add_child(enemy)
 	enemy.global_position = pos
 	spawned_this_wave[type_key] = spawned_this_wave.get(type_key, 0) + 1

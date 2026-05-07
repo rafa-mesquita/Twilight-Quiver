@@ -55,6 +55,9 @@ var current_target: Node2D = null
 var _stun_remaining: float = 0.0
 # Maldição: quando convertido por curse, AI inverte (mira em enemies em vez do player).
 var is_curse_ally: bool = false
+# Wave_manager seta isso em alguns inimigos da wave 1 pra garantir mínimo de
+# moedas dropadas (chance vira 1.0 ao morrer). Ignorado em waves 2+.
+var guaranteed_gold_drop: bool = false
 
 
 func _ready() -> void:
@@ -180,8 +183,9 @@ func take_damage(amount: float) -> void:
 		# Só roda se ainda for enemy (não duplo-converte aliado já convertido).
 		if not is_curse_ally and CurseAllyHelper.try_convert_on_death(self):
 			return
+		var drop_chance: float = 1.0 if guaranteed_gold_drop else gold_drop_chance
 		GoldDrop.try_drop(_get_world(), gold_scene, global_position,
-			gold_drop_chance, gold_drop_min, gold_drop_max)
+			drop_chance, gold_drop_min, gold_drop_max)
 		HeartDrop.try_drop(_get_world(), heart_scene, global_position)
 		_spawn_kill_effect()
 		_spawn_death_silhouette()
