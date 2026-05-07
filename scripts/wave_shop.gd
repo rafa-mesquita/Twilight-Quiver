@@ -1,26 +1,23 @@
 extends CanvasLayer
 
-# Loja pós-wave: 3 estruturas (esq) + 3 upgrades (dir).
-# Player compra max 1 estrutura + 1 upgrade por round.
-# Estruturas entram em placement mode (ghost segue mouse, click coloca).
-# Emite "closed" quando o player clica "Próxima Wave".
+# Loja pós-wave: 4 categorias.
+# - Status (1 card paisagem): HP — compra dedicada com preço escalonado 1G, 2G...
+# - Estrutura (1 card paisagem): Torre de Flechas — placement mode no mapa.
+# - Upgrades (3 cards retrato): rolagem aleatória do catálogo, max 1-2 por round.
+# - Aliados (3 cards retrato): Woodwarden + slots futuros.
+# Player pode selecionar 1 de cada categoria; placements (estrutura, aliado)
+# entram em fila e o player escolhe o spot pra cada um após "Próxima Wave".
 
 signal closed
 
 # Tabela de preço por nível atual do player → preço da próxima compra.
-# 1ª = 4, 2ª = 6, 3ª = 10, 4ª = 15, 5ª+ = 20 (cap).
 const PRICE_TABLE: Array[int] = [3, 6, 10, 15, 20]
 const TOWER_PRICE: int = 10
-# Woodwarden: 1ª compra = 6 coins. Cada compra "uppa" o aliado e aumenta custo.
-# Tabela de preços por nível atual do player → custo da próxima compra.
 const WOODWARDEN_PRICE_TABLE: Array[int] = [6, 10, 14, 18, 24, 30]
-# Sobretaxa global por estrutura já comprada nesta partida (qualquer tipo).
-# Aplica em TODAS as estruturas — desincentiva spam mesmo trocando o tipo.
+# Sobretaxa global por estrutura/aliado já comprado.
 const STRUCTURE_SURCHARGE_PER_OWNED: int = 3
 
 const UPGRADE_CATALOG: Array = [
-	# HP saiu do catálogo aleatório — virou compra dedicada na coluna esquerda
-	# com preço escalado por nível (1, 2, 3, 4...).
 	{"id": "damage", "name": "Dano"},
 	{"id": "perfuracao", "name": "Perfuracao", "max_level": 4},
 	{"id": "attack_speed", "name": "Atack Speed"},
@@ -30,7 +27,6 @@ const UPGRADE_CATALOG: Array = [
 	{"id": "life_steal", "name": "Coleta de Coracao"},
 	{"id": "gold_magnet", "name": "Ima de Gold", "max_level": 1},
 	{"id": "dash", "name": "Dash", "max_level": 1},
-	# Sub-melhorias do dash — só aparecem no roll quando pré-requisito atendido.
 	{"id": "dash_cooldown", "name": "Dash CD Reduce", "requires": "dash"},
 	{"id": "dash_auto_attack", "name": "Dash Auto-Atk", "max_level": 1, "requires": "dash"},
 	{"id": "dash_double_arrow", "name": "Dash 2 Flechas", "max_level": 1, "requires": "dash_auto_attack"},
@@ -38,12 +34,11 @@ const UPGRADE_CATALOG: Array = [
 	{"id": "curse_arrow", "name": "Flecha de Maldição", "max_level": 4},
 ]
 
-const HP_DESCS: Array[String] = [
-	"+15 HP maximo",
-	"+15 HP maximo",
-	"+15 HP maximo",
-	"+15 HP maximo",
-]
+const UPGRADE_PRICE_OVERRIDES: Dictionary = {
+	"dash_auto_attack": 12,
+	"dash_double_arrow": 18,
+}
+
 const DAMAGE_DESCS: Array[String] = [
 	"+20% dano da flecha",
 	"+20% dano da flecha",
@@ -93,10 +88,10 @@ const LIFE_STEAL_DESCS: Array[String] = [
 	"+5% chance, +10%\nheal por stack",
 ]
 const DASH_COOLDOWN_DESCS: Array[String] = [
-	"-0.3s no cooldown\ndo dash (min 0.5s)",
-	"-0.3s no cooldown\ndo dash (min 0.5s)",
-	"-0.3s no cooldown\ndo dash (min 0.5s)",
-	"-0.3s no cooldown\ndo dash (min 0.5s)",
+	"-0.5s no cooldown\ndo dash (min 0.5s)",
+	"-0.5s no cooldown\ndo dash (min 0.5s)",
+	"-0.5s no cooldown\ndo dash (min 0.5s)",
+	"-0.5s no cooldown\ndo dash (min 0.5s)",
 ]
 const DASH_AUTO_ATTACK_DESCS: Array[String] = [
 	"Dash dispara flecha\nauto no inimigo proximo",
@@ -117,77 +112,81 @@ const CURSE_ARROW_DESCS: Array[String] = [
 	"50% chance + skill (Q):\nraio roxo, cd 20s",
 ]
 
-@onready var gold_label: Label = $Root/HBox/RightCol/Header/GoldLabel
-@onready var continue_btn: Button = $Root/HBox/RightCol/ContinueBtn
+@onready var gold_label: Label = $Root/GoldLabel
+@onready var continue_btn: Button = $Root/ContinueBtn
 @onready var placement_hint: Label = $PlacementHint
 @onready var bg_rect: ColorRect = $Bg
 @onready var root_panel: Control = $Root
 
-@onready var struct_cards: Array[Control] = [
-	$Root/HBox/LeftCol/StructList/Card1,
-	$Root/HBox/LeftCol/StructList/Card2,
-	$Root/HBox/LeftCol/StructList/Card3,
-]
+@onready var status_card: Control = $Root/StatusCard
+@onready var estrut_card: Control = $Root/EstrutCard
 @onready var upg_cards: Array[Control] = [
-	$Root/HBox/RightCol/UpgRow/Card1,
-	$Root/HBox/RightCol/UpgRow/Card2,
-	$Root/HBox/RightCol/UpgRow/Card3,
+	$Root/UpgRow/UpgCard1,
+	$Root/UpgRow/UpgCard2,
+	$Root/UpgRow/UpgCard3,
+]
+@onready var aliado_cards: Array[Control] = [
+	$Root/AliadoRow/AliadoCard1,
+	$Root/AliadoRow/AliadoCard2,
+	$Root/AliadoRow/AliadoCard3,
 ]
 
-# Bônus +1 upgrade alterna por wave: rounds pares (2,4,6...) liberam 2 upgrades,
-# rounds ímpares (1,3,5...) só 1. Lê wave_manager.wave_number em _ready.
+# Bônus +1 upgrade alterna por wave: pares (2,4,6...) liberam 2 upgrades.
 var max_upgrades_this_round: int = 1
-# Seleção: click marca, click de novo desmarca. A compra acontece
-# no "Próxima Wave" — commita upgrades selecionados + entra em placement
-# se houver estrutura selecionada. Estrutura é seleção única (toggle),
-# upgrades é multi (limite max_upgrades_this_round).
+
+# Slots
+var status_slot: Dictionary = {}
+var estrutura_slot: Dictionary = {}
+var upg_slots: Array = []
+var aliado_slots: Array = []
+
+# Selection state
+var _status_selected: bool = false
+var _estrutura_selected: bool = false
+var _selected_aliado_idx: int = -1
 var _selected_upgrade_idxs: Array[int] = []
-var _selected_structure_idx: int = -1
-# Re-roll: até 2 por categoria. 1º roll = 1 coin, 2º roll = 2 coins.
+
+# Reroll (só upgrades têm reroll por ora)
 const REROLL_COSTS: Array[int] = [1, 2]
 const MAX_REROLLS_PER_CATEGORY: int = 2
-var _struct_rerolls_used: int = 0
 var _upg_rerolls_used: int = 0
-var _struct_reroll_btn: TextureButton
 var _upg_reroll_btn: TextureButton
-var _struct_reroll_widget: Control
 var _upg_reroll_widget: Control
 
 const BUY_SOUND: AudioStream = preload("res://audios/effects/buy_1.mp3")
 
-var struct_slots: Array = []
-var upg_slots: Array = []
-
-# Placement mode (5 spots aleatórios)
-const PLACEMENT_BOUNDS: Rect2 = Rect2(-80, -40, 680, 380)  # área válida do mapa
-const PLACEMENT_MIN_DIST: float = 80.0  # distância mínima entre spots
-const PLACEMENT_CLICK_RADIUS: float = 60.0  # raio max do click pra selecionar spot
+# Placement mode
+const PLACEMENT_BOUNDS: Rect2 = Rect2(-80, -40, 680, 380)
+const PLACEMENT_MIN_DIST: float = 80.0
+const PLACEMENT_CLICK_RADIUS: float = 60.0
 const PLACEMENT_SPOT_COUNT: int = 5
 
 var _placement_active: bool = false
 var _placement_ghosts: Array[Node2D] = []
-var _placement_slot_idx: int = -1
+# Fila de placements pendentes (estrutura primeiro, aliado depois).
+var _placement_queue: Array[Dictionary] = []
+var _placement_current: Dictionary = {}
+
+const SELECTED_TINT: Color = Color(1.4, 1.25, 0.5, 1.0)
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	# Bônus de +1 upgrade alterna a cada wave: par = 2 compras, ímpar = 1.
 	var wm := get_tree().get_first_node_in_group("wave_manager")
 	if wm != null and "wave_number" in wm and int(wm.wave_number) % 2 == 0:
 		max_upgrades_this_round = 2
 	continue_btn.pressed.connect(_on_continue_pressed)
-	_setup_reroll_buttons()
+	_setup_upg_reroll_button()
 	_setup_bonus_label()
 	_refresh_gold_label()
-	_roll_slots()
-	_build_struct_cards()
-	_build_upg_cards()
+	_roll_all_slots()
+	_build_all_cards()
+	_connect_card_buttons()
 	_refresh_button_states()
 
 
 func _process(_delta: float) -> void:
 	if _placement_active and not _placement_ghosts.is_empty():
-		# Highlight do ghost mais próximo do mouse — outros ficam dim.
 		var mouse_world: Vector2 = _world_mouse_position()
 		var nearest: Node2D = _nearest_ghost_to(mouse_world)
 		for g in _placement_ghosts:
@@ -220,7 +219,6 @@ func _input(event: InputEvent) -> void:
 
 
 func _world_mouse_position() -> Vector2:
-	# Converte screen mouse pos → world pos (considera transformação da câmera/canvas).
 	return get_viewport().get_canvas_transform().affine_inverse() * get_viewport().get_mouse_position()
 
 
@@ -238,8 +236,6 @@ func _nearest_ghost_to(pos: Vector2) -> Node2D:
 
 
 func _generate_random_positions(count: int) -> Array[Vector2]:
-	# Prioriza markers definidos no editor (Map/TowerSpawnPoints / group "tower_spawn_root").
-	# Pega `count` aleatórios do pool. Se não houver markers, faz fallback pra random.
 	var spawn_root := get_tree().get_first_node_in_group("tower_spawn_root")
 	if spawn_root != null and spawn_root.get_child_count() > 0:
 		var marker_positions: Array[Vector2] = []
@@ -251,7 +247,6 @@ func _generate_random_positions(count: int) -> Array[Vector2]:
 		for i in mini(count, marker_positions.size()):
 			picked.append(marker_positions[i])
 		return picked
-	# Fallback: gera random dentro de PLACEMENT_BOUNDS.
 	var result: Array[Vector2] = []
 	var attempts: int = 0
 	while result.size() < count and attempts < 200:
@@ -272,24 +267,43 @@ func _generate_random_positions(count: int) -> Array[Vector2]:
 
 # ---------- Roll ----------
 
-func _roll_slots() -> void:
-	_roll_struct_slots()
+func _roll_all_slots() -> void:
+	_roll_status_slot()
+	_roll_estrutura_slot()
 	_roll_upg_slots()
+	_roll_aliado_slots()
 
 
-func _roll_struct_slots() -> void:
-	struct_slots.clear()
-	# Sobretaxa global: +N por estrutura já comprada (mesmo tipo ou não).
+func _roll_status_slot() -> void:
+	var p := _get_player()
+	var hp_lvl: int = 0
+	if p != null and p.has_method("get_upgrade_count"):
+		hp_lvl = p.get_upgrade_count("hp")
+	status_slot = {
+		"id": "hp",
+		"name": "Mais HP",
+		"desc": "+15 HP maximo",
+		"price": hp_lvl + 1,
+		"available": true,
+		"is_upgrade": true,
+	}
+
+
+func _roll_estrutura_slot() -> void:
 	var surcharge: int = STRUCTURE_SURCHARGE_PER_OWNED * _total_structures_bought()
-	struct_slots.append({
+	estrutura_slot = {
 		"id": "arrow_tower",
 		"name": "Torre de Flechas",
 		"desc": "Atira em inimigos\nproximos. 80% dano.",
 		"price": TOWER_PRICE + surcharge,
 		"available": true,
 		"scene": "res://scenes/structures/arrow_tower.tscn",
-	})
-	# Aliado: Woodwarden — preço progressivo, cada compra "uppa" stats. Max 4.
+	}
+
+
+func _roll_aliado_slots() -> void:
+	aliado_slots.clear()
+	var surcharge: int = STRUCTURE_SURCHARGE_PER_OWNED * _total_structures_bought()
 	var ww_lvl: int = 0
 	var p := _get_player()
 	if p != null and p.has_method("get_upgrade_count"):
@@ -306,7 +320,7 @@ func _roll_struct_slots() -> void:
 			2: ww_desc = "Lv3: +1 aliado, +25hp\n+5 dano em todos"
 			3: ww_desc = "Lv4 max: +1 aliado\n+25hp +5 dano"
 			_: ww_desc = ""
-	struct_slots.append({
+	aliado_slots.append({
 		"id": "woodwarden",
 		"name": "Woodwarden",
 		"desc": ww_desc,
@@ -315,28 +329,14 @@ func _roll_struct_slots() -> void:
 		"scene": "res://scenes/woodwarden.tscn",
 		"is_ally": true,
 	})
-	# Slot dedicado de HP (sempre disponível, preço escalonado 1, 2, 3, 4...).
-	# is_upgrade=true sinaliza pro flow de compra: aplica direto via apply_upgrade
-	# e pula placement mode.
-	var hp_lvl: int = 0
-	if p != null and p.has_method("get_upgrade_count"):
-		hp_lvl = p.get_upgrade_count("hp")
-	struct_slots.append({
-		"id": "hp",
-		"name": "Mais HP",
-		"desc": "+15 HP maximo",
-		"price": hp_lvl + 1,
-		"available": true,
-		"is_upgrade": true,
-	})
+	aliado_slots.append({"id": "soon", "name": "Em breve", "desc": "—", "price": 0, "available": false})
+	aliado_slots.append({"id": "soon", "name": "Em breve", "desc": "—", "price": 0, "available": false})
 
 
 func _roll_upg_slots() -> void:
 	upg_slots.clear()
 	var player := _get_player()
-	var already_picked_ids: Array[String] = []  # evita 2 cards iguais no mesmo roll
-	# Mutex elemental: se o player já comprou um caminho (fire ou curse), o outro
-	# fica permanentemente fora do pool nesta partida.
+	var already_picked_ids: Array[String] = []
 	var has_fire: bool = player != null and player.has_method("get_upgrade_count") and player.get_upgrade_count("fire_arrow") > 0
 	var has_curse: bool = player != null and player.has_method("get_upgrade_count") and player.get_upgrade_count("curse_arrow") > 0
 	for i in 3:
@@ -355,8 +355,6 @@ func _roll_upg_slots() -> void:
 				continue
 			if id == "curse_arrow" and has_fire:
 				continue
-			# Pré-requisito: upgrade só entra no pool se o requires está com lvl > 0.
-			# Ex: dash_auto_attack só aparece após comprar dash.
 			var requires: String = u.get("requires", "")
 			if requires != "":
 				var req_lvl: int = 0
@@ -386,14 +384,6 @@ func _roll_upg_slots() -> void:
 		})
 
 
-# Override de preço por upgrade — sub-melhorias one-shot do dash são fortes
-# demais pra cair no PRICE_TABLE base (3 coins), então têm preço fixo alto.
-const UPGRADE_PRICE_OVERRIDES: Dictionary = {
-	"dash_auto_attack": 12,
-	"dash_double_arrow": 18,
-}
-
-
 func _get_upgrade_price(id: String, player_current_level: int) -> int:
 	if id in UPGRADE_PRICE_OVERRIDES:
 		return int(UPGRADE_PRICE_OVERRIDES[id])
@@ -407,7 +397,6 @@ func _get_upgrade_price(id: String, player_current_level: int) -> int:
 func _get_upgrade_desc(id: String, target_level: int) -> String:
 	var arr: Array
 	match id:
-		"hp": arr = HP_DESCS
 		"damage": arr = DAMAGE_DESCS
 		"perfuracao": arr = PERFURACAO_DESCS
 		"attack_speed": arr = ATTACK_SPEED_DESCS
@@ -429,62 +418,373 @@ func _get_upgrade_desc(id: String, target_level: int) -> String:
 
 # ---------- Build cards ----------
 
-func _build_struct_cards() -> void:
+func _build_all_cards() -> void:
+	_build_card(status_card, status_slot, 0)
+	_build_card(estrut_card, estrutura_slot, 0)
 	for i in 3:
-		var slot: Dictionary = struct_slots[i]
-		var card: Control = struct_cards[i]
-		card.get_node("VBox/TitleLabel").text = slot["name"]
-		card.get_node("VBox/DescLabel").text = slot["desc"]
-		card.get_node("VBox/PriceLabel").text = ("%d coins" % slot["price"]) if slot["available"] else "—"
-		var btn: Button = card.get_node("VBox/BuyBtn")
-		btn.text = "Comprar" if slot["available"] else "—"
-		for c in btn.pressed.get_connections():
-			btn.pressed.disconnect(c["callable"])
-		btn.pressed.connect(_buy_structure.bind(i))
+		var tl: int = int(upg_slots[i].get("target_level", 0))
+		_build_card(upg_cards[i], upg_slots[i], tl)
+	for i in 3:
+		_build_card(aliado_cards[i], aliado_slots[i], 0)
 
 
-func _build_upg_cards() -> void:
+func _build_card(card: Control, slot: Dictionary, target_level: int) -> void:
+	var available: bool = slot.get("available", false)
+	var title_label: Label = card.get_node("TitleLabel")
+	title_label.text = slot.get("name", "—")
+	title_label.modulate = _level_tint_for_label(target_level) if (available and target_level > 0) else Color.WHITE
+	card.get_node("DescLabel").text = slot.get("desc", "—")
+	card.get_node("PriceLabel").text = ("%d coins" % int(slot.get("price", 0))) if available else "—"
+	var stars_label: Label = card.get_node_or_null("StarsLabel")
+	if stars_label != null:
+		var stars_str: String = _stars_text(target_level) if (available and target_level > 0) else ""
+		stars_label.text = stars_str
+		stars_label.modulate = _level_tint_for_label(target_level) if (available and target_level > 0) else Color.WHITE
+
+
+func _connect_card_buttons() -> void:
+	_connect_button(status_card.get_node("BuyBtn"), Callable(self, "_buy_status"))
+	_connect_button(estrut_card.get_node("BuyBtn"), Callable(self, "_buy_estrutura"))
+	for i in 3:
+		_connect_button(upg_cards[i].get_node("BuyBtn"), Callable(self, "_buy_upgrade").bind(i))
+	for i in 3:
+		_connect_button(aliado_cards[i].get_node("BuyBtn"), Callable(self, "_buy_aliado").bind(i))
+
+
+func _connect_button(btn_node: Node, target: Callable) -> void:
+	var btn := btn_node as Button
+	if btn == null:
+		return
+	for c in btn.pressed.get_connections():
+		btn.pressed.disconnect(c["callable"])
+	btn.pressed.connect(target)
+
+
+# ---------- Compra (toggle) ----------
+
+func _buy_status() -> void:
+	if _placement_active or not status_slot.get("available", false):
+		return
+	if _status_selected:
+		_status_selected = false
+		_refresh_button_states()
+		return
+	var player := _get_player()
+	if player == null:
+		return
+	var price: int = int(status_slot.get("price", 0))
+	if player.gold < _selected_total_cost() + price:
+		return
+	_status_selected = true
+	_play_buy_sound()
+	_refresh_button_states()
+
+
+func _buy_estrutura() -> void:
+	if _placement_active or not estrutura_slot.get("available", false):
+		return
+	if _estrutura_selected:
+		_estrutura_selected = false
+		_refresh_button_states()
+		return
+	var player := _get_player()
+	if player == null:
+		return
+	var price: int = int(estrutura_slot.get("price", 0))
+	if player.gold < _selected_total_cost() + price:
+		return
+	_estrutura_selected = true
+	_play_buy_sound()
+	_refresh_button_states()
+
+
+func _buy_aliado(idx: int) -> void:
+	if _placement_active:
+		return
+	var slot: Dictionary = aliado_slots[idx]
+	if not slot.get("available", false):
+		return
+	if _selected_aliado_idx == idx:
+		_selected_aliado_idx = -1
+		_refresh_button_states()
+		return
+	var player := _get_player()
+	if player == null:
+		return
+	var price: int = int(slot["price"])
+	# Permite swap (devolve preço do aliado já selecionado).
+	if player.gold < _selected_total_cost() - _aliado_price() + price:
+		return
+	_selected_aliado_idx = idx
+	_play_buy_sound()
+	_refresh_button_states()
+
+
+func _buy_upgrade(idx: int) -> void:
+	if _placement_active:
+		return
+	var slot: Dictionary = upg_slots[idx]
+	if not slot.get("available", false):
+		return
+	if idx in _selected_upgrade_idxs:
+		_selected_upgrade_idxs.erase(idx)
+		_refresh_button_states()
+		return
+	if _selected_upgrade_idxs.size() >= max_upgrades_this_round:
+		return
+	if _is_elemental_blocked_by_selection(slot.get("id", "")):
+		return
+	var player := _get_player()
+	if player == null:
+		return
+	var price: int = int(slot["price"])
+	if player.gold < _selected_total_cost() + price:
+		return
+	_selected_upgrade_idxs.append(idx)
+	_play_buy_sound()
+	_refresh_button_states()
+
+
+func _is_elemental_blocked_by_selection(id: String) -> bool:
+	if id != "fire_arrow" and id != "curse_arrow":
+		return false
+	var counterpart: String = "curse_arrow" if id == "fire_arrow" else "fire_arrow"
+	for sel_idx in _selected_upgrade_idxs:
+		if upg_slots[sel_idx].get("id", "") == counterpart:
+			return true
+	return false
+
+
+# ---------- Selection accounting ----------
+
+func _selected_upgrades_total_cost() -> int:
+	var total: int = 0
+	for i in _selected_upgrade_idxs:
+		total += int(upg_slots[i].get("price", 0))
+	return total
+
+
+func _selected_total_cost() -> int:
+	var total: int = _selected_upgrades_total_cost()
+	if _status_selected:
+		total += int(status_slot.get("price", 0))
+	if _estrutura_selected:
+		total += int(estrutura_slot.get("price", 0))
+	if _selected_aliado_idx >= 0:
+		total += int(aliado_slots[_selected_aliado_idx].get("price", 0))
+	return total
+
+
+func _aliado_price() -> int:
+	return int(aliado_slots[_selected_aliado_idx].get("price", 0)) if _selected_aliado_idx >= 0 else 0
+
+
+# ---------- Refresh ----------
+
+func _refresh_button_states() -> void:
+	var player := _get_player()
+	var current_gold: int = player.gold if player != null else 0
+	var pending_cost: int = _selected_total_cost()
+	var available_gold: int = current_gold - pending_cost
+	if _upg_reroll_btn != null:
+		var upg_max: bool = _upg_rerolls_used >= MAX_REROLLS_PER_CATEGORY
+		var upg_cost: int = _next_reroll_cost(_upg_rerolls_used)
+		var disabled_upg: bool = upg_max or available_gold < upg_cost
+		_upg_reroll_btn.disabled = disabled_upg
+		_set_reroll_widget_dim(_upg_reroll_widget, disabled_upg)
+		_update_reroll_price_label(_upg_reroll_widget, upg_cost, upg_max)
+	_refresh_gold_label()
+	# Status (single, toggle).
+	var status_price: int = int(status_slot.get("price", 0))
+	var status_can: bool = status_slot.get("available", false) and (_status_selected or available_gold >= status_price)
+	_apply_card_state(status_card, status_slot, _status_selected, status_can)
+	# Estrutura (single, toggle).
+	var estr_price: int = int(estrutura_slot.get("price", 0))
+	var estr_can: bool = estrutura_slot.get("available", false) and (_estrutura_selected or available_gold >= estr_price)
+	_apply_card_state(estrut_card, estrutura_slot, _estrutura_selected, estr_can)
+	# Upgrades (multi-select limited).
+	var limit_reached: bool = _selected_upgrade_idxs.size() >= max_upgrades_this_round
 	for i in 3:
 		var slot: Dictionary = upg_slots[i]
-		var card: Control = upg_cards[i]
-		var available: bool = slot.get("available", false)
-		var target_level: int = int(slot.get("target_level", 0))
-		var title_label: Label = card.get_node("VBox/TitleLabel")
-		title_label.text = slot["name"]
-		title_label.modulate = _level_tint_for_label(target_level) if available else Color.WHITE
-		# Estrelas em Label separado sem override de fonte (at01 não tem ★).
-		var star_label: Label = _ensure_stars_label(card)
-		var stars_str: String = _stars_text(target_level) if available else ""
-		star_label.text = stars_str
-		star_label.visible = stars_str != ""
-		star_label.modulate = _level_tint_for_label(target_level) if available else Color.WHITE
-		card.get_node("VBox/DescLabel").text = slot["desc"]
-		card.get_node("VBox/PriceLabel").text = ("%d coins" % slot["price"]) if available else "—"
-		# Tint do card inteiro pra reforçar o tier — sutil pra não quebrar a leitura.
-		card.modulate = _level_tint_for_card(target_level) if available else Color.WHITE
-		var btn: Button = card.get_node("VBox/BuyBtn")
-		btn.text = "Selecionar" if available else "—"
-		for c in btn.pressed.get_connections():
-			btn.pressed.disconnect(c["callable"])
-		btn.pressed.connect(_buy_upgrade.bind(i))
+		var price: int = int(slot.get("price", 0))
+		var is_selected: bool = i in _selected_upgrade_idxs
+		var blocked: bool = _is_elemental_blocked_by_selection(slot.get("id", ""))
+		var can_select: bool = not limit_reached and available_gold >= price and not blocked
+		_apply_card_state(upg_cards[i], slot, is_selected, can_select or is_selected)
+	# Aliado (single-select, swap allowed).
+	for i in 3:
+		var slot: Dictionary = aliado_slots[i]
+		var price: int = int(slot.get("price", 0))
+		var is_selected: bool = _selected_aliado_idx == i
+		var afford_swap: bool = current_gold >= pending_cost - _aliado_price() + price
+		_apply_card_state(aliado_cards[i], slot, is_selected, afford_swap)
 
 
-func _ensure_stars_label(card: Control) -> Label:
-	# Garante que existe um StarsLabel logo abaixo do TitleLabel, usando a fonte
-	# default do Godot (a at01 do projeto não tem o glifo ★).
-	var vbox: VBoxContainer = card.get_node("VBox")
-	var existing := vbox.get_node_or_null("StarsLabel")
-	if existing != null and existing is Label:
-		return existing as Label
-	var star_label := Label.new()
-	star_label.name = "StarsLabel"
-	star_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	star_label.add_theme_font_size_override("font_size", 22)
-	vbox.add_child(star_label)
-	var title_idx: int = vbox.get_node("TitleLabel").get_index()
-	vbox.move_child(star_label, title_idx + 1)
-	return star_label
+func _apply_card_state(card: Control, slot: Dictionary, is_selected: bool, can_buy: bool) -> void:
+	var available: bool = slot.get("available", false)
+	var bg: TextureRect = card.get_node_or_null("Bg") as TextureRect
+	if bg != null:
+		# Mantém o tint base do TextureRect (definido na cena, ex: laranja pra
+		# aliado) e multiplica por SELECTED_TINT quando selecionado.
+		# Pra deixar o user editar tint base na .tscn, guardamos em meta.
+		if not card.has_meta("base_tint"):
+			card.set_meta("base_tint", bg.modulate)
+		var base_tint: Color = card.get_meta("base_tint")
+		if not available:
+			bg.modulate = base_tint * Color(0.5, 0.5, 0.5, 0.7)
+		elif is_selected:
+			bg.modulate = base_tint * SELECTED_TINT
+		else:
+			bg.modulate = base_tint
+	var btn: Button = card.get_node_or_null("BuyBtn") as Button
+	if btn != null:
+		btn.disabled = not available or (not is_selected and not can_buy)
 
+
+# ---------- Continue & placement queue ----------
+
+func _on_continue_pressed() -> void:
+	if _placement_active:
+		_cancel_placement()
+		return
+	# Monta queue de placements: estrutura primeiro, aliado depois.
+	_placement_queue.clear()
+	if _estrutura_selected:
+		_placement_queue.append({"type": "estrutura", "slot": estrutura_slot})
+	if _selected_aliado_idx >= 0:
+		var sel: Dictionary = aliado_slots[_selected_aliado_idx]
+		if sel.get("available", false):
+			_placement_queue.append({"type": "aliado", "slot": sel})
+	if _placement_queue.is_empty():
+		# Sem placements pendentes — aplica status + upgrades direto e fecha.
+		_commit_status_only()
+		_commit_upgrades_and_close()
+		return
+	_process_next_placement()
+
+
+func _process_next_placement() -> void:
+	if _placement_queue.is_empty():
+		_commit_status_only()
+		_commit_upgrades_and_close()
+		return
+	_placement_current = _placement_queue.pop_front()
+	_enter_placement_mode(_placement_current["slot"])
+
+
+func _commit_status_only() -> void:
+	var player := _get_player()
+	if player == null:
+		return
+	if _status_selected and status_slot.get("available", false):
+		if player.spend_gold(int(status_slot.get("price", 0))):
+			if player.has_method("apply_upgrade"):
+				player.apply_upgrade(status_slot["id"])
+		_status_selected = false
+
+
+func _commit_upgrades_and_close() -> void:
+	var player := _get_player()
+	if player != null:
+		for idx in _selected_upgrade_idxs:
+			var slot: Dictionary = upg_slots[idx]
+			if not player.spend_gold(int(slot.get("price", 0))):
+				continue
+			if player.has_method("apply_upgrade"):
+				player.apply_upgrade(slot["id"])
+	closed.emit()
+
+
+# ---------- Placement mode ----------
+
+func _enter_placement_mode(slot: Dictionary) -> void:
+	var scene: PackedScene = load(slot["scene"])
+	if scene == null:
+		return
+	var world := get_tree().get_first_node_in_group("world")
+	if world == null:
+		return
+	var positions: Array[Vector2] = _generate_random_positions(PLACEMENT_SPOT_COUNT)
+	_placement_ghosts.clear()
+	for pos in positions:
+		var ghost: Node2D = scene.instantiate()
+		world.add_child(ghost)
+		ghost.global_position = pos
+		ghost.modulate = Color(1, 1, 1, 0.5)
+		ghost.process_mode = Node.PROCESS_MODE_DISABLED
+		_placement_ghosts.append(ghost)
+	_placement_active = true
+	bg_rect.visible = false
+	root_panel.visible = false
+	placement_hint.visible = true
+	_set_camera_overview(true)
+
+
+func _confirm_placement_at(chosen: Node2D) -> void:
+	var slot: Dictionary = _placement_current["slot"]
+	var player := _get_player()
+	if player == null or not player.spend_gold(int(slot["price"])):
+		_cancel_placement()
+		return
+	for g in _placement_ghosts:
+		if not is_instance_valid(g):
+			continue
+		if g == chosen:
+			g.modulate = Color(1, 1, 1, 1)
+			g.process_mode = Node.PROCESS_MODE_INHERIT
+		else:
+			g.queue_free()
+	_placement_ghosts.clear()
+	# Aliado (Woodwarden): conta como upgrade (apply_upgrade pra escalar stats).
+	if slot.get("id", "") == "woodwarden" and player.has_method("apply_upgrade"):
+		player.apply_upgrade("woodwarden")
+		var wm0 := get_tree().get_first_node_in_group("wave_manager")
+		if wm0 != null and wm0.has_method("_apply_woodwarden_scaling_if_applicable"):
+			wm0._apply_woodwarden_scaling_if_applicable(chosen, slot["scene"])
+			if "max_hp" in chosen and "hp" in chosen:
+				chosen.hp = chosen.max_hp
+				if chosen.has_node("HpBar"):
+					chosen.get_node("HpBar").set_ratio(1.0)
+	# Registra no wave_manager pra renascer entre waves se for destruída.
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm != null and wm.has_method("register_structure"):
+		wm.register_structure(slot["scene"], chosen.global_position, chosen)
+	# Marca seleção como "completa" pra commit não recobrar.
+	if _placement_current.get("type", "") == "estrutura":
+		_estrutura_selected = false
+	elif _placement_current.get("type", "") == "aliado":
+		_selected_aliado_idx = -1
+	_placement_current = {}
+	_exit_placement_mode()
+	_process_next_placement()
+
+
+func _cancel_placement() -> void:
+	for g in _placement_ghosts:
+		if is_instance_valid(g):
+			g.queue_free()
+	_placement_ghosts.clear()
+	_placement_queue.clear()
+	_placement_current = {}
+	_exit_placement_mode()
+	_refresh_button_states()
+
+
+func _exit_placement_mode() -> void:
+	_placement_active = false
+	bg_rect.visible = true
+	root_panel.visible = true
+	placement_hint.visible = false
+	_set_camera_overview(false)
+
+
+func _set_camera_overview(active: bool) -> void:
+	var camera := get_viewport().get_camera_2d()
+	if camera != null and camera.has_method("set_overview_mode"):
+		camera.set_overview_mode(active)
+
+
+# ---------- Tier visuals ----------
 
 func _stars_text(level: int) -> String:
 	if level <= 0:
@@ -498,17 +798,7 @@ func _stars_text(level: int) -> String:
 	return s
 
 
-func _level_tint_for_card(level: int) -> Color:
-	# Tint suave aplicado no card inteiro (multiplicativo, fica próximo do branco).
-	match level:
-		1: return Color(1.0, 1.0, 1.0, 1.0)
-		2: return Color(0.85, 0.95, 1.15, 1.0)  # azulado
-		3: return Color(1.05, 0.85, 1.15, 1.0)  # roxeado
-		_: return Color(1.2, 1.05, 0.7, 1.0)    # dourado (4+)
-
-
 func _level_tint_for_label(level: int) -> Color:
-	# Cor do título — mais saturada pra dar destaque às estrelas.
 	match level:
 		1: return Color(1.0, 1.0, 1.0, 1.0)
 		2: return Color(0.55, 0.85, 1.0, 1.0)
@@ -516,297 +806,12 @@ func _level_tint_for_label(level: int) -> Color:
 		_: return Color(1.0, 0.85, 0.3, 1.0)
 
 
-# ---------- Compra ----------
-
-func _buy_structure(idx: int) -> void:
-	if _placement_active:
-		return
-	var slot: Dictionary = struct_slots[idx]
-	if not slot.get("available", false):
-		return
-	# Toggle: clicar de novo no mesmo card desmarca.
-	if _selected_structure_idx == idx:
-		_selected_structure_idx = -1
-		_refresh_button_states()
-		return
-	# Verifica gold considerando todas as seleções pendentes (estrutura + upgrades).
-	var player := _get_player()
-	if player == null:
-		return
-	var struct_price: int = int(slot["price"])
-	if player.gold < _selected_upgrades_total_cost() + struct_price:
-		return
-	_selected_structure_idx = idx
-	_play_buy_sound()
-	_refresh_button_states()
-
-
-func _enter_placement_mode(idx: int) -> void:
-	var slot: Dictionary = struct_slots[idx]
-	var scene: PackedScene = load(slot["scene"])
-	if scene == null:
-		return
-	var world := get_tree().get_first_node_in_group("world")
-	if world == null:
-		return
-	# Gera 5 posições aleatórias espalhadas e spawna um ghost em cada.
-	var positions: Array[Vector2] = _generate_random_positions(PLACEMENT_SPOT_COUNT)
-	_placement_ghosts.clear()
-	for pos in positions:
-		var ghost: Node2D = scene.instantiate()
-		world.add_child(ghost)
-		ghost.global_position = pos
-		ghost.modulate = Color(1, 1, 1, 0.5)
-		ghost.process_mode = Node.PROCESS_MODE_DISABLED
-		_placement_ghosts.append(ghost)
-	_placement_active = true
-	_placement_slot_idx = idx
-	# Esconde UI da loja durante placement.
-	bg_rect.visible = false
-	root_panel.visible = false
-	placement_hint.visible = true
-	# Câmera entra em overview pra mostrar mapa inteiro (todos os 5 spots visíveis).
-	_set_camera_overview(true)
-
-
-func _confirm_placement_at(chosen: Node2D) -> void:
-	var slot: Dictionary = struct_slots[_placement_slot_idx]
-	var player := _get_player()
-	if player == null or not player.spend_gold(int(slot["price"])):
-		_cancel_placement()
-		return
-	# Ativa a estrutura escolhida; remove os outros ghosts.
-	for g in _placement_ghosts:
-		if not is_instance_valid(g):
-			continue
-		if g == chosen:
-			g.modulate = Color(1, 1, 1, 1)
-			g.process_mode = Node.PROCESS_MODE_INHERIT
-		else:
-			g.queue_free()
-	_placement_ghosts.clear()
-	# Aliado (Woodwarden): conta como upgrade — incrementa woodwarden_level
-	# do player ANTES de registrar/spawnar pra que o scaling do wave_manager
-	# pegue o nível novo (ex: 1ª compra → spawn lv1, 2ª → spawn lv2).
-	if slot.get("id", "") == "woodwarden" and player.has_method("apply_upgrade"):
-		player.apply_upgrade("woodwarden")
-		# Aplica scaling no ghost recém-ativado também (já está spawnado).
-		var wm0 := get_tree().get_first_node_in_group("wave_manager")
-		if wm0 != null and wm0.has_method("_apply_woodwarden_scaling_if_applicable"):
-			wm0._apply_woodwarden_scaling_if_applicable(chosen, slot["scene"])
-			# Ajusta hp atual ao novo max_hp (foi instanciado com valor base).
-			if "max_hp" in chosen and "hp" in chosen:
-				chosen.hp = chosen.max_hp
-				if chosen.has_node("HpBar"):
-					chosen.get_node("HpBar").set_ratio(1.0)
-	# Registra a estrutura no wave_manager pra renascer na próxima wave caso
-	# seja destruída pelos inimigos.
-	var wm := get_tree().get_first_node_in_group("wave_manager")
-	if wm != null and wm.has_method("register_structure"):
-		wm.register_structure(slot["scene"], chosen.global_position, chosen)
-	_exit_placement_mode()
-	# Após colocar a estrutura, finaliza o flow do Continue: aplica upgrades
-	# selecionados e fecha o shop.
-	_commit_upgrades_and_close()
-
-
-func _cancel_placement() -> void:
-	for g in _placement_ghosts:
-		if is_instance_valid(g):
-			g.queue_free()
-	_placement_ghosts.clear()
-	_exit_placement_mode()
-	# Cancelar = volta pra shop com a estrutura ainda selecionada — usuário
-	# pode reescolher um spot via Continue de novo, ou desmarcar pelo card.
-	_refresh_button_states()
-
-
-func _exit_placement_mode() -> void:
-	_placement_active = false
-	_placement_slot_idx = -1
-	bg_rect.visible = true
-	root_panel.visible = true
-	placement_hint.visible = false
-	# Restaura zoom da câmera (volta a seguir o player).
-	_set_camera_overview(false)
-
-
-func _set_camera_overview(active: bool) -> void:
-	var camera := get_viewport().get_camera_2d()
-	if camera != null and camera.has_method("set_overview_mode"):
-		camera.set_overview_mode(active)
-
-
-func _is_upgrade_limit_reached() -> bool:
-	return _selected_upgrade_idxs.size() >= max_upgrades_this_round
-
-
-func _selected_upgrades_total_cost() -> int:
-	var total: int = 0
-	for i in _selected_upgrade_idxs:
-		total += int(upg_slots[i].get("price", 0))
-	return total
-
-
-func _selected_total_cost_with_structure() -> int:
-	var total: int = _selected_upgrades_total_cost()
-	if _selected_structure_idx >= 0:
-		total += int(struct_slots[_selected_structure_idx].get("price", 0))
-	return total
-
-
-func _buy_upgrade(idx: int) -> void:
-	var slot: Dictionary = upg_slots[idx]
-	if not slot.get("available", false):
-		return
-	# Toggle: já selecionado → desmarca.
-	if idx in _selected_upgrade_idxs:
-		_selected_upgrade_idxs.erase(idx)
-		_refresh_button_states()
-		return
-	# Limite de seleções por round (1 ou 2 dependendo da wave).
-	if _is_upgrade_limit_reached():
-		return
-	# Mutex elemental DENTRO DO MESMO ROUND: se já tem fire ou curse selecionado,
-	# bloqueia o outro (caso ambos tenham rolado neste round antes do player ter
-	# qualquer um — o filtro do _roll_upg_slots não cobre esse caso).
-	if _is_elemental_blocked_by_selection(slot.get("id", "")):
-		return
-	var player := _get_player()
-	if player == null:
-		return
-	# Verifica gold considerando todas as seleções pendentes (struct + upgrades).
-	var price: int = int(slot["price"])
-	if player.gold < _selected_total_cost_with_structure() + price:
-		return
-	_selected_upgrade_idxs.append(idx)
-	_play_buy_sound()
-
-
-func _is_elemental_blocked_by_selection(id: String) -> bool:
-	# Se o id é fire/curse, bloqueia se o OUTRO elemental já está selecionado.
-	if id != "fire_arrow" and id != "curse_arrow":
-		return false
-	var counterpart: String = "curse_arrow" if id == "fire_arrow" else "fire_arrow"
-	for sel_idx in _selected_upgrade_idxs:
-		if upg_slots[sel_idx].get("id", "") == counterpart:
-			return true
-	return false
-	_refresh_button_states()
-
-
-func _commit_upgrades_and_close() -> void:
-	# Cobra e aplica todos os upgrades selecionados em sequência. Som único.
-	# Som de compra já tocou ao SELECIONAR; commit é silencioso pra não duplicar.
-	var player := _get_player()
-	if player != null:
-		for idx in _selected_upgrade_idxs:
-			var slot: Dictionary = upg_slots[idx]
-			if not player.spend_gold(int(slot.get("price", 0))):
-				continue
-			if player.has_method("apply_upgrade"):
-				player.apply_upgrade(slot["id"])
-	closed.emit()
-
-
-const SELECTED_TINT: Color = Color(1.4, 1.25, 0.5, 1.0)
-
-
-func _refresh_button_states() -> void:
-	var player := _get_player()
-	var current_gold: int = player.gold if player != null else 0
-	# Gold "comprometido" pelas seleções pendentes — o que sobra é o gold que
-	# pode ser usado pra novas seleções/rerolls sem estourar.
-	var pending_cost: int = _selected_total_cost_with_structure()
-	var available_gold: int = current_gold - pending_cost
-	# Mantém o label do gold sincronizado com as seleções pendentes.
-	_refresh_gold_label()
-	if _struct_reroll_btn != null:
-		var struct_max: bool = _struct_rerolls_used >= MAX_REROLLS_PER_CATEGORY
-		var struct_cost: int = _next_reroll_cost(_struct_rerolls_used)
-		# Reroll de struct: liberado mesmo com estrutura selecionada (vai trocar o pool).
-		var disabled_struct: bool = struct_max or _placement_active \
-			or available_gold < struct_cost
-		_struct_reroll_btn.disabled = disabled_struct
-		_set_reroll_widget_dim(_struct_reroll_widget, disabled_struct)
-		_update_reroll_price_label(_struct_reroll_widget, struct_cost, struct_max)
-	if _upg_reroll_btn != null:
-		var upg_max: bool = _upg_rerolls_used >= MAX_REROLLS_PER_CATEGORY
-		var upg_cost: int = _next_reroll_cost(_upg_rerolls_used)
-		var disabled_upg: bool = upg_max or available_gold < upg_cost
-		_upg_reroll_btn.disabled = disabled_upg
-		_set_reroll_widget_dim(_upg_reroll_widget, disabled_upg)
-		_update_reroll_price_label(_upg_reroll_widget, upg_cost, upg_max)
-	# Estruturas: toggle. Selecionada = amarelo + "Selecionado". Outras só
-	# desabilitam se não der pra trocar pra elas (= sem gold suficiente).
-	for i in 3:
-		var slot: Dictionary = struct_slots[i]
-		var btn: Button = struct_cards[i].get_node("VBox/BuyBtn")
-		var available: bool = slot.get("available", false)
-		var price: int = int(slot.get("price", 0))
-		var is_selected: bool = _selected_structure_idx == i
-		# Pode trocar a seleção se a outra estrutura cabe no gold (devolvendo a já selecionada).
-		var afford_swap: bool = current_gold >= pending_cost - _selected_struct_price() + price
-		btn.disabled = not available or (not is_selected and not afford_swap)
-		if not available:
-			btn.text = "—"
-			btn.modulate = Color.WHITE
-		elif is_selected:
-			btn.text = "Selecionado"
-			btn.modulate = SELECTED_TINT
-		else:
-			btn.text = "Selecionar"
-			btn.modulate = Color.WHITE
-	# Upgrades: multi-seleção até max_upgrades_this_round. Selecionado = amarelo.
-	var limit_reached: bool = _is_upgrade_limit_reached()
-	for i in 3:
-		var slot: Dictionary = upg_slots[i]
-		var btn: Button = upg_cards[i].get_node("VBox/BuyBtn")
-		var available: bool = slot.get("available", false)
-		var price: int = int(slot.get("price", 0))
-		var is_selected: bool = i in _selected_upgrade_idxs
-		# Pode adicionar essa nova seleção? cabem no gold + ainda dentro do limite +
-		# não bloqueado pelo mutex elemental (fire/curse mutuamente exclusivos).
-		var blocked: bool = _is_elemental_blocked_by_selection(slot.get("id", ""))
-		var can_select: bool = not limit_reached and available_gold >= price and not blocked
-		btn.disabled = not available or (not is_selected and not can_select)
-		if not available:
-			btn.text = "—"
-			btn.modulate = Color.WHITE
-		elif is_selected:
-			btn.text = "Selecionado"
-			btn.modulate = SELECTED_TINT
-		else:
-			btn.text = "Selecionar"
-			btn.modulate = Color.WHITE
-
-
-func _selected_struct_price() -> int:
-	if _selected_structure_idx < 0:
-		return 0
-	return int(struct_slots[_selected_structure_idx].get("price", 0))
-
-
-func _set_reroll_widget_dim(widget: Control, dim: bool) -> void:
-	if widget == null or not is_instance_valid(widget):
-		return
-	var icon_wrap: Node = widget.get_node_or_null("IconWrap")
-	if icon_wrap != null:
-		var btn := icon_wrap.get_node_or_null("Btn") as TextureButton
-		if btn != null:
-			btn.modulate = Color(0.55, 0.55, 0.55, 0.65) if dim else Color.WHITE
-	var price: Label = widget.get_node_or_null("Price") as Label
-	if price != null:
-		price.modulate = Color(0.55, 0.55, 0.55, 0.65) if dim else Color.WHITE
-
+# ---------- Gold label ----------
 
 func _refresh_gold_label() -> void:
 	var player := _get_player()
 	var g: int = player.gold if player != null else 0
-	# Mostra o gold "efetivo" (já descontando as seleções pendentes) pra player
-	# enxergar quanto sobra ao selecionar upgrades/estruturas. Cai pro número
-	# normal quando nada está selecionado.
-	var available: int = g - _selected_total_cost_with_structure()
+	var available: int = g - _selected_total_cost()
 	gold_label.text = "%d coins" % available
 
 
@@ -815,8 +820,6 @@ func _get_player() -> Node:
 
 
 func _total_structures_bought() -> int:
-	# Lê do wave_manager: cada placement confirmado vira uma entrada em
-	# owned_structures (registrada via register_structure). Tamanho = total comprado.
 	var wm := get_tree().get_first_node_in_group("wave_manager")
 	if wm == null or not "owned_structures" in wm:
 		return 0
@@ -834,47 +837,14 @@ func _play_buy_sound() -> void:
 	p.finished.connect(p.queue_free)
 
 
-func _on_continue_pressed() -> void:
-	if _placement_active:
-		# Safety: shop UI fica escondida durante placement, mas se de alguma
-		# forma o botão for clicado, cancela e mantém aberto.
-		_cancel_placement()
-		return
-	# Estrutura selecionada → entra em placement. Após confirmar o spot,
-	# os upgrades são commitados e o shop fecha (_commit_upgrades_and_close).
-	# Exceção: slot "is_upgrade" (ex: HP dedicado) aplica direto sem placement.
-	if _selected_structure_idx >= 0:
-		var sel_slot: Dictionary = struct_slots[_selected_structure_idx]
-		if sel_slot.get("is_upgrade", false):
-			_apply_struct_slot_as_upgrade(sel_slot)
-			_commit_upgrades_and_close()
-			return
-		_enter_placement_mode(_selected_structure_idx)
-		return
-	# Sem estrutura: só commita upgrades selecionados (se houver) e fecha.
-	_commit_upgrades_and_close()
-
-
-func _apply_struct_slot_as_upgrade(slot: Dictionary) -> void:
-	# Slot da coluna de "estruturas" que na verdade é um upgrade direto (ex: HP).
-	# Cobra o preço e aplica via player.apply_upgrade — sem placement mode.
-	var player := _get_player()
-	if player == null:
-		return
-	var price: int = int(slot.get("price", 0))
-	if not player.spend_gold(price):
-		return
-	if player.has_method("apply_upgrade"):
-		player.apply_upgrade(slot["id"])
-
+# ---------- Bonus +1 upgrade label ----------
 
 func _setup_bonus_label() -> void:
-	# Quando o bônus de +1 upgrade rola, mostra um label dourado pulsando
-	# ao lado do UpgHeader pra player saber que pode comprar 2.
 	if max_upgrades_this_round <= 1:
 		return
-	var right_header: HBoxContainer = $Root/HBox/RightCol/Header
-	var upg_label: Label = $Root/HBox/RightCol/Header/UpgHeader
+	var upg_header: Label = $Root/UpgHeader
+	if upg_header == null:
+		return
 	var bonus := Label.new()
 	bonus.name = "BonusUpgradeLabel"
 	bonus.text = "BONUS +1!"
@@ -883,101 +853,63 @@ func _setup_bonus_label() -> void:
 		bonus.add_theme_font_override("font", at01_font)
 	bonus.add_theme_font_size_override("font_size", 22)
 	bonus.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3, 1.0))
-	right_header.add_child(bonus)
-	right_header.move_child(bonus, upg_label.get_index() + 1)
-	# Pulse leve pra chamar atenção.
+	bonus.position = Vector2(720, 4)
+	bonus.size = Vector2(200, 40)
+	upg_header.add_child(bonus)
 	var tw := bonus.create_tween().set_loops()
 	tw.tween_property(bonus, "modulate:a", 0.55, 0.6)
 	tw.tween_property(bonus, "modulate:a", 1.0, 0.6)
 
 
-func _setup_reroll_buttons() -> void:
-	# Estruturas: LeftHeader é um Label simples — embrulha num HBox pra encaixar
-	# o ícone + custo do re-roll do lado.
-	var left_col: VBoxContainer = $Root/HBox/LeftCol
-	var struct_label: Label = $Root/HBox/LeftCol/LeftHeader
-	var struct_hbox := HBoxContainer.new()
-	struct_hbox.add_theme_constant_override("separation", 10)
-	struct_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	var label_idx: int = struct_label.get_index()
-	left_col.remove_child(struct_label)
-	left_col.add_child(struct_hbox)
-	left_col.move_child(struct_hbox, label_idx)
-	struct_hbox.add_child(struct_label)
-	_struct_reroll_widget = _make_reroll_pair()
-	_struct_reroll_btn = _struct_reroll_widget.get_node("IconWrap/Btn") as TextureButton
-	if _struct_reroll_btn != null:
-		_struct_reroll_btn.pressed.connect(_on_struct_reroll)
-	struct_hbox.add_child(_struct_reroll_widget)
-	# Upgrades: Header já é HBox (UpgHeader + GoldLabel) — UpgHeader tinha
-	# size_flags=expand que jogava o reroll pro extremo direito. Tira o expand
-	# e adiciona um spacer antes do GoldLabel pra manter ele no canto.
-	var right_header: HBoxContainer = $Root/HBox/RightCol/Header
-	var upg_label: Label = $Root/HBox/RightCol/Header/UpgHeader
-	upg_label.size_flags_horizontal = 0
+# ---------- Reroll (upgrades only) ----------
+
+func _setup_upg_reroll_button() -> void:
+	var upg_reroll_anchor := get_node_or_null("Root/UpgHeader/UpgReroll") as Control
+	if upg_reroll_anchor == null:
+		return
 	_upg_reroll_widget = _make_reroll_pair()
+	_upg_reroll_widget.name = "UpgRerollPair"
+	upg_reroll_anchor.add_child(_upg_reroll_widget)
+	_upg_reroll_widget.position = Vector2.ZERO
 	_upg_reroll_btn = _upg_reroll_widget.get_node("IconWrap/Btn") as TextureButton
 	if _upg_reroll_btn != null:
 		_upg_reroll_btn.pressed.connect(_on_upg_reroll)
-	right_header.add_child(_upg_reroll_widget)
-	right_header.move_child(_upg_reroll_widget, upg_label.get_index() + 1)
-	# Spacer expansivo entre o reroll e o gold label.
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	right_header.add_child(spacer)
-	var gold_node: Node = $Root/HBox/RightCol/Header/GoldLabel
-	right_header.move_child(spacer, gold_node.get_index())
 
 
-func _make_reroll_pair() -> HBoxContainer:
-	# HBox externo: [Icon (Control), Price (Label)]
-	var pair := HBoxContainer.new()
-	pair.add_theme_constant_override("separation", 6)
-	pair.alignment = BoxContainer.ALIGNMENT_CENTER
-	var icon_wrap := _make_reroll_widget()
-	icon_wrap.name = "IconWrap"
-	pair.add_child(icon_wrap)
-	var price := Label.new()
-	price.name = "Price"
-	# Texto inicial = primeiro custo; _refresh_button_states sobrescreve dinamicamente.
-	price.text = "%d" % REROLL_COSTS[0]
-	var at01_font: Font = load("res://font/at01.ttf")
-	if at01_font != null:
-		price.add_theme_font_override("font", at01_font)
-	price.add_theme_font_size_override("font_size", 22)
-	price.add_theme_color_override("font_color", Color(1, 0.85, 0.35, 1))
-	pair.add_child(price)
-	return pair
-
-
-const REROLL_BUTTON_SIZE: Vector2 = Vector2(64, 64)  # 32×32 sprite × 2× nearest pra ficar crisp
-
-
-func _make_reroll_widget() -> Control:
-	var tex: Texture2D = load("res://assets/Hud/new reroll.png")
-	var container := Control.new()
-	container.custom_minimum_size = REROLL_BUTTON_SIZE
-	container.size = REROLL_BUTTON_SIZE
-	container.tooltip_text = "Re-roll (1º: 1 coin, 2º: 2 coins)"
-
-	# Botão flat — sem halo, sem hover tween (user tirou o efeito).
-	var btn := TextureButton.new()
-	btn.name = "Btn"
-	btn.texture_normal = tex
-	btn.ignore_texture_size = true
-	btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-	btn.set_anchors_preset(Control.PRESET_FULL_RECT)
-	btn.pivot_offset = REROLL_BUTTON_SIZE * 0.5
-	btn.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	container.add_child(btn)
-	return container
+func _on_upg_reroll() -> void:
+	if _upg_rerolls_used >= MAX_REROLLS_PER_CATEGORY:
+		return
+	if _selected_upgrade_idxs.size() >= max_upgrades_this_round:
+		return
+	var cost: int = _next_reroll_cost(_upg_rerolls_used)
+	var player := _get_player()
+	if player == null or not player.spend_gold(cost):
+		return
+	_upg_rerolls_used += 1
+	_selected_upgrade_idxs.clear()
+	_play_buy_sound()
+	_roll_upg_slots()
+	_build_all_cards()
+	_refresh_gold_label()
+	_refresh_button_states()
 
 
 func _next_reroll_cost(rerolls_used: int) -> int:
-	# Cap em REROLL_COSTS — se já usou todos os rolls, retorna o último (botão
-	# fica disabled de qualquer forma).
 	var idx: int = clampi(rerolls_used, 0, REROLL_COSTS.size() - 1)
 	return REROLL_COSTS[idx]
+
+
+func _set_reroll_widget_dim(widget: Control, dim: bool) -> void:
+	if widget == null or not is_instance_valid(widget):
+		return
+	var icon_wrap: Node = widget.get_node_or_null("IconWrap")
+	if icon_wrap != null:
+		var btn := icon_wrap.get_node_or_null("Btn") as TextureButton
+		if btn != null:
+			btn.modulate = Color(0.55, 0.55, 0.55, 0.65) if dim else Color.WHITE
+	var price: Label = widget.get_node_or_null("Price") as Label
+	if price != null:
+		price.modulate = Color(0.55, 0.55, 0.55, 0.65) if dim else Color.WHITE
 
 
 func _update_reroll_price_label(widget: Control, cost: int, maxed: bool) -> void:
@@ -989,35 +921,41 @@ func _update_reroll_price_label(widget: Control, cost: int, maxed: bool) -> void
 	price.text = "—" if maxed else "%d" % cost
 
 
-func _on_struct_reroll() -> void:
-	if _struct_rerolls_used >= MAX_REROLLS_PER_CATEGORY or _placement_active:
-		return
-	var cost: int = _next_reroll_cost(_struct_rerolls_used)
-	var player := _get_player()
-	if player == null or not player.spend_gold(cost):
-		return
-	_struct_rerolls_used += 1
-	# Reseta seleção de estrutura — slots mudaram.
-	_selected_structure_idx = -1
-	_play_buy_sound()
-	_roll_struct_slots()
-	_build_struct_cards()
-	_refresh_gold_label()
-	_refresh_button_states()
+const REROLL_BUTTON_SIZE: Vector2 = Vector2(64, 64)
 
 
-func _on_upg_reroll() -> void:
-	if _upg_rerolls_used >= MAX_REROLLS_PER_CATEGORY or _is_upgrade_limit_reached():
-		return
-	var cost: int = _next_reroll_cost(_upg_rerolls_used)
-	var player := _get_player()
-	if player == null or not player.spend_gold(cost):
-		return
-	_upg_rerolls_used += 1
-	# Reseta seleções de upgrade — os cards mudaram, índices não fazem mais sentido.
-	_selected_upgrade_idxs.clear()
-	_play_buy_sound()
-	_roll_upg_slots()
-	_build_upg_cards()
-	_refresh_gold_label()
-	_refresh_button_states()
+func _make_reroll_pair() -> HBoxContainer:
+	var pair := HBoxContainer.new()
+	pair.add_theme_constant_override("separation", 6)
+	pair.alignment = BoxContainer.ALIGNMENT_CENTER
+	var icon_wrap := _make_reroll_widget()
+	icon_wrap.name = "IconWrap"
+	pair.add_child(icon_wrap)
+	var price := Label.new()
+	price.name = "Price"
+	price.text = "%d" % REROLL_COSTS[0]
+	var at01_font: Font = load("res://font/at01.ttf")
+	if at01_font != null:
+		price.add_theme_font_override("font", at01_font)
+	price.add_theme_font_size_override("font_size", 22)
+	price.add_theme_color_override("font_color", Color(1, 0.85, 0.35, 1))
+	pair.add_child(price)
+	return pair
+
+
+func _make_reroll_widget() -> Control:
+	var tex: Texture2D = load("res://assets/Hud/new reroll.png")
+	var container := Control.new()
+	container.custom_minimum_size = REROLL_BUTTON_SIZE
+	container.size = REROLL_BUTTON_SIZE
+	container.tooltip_text = "Re-roll (1º: 1 coin, 2º: 2 coins)"
+	var btn := TextureButton.new()
+	btn.name = "Btn"
+	btn.texture_normal = tex
+	btn.ignore_texture_size = true
+	btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn.set_anchors_preset(Control.PRESET_FULL_RECT)
+	btn.pivot_offset = REROLL_BUTTON_SIZE * 0.5
+	btn.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	container.add_child(btn)
+	return container

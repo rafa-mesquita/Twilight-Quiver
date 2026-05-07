@@ -2,17 +2,11 @@
 
 [ext_resource type="Script" path="res://scripts/wave_shop.gd" id="1_shop"]
 [ext_resource type="FontFile" uid="uid://b13jsxnoofsxm" path="res://font/at01.ttf" id="2_font"]
-
-[sub_resource type="StyleBoxFlat" id="SBF_card"]
-bg_color = Color(0.13, 0.1, 0.18, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.45, 0.32, 0.6, 1)
+[ext_resource type="Texture2D" path="res://assets/Hud/shop/card_status.png" id="3_card_wide"]
+[ext_resource type="Texture2D" path="res://assets/Hud/shop/card_upgrade.png" id="4_card_tall"]
 
 [sub_resource type="StyleBoxFlat" id="SBF_btn_normal"]
-bg_color = Color(0.18, 0.14, 0.24, 1)
+bg_color = Color(0.18, 0.14, 0.24, 0.92)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
@@ -20,7 +14,7 @@ border_width_bottom = 2
 border_color = Color(0.55, 0.4, 0.7, 1)
 
 [sub_resource type="StyleBoxFlat" id="SBF_btn_hover"]
-bg_color = Color(0.28, 0.2, 0.38, 1)
+bg_color = Color(0.28, 0.2, 0.38, 0.95)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
@@ -28,20 +22,12 @@ border_width_bottom = 2
 border_color = Color(0.95, 0.75, 1, 1)
 
 [sub_resource type="StyleBoxFlat" id="SBF_btn_disabled"]
-bg_color = Color(0.1, 0.08, 0.13, 1)
+bg_color = Color(0.1, 0.08, 0.13, 0.85)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.25, 0.2, 0.3, 1)
-
-[sub_resource type="StyleBoxFlat" id="SBF_btn_pressed"]
-bg_color = Color(0.08, 0.05, 0.12, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 0.85, 1, 1)
 
 [node name="WaveShop" type="CanvasLayer"]
 layer = 50
@@ -56,314 +42,739 @@ color = Color(0.04, 0.04, 0.08, 0.85)
 anchor_right = 1.0
 anchor_bottom = 1.0
 
-[node name="HBox" type="HBoxContainer" parent="Root"]
+[node name="GoldLabel" type="Label" parent="Root"]
+layout_mode = 0
+offset_left = 1500.0
+offset_top = 30.0
+offset_right = 1860.0
+offset_bottom = 80.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 36
+text = "0 coins"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+
+[node name="StatusHeader" type="Label" parent="Root"]
+layout_mode = 0
+offset_left = 60.0
+offset_top = 90.0
+offset_right = 580.0
+offset_bottom = 130.0
+theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "STATUS"
+horizontal_alignment = 1
+
+[node name="StatusCard" type="Control" parent="Root"]
+layout_mode = 0
+offset_left = 60.0
+offset_top = 140.0
+offset_right = 580.0
+offset_bottom = 276.0
+
+[node name="Bg" type="TextureRect" parent="Root/StatusCard"]
+texture_filter = 1
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
+texture = ExtResource("3_card_wide")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="TitleLabel" type="Label" parent="Root/StatusCard"]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 16.0
+offset_right = 420.0
+offset_bottom = 60.0
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "Mais HP"
+vertical_alignment = 1
+
+[node name="StarsLabel" type="Label" parent="Root/StatusCard"]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 50.0
+offset_right = 420.0
+offset_bottom = 80.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = ""
+
+[node name="DescLabel" type="Label" parent="Root/StatusCard"]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 78.0
+offset_right = 420.0
+offset_bottom = 116.0
+theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "+15 HP maximo"
+autowrap_mode = 2
+
+[node name="PriceLabel" type="Label" parent="Root/StatusCard"]
+layout_mode = 0
+offset_left = 420.0
+offset_top = 16.0
+offset_right = 510.0
+offset_bottom = 60.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "1 coins"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="BuyBtn" type="Button" parent="Root/StatusCard"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 520.0
+offset_bottom = 136.0
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 1
+theme_override_styles/normal = SubResource("SBF_btn_disabled")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/disabled = SubResource("SBF_btn_disabled")
+flat = true
+text = ""
+
+[node name="EstrutHeader" type="Label" parent="Root"]
+layout_mode = 0
 offset_left = 60.0
-offset_top = 60.0
-offset_right = -60.0
-offset_bottom = -60.0
-theme_override_constants/separation = 40
-
-[node name="LeftCol" type="VBoxContainer" parent="Root/HBox"]
-custom_minimum_size = Vector2(560, 0)
-size_flags_horizontal = 3
-theme_override_constants/separation = 16
-
-[node name="LeftHeader" type="Label" parent="Root/HBox/LeftCol"]
+offset_top = 300.0
+offset_right = 580.0
+offset_bottom = 340.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 36
-text = "ESTRUTURAS / ALIADOS"
+theme_override_font_sizes/font_size = 28
+text = "ESTRUTURAS"
 horizontal_alignment = 1
 
-[node name="StructList" type="VBoxContainer" parent="Root/HBox/LeftCol"]
-size_flags_vertical = 3
-theme_override_constants/separation = 16
+[node name="StructReroll" type="Control" parent="Root/EstrutHeader"]
+layout_mode = 0
+offset_left = 380.0
+offset_top = -8.0
+offset_right = 460.0
+offset_bottom = 56.0
 
-[node name="Card1" type="PanelContainer" parent="Root/HBox/LeftCol/StructList"]
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_styles/panel = SubResource("SBF_card")
+[node name="EstrutCard" type="Control" parent="Root"]
+layout_mode = 0
+offset_left = 60.0
+offset_top = 350.0
+offset_right = 580.0
+offset_bottom = 486.0
 
-[node name="VBox" type="VBoxContainer" parent="Root/HBox/LeftCol/StructList/Card1"]
-theme_override_constants/separation = 6
+[node name="Bg" type="TextureRect" parent="Root/EstrutCard"]
+texture_filter = 1
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("3_card_wide")
+expand_mode = 1
+stretch_mode = 6
 
-[node name="TitleLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card1/VBox"]
+[node name="TitleLabel" type="Label" parent="Root/EstrutCard"]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 16.0
+offset_right = 420.0
+offset_bottom = 60.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
-text = "—"
-horizontal_alignment = 1
-
-[node name="DescLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card1/VBox"]
-size_flags_vertical = 3
-theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 18
-text = "—"
-horizontal_alignment = 1
+text = "Torre de Flechas"
 vertical_alignment = 1
-autowrap_mode = 2
 
-[node name="PriceLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card1/VBox"]
+[node name="StarsLabel" type="Label" parent="Root/EstrutCard"]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 50.0
+offset_right = 420.0
+offset_bottom = 80.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 22
-text = "—"
-horizontal_alignment = 1
+text = ""
 
-[node name="BuyBtn" type="Button" parent="Root/HBox/LeftCol/StructList/Card1/VBox"]
-custom_minimum_size = Vector2(0, 36)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("SBF_btn_normal")
-theme_override_styles/hover = SubResource("SBF_btn_hover")
-theme_override_styles/pressed = SubResource("SBF_btn_pressed")
-theme_override_styles/disabled = SubResource("SBF_btn_disabled")
-text = "Comprar"
-
-[node name="Card2" type="PanelContainer" parent="Root/HBox/LeftCol/StructList"]
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_styles/panel = SubResource("SBF_card")
-
-[node name="VBox" type="VBoxContainer" parent="Root/HBox/LeftCol/StructList/Card2"]
-theme_override_constants/separation = 6
-
-[node name="TitleLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card2/VBox"]
-theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
-text = "—"
-horizontal_alignment = 1
-
-[node name="DescLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card2/VBox"]
-size_flags_vertical = 3
+[node name="DescLabel" type="Label" parent="Root/EstrutCard"]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 78.0
+offset_right = 420.0
+offset_bottom = 116.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 16
 text = "—"
-horizontal_alignment = 1
-vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="PriceLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card2/VBox"]
+[node name="PriceLabel" type="Label" parent="Root/EstrutCard"]
+layout_mode = 0
+offset_left = 420.0
+offset_top = 16.0
+offset_right = 510.0
+offset_bottom = 60.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 22
-text = "—"
-horizontal_alignment = 1
-
-[node name="BuyBtn" type="Button" parent="Root/HBox/LeftCol/StructList/Card2/VBox"]
-custom_minimum_size = Vector2(0, 36)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("SBF_btn_normal")
-theme_override_styles/hover = SubResource("SBF_btn_hover")
-theme_override_styles/pressed = SubResource("SBF_btn_pressed")
-theme_override_styles/disabled = SubResource("SBF_btn_disabled")
-text = "Comprar"
-
-[node name="Card3" type="PanelContainer" parent="Root/HBox/LeftCol/StructList"]
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_styles/panel = SubResource("SBF_card")
-
-[node name="VBox" type="VBoxContainer" parent="Root/HBox/LeftCol/StructList/Card3"]
-theme_override_constants/separation = 6
-
-[node name="TitleLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card3/VBox"]
-theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
-text = "—"
-horizontal_alignment = 1
-
-[node name="DescLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card3/VBox"]
-size_flags_vertical = 3
-theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 18
-text = "—"
-horizontal_alignment = 1
+text = "10 coins"
+horizontal_alignment = 2
 vertical_alignment = 1
-autowrap_mode = 2
 
-[node name="PriceLabel" type="Label" parent="Root/HBox/LeftCol/StructList/Card3/VBox"]
-theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+[node name="BuyBtn" type="Button" parent="Root/EstrutCard"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 520.0
+offset_bottom = 136.0
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
-text = "—"
-horizontal_alignment = 1
-
-[node name="BuyBtn" type="Button" parent="Root/HBox/LeftCol/StructList/Card3/VBox"]
-custom_minimum_size = Vector2(0, 36)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_font_sizes/font_size = 1
+theme_override_styles/normal = SubResource("SBF_btn_disabled")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
-theme_override_styles/pressed = SubResource("SBF_btn_pressed")
 theme_override_styles/disabled = SubResource("SBF_btn_disabled")
-text = "Comprar"
+flat = true
+text = ""
 
-[node name="RightCol" type="VBoxContainer" parent="Root/HBox"]
-custom_minimum_size = Vector2(900, 0)
-size_flags_horizontal = 3
-theme_override_constants/separation = 16
 
-[node name="Header" type="HBoxContainer" parent="Root/HBox/RightCol"]
-
-[node name="UpgHeader" type="Label" parent="Root/HBox/RightCol/Header"]
-size_flags_horizontal = 3
+[node name="UpgHeader" type="Label" parent="Root"]
+layout_mode = 0
+offset_left = 620.0
+offset_top = 90.0
+offset_right = 1572.0
+offset_bottom = 130.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 28
 text = "UPGRADES"
+horizontal_alignment = 1
 
-[node name="GoldLabel" type="Label" parent="Root/HBox/RightCol/Header"]
+[node name="UpgReroll" type="Control" parent="Root/UpgHeader"]
+layout_mode = 0
+offset_left = 760.0
+offset_top = -8.0
+offset_right = 840.0
+offset_bottom = 56.0
+
+[node name="UpgRow" type="Control" parent="Root"]
+layout_mode = 0
+offset_left = 620.0
+offset_top = 140.0
+offset_right = 1572.0
+offset_bottom = 516.0
+
+[node name="UpgCard1" type="Control" parent="Root/UpgRow"]
+layout_mode = 0
+offset_right = 304.0
+offset_bottom = 376.0
+
+[node name="Bg" type="TextureRect" parent="Root/UpgRow/UpgCard1"]
+texture_filter = 1
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("4_card_tall")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="TitleLabel" type="Label" parent="Root/UpgRow/UpgCard1"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 24.0
+offset_right = 288.0
+offset_bottom = 70.0
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+text = "—"
+horizontal_alignment = 1
+
+[node name="StarsLabel" type="Label" parent="Root/UpgRow/UpgCard1"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 70.0
+offset_right = 288.0
+offset_bottom = 100.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = ""
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard1"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 110.0
+offset_right = 288.0
+offset_bottom = 280.0
+theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "—"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard1"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 290.0
+offset_right = 288.0
+offset_bottom = 330.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "—"
+horizontal_alignment = 1
+
+[node name="BuyBtn" type="Button" parent="Root/UpgRow/UpgCard1"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 304.0
+offset_bottom = 376.0
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 1
+theme_override_styles/normal = SubResource("SBF_btn_disabled")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/disabled = SubResource("SBF_btn_disabled")
+flat = true
+text = ""
+
+[node name="UpgCard2" type="Control" parent="Root/UpgRow"]
+layout_mode = 0
+offset_left = 324.0
+offset_right = 628.0
+offset_bottom = 376.0
+
+[node name="Bg" type="TextureRect" parent="Root/UpgRow/UpgCard2"]
+texture_filter = 1
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("4_card_tall")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="TitleLabel" type="Label" parent="Root/UpgRow/UpgCard2"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 24.0
+offset_right = 288.0
+offset_bottom = 70.0
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+text = "—"
+horizontal_alignment = 1
+
+[node name="StarsLabel" type="Label" parent="Root/UpgRow/UpgCard2"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 70.0
+offset_right = 288.0
+offset_bottom = 100.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = ""
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard2"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 110.0
+offset_right = 288.0
+offset_bottom = 280.0
+theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "—"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard2"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 290.0
+offset_right = 288.0
+offset_bottom = 330.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "—"
+horizontal_alignment = 1
+
+[node name="BuyBtn" type="Button" parent="Root/UpgRow/UpgCard2"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 304.0
+offset_bottom = 376.0
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 1
+theme_override_styles/normal = SubResource("SBF_btn_disabled")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/disabled = SubResource("SBF_btn_disabled")
+flat = true
+text = ""
+
+[node name="UpgCard3" type="Control" parent="Root/UpgRow"]
+layout_mode = 0
+offset_left = 648.0
+offset_right = 952.0
+offset_bottom = 376.0
+
+[node name="Bg" type="TextureRect" parent="Root/UpgRow/UpgCard3"]
+texture_filter = 1
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("4_card_tall")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="TitleLabel" type="Label" parent="Root/UpgRow/UpgCard3"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 24.0
+offset_right = 288.0
+offset_bottom = 70.0
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+text = "—"
+horizontal_alignment = 1
+
+[node name="StarsLabel" type="Label" parent="Root/UpgRow/UpgCard3"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 70.0
+offset_right = 288.0
+offset_bottom = 100.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = ""
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard3"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 110.0
+offset_right = 288.0
+offset_bottom = 280.0
+theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "—"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard3"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 290.0
+offset_right = 288.0
+offset_bottom = 330.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "—"
+horizontal_alignment = 1
+
+[node name="BuyBtn" type="Button" parent="Root/UpgRow/UpgCard3"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 304.0
+offset_bottom = 376.0
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 1
+theme_override_styles/normal = SubResource("SBF_btn_disabled")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/disabled = SubResource("SBF_btn_disabled")
+flat = true
+text = ""
+
+[node name="AliadoHeader" type="Label" parent="Root"]
+layout_mode = 0
+offset_left = 620.0
+offset_top = 540.0
+offset_right = 1572.0
+offset_bottom = 580.0
+theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "ALIADOS"
+horizontal_alignment = 1
+
+[node name="AliadoRow" type="Control" parent="Root"]
+layout_mode = 0
+offset_left = 620.0
+offset_top = 590.0
+offset_right = 1572.0
+offset_bottom = 966.0
+
+[node name="AliadoCard1" type="Control" parent="Root/AliadoRow"]
+layout_mode = 0
+offset_right = 304.0
+offset_bottom = 376.0
+
+[node name="Bg" type="TextureRect" parent="Root/AliadoRow/AliadoCard1"]
+texture_filter = 1
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("4_card_tall")
+expand_mode = 1
+stretch_mode = 6
+modulate = Color(1.0, 0.55, 0.4, 1.0)
+
+[node name="TitleLabel" type="Label" parent="Root/AliadoRow/AliadoCard1"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 24.0
+offset_right = 288.0
+offset_bottom = 70.0
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+text = "—"
+horizontal_alignment = 1
+
+[node name="StarsLabel" type="Label" parent="Root/AliadoRow/AliadoCard1"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 70.0
+offset_right = 288.0
+offset_bottom = 100.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = ""
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="Root/AliadoRow/AliadoCard1"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 110.0
+offset_right = 288.0
+offset_bottom = 280.0
+theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "—"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard1"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 290.0
+offset_right = 288.0
+offset_bottom = 330.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "—"
+horizontal_alignment = 1
+
+[node name="BuyBtn" type="Button" parent="Root/AliadoRow/AliadoCard1"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 304.0
+offset_bottom = 376.0
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 1
+theme_override_styles/normal = SubResource("SBF_btn_disabled")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/disabled = SubResource("SBF_btn_disabled")
+flat = true
+text = ""
+
+[node name="AliadoCard2" type="Control" parent="Root/AliadoRow"]
+layout_mode = 0
+offset_left = 324.0
+offset_right = 628.0
+offset_bottom = 376.0
+
+[node name="Bg" type="TextureRect" parent="Root/AliadoRow/AliadoCard2"]
+texture_filter = 1
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("4_card_tall")
+expand_mode = 1
+stretch_mode = 6
+modulate = Color(1.0, 0.55, 0.4, 1.0)
+
+[node name="TitleLabel" type="Label" parent="Root/AliadoRow/AliadoCard2"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 24.0
+offset_right = 288.0
+offset_bottom = 70.0
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+text = "—"
+horizontal_alignment = 1
+
+[node name="StarsLabel" type="Label" parent="Root/AliadoRow/AliadoCard2"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 70.0
+offset_right = 288.0
+offset_bottom = 100.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = ""
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="Root/AliadoRow/AliadoCard2"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 110.0
+offset_right = 288.0
+offset_bottom = 280.0
+theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "—"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard2"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 290.0
+offset_right = 288.0
+offset_bottom = 330.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "—"
+horizontal_alignment = 1
+
+[node name="BuyBtn" type="Button" parent="Root/AliadoRow/AliadoCard2"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 304.0
+offset_bottom = 376.0
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 1
+theme_override_styles/normal = SubResource("SBF_btn_disabled")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/disabled = SubResource("SBF_btn_disabled")
+flat = true
+text = ""
+
+[node name="AliadoCard3" type="Control" parent="Root/AliadoRow"]
+layout_mode = 0
+offset_left = 648.0
+offset_right = 952.0
+offset_bottom = 376.0
+
+[node name="Bg" type="TextureRect" parent="Root/AliadoRow/AliadoCard3"]
+texture_filter = 1
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("4_card_tall")
+expand_mode = 1
+stretch_mode = 6
+modulate = Color(1.0, 0.55, 0.4, 1.0)
+
+[node name="TitleLabel" type="Label" parent="Root/AliadoRow/AliadoCard3"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 24.0
+offset_right = 288.0
+offset_bottom = 70.0
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+text = "—"
+horizontal_alignment = 1
+
+[node name="StarsLabel" type="Label" parent="Root/AliadoRow/AliadoCard3"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 70.0
+offset_right = 288.0
+offset_bottom = 100.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = ""
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="Root/AliadoRow/AliadoCard3"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 110.0
+offset_right = 288.0
+offset_bottom = 280.0
+theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "—"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard3"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 290.0
+offset_right = 288.0
+offset_bottom = 330.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "—"
+horizontal_alignment = 1
+
+[node name="BuyBtn" type="Button" parent="Root/AliadoRow/AliadoCard3"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 304.0
+offset_bottom = 376.0
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 1
+theme_override_styles/normal = SubResource("SBF_btn_disabled")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/disabled = SubResource("SBF_btn_disabled")
+flat = true
+text = ""
+
+
+[node name="ContinueBtn" type="Button" parent="Root"]
+layout_mode = 0
+offset_left = 60.0
+offset_top = 990.0
+offset_right = 540.0
+offset_bottom = 1050.0
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 32
-text = "0 coins"
-
-[node name="UpgRow" type="HBoxContainer" parent="Root/HBox/RightCol"]
-size_flags_vertical = 3
-theme_override_constants/separation = 20
-
-[node name="Card1" type="PanelContainer" parent="Root/HBox/RightCol/UpgRow"]
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_styles/panel = SubResource("SBF_card")
-
-[node name="VBox" type="VBoxContainer" parent="Root/HBox/RightCol/UpgRow/Card1"]
-theme_override_constants/separation = 8
-
-[node name="TitleLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card1/VBox"]
-theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
-text = "—"
-horizontal_alignment = 1
-
-[node name="DescLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card1/VBox"]
-size_flags_vertical = 3
-theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 18
-text = "—"
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 2
-
-[node name="PriceLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card1/VBox"]
-theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
-text = "—"
-horizontal_alignment = 1
-
-[node name="BuyBtn" type="Button" parent="Root/HBox/RightCol/UpgRow/Card1/VBox"]
-custom_minimum_size = Vector2(0, 40)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
-theme_override_styles/pressed = SubResource("SBF_btn_pressed")
-theme_override_styles/disabled = SubResource("SBF_btn_disabled")
-text = "Comprar"
-
-[node name="Card2" type="PanelContainer" parent="Root/HBox/RightCol/UpgRow"]
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_styles/panel = SubResource("SBF_card")
-
-[node name="VBox" type="VBoxContainer" parent="Root/HBox/RightCol/UpgRow/Card2"]
-theme_override_constants/separation = 8
-
-[node name="TitleLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card2/VBox"]
-theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
-text = "—"
-horizontal_alignment = 1
-
-[node name="DescLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card2/VBox"]
-size_flags_vertical = 3
-theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 18
-text = "—"
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 2
-
-[node name="PriceLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card2/VBox"]
-theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
-text = "—"
-horizontal_alignment = 1
-
-[node name="BuyBtn" type="Button" parent="Root/HBox/RightCol/UpgRow/Card2/VBox"]
-custom_minimum_size = Vector2(0, 40)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("SBF_btn_normal")
-theme_override_styles/hover = SubResource("SBF_btn_hover")
-theme_override_styles/pressed = SubResource("SBF_btn_pressed")
-theme_override_styles/disabled = SubResource("SBF_btn_disabled")
-text = "Comprar"
-
-[node name="Card3" type="PanelContainer" parent="Root/HBox/RightCol/UpgRow"]
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_styles/panel = SubResource("SBF_card")
-
-[node name="VBox" type="VBoxContainer" parent="Root/HBox/RightCol/UpgRow/Card3"]
-theme_override_constants/separation = 8
-
-[node name="TitleLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card3/VBox"]
-theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
-text = "—"
-horizontal_alignment = 1
-
-[node name="DescLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card3/VBox"]
-size_flags_vertical = 3
-theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 18
-text = "—"
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 2
-
-[node name="PriceLabel" type="Label" parent="Root/HBox/RightCol/UpgRow/Card3/VBox"]
-theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
-text = "—"
-horizontal_alignment = 1
-
-[node name="BuyBtn" type="Button" parent="Root/HBox/RightCol/UpgRow/Card3/VBox"]
-custom_minimum_size = Vector2(0, 40)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("SBF_btn_normal")
-theme_override_styles/hover = SubResource("SBF_btn_hover")
-theme_override_styles/pressed = SubResource("SBF_btn_pressed")
-theme_override_styles/disabled = SubResource("SBF_btn_disabled")
-text = "Comprar"
-
-[node name="ContinueBtn" type="Button" parent="Root/HBox/RightCol"]
-custom_minimum_size = Vector2(0, 60)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 32
-theme_override_styles/normal = SubResource("SBF_btn_normal")
-theme_override_styles/hover = SubResource("SBF_btn_hover")
-theme_override_styles/pressed = SubResource("SBF_btn_pressed")
 theme_override_styles/disabled = SubResource("SBF_btn_disabled")
 text = "Proxima Wave"
 
