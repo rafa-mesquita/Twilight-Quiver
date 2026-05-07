@@ -1,29 +1,34 @@
 extends CanvasLayer
 
-# Loja pós-wave: 4 categorias.
-# - Status (1 card paisagem): HP — compra dedicada com preço escalonado 1G, 2G...
-# - Estrutura (1 card paisagem): Torre de Flechas — placement mode no mapa.
-# - Upgrades (3 cards retrato): rolagem aleatória do catálogo, max 1-2 por round.
-# - Aliados (3 cards retrato): Woodwarden + slots futuros.
-# Player pode selecionar 1 de cada categoria; placements (estrutura, aliado)
-# entram em fila e o player escolhe o spot pra cada um após "Próxima Wave".
+# Loja pós-wave: 4 categorias, cada uma com reroll próprio.
+# - Estruturas (2 cards paisagem, esq. topo): Torre + slots futuros, placement.
+# - Status (2 cards paisagem, esq. base): HP, Dano, Atk Speed, Move Speed.
+# - Aliados (3 cards retrato, dir. topo): Woodwarden + slots futuros, placement.
+# - Upgrades (3 cards retrato, dir. base): perfuração, multi, chain, life steal,
+#   gold magnet, dash + subs, fire, curse.
+# Player seleciona max 1 por categoria (upgrades pode ser 1-2 com bonus em waves
+# pares). Placements (estrut + aliado) entram numa fila ao apertar "Próxima Wave".
 
 signal closed
 
-# Tabela de preço por nível atual do player → preço da próxima compra.
 const PRICE_TABLE: Array[int] = [3, 6, 10, 15, 20]
 const TOWER_PRICE: int = 10
 const WOODWARDEN_PRICE_TABLE: Array[int] = [6, 10, 14, 18, 24, 30]
-# Sobretaxa global por estrutura/aliado já comprado.
 const STRUCTURE_SURCHARGE_PER_OWNED: int = 3
 
-const UPGRADE_CATALOG: Array = [
+# Pool dos cards de status (passive stats — escalonáveis ilimitadamente).
+const STATUS_POOL: Array = [
+	{"id": "hp", "name": "Mais HP"},
 	{"id": "damage", "name": "Dano"},
-	{"id": "perfuracao", "name": "Perfuracao", "max_level": 4},
 	{"id": "attack_speed", "name": "Atack Speed"},
+	{"id": "move_speed", "name": "Move Speed"},
+]
+
+# Pool dos cards de upgrade (gameplay-changing items, com requirements).
+const UPGRADE_POOL: Array = [
+	{"id": "perfuracao", "name": "Perfuracao", "max_level": 4},
 	{"id": "multi_arrow", "name": "Multiplas Flechas", "max_level": 4},
 	{"id": "chain_lightning", "name": "Cadeia de Raios", "max_level": 4},
-	{"id": "move_speed", "name": "Move Speed"},
 	{"id": "life_steal", "name": "Coleta de Coracao"},
 	{"id": "gold_magnet", "name": "Ima de Gold", "max_level": 1},
 	{"id": "dash", "name": "Dash", "max_level": 1},
@@ -39,12 +44,8 @@ const UPGRADE_PRICE_OVERRIDES: Dictionary = {
 	"dash_double_arrow": 18,
 }
 
-const DAMAGE_DESCS: Array[String] = [
-	"+20% dano da flecha",
-	"+20% dano da flecha",
-	"+20% dano da flecha",
-	"+20% dano da flecha",
-]
+const HP_DESCS: Array[String] = ["+15 HP maximo", "+15 HP maximo", "+15 HP maximo", "+15 HP maximo"]
+const DAMAGE_DESCS: Array[String] = ["+20% dano da flecha", "+20% dano da flecha", "+20% dano da flecha", "+20% dano da flecha"]
 const PERFURACAO_DESCS: Array[String] = [
 	"A cada 3 ataques flecha\natravessa, +30% dano",
 	"+60% dano + hitbox maior",
@@ -75,12 +76,8 @@ const MOVE_SPEED_DESCS: Array[String] = [
 	"+17% velocidade de\nmovimento",
 	"+17% velocidade de\nmovimento",
 ]
-const GOLD_MAGNET_DESCS: Array[String] = [
-	"Puxa todo gold +2%\nchance de drop",
-]
-const DASH_DESCS: Array[String] = [
-	"Espaco = dash\n(cd 4.5s)",
-]
+const GOLD_MAGNET_DESCS: Array[String] = ["Puxa todo gold +2%\nchance de drop"]
+const DASH_DESCS: Array[String] = ["Espaco = dash\n(cd 4.5s)"]
 const LIFE_STEAL_DESCS: Array[String] = [
 	"Inimigos: 12% drop\ncoracao cura 20% HP",
 	"+5% chance, +10%\nheal por stack",
@@ -93,12 +90,8 @@ const DASH_COOLDOWN_DESCS: Array[String] = [
 	"-0.5s no cooldown\ndo dash (min 0.5s)",
 	"-0.5s no cooldown\ndo dash (min 0.5s)",
 ]
-const DASH_AUTO_ATTACK_DESCS: Array[String] = [
-	"Dash dispara flecha\nauto no inimigo proximo",
-]
-const DASH_DOUBLE_ARROW_DESCS: Array[String] = [
-	"Dash dispara 2 flechas\nem sequencia",
-]
+const DASH_AUTO_ATTACK_DESCS: Array[String] = ["Dash dispara flecha\nauto no inimigo proximo"]
+const DASH_DOUBLE_ARROW_DESCS: Array[String] = ["Dash dispara 2 flechas\nem sequencia"]
 const FIRE_ARROW_DESCS: Array[String] = [
 	"Flecha queima inimigos\n4 dmg/s por 3s",
 	"+1 dmg/s queima +\nrastro de fogo (4 dps)",
@@ -118,8 +111,14 @@ const CURSE_ARROW_DESCS: Array[String] = [
 @onready var bg_rect: ColorRect = $Bg
 @onready var root_panel: Control = $Root
 
-@onready var status_card: Control = $Root/StatusCard
-@onready var estrut_card: Control = $Root/EstrutCard
+@onready var estrut_cards: Array[Control] = [
+	$Root/EstrutCard1,
+	$Root/EstrutCard2,
+]
+@onready var status_cards: Array[Control] = [
+	$Root/StatusCard1,
+	$Root/StatusCard2,
+]
 @onready var upg_cards: Array[Control] = [
 	$Root/UpgRow/UpgCard1,
 	$Root/UpgRow/UpgCard2,
@@ -131,27 +130,36 @@ const CURSE_ARROW_DESCS: Array[String] = [
 	$Root/AliadoRow/AliadoCard3,
 ]
 
-# Bônus +1 upgrade alterna por wave: pares (2,4,6...) liberam 2 upgrades.
+# Bonus +1 upgrade alterna por wave: pares (2,4,6...) liberam 2 upgrades.
 var max_upgrades_this_round: int = 1
 
 # Slots
-var status_slot: Dictionary = {}
-var estrutura_slot: Dictionary = {}
+var status_slots: Array = []
+var estrutura_slots: Array = []
 var upg_slots: Array = []
 var aliado_slots: Array = []
 
 # Selection state
-var _status_selected: bool = false
-var _estrutura_selected: bool = false
+var _selected_status_idx: int = -1
+var _selected_estrut_idx: int = -1
 var _selected_aliado_idx: int = -1
 var _selected_upgrade_idxs: Array[int] = []
 
-# Reroll (só upgrades têm reroll por ora)
-const REROLL_COSTS: Array[int] = [1, 2]
-const MAX_REROLLS_PER_CATEGORY: int = 2
+# Reroll: até N por categoria. Custo escala 1, 2, 3.
+const REROLL_COSTS: Array[int] = [1, 2, 3]
+const MAX_REROLLS_PER_CATEGORY: int = 3
+var _status_rerolls_used: int = 0
+var _estrut_rerolls_used: int = 0
 var _upg_rerolls_used: int = 0
+var _aliado_rerolls_used: int = 0
+var _status_reroll_btn: TextureButton
+var _estrut_reroll_btn: TextureButton
 var _upg_reroll_btn: TextureButton
+var _aliado_reroll_btn: TextureButton
+var _status_reroll_widget: Control
+var _estrut_reroll_widget: Control
 var _upg_reroll_widget: Control
+var _aliado_reroll_widget: Control
 
 const BUY_SOUND: AudioStream = preload("res://audios/effects/buy_1.mp3")
 
@@ -169,6 +177,13 @@ var _placement_current: Dictionary = {}
 
 const SELECTED_TINT: Color = Color(1.4, 1.25, 0.5, 1.0)
 
+# Layout editor (modo dev pra arrastar elementos da loja).
+var _layout_edit_active: bool = false
+var _layout_edit_panel: Control = null
+var _layout_drag_target: Control = null
+var _layout_drag_offset: Vector2 = Vector2.ZERO
+const LAYOUT_EDIT_HIGHLIGHT: Color = Color(1.5, 0.6, 0.6, 1.0)
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -176,13 +191,14 @@ func _ready() -> void:
 	if wm != null and "wave_number" in wm and int(wm.wave_number) % 2 == 0:
 		max_upgrades_this_round = 2
 	continue_btn.pressed.connect(_on_continue_pressed)
-	_setup_upg_reroll_button()
+	_setup_reroll_buttons()
 	_setup_bonus_label()
 	_refresh_gold_label()
 	_roll_all_slots()
 	_build_all_cards()
 	_connect_card_buttons()
 	_refresh_button_states()
+	_setup_layout_editor()
 
 
 func _process(_delta: float) -> void:
@@ -268,37 +284,58 @@ func _generate_random_positions(count: int) -> Array[Vector2]:
 # ---------- Roll ----------
 
 func _roll_all_slots() -> void:
-	_roll_status_slot()
-	_roll_estrutura_slot()
+	_roll_status_slots()
+	_roll_estrutura_slots()
 	_roll_upg_slots()
 	_roll_aliado_slots()
 
 
-func _roll_status_slot() -> void:
-	var p := _get_player()
-	var hp_lvl: int = 0
-	if p != null and p.has_method("get_upgrade_count"):
-		hp_lvl = p.get_upgrade_count("hp")
-	status_slot = {
-		"id": "hp",
-		"name": "Mais HP",
-		"desc": "+15 HP maximo",
-		"price": hp_lvl + 1,
-		"available": true,
-		"is_upgrade": true,
-	}
+func _roll_status_slots() -> void:
+	# 2 rolls distintos do STATUS_POOL.
+	status_slots.clear()
+	var picks: Array = STATUS_POOL.duplicate()
+	picks.shuffle()
+	var player := _get_player()
+	for i in 2:
+		if i >= picks.size():
+			status_slots.append({"id": "none", "name": "—", "desc": "—", "price": 0, "available": false})
+			continue
+		var picked: Dictionary = picks[i]
+		var picked_id: String = picked["id"]
+		var current_level: int = 0
+		if player != null and player.has_method("get_upgrade_count"):
+			current_level = player.get_upgrade_count(picked_id)
+		var target_level: int = current_level + 1
+		var price: int = _status_price_for(picked_id, current_level)
+		status_slots.append({
+			"id": picked_id,
+			"name": picked["name"],
+			"desc": _get_upgrade_desc(picked_id, target_level),
+			"price": price,
+			"available": true,
+			"target_level": target_level,
+		})
 
 
-func _roll_estrutura_slot() -> void:
+func _status_price_for(id: String, current_level: int) -> int:
+	# HP escala 1G, 2G, 3G... — outros stats usam PRICE_TABLE.
+	if id == "hp":
+		return current_level + 1
+	return _get_upgrade_price(id, current_level)
+
+
+func _roll_estrutura_slots() -> void:
+	estrutura_slots.clear()
 	var surcharge: int = STRUCTURE_SURCHARGE_PER_OWNED * _total_structures_bought()
-	estrutura_slot = {
+	estrutura_slots.append({
 		"id": "arrow_tower",
 		"name": "Torre de Flechas",
 		"desc": "Atira em inimigos\nproximos. 80% dano.",
 		"price": TOWER_PRICE + surcharge,
 		"available": true,
 		"scene": "res://scenes/structures/arrow_tower.tscn",
-	}
+	})
+	estrutura_slots.append({"id": "soon", "name": "Em breve", "desc": "—", "price": 0, "available": false})
 
 
 func _roll_aliado_slots() -> void:
@@ -341,7 +378,7 @@ func _roll_upg_slots() -> void:
 	var has_curse: bool = player != null and player.has_method("get_upgrade_count") and player.get_upgrade_count("curse_arrow") > 0
 	for i in 3:
 		var pool: Array = []
-		for u in UPGRADE_CATALOG:
+		for u in UPGRADE_POOL:
 			var id: String = u["id"]
 			var max_level: int = u.get("max_level", 999)
 			var current: int = 0
@@ -397,6 +434,7 @@ func _get_upgrade_price(id: String, player_current_level: int) -> int:
 func _get_upgrade_desc(id: String, target_level: int) -> String:
 	var arr: Array
 	match id:
+		"hp": arr = HP_DESCS
 		"damage": arr = DAMAGE_DESCS
 		"perfuracao": arr = PERFURACAO_DESCS
 		"attack_speed": arr = ATTACK_SPEED_DESCS
@@ -419,11 +457,14 @@ func _get_upgrade_desc(id: String, target_level: int) -> String:
 # ---------- Build cards ----------
 
 func _build_all_cards() -> void:
-	_build_card(status_card, status_slot, 0)
-	_build_card(estrut_card, estrutura_slot, 0)
+	for i in 2:
+		_build_card(estrut_cards[i], estrutura_slots[i], 0)
+	for i in 2:
+		var tl: int = int(status_slots[i].get("target_level", 0))
+		_build_card(status_cards[i], status_slots[i], tl)
 	for i in 3:
-		var tl: int = int(upg_slots[i].get("target_level", 0))
-		_build_card(upg_cards[i], upg_slots[i], tl)
+		var tl2: int = int(upg_slots[i].get("target_level", 0))
+		_build_card(upg_cards[i], upg_slots[i], tl2)
 	for i in 3:
 		_build_card(aliado_cards[i], aliado_slots[i], 0)
 
@@ -443,8 +484,10 @@ func _build_card(card: Control, slot: Dictionary, target_level: int) -> void:
 
 
 func _connect_card_buttons() -> void:
-	_connect_button(status_card.get_node("BuyBtn"), Callable(self, "_buy_status"))
-	_connect_button(estrut_card.get_node("BuyBtn"), Callable(self, "_buy_estrutura"))
+	for i in 2:
+		_connect_button(estrut_cards[i].get_node("BuyBtn"), Callable(self, "_buy_estrutura").bind(i))
+	for i in 2:
+		_connect_button(status_cards[i].get_node("BuyBtn"), Callable(self, "_buy_status").bind(i))
 	for i in 3:
 		_connect_button(upg_cards[i].get_node("BuyBtn"), Callable(self, "_buy_upgrade").bind(i))
 	for i in 3:
@@ -462,38 +505,45 @@ func _connect_button(btn_node: Node, target: Callable) -> void:
 
 # ---------- Compra (toggle) ----------
 
-func _buy_status() -> void:
-	if _placement_active or not status_slot.get("available", false):
+func _buy_status(idx: int) -> void:
+	if _placement_active:
 		return
-	if _status_selected:
-		_status_selected = false
+	var slot: Dictionary = status_slots[idx]
+	if not slot.get("available", false):
+		return
+	if _selected_status_idx == idx:
+		_selected_status_idx = -1
 		_refresh_button_states()
 		return
 	var player := _get_player()
 	if player == null:
 		return
-	var price: int = int(status_slot.get("price", 0))
-	if player.gold < _selected_total_cost() + price:
+	var price: int = int(slot["price"])
+	# Swap permitido (devolve preço do status já selecionado).
+	if player.gold < _selected_total_cost() - _status_price() + price:
 		return
-	_status_selected = true
+	_selected_status_idx = idx
 	_play_buy_sound()
 	_refresh_button_states()
 
 
-func _buy_estrutura() -> void:
-	if _placement_active or not estrutura_slot.get("available", false):
+func _buy_estrutura(idx: int) -> void:
+	if _placement_active:
 		return
-	if _estrutura_selected:
-		_estrutura_selected = false
+	var slot: Dictionary = estrutura_slots[idx]
+	if not slot.get("available", false):
+		return
+	if _selected_estrut_idx == idx:
+		_selected_estrut_idx = -1
 		_refresh_button_states()
 		return
 	var player := _get_player()
 	if player == null:
 		return
-	var price: int = int(estrutura_slot.get("price", 0))
-	if player.gold < _selected_total_cost() + price:
+	var price: int = int(slot["price"])
+	if player.gold < _selected_total_cost() - _estrut_price() + price:
 		return
-	_estrutura_selected = true
+	_selected_estrut_idx = idx
 	_play_buy_sound()
 	_refresh_button_states()
 
@@ -512,7 +562,6 @@ func _buy_aliado(idx: int) -> void:
 	if player == null:
 		return
 	var price: int = int(slot["price"])
-	# Permite swap (devolve preço do aliado já selecionado).
 	if player.gold < _selected_total_cost() - _aliado_price() + price:
 		return
 	_selected_aliado_idx = idx
@@ -566,13 +615,21 @@ func _selected_upgrades_total_cost() -> int:
 
 func _selected_total_cost() -> int:
 	var total: int = _selected_upgrades_total_cost()
-	if _status_selected:
-		total += int(status_slot.get("price", 0))
-	if _estrutura_selected:
-		total += int(estrutura_slot.get("price", 0))
+	if _selected_status_idx >= 0:
+		total += int(status_slots[_selected_status_idx].get("price", 0))
+	if _selected_estrut_idx >= 0:
+		total += int(estrutura_slots[_selected_estrut_idx].get("price", 0))
 	if _selected_aliado_idx >= 0:
 		total += int(aliado_slots[_selected_aliado_idx].get("price", 0))
 	return total
+
+
+func _status_price() -> int:
+	return int(status_slots[_selected_status_idx].get("price", 0)) if _selected_status_idx >= 0 else 0
+
+
+func _estrut_price() -> int:
+	return int(estrutura_slots[_selected_estrut_idx].get("price", 0)) if _selected_estrut_idx >= 0 else 0
 
 
 func _aliado_price() -> int:
@@ -586,23 +643,33 @@ func _refresh_button_states() -> void:
 	var current_gold: int = player.gold if player != null else 0
 	var pending_cost: int = _selected_total_cost()
 	var available_gold: int = current_gold - pending_cost
-	if _upg_reroll_btn != null:
-		var upg_max: bool = _upg_rerolls_used >= MAX_REROLLS_PER_CATEGORY
-		var upg_cost: int = _next_reroll_cost(_upg_rerolls_used)
-		var disabled_upg: bool = upg_max or available_gold < upg_cost
-		_upg_reroll_btn.disabled = disabled_upg
-		_set_reroll_widget_dim(_upg_reroll_widget, disabled_upg)
-		_update_reroll_price_label(_upg_reroll_widget, upg_cost, upg_max)
+	_refresh_reroll(_status_reroll_btn, _status_reroll_widget, _status_rerolls_used, available_gold)
+	_refresh_reroll(_estrut_reroll_btn, _estrut_reroll_widget, _estrut_rerolls_used, available_gold)
+	_refresh_reroll(_upg_reroll_btn, _upg_reroll_widget, _upg_rerolls_used, available_gold)
+	_refresh_reroll(_aliado_reroll_btn, _aliado_reroll_widget, _aliado_rerolls_used, available_gold)
 	_refresh_gold_label()
-	# Status (single, toggle).
-	var status_price: int = int(status_slot.get("price", 0))
-	var status_can: bool = status_slot.get("available", false) and (_status_selected or available_gold >= status_price)
-	_apply_card_state(status_card, status_slot, _status_selected, status_can)
-	# Estrutura (single, toggle).
-	var estr_price: int = int(estrutura_slot.get("price", 0))
-	var estr_can: bool = estrutura_slot.get("available", false) and (_estrutura_selected or available_gold >= estr_price)
-	_apply_card_state(estrut_card, estrutura_slot, _estrutura_selected, estr_can)
-	# Upgrades (multi-select limited).
+	# Status (single-select com swap).
+	for i in 2:
+		var slot: Dictionary = status_slots[i]
+		var price: int = int(slot.get("price", 0))
+		var is_selected: bool = _selected_status_idx == i
+		var afford_swap: bool = current_gold >= pending_cost - _status_price() + price
+		_apply_card_state(status_cards[i], slot, is_selected, afford_swap)
+	# Estrutura (single-select com swap).
+	for i in 2:
+		var slot: Dictionary = estrutura_slots[i]
+		var price: int = int(slot.get("price", 0))
+		var is_selected: bool = _selected_estrut_idx == i
+		var afford_swap: bool = current_gold >= pending_cost - _estrut_price() + price
+		_apply_card_state(estrut_cards[i], slot, is_selected, afford_swap)
+	# Aliado (single-select com swap).
+	for i in 3:
+		var slot: Dictionary = aliado_slots[i]
+		var price: int = int(slot.get("price", 0))
+		var is_selected: bool = _selected_aliado_idx == i
+		var afford_swap: bool = current_gold >= pending_cost - _aliado_price() + price
+		_apply_card_state(aliado_cards[i], slot, is_selected, afford_swap)
+	# Upgrades (multi-select limitado).
 	var limit_reached: bool = _selected_upgrade_idxs.size() >= max_upgrades_this_round
 	for i in 3:
 		var slot: Dictionary = upg_slots[i]
@@ -611,22 +678,25 @@ func _refresh_button_states() -> void:
 		var blocked: bool = _is_elemental_blocked_by_selection(slot.get("id", ""))
 		var can_select: bool = not limit_reached and available_gold >= price and not blocked
 		_apply_card_state(upg_cards[i], slot, is_selected, can_select or is_selected)
-	# Aliado (single-select, swap allowed).
-	for i in 3:
-		var slot: Dictionary = aliado_slots[i]
-		var price: int = int(slot.get("price", 0))
-		var is_selected: bool = _selected_aliado_idx == i
-		var afford_swap: bool = current_gold >= pending_cost - _aliado_price() + price
-		_apply_card_state(aliado_cards[i], slot, is_selected, afford_swap)
+
+
+func _refresh_reroll(btn: TextureButton, widget: Control, used: int, available_gold: int) -> void:
+	if btn == null:
+		return
+	var maxed: bool = used >= MAX_REROLLS_PER_CATEGORY
+	var cost: int = _next_reroll_cost(used)
+	var disabled: bool = maxed or available_gold < cost
+	btn.disabled = disabled
+	_set_reroll_widget_dim(widget, disabled)
+	_update_reroll_price_label(widget, cost, maxed)
 
 
 func _apply_card_state(card: Control, slot: Dictionary, is_selected: bool, can_buy: bool) -> void:
 	var available: bool = slot.get("available", false)
 	var bg: TextureRect = card.get_node_or_null("Bg") as TextureRect
 	if bg != null:
-		# Mantém o tint base do TextureRect (definido na cena, ex: laranja pra
-		# aliado) e multiplica por SELECTED_TINT quando selecionado.
-		# Pra deixar o user editar tint base na .tscn, guardamos em meta.
+		# Mantém o tint base configurado na .tscn (ex: laranja do upgrade card)
+		# e multiplica por SELECTED_TINT quando selecionado.
 		if not card.has_meta("base_tint"):
 			card.set_meta("base_tint", bg.modulate)
 		var base_tint: Color = card.get_meta("base_tint")
@@ -647,16 +717,16 @@ func _on_continue_pressed() -> void:
 	if _placement_active:
 		_cancel_placement()
 		return
-	# Monta queue de placements: estrutura primeiro, aliado depois.
 	_placement_queue.clear()
-	if _estrutura_selected:
-		_placement_queue.append({"type": "estrutura", "slot": estrutura_slot})
+	if _selected_estrut_idx >= 0:
+		var sel_e: Dictionary = estrutura_slots[_selected_estrut_idx]
+		if sel_e.get("available", false) and "scene" in sel_e:
+			_placement_queue.append({"type": "estrutura", "slot": sel_e})
 	if _selected_aliado_idx >= 0:
-		var sel: Dictionary = aliado_slots[_selected_aliado_idx]
-		if sel.get("available", false):
-			_placement_queue.append({"type": "aliado", "slot": sel})
+		var sel_a: Dictionary = aliado_slots[_selected_aliado_idx]
+		if sel_a.get("available", false) and "scene" in sel_a:
+			_placement_queue.append({"type": "aliado", "slot": sel_a})
 	if _placement_queue.is_empty():
-		# Sem placements pendentes — aplica status + upgrades direto e fecha.
 		_commit_status_only()
 		_commit_upgrades_and_close()
 		return
@@ -676,11 +746,13 @@ func _commit_status_only() -> void:
 	var player := _get_player()
 	if player == null:
 		return
-	if _status_selected and status_slot.get("available", false):
-		if player.spend_gold(int(status_slot.get("price", 0))):
-			if player.has_method("apply_upgrade"):
-				player.apply_upgrade(status_slot["id"])
-		_status_selected = false
+	if _selected_status_idx >= 0:
+		var slot: Dictionary = status_slots[_selected_status_idx]
+		if slot.get("available", false):
+			if player.spend_gold(int(slot.get("price", 0))):
+				if player.has_method("apply_upgrade"):
+					player.apply_upgrade(slot["id"])
+		_selected_status_idx = -1
 
 
 func _commit_upgrades_and_close() -> void:
@@ -735,7 +807,6 @@ func _confirm_placement_at(chosen: Node2D) -> void:
 		else:
 			g.queue_free()
 	_placement_ghosts.clear()
-	# Aliado (Woodwarden): conta como upgrade (apply_upgrade pra escalar stats).
 	if slot.get("id", "") == "woodwarden" and player.has_method("apply_upgrade"):
 		player.apply_upgrade("woodwarden")
 		var wm0 := get_tree().get_first_node_in_group("wave_manager")
@@ -745,13 +816,11 @@ func _confirm_placement_at(chosen: Node2D) -> void:
 				chosen.hp = chosen.max_hp
 				if chosen.has_node("HpBar"):
 					chosen.get_node("HpBar").set_ratio(1.0)
-	# Registra no wave_manager pra renascer entre waves se for destruída.
 	var wm := get_tree().get_first_node_in_group("wave_manager")
 	if wm != null and wm.has_method("register_structure"):
 		wm.register_structure(slot["scene"], chosen.global_position, chosen)
-	# Marca seleção como "completa" pra commit não recobrar.
 	if _placement_current.get("type", "") == "estrutura":
-		_estrutura_selected = false
+		_selected_estrut_idx = -1
 	elif _placement_current.get("type", "") == "aliado":
 		_selected_aliado_idx = -1
 	_placement_current = {}
@@ -861,25 +930,74 @@ func _setup_bonus_label() -> void:
 	tw.tween_property(bonus, "modulate:a", 1.0, 0.6)
 
 
-# ---------- Reroll (upgrades only) ----------
+# ---------- Reroll (4 categorias) ----------
 
-func _setup_upg_reroll_button() -> void:
-	var upg_reroll_anchor := get_node_or_null("Root/UpgHeader/UpgReroll") as Control
-	if upg_reroll_anchor == null:
+func _setup_reroll_buttons() -> void:
+	_status_reroll_widget = _attach_reroll_to("Root/StatusReroll")
+	if _status_reroll_widget != null:
+		_status_reroll_btn = _status_reroll_widget.get_node("IconWrap/Btn") as TextureButton
+		if _status_reroll_btn != null:
+			_status_reroll_btn.pressed.connect(_on_status_reroll)
+	_estrut_reroll_widget = _attach_reroll_to("Root/EstrutReroll")
+	if _estrut_reroll_widget != null:
+		_estrut_reroll_btn = _estrut_reroll_widget.get_node("IconWrap/Btn") as TextureButton
+		if _estrut_reroll_btn != null:
+			_estrut_reroll_btn.pressed.connect(_on_estrut_reroll)
+	_upg_reroll_widget = _attach_reroll_to("Root/UpgReroll")
+	if _upg_reroll_widget != null:
+		_upg_reroll_btn = _upg_reroll_widget.get_node("IconWrap/Btn") as TextureButton
+		if _upg_reroll_btn != null:
+			_upg_reroll_btn.pressed.connect(_on_upg_reroll)
+	_aliado_reroll_widget = _attach_reroll_to("Root/AliadoReroll")
+	if _aliado_reroll_widget != null:
+		_aliado_reroll_btn = _aliado_reroll_widget.get_node("IconWrap/Btn") as TextureButton
+		if _aliado_reroll_btn != null:
+			_aliado_reroll_btn.pressed.connect(_on_aliado_reroll)
+
+
+func _attach_reroll_to(anchor_path: String) -> Control:
+	var anchor := get_node_or_null(anchor_path) as Control
+	if anchor == null:
+		return null
+	var widget := _make_reroll_pair()
+	widget.name = "RerollPair"
+	anchor.add_child(widget)
+	widget.position = Vector2.ZERO
+	return widget
+
+
+func _on_status_reroll() -> void:
+	if _status_rerolls_used >= MAX_REROLLS_PER_CATEGORY:
 		return
-	_upg_reroll_widget = _make_reroll_pair()
-	_upg_reroll_widget.name = "UpgRerollPair"
-	upg_reroll_anchor.add_child(_upg_reroll_widget)
-	_upg_reroll_widget.position = Vector2.ZERO
-	_upg_reroll_btn = _upg_reroll_widget.get_node("IconWrap/Btn") as TextureButton
-	if _upg_reroll_btn != null:
-		_upg_reroll_btn.pressed.connect(_on_upg_reroll)
+	var cost: int = _next_reroll_cost(_status_rerolls_used)
+	var player := _get_player()
+	if player == null or not player.spend_gold(cost):
+		return
+	_status_rerolls_used += 1
+	_selected_status_idx = -1
+	_play_buy_sound()
+	_roll_status_slots()
+	_build_all_cards()
+	_refresh_button_states()
+
+
+func _on_estrut_reroll() -> void:
+	if _estrut_rerolls_used >= MAX_REROLLS_PER_CATEGORY:
+		return
+	var cost: int = _next_reroll_cost(_estrut_rerolls_used)
+	var player := _get_player()
+	if player == null or not player.spend_gold(cost):
+		return
+	_estrut_rerolls_used += 1
+	_selected_estrut_idx = -1
+	_play_buy_sound()
+	_roll_estrutura_slots()
+	_build_all_cards()
+	_refresh_button_states()
 
 
 func _on_upg_reroll() -> void:
 	if _upg_rerolls_used >= MAX_REROLLS_PER_CATEGORY:
-		return
-	if _selected_upgrade_idxs.size() >= max_upgrades_this_round:
 		return
 	var cost: int = _next_reroll_cost(_upg_rerolls_used)
 	var player := _get_player()
@@ -890,7 +1008,21 @@ func _on_upg_reroll() -> void:
 	_play_buy_sound()
 	_roll_upg_slots()
 	_build_all_cards()
-	_refresh_gold_label()
+	_refresh_button_states()
+
+
+func _on_aliado_reroll() -> void:
+	if _aliado_rerolls_used >= MAX_REROLLS_PER_CATEGORY:
+		return
+	var cost: int = _next_reroll_cost(_aliado_rerolls_used)
+	var player := _get_player()
+	if player == null or not player.spend_gold(cost):
+		return
+	_aliado_rerolls_used += 1
+	_selected_aliado_idx = -1
+	_play_buy_sound()
+	_roll_aliado_slots()
+	_build_all_cards()
 	_refresh_button_states()
 
 
@@ -921,7 +1053,7 @@ func _update_reroll_price_label(widget: Control, cost: int, maxed: bool) -> void
 	price.text = "—" if maxed else "%d" % cost
 
 
-const REROLL_BUTTON_SIZE: Vector2 = Vector2(64, 64)
+const REROLL_BUTTON_SIZE: Vector2 = Vector2(48, 48)
 
 
 func _make_reroll_pair() -> HBoxContainer:
@@ -948,7 +1080,7 @@ func _make_reroll_widget() -> Control:
 	var container := Control.new()
 	container.custom_minimum_size = REROLL_BUTTON_SIZE
 	container.size = REROLL_BUTTON_SIZE
-	container.tooltip_text = "Re-roll (1º: 1 coin, 2º: 2 coins)"
+	container.tooltip_text = "Re-roll (1: 1 coin, 2: 2 coins, 3: 3 coins)"
 	var btn := TextureButton.new()
 	btn.name = "Btn"
 	btn.texture_normal = tex
@@ -959,3 +1091,141 @@ func _make_reroll_widget() -> Control:
 	btn.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	container.add_child(btn)
 	return container
+
+
+# ---------- Layout Editor (dev) ----------
+# Modo dev pra arrastar elementos da loja com mouse e exportar offsets.
+# Toggle no botão "EDIT LAYOUT" (canto inferior direito). Ao ativar:
+# - Cada elemento editável ganha highlight vermelho.
+# - Clique e arraste move o offset_left/top.
+# - "PRINT VALUES" loga todas as posições no console pra commitar na .tscn.
+
+func _setup_layout_editor() -> void:
+	_layout_edit_panel = Control.new()
+	_layout_edit_panel.name = "LayoutEditorPanel"
+	_layout_edit_panel.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_layout_edit_panel.position = Vector2(-360, -180)
+	_layout_edit_panel.size = Vector2(340, 160)
+	_layout_edit_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	$Root.add_child(_layout_edit_panel)
+	var bg := ColorRect.new()
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.color = Color(0.08, 0.08, 0.12, 0.85)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_layout_edit_panel.add_child(bg)
+	var at01: Font = load("res://font/at01.ttf")
+	var toggle := Button.new()
+	toggle.position = Vector2(10, 10)
+	toggle.size = Vector2(320, 60)
+	toggle.text = "EDIT LAYOUT: OFF"
+	if at01 != null:
+		toggle.add_theme_font_override("font", at01)
+	toggle.add_theme_font_size_override("font_size", 24)
+	toggle.pressed.connect(_toggle_layout_edit.bind(toggle))
+	_layout_edit_panel.add_child(toggle)
+	var print_btn := Button.new()
+	print_btn.position = Vector2(10, 80)
+	print_btn.size = Vector2(320, 60)
+	print_btn.text = "PRINT VALUES"
+	if at01 != null:
+		print_btn.add_theme_font_override("font", at01)
+	print_btn.add_theme_font_size_override("font_size", 24)
+	print_btn.pressed.connect(_print_layout_values)
+	_layout_edit_panel.add_child(print_btn)
+
+
+func _toggle_layout_edit(toggle_btn: Button) -> void:
+	_layout_edit_active = not _layout_edit_active
+	toggle_btn.text = "EDIT LAYOUT: ON" if _layout_edit_active else "EDIT LAYOUT: OFF"
+	for n in _editable_layout_nodes():
+		if _layout_edit_active:
+			(n as CanvasItem).self_modulate = LAYOUT_EDIT_HIGHLIGHT
+		else:
+			(n as CanvasItem).self_modulate = Color.WHITE
+	# Quando edit mode tá ON, desabilita os BuyBtn-overlay dos cards pra cliques
+	# de drag não acionarem compra.
+	for card in _all_card_controls():
+		var btn := card.get_node_or_null("BuyBtn") as Button
+		if btn != null:
+			btn.visible = not _layout_edit_active
+
+
+func _editable_layout_nodes() -> Array:
+	# Tudo que faz sentido reposicionar: headers, cards, rerolls, gold, continue.
+	var nodes: Array = []
+	for n_path in [
+		"Root/GoldLabel",
+		"Root/EstrutHeader", "Root/EstrutReroll", "Root/EstrutCard1", "Root/EstrutCard2",
+		"Root/StatusHeader", "Root/StatusReroll", "Root/StatusCard1", "Root/StatusCard2",
+		"Root/AliadoHeader", "Root/AliadoReroll", "Root/AliadoRow",
+		"Root/UpgHeader", "Root/UpgReroll", "Root/UpgRow",
+		"Root/ContinueBtn",
+	]:
+		var n := get_node_or_null(n_path)
+		if n != null and n is Control:
+			nodes.append(n)
+	return nodes
+
+
+func _all_card_controls() -> Array:
+	var arr: Array = []
+	arr.append_array(estrut_cards)
+	arr.append_array(status_cards)
+	arr.append_array(upg_cards)
+	arr.append_array(aliado_cards)
+	return arr
+
+
+func _gui_input_drag(event: InputEvent) -> void:
+	pass  # placeholder, drag é via _input global abaixo
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not _layout_edit_active:
+		return
+	if event is InputEventMouseButton:
+		var mb: InputEventMouseButton = event
+		if mb.button_index != MOUSE_BUTTON_LEFT:
+			return
+		if mb.pressed:
+			# Pega o nó editável mais ao topo sob o mouse.
+			var picked: Control = _pick_editable_under_mouse(mb.position)
+			if picked != null:
+				_layout_drag_target = picked
+				_layout_drag_offset = mb.position - Vector2(picked.offset_left, picked.offset_top)
+				get_viewport().set_input_as_handled()
+		else:
+			if _layout_drag_target != null:
+				_layout_drag_target = null
+				get_viewport().set_input_as_handled()
+	elif event is InputEventMouseMotion and _layout_drag_target != null:
+		var mm: InputEventMouseMotion = event
+		var new_pos: Vector2 = mm.position - _layout_drag_offset
+		var w: float = _layout_drag_target.offset_right - _layout_drag_target.offset_left
+		var h: float = _layout_drag_target.offset_bottom - _layout_drag_target.offset_top
+		_layout_drag_target.offset_left = new_pos.x
+		_layout_drag_target.offset_top = new_pos.y
+		_layout_drag_target.offset_right = new_pos.x + w
+		_layout_drag_target.offset_bottom = new_pos.y + h
+
+
+func _pick_editable_under_mouse(mouse_pos: Vector2) -> Control:
+	# Itera ao contrário (o último adicionado é o mais "no topo" visualmente).
+	var candidates: Array = _editable_layout_nodes()
+	candidates.reverse()
+	for n in candidates:
+		var c: Control = n
+		var rect := Rect2(Vector2(c.offset_left, c.offset_top), Vector2(c.offset_right - c.offset_left, c.offset_bottom - c.offset_top))
+		if rect.has_point(mouse_pos):
+			return c
+	return null
+
+
+func _print_layout_values() -> void:
+	print("===== SHOP LAYOUT VALUES =====")
+	for n in _editable_layout_nodes():
+		var c: Control = n
+		print("%s: offset_left=%d offset_top=%d offset_right=%d offset_bottom=%d" % [
+			c.get_path(), int(c.offset_left), int(c.offset_top), int(c.offset_right), int(c.offset_bottom)
+		])
+	print("=============================")

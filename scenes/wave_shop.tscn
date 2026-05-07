@@ -55,27 +55,34 @@ text = "0 coins"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-
-[node name="StatusHeader" type="Label" parent="Root"]
+[node name="EstrutHeader" type="Label" parent="Root"]
 layout_mode = 0
 offset_left = 60.0
 offset_top = 90.0
-offset_right = 580.0
+offset_right = 480.0
 offset_bottom = 130.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
-text = "STATUS"
-horizontal_alignment = 1
+text = "ESTRUTURAS"
+horizontal_alignment = 0
+vertical_alignment = 1
 
-[node name="StatusCard" type="Control" parent="Root"]
+[node name="EstrutReroll" type="Control" parent="Root"]
+layout_mode = 0
+offset_left = 480.0
+offset_top = 86.0
+offset_right = 580.0
+offset_bottom = 150.0
+
+[node name="EstrutCard1" type="Control" parent="Root"]
 layout_mode = 0
 offset_left = 60.0
 offset_top = 140.0
 offset_right = 580.0
 offset_bottom = 276.0
 
-[node name="Bg" type="TextureRect" parent="Root/StatusCard"]
+[node name="Bg" type="TextureRect" parent="Root/EstrutCard1"]
 texture_filter = 1
 layout_mode = 0
 anchor_right = 1.0
@@ -84,7 +91,7 @@ texture = ExtResource("3_card_wide")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="TitleLabel" type="Label" parent="Root/StatusCard"]
+[node name="TitleLabel" type="Label" parent="Root/EstrutCard1"]
 layout_mode = 0
 offset_left = 100.0
 offset_top = 16.0
@@ -93,10 +100,10 @@ offset_bottom = 60.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
-text = "Mais HP"
+text = "—"
 vertical_alignment = 1
 
-[node name="StarsLabel" type="Label" parent="Root/StatusCard"]
+[node name="StarsLabel" type="Label" parent="Root/EstrutCard1"]
 layout_mode = 0
 offset_left = 100.0
 offset_top = 50.0
@@ -107,7 +114,7 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 22
 text = ""
 
-[node name="DescLabel" type="Label" parent="Root/StatusCard"]
+[node name="DescLabel" type="Label" parent="Root/EstrutCard1"]
 layout_mode = 0
 offset_left = 100.0
 offset_top = 78.0
@@ -116,10 +123,10 @@ offset_bottom = 116.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 16
-text = "+15 HP maximo"
+text = "—"
 autowrap_mode = 2
 
-[node name="PriceLabel" type="Label" parent="Root/StatusCard"]
+[node name="PriceLabel" type="Label" parent="Root/EstrutCard1"]
 layout_mode = 0
 offset_left = 420.0
 offset_top = 16.0
@@ -128,11 +135,11 @@ offset_bottom = 60.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 22
-text = "1 coins"
+text = "—"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="BuyBtn" type="Button" parent="Root/StatusCard"]
+[node name="BuyBtn" type="Button" parent="Root/EstrutCard1"]
 layout_mode = 0
 offset_left = 0.0
 offset_top = 0.0
@@ -146,33 +153,14 @@ theme_override_styles/disabled = SubResource("SBF_btn_disabled")
 flat = true
 text = ""
 
-[node name="EstrutHeader" type="Label" parent="Root"]
+[node name="EstrutCard2" type="Control" parent="Root"]
 layout_mode = 0
 offset_left = 60.0
-offset_top = 300.0
+offset_top = 290.0
 offset_right = 580.0
-offset_bottom = 340.0
-theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
-text = "ESTRUTURAS"
-horizontal_alignment = 1
+offset_bottom = 426.0
 
-[node name="StructReroll" type="Control" parent="Root/EstrutHeader"]
-layout_mode = 0
-offset_left = 380.0
-offset_top = -8.0
-offset_right = 460.0
-offset_bottom = 56.0
-
-[node name="EstrutCard" type="Control" parent="Root"]
-layout_mode = 0
-offset_left = 60.0
-offset_top = 350.0
-offset_right = 580.0
-offset_bottom = 486.0
-
-[node name="Bg" type="TextureRect" parent="Root/EstrutCard"]
+[node name="Bg" type="TextureRect" parent="Root/EstrutCard2"]
 texture_filter = 1
 layout_mode = 0
 anchor_right = 1.0
@@ -181,7 +169,7 @@ texture = ExtResource("3_card_wide")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="TitleLabel" type="Label" parent="Root/EstrutCard"]
+[node name="TitleLabel" type="Label" parent="Root/EstrutCard2"]
 layout_mode = 0
 offset_left = 100.0
 offset_top = 16.0
@@ -190,10 +178,10 @@ offset_bottom = 60.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
-text = "Torre de Flechas"
+text = "—"
 vertical_alignment = 1
 
-[node name="StarsLabel" type="Label" parent="Root/EstrutCard"]
+[node name="StarsLabel" type="Label" parent="Root/EstrutCard2"]
 layout_mode = 0
 offset_left = 100.0
 offset_top = 50.0
@@ -204,7 +192,7 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 22
 text = ""
 
-[node name="DescLabel" type="Label" parent="Root/EstrutCard"]
+[node name="DescLabel" type="Label" parent="Root/EstrutCard2"]
 layout_mode = 0
 offset_left = 100.0
 offset_top = 78.0
@@ -216,7 +204,7 @@ theme_override_font_sizes/font_size = 16
 text = "—"
 autowrap_mode = 2
 
-[node name="PriceLabel" type="Label" parent="Root/EstrutCard"]
+[node name="PriceLabel" type="Label" parent="Root/EstrutCard2"]
 layout_mode = 0
 offset_left = 420.0
 offset_top = 16.0
@@ -225,11 +213,11 @@ offset_bottom = 60.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 22
-text = "10 coins"
+text = "—"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="BuyBtn" type="Button" parent="Root/EstrutCard"]
+[node name="BuyBtn" type="Button" parent="Root/EstrutCard2"]
 layout_mode = 0
 offset_left = 0.0
 offset_top = 0.0
@@ -243,103 +231,96 @@ theme_override_styles/disabled = SubResource("SBF_btn_disabled")
 flat = true
 text = ""
 
-
-[node name="UpgHeader" type="Label" parent="Root"]
+[node name="StatusHeader" type="Label" parent="Root"]
 layout_mode = 0
-offset_left = 620.0
-offset_top = 90.0
-offset_right = 1572.0
-offset_bottom = 130.0
+offset_left = 60.0
+offset_top = 460.0
+offset_right = 480.0
+offset_bottom = 500.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
-text = "UPGRADES"
-horizontal_alignment = 1
+text = "STATUS"
+horizontal_alignment = 0
+vertical_alignment = 1
 
-[node name="UpgReroll" type="Control" parent="Root/UpgHeader"]
+[node name="StatusReroll" type="Control" parent="Root"]
 layout_mode = 0
-offset_left = 760.0
-offset_top = -8.0
-offset_right = 840.0
-offset_bottom = 56.0
+offset_left = 480.0
+offset_top = 456.0
+offset_right = 580.0
+offset_bottom = 520.0
 
-[node name="UpgRow" type="Control" parent="Root"]
+[node name="StatusCard1" type="Control" parent="Root"]
 layout_mode = 0
-offset_left = 620.0
-offset_top = 140.0
-offset_right = 1572.0
-offset_bottom = 516.0
+offset_left = 60.0
+offset_top = 510.0
+offset_right = 580.0
+offset_bottom = 646.0
 
-[node name="UpgCard1" type="Control" parent="Root/UpgRow"]
-layout_mode = 0
-offset_right = 304.0
-offset_bottom = 376.0
-
-[node name="Bg" type="TextureRect" parent="Root/UpgRow/UpgCard1"]
+[node name="Bg" type="TextureRect" parent="Root/StatusCard1"]
 texture_filter = 1
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-texture = ExtResource("4_card_tall")
+texture = ExtResource("3_card_wide")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="TitleLabel" type="Label" parent="Root/UpgRow/UpgCard1"]
+[node name="TitleLabel" type="Label" parent="Root/StatusCard1"]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 24.0
-offset_right = 288.0
-offset_bottom = 70.0
+offset_left = 100.0
+offset_top = 16.0
+offset_right = 420.0
+offset_bottom = 60.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 28
 text = "—"
-horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="StarsLabel" type="Label" parent="Root/UpgRow/UpgCard1"]
+[node name="StarsLabel" type="Label" parent="Root/StatusCard1"]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 70.0
-offset_right = 288.0
-offset_bottom = 100.0
+offset_left = 100.0
+offset_top = 50.0
+offset_right = 420.0
+offset_bottom = 80.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 22
 text = ""
-horizontal_alignment = 1
 
-[node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard1"]
+[node name="DescLabel" type="Label" parent="Root/StatusCard1"]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 110.0
-offset_right = 288.0
-offset_bottom = 280.0
+offset_left = 100.0
+offset_top = 78.0
+offset_right = 420.0
+offset_bottom = 116.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 16
 text = "—"
-horizontal_alignment = 1
-vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard1"]
+[node name="PriceLabel" type="Label" parent="Root/StatusCard1"]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 290.0
-offset_right = 288.0
-offset_bottom = 330.0
+offset_left = 420.0
+offset_top = 16.0
+offset_right = 510.0
+offset_bottom = 60.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 22
 text = "—"
-horizontal_alignment = 1
+horizontal_alignment = 2
+vertical_alignment = 1
 
-[node name="BuyBtn" type="Button" parent="Root/UpgRow/UpgCard1"]
+[node name="BuyBtn" type="Button" parent="Root/StatusCard1"]
 layout_mode = 0
 offset_left = 0.0
 offset_top = 0.0
-offset_right = 304.0
-offset_bottom = 376.0
+offset_right = 520.0
+offset_bottom = 136.0
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 1
 theme_override_styles/normal = SubResource("SBF_btn_disabled")
@@ -348,156 +329,76 @@ theme_override_styles/disabled = SubResource("SBF_btn_disabled")
 flat = true
 text = ""
 
-[node name="UpgCard2" type="Control" parent="Root/UpgRow"]
+[node name="StatusCard2" type="Control" parent="Root"]
 layout_mode = 0
-offset_left = 324.0
-offset_right = 628.0
-offset_bottom = 376.0
+offset_left = 60.0
+offset_top = 660.0
+offset_right = 580.0
+offset_bottom = 796.0
 
-[node name="Bg" type="TextureRect" parent="Root/UpgRow/UpgCard2"]
+[node name="Bg" type="TextureRect" parent="Root/StatusCard2"]
 texture_filter = 1
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-texture = ExtResource("4_card_tall")
+texture = ExtResource("3_card_wide")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="TitleLabel" type="Label" parent="Root/UpgRow/UpgCard2"]
+[node name="TitleLabel" type="Label" parent="Root/StatusCard2"]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 24.0
-offset_right = 288.0
-offset_bottom = 70.0
+offset_left = 100.0
+offset_top = 16.0
+offset_right = 420.0
+offset_bottom = 60.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 28
 text = "—"
-horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="StarsLabel" type="Label" parent="Root/UpgRow/UpgCard2"]
+[node name="StarsLabel" type="Label" parent="Root/StatusCard2"]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 70.0
-offset_right = 288.0
-offset_bottom = 100.0
+offset_left = 100.0
+offset_top = 50.0
+offset_right = 420.0
+offset_bottom = 80.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 22
 text = ""
-horizontal_alignment = 1
 
-[node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard2"]
+[node name="DescLabel" type="Label" parent="Root/StatusCard2"]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 110.0
-offset_right = 288.0
-offset_bottom = 280.0
+offset_left = 100.0
+offset_top = 78.0
+offset_right = 420.0
+offset_bottom = 116.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 16
 text = "—"
-horizontal_alignment = 1
-vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard2"]
+[node name="PriceLabel" type="Label" parent="Root/StatusCard2"]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 290.0
-offset_right = 288.0
-offset_bottom = 330.0
+offset_left = 420.0
+offset_top = 16.0
+offset_right = 510.0
+offset_bottom = 60.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 22
 text = "—"
-horizontal_alignment = 1
-
-[node name="BuyBtn" type="Button" parent="Root/UpgRow/UpgCard2"]
-layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 304.0
-offset_bottom = 376.0
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 1
-theme_override_styles/normal = SubResource("SBF_btn_disabled")
-theme_override_styles/hover = SubResource("SBF_btn_hover")
-theme_override_styles/disabled = SubResource("SBF_btn_disabled")
-flat = true
-text = ""
-
-[node name="UpgCard3" type="Control" parent="Root/UpgRow"]
-layout_mode = 0
-offset_left = 648.0
-offset_right = 952.0
-offset_bottom = 376.0
-
-[node name="Bg" type="TextureRect" parent="Root/UpgRow/UpgCard3"]
-texture_filter = 1
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-texture = ExtResource("4_card_tall")
-expand_mode = 1
-stretch_mode = 6
-
-[node name="TitleLabel" type="Label" parent="Root/UpgRow/UpgCard3"]
-layout_mode = 0
-offset_left = 16.0
-offset_top = 24.0
-offset_right = 288.0
-offset_bottom = 70.0
-theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
-text = "—"
-horizontal_alignment = 1
-
-[node name="StarsLabel" type="Label" parent="Root/UpgRow/UpgCard3"]
-layout_mode = 0
-offset_left = 16.0
-offset_top = 70.0
-offset_right = 288.0
-offset_bottom = 100.0
-theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
-text = ""
-horizontal_alignment = 1
-
-[node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard3"]
-layout_mode = 0
-offset_left = 16.0
-offset_top = 110.0
-offset_right = 288.0
-offset_bottom = 280.0
-theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 18
-text = "—"
-horizontal_alignment = 1
+horizontal_alignment = 2
 vertical_alignment = 1
-autowrap_mode = 2
 
-[node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard3"]
-layout_mode = 0
-offset_left = 16.0
-offset_top = 290.0
-offset_right = 288.0
-offset_bottom = 330.0
-theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
-text = "—"
-horizontal_alignment = 1
-
-[node name="BuyBtn" type="Button" parent="Root/UpgRow/UpgCard3"]
+[node name="BuyBtn" type="Button" parent="Root/StatusCard2"]
 layout_mode = 0
 offset_left = 0.0
 offset_top = 0.0
-offset_right = 304.0
-offset_bottom = 376.0
+offset_right = 520.0
+offset_bottom = 136.0
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 1
 theme_override_styles/normal = SubResource("SBF_btn_disabled")
@@ -509,21 +410,29 @@ text = ""
 [node name="AliadoHeader" type="Label" parent="Root"]
 layout_mode = 0
 offset_left = 620.0
-offset_top = 540.0
-offset_right = 1572.0
-offset_bottom = 580.0
+offset_top = 90.0
+offset_right = 1480.0
+offset_bottom = 130.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
 text = "ALIADOS"
-horizontal_alignment = 1
+horizontal_alignment = 0
+vertical_alignment = 1
+
+[node name="AliadoReroll" type="Control" parent="Root"]
+layout_mode = 0
+offset_left = 1480.0
+offset_top = 86.0
+offset_right = 1572.0
+offset_bottom = 150.0
 
 [node name="AliadoRow" type="Control" parent="Root"]
 layout_mode = 0
 offset_left = 620.0
-offset_top = 590.0
+offset_top = 140.0
 offset_right = 1572.0
-offset_bottom = 966.0
+offset_bottom = 516.0
 
 [node name="AliadoCard1" type="Control" parent="Root/AliadoRow"]
 layout_mode = 0
@@ -538,7 +447,6 @@ anchor_bottom = 1.0
 texture = ExtResource("4_card_tall")
 expand_mode = 1
 stretch_mode = 6
-modulate = Color(1.0, 0.55, 0.4, 1.0)
 
 [node name="TitleLabel" type="Label" parent="Root/AliadoRow/AliadoCard1"]
 layout_mode = 0
@@ -618,7 +526,6 @@ anchor_bottom = 1.0
 texture = ExtResource("4_card_tall")
 expand_mode = 1
 stretch_mode = 6
-modulate = Color(1.0, 0.55, 0.4, 1.0)
 
 [node name="TitleLabel" type="Label" parent="Root/AliadoRow/AliadoCard2"]
 layout_mode = 0
@@ -698,7 +605,6 @@ anchor_bottom = 1.0
 texture = ExtResource("4_card_tall")
 expand_mode = 1
 stretch_mode = 6
-modulate = Color(1.0, 0.55, 0.4, 1.0)
 
 [node name="TitleLabel" type="Label" parent="Root/AliadoRow/AliadoCard3"]
 layout_mode = 0
@@ -764,6 +670,271 @@ theme_override_styles/disabled = SubResource("SBF_btn_disabled")
 flat = true
 text = ""
 
+[node name="UpgHeader" type="Label" parent="Root"]
+layout_mode = 0
+offset_left = 620.0
+offset_top = 540.0
+offset_right = 1480.0
+offset_bottom = 580.0
+theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "UPGRADES"
+horizontal_alignment = 0
+vertical_alignment = 1
+
+[node name="UpgReroll" type="Control" parent="Root"]
+layout_mode = 0
+offset_left = 1480.0
+offset_top = 536.0
+offset_right = 1572.0
+offset_bottom = 600.0
+
+[node name="UpgRow" type="Control" parent="Root"]
+layout_mode = 0
+offset_left = 620.0
+offset_top = 590.0
+offset_right = 1572.0
+offset_bottom = 966.0
+
+[node name="UpgCard1" type="Control" parent="Root/UpgRow"]
+layout_mode = 0
+offset_right = 304.0
+offset_bottom = 376.0
+
+[node name="Bg" type="TextureRect" parent="Root/UpgRow/UpgCard1"]
+texture_filter = 1
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("4_card_tall")
+expand_mode = 1
+stretch_mode = 6
+modulate = Color(1.0, 0.55, 0.4, 1.0)
+
+[node name="TitleLabel" type="Label" parent="Root/UpgRow/UpgCard1"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 24.0
+offset_right = 288.0
+offset_bottom = 70.0
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+text = "—"
+horizontal_alignment = 1
+
+[node name="StarsLabel" type="Label" parent="Root/UpgRow/UpgCard1"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 70.0
+offset_right = 288.0
+offset_bottom = 100.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = ""
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard1"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 110.0
+offset_right = 288.0
+offset_bottom = 280.0
+theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "—"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard1"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 290.0
+offset_right = 288.0
+offset_bottom = 330.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "—"
+horizontal_alignment = 1
+
+[node name="BuyBtn" type="Button" parent="Root/UpgRow/UpgCard1"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 304.0
+offset_bottom = 376.0
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 1
+theme_override_styles/normal = SubResource("SBF_btn_disabled")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/disabled = SubResource("SBF_btn_disabled")
+flat = true
+text = ""
+
+[node name="UpgCard2" type="Control" parent="Root/UpgRow"]
+layout_mode = 0
+offset_left = 324.0
+offset_right = 628.0
+offset_bottom = 376.0
+
+[node name="Bg" type="TextureRect" parent="Root/UpgRow/UpgCard2"]
+texture_filter = 1
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("4_card_tall")
+expand_mode = 1
+stretch_mode = 6
+modulate = Color(1.0, 0.55, 0.4, 1.0)
+
+[node name="TitleLabel" type="Label" parent="Root/UpgRow/UpgCard2"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 24.0
+offset_right = 288.0
+offset_bottom = 70.0
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+text = "—"
+horizontal_alignment = 1
+
+[node name="StarsLabel" type="Label" parent="Root/UpgRow/UpgCard2"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 70.0
+offset_right = 288.0
+offset_bottom = 100.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = ""
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard2"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 110.0
+offset_right = 288.0
+offset_bottom = 280.0
+theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "—"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard2"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 290.0
+offset_right = 288.0
+offset_bottom = 330.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "—"
+horizontal_alignment = 1
+
+[node name="BuyBtn" type="Button" parent="Root/UpgRow/UpgCard2"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 304.0
+offset_bottom = 376.0
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 1
+theme_override_styles/normal = SubResource("SBF_btn_disabled")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/disabled = SubResource("SBF_btn_disabled")
+flat = true
+text = ""
+
+[node name="UpgCard3" type="Control" parent="Root/UpgRow"]
+layout_mode = 0
+offset_left = 648.0
+offset_right = 952.0
+offset_bottom = 376.0
+
+[node name="Bg" type="TextureRect" parent="Root/UpgRow/UpgCard3"]
+texture_filter = 1
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("4_card_tall")
+expand_mode = 1
+stretch_mode = 6
+modulate = Color(1.0, 0.55, 0.4, 1.0)
+
+[node name="TitleLabel" type="Label" parent="Root/UpgRow/UpgCard3"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 24.0
+offset_right = 288.0
+offset_bottom = 70.0
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+text = "—"
+horizontal_alignment = 1
+
+[node name="StarsLabel" type="Label" parent="Root/UpgRow/UpgCard3"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 70.0
+offset_right = 288.0
+offset_bottom = 100.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = ""
+horizontal_alignment = 1
+
+[node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard3"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 110.0
+offset_right = 288.0
+offset_bottom = 280.0
+theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "—"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard3"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 290.0
+offset_right = 288.0
+offset_bottom = 330.0
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "—"
+horizontal_alignment = 1
+
+[node name="BuyBtn" type="Button" parent="Root/UpgRow/UpgCard3"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 304.0
+offset_bottom = 376.0
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 1
+theme_override_styles/normal = SubResource("SBF_btn_disabled")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/disabled = SubResource("SBF_btn_disabled")
+flat = true
+text = ""
 
 [node name="ContinueBtn" type="Button" parent="Root"]
 layout_mode = 0
@@ -791,6 +962,6 @@ offset_bottom = -40.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
-text = "Escolha um dos 5 pontos para posicionar a torre  -  Aperte Z para voltar"
+text = "Escolha um dos 5 pontos para posicionar  -  Aperte Z para voltar"
 horizontal_alignment = 1
 vertical_alignment = 1
