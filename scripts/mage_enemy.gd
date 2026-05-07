@@ -56,8 +56,6 @@ var _stun_remaining: float = 0.0
 var _flash_tween: Tween
 # Maldição: AI vira aliada ao ser convertido (mira em enemies, projétil hit them).
 var is_curse_ally: bool = false
-# Wave_manager seta em alguns enemies da wave 1 pra garantir mínimo de coins.
-var guaranteed_gold_drop: bool = false
 
 
 func _ready() -> void:
@@ -238,9 +236,8 @@ func take_damage(amount: float) -> void:
 		# Maldição: chance de virar aliado em vez de morrer.
 		if not is_curse_ally and CurseAllyHelper.try_convert_on_death(self):
 			return
-		var drop_chance: float = 1.0 if guaranteed_gold_drop else gold_drop_chance
 		GoldDrop.try_drop(_get_world(), gold_scene, global_position,
-			drop_chance, gold_drop_min, gold_drop_max)
+			gold_drop_chance, gold_drop_min, gold_drop_max)
 		HeartDrop.try_drop(_get_world(), heart_scene, global_position)
 		_spawn_kill_effect()
 		_spawn_death_silhouette()

@@ -17,8 +17,9 @@ extends Node2D
 # Scaling por wave: cada wave acima da 1ª aumenta HP e dano dos inimigos linearmente.
 @export var hp_growth_per_wave: float = 0.12  # +12% HP por wave
 @export var damage_growth_per_wave: float = 0.08  # +8% dano por wave
-# Wave 1: primeira impressão. Garante mínimo de N gold drops pra player ter coins
-# pra primeira shop. Setado nos N primeiros spawns via guaranteed_gold_drop=true.
+# Wave 1 pity system: garante mínimo de N moedas pra player não ser punido por
+# RNG ruim na primeira shop. Só ATIVA se naturalmente caiu menos que N — os
+# faltantes spawnam no _finish_wave (ainda pegos pelo magnet de fim de wave).
 @export var wave1_min_guaranteed_drops: int = 4
 
 var wave_number: int = 0
@@ -32,7 +33,7 @@ var wave_config: Dictionary = {}  # {type_key: {"alive_target": int, "total": in
 var spawned_this_wave: Dictionary = {}  # {type_key: int}
 var total_to_spawn_this_wave: int = 0
 var last_progress_killed: int = -1  # cache pra evitar spam de update na HUD
-var _guaranteed_drops_remaining: int = 0  # contagem regressiva de spawns flagados pra dropar gold (wave 1)
+var _coins_dropped_this_wave: int = 0  # tracker pro pity system de gold drops da wave 1
 
 # Registro de tipos: associa uma chave de string a (PackedScene, group_name).
 # Pra adicionar um novo tipo de inimigo: registra aqui + adiciona group no script dele.
@@ -148,8 +149,8 @@ func _start_next_wave() -> void:
 	total_to_spawn_this_wave = _calc_total_to_spawn()
 	last_progress_killed = -1
 	spawn_cooldown = 0.0
-	# Wave 1: primeiros N spawns dropam gold garantido. Wave 2+ usa só chance normal.
-	_guaranteed_drops_remaining = wave1_min_guaranteed_drops if wave_number == 1 else 0
+	# Reseta contador de moedas dropadas — pity system da wave 1 garante mínimo no _finish_wave.
+	_coins_dropped_this_wave = 0
 
 	# Reseta HP e posição do player antes da nova wave (camera segue → player no centro).
 	var player := get_tree().get_first_node_in_group("player")
@@ -269,11 +270,6 @@ func _spawn_one(type_key: String) -> void:
 	var enemy: Node2D = info["scene"].instantiate()
 	# Aplica scaling de wave ANTES de add_child pra _ready do inimigo já usar max_hp escalado.
 	_apply_wave_scaling(enemy)
-	# Wave 1: marca os primeiros N spawns pra dropar gold garantido (mínimo de
-	# moedas pro player ter o que comprar na 1ª shop).
-	if _guaranteed_drops_remaining > 0 and "guaranteed_gold_drop" in enemy:
-		enemy.guaranteed_gold_drop = true
-		_guaranteed_drops_remaining -= 1
 	world.add_child(enemy)
 	enemy.global_position = pos
 	spawned_this_wave[type_key] = spawned_this_wave.get(type_key, 0) + 1
@@ -318,8 +314,38 @@ func _finish_wave() -> void:
 	_emit_progress()
 	# Maldição: aliados convertidos pela curse só duram até o fim da horda/turno.
 	_cleanup_curse_allies()
+	# Wave 1 pity: se RNG não dropou as N mínimas, completa AGORA (antes do
+	# magnet sugar pro player). Wave 2+ não tem pity, RNG normal.
+	_top_up_wave1_coins()
 	# Suga todas as moedas restantes do mapa pro player (auto-coleta).
 	_magnet_remaining_gold()
+
+
+func notify_coin_dropped(amount: int = 1) -> void:
+	# Chamado por GoldDrop.try_drop sempre que spawna moeda(s).
+	_coins_dropped_this_wave += amount
+
+
+func _top_up_wave1_coins() -> void:
+	if wave_number != 1 or wave1_min_guaranteed_drops <= 0:
+		return
+	var missing: int = wave1_min_guaranteed_drops - _coins_dropped_this_wave
+	if missing <= 0:
+		return
+	var gold_scene: PackedScene = load("res://scenes/gold.tscn") as PackedScene
+	if gold_scene == null:
+		return
+	var world := get_tree().get_first_node_in_group("world")
+	if world == null:
+		return
+	# Spawna as faltantes perto do player (vão ser sugadas pelo magnet logo a seguir).
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	var center: Vector2 = player.global_position if player != null else Vector2.ZERO
+	for i in missing:
+		var coin: Node2D = gold_scene.instantiate()
+		world.add_child(coin)
+		var off := Vector2(randf_range(-24.0, 24.0), randf_range(-24.0, 24.0))
+		coin.global_position = center + off
 
 
 func _cleanup_curse_allies() -> void:

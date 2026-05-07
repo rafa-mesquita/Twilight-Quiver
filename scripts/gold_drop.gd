@@ -27,3 +27,7 @@ static func try_drop(world: Node, scene: PackedScene, position: Vector2,
 		var off := Vector2(randf_range(-PICKUP_SPREAD, PICKUP_SPREAD),
 			randf_range(-PICKUP_SPREAD * 0.5, PICKUP_SPREAD * 0.5))
 		coin.global_position = position + off
+	# Notifica o wave_manager pro pity system de wave 1.
+	var wm := world.get_tree().get_first_node_in_group("wave_manager")
+	if wm != null and wm.has_method("notify_coin_dropped"):
+		wm.notify_coin_dropped(amount)
