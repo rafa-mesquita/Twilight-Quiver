@@ -75,16 +75,32 @@ jobs:
           ./godot --headless --export-release "Web" build/web/index.html
           ls -la build/web/
 
+      - name: Export Windows build
+        run: |
+          mkdir -p build/windows
+          ./godot --headless --export-release "Windows Desktop" build/windows/twilight-quiver.exe
+          ls -la build/windows/
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
           # Auto-ativa Pages com source "GitHub Actions" se ainda não tá configurado.
           enablement: true
 
-      - name: Upload artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
+
+      # Build Windows fica disponível como artifact baixável na página do run
+      # (Actions → último run → Artifacts → twilight-quiver-windows).
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: twilight-quiver-windows
+          path: build/windows/
+          if-no-files-found: error
+          retention-days: 30
 
   deploy:
     needs: build

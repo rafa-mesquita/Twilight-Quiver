@@ -15,8 +15,11 @@ extends Node2D
 @export var spawn_points_path: NodePath
 @export var farthest_count: int = 3  # quantos spawn points ativos por wave (top N mais longe do player)
 # Scaling por wave: cada wave acima da 1ª aumenta HP e dano dos inimigos linearmente.
-@export var hp_growth_per_wave: float = 0.12  # +12% HP por wave
-@export var damage_growth_per_wave: float = 0.08  # +8% dano por wave
+@export var hp_growth_per_wave: float = 0.12  # +12% HP por wave (até wave 3)
+@export var damage_growth_per_wave: float = 0.08  # +8% dano por wave (até wave 3)
+# Wave 4+: cresce mais devagar — curva acumulada não fica brutal em sessões longas.
+@export var hp_growth_per_wave_late: float = 0.08
+@export var damage_growth_per_wave_late: float = 0.05
 # Wave 1 pity system: garante mínimo de N moedas pra player não ser punido por
 # RNG ruim na primeira shop. Só ATIVA se naturalmente caiu menos que N — os
 # faltantes spawnam no _finish_wave (ainda pegos pelo magnet de fim de wave).
@@ -130,7 +133,7 @@ func _process(delta: float) -> void:
 	var picked_type: String = _pick_type_to_spawn()
 	if picked_type != "":
 		_spawn_one(picked_type)
-		spawn_cooldown = spawn_delay
+		spawn_cooldown = _spawn_delay_for_wave()
 		return
 
 	# Nenhum tipo precisando spawnar — wave acaba quando todos os inimigos morrerem.
@@ -216,10 +219,11 @@ func _build_wave_config(num: int) -> Dictionary:
 	# Waves 3+: escala automática + um pouco de aleatoriedade.
 	# Quanto maior o wave_number, mais inimigos vivos e mais total.
 	# Ratio macaco/mago varia entre ~70/30 e ~50/50 conforme a wave avança.
-	# `WAVE_3PLUS_REDUCTION` reduz contagem em 13% do scale linear (afeta o número
-	# de inimigos sem mexer na escala de stats).
-	const WAVE_3PLUS_REDUCTION: float = 0.87
-	var scale: float = (1.0 + (num - 1) * 0.35) * WAVE_3PLUS_REDUCTION
+	# Wave 3 leva um corte extra (curva de aprendizado pós-wave 2).
+	var reduction: float = 0.87
+	if num == 3:
+		reduction = 0.72
+	var scale: float = (1.0 + (num - 1) * 0.35) * reduction
 	var monkey_alive: int = int(round(5 * scale + randf_range(-1.0, 2.0)))
 	var monkey_total: int = int(round(15 * scale + randf_range(0.0, 4.0)))
 	var mage_alive: int = int(round(3 * scale + randf_range(0.0, 2.0)))
@@ -232,6 +236,13 @@ func _build_wave_config(num: int) -> Dictionary:
 		"mage": {"alive_target": maxi(mage_alive, 1), "total": maxi(mage_total, mage_alive)},
 		"summoner_mage": {"alive_target": maxi(summ_alive, 1), "total": maxi(summ_total, summ_alive)},
 	}
+
+
+func _spawn_delay_for_wave() -> float:
+	# Wave 3 spawna mais devagar pra dar respiro depois do salto da wave 2.
+	if wave_number == 3:
+		return spawn_delay * 1.6
+	return spawn_delay
 
 
 func _pick_type_to_spawn() -> String:
@@ -276,8 +287,12 @@ func _spawn_one(type_key: String) -> void:
 
 
 func _apply_wave_scaling(enemy: Node) -> void:
-	var hp_mult: float = 1.0 + maxf(wave_number - 1, 0) * hp_growth_per_wave
-	var dmg_mult: float = 1.0 + maxf(wave_number - 1, 0) * damage_growth_per_wave
+	# Curva piecewise: waves 1→3 usam taxa cheia, wave 4+ usa taxa reduzida.
+	# Ex (default): wave 4 = 1.0 + 2*0.12 + 1*0.08 = 1.32 (HP); antes era 1.36.
+	var early_steps: float = float(mini(maxi(wave_number - 1, 0), 2))
+	var late_steps: float = float(maxi(wave_number - 3, 0))
+	var hp_mult: float = 1.0 + early_steps * hp_growth_per_wave + late_steps * hp_growth_per_wave_late
+	var dmg_mult: float = 1.0 + early_steps * damage_growth_per_wave + late_steps * damage_growth_per_wave_late
 	if "max_hp" in enemy:
 		enemy.max_hp = enemy.max_hp * hp_mult
 	# Inimigos melee guardam dano em "damage" direto. Ranged (mage/insect) usam
@@ -365,6 +380,12 @@ func _cleanup_curse_allies() -> void:
 		await hud.play_wave_cleared(wave_number)
 	if stopped:
 		return
+	# Bônus de boas-vindas: após a wave 1, presenteia um upgrade aleatório
+	# (do pool base, sem elementais nem sub-melhorias do dash).
+	if wave_number == 1:
+		await _grant_free_random_upgrade()
+		if stopped:
+			return
 	# Loja pós-wave: 1 estrutura + 1 upgrade max.
 	await _open_shop()
 	if stopped:
@@ -467,5 +488,79 @@ func _apply_woodwarden_scaling_if_applicable(inst: Node2D, scene_path: String) -
 		inst.max_hp = inst.max_hp + 25.0 * float(lvl - 1)
 	if "damage" in inst:
 		inst.damage = inst.damage + 5.0 * float(lvl - 1)
+
+
+# Pool curado pro bônus de boas-vindas: só upgrades base do tier 1 (sem elementais
+# pra não bloquear o caminho que o player quer escolher, sem sub-dash que precisa
+# de pré-requisito).
+const FREE_UPGRADE_POOL: Array[Dictionary] = [
+	{"id": "hp", "name": "Mais HP"},
+	{"id": "damage", "name": "Dano"},
+	{"id": "perfuracao", "name": "Perfuracao"},
+	{"id": "attack_speed", "name": "Atack Speed"},
+	{"id": "multi_arrow", "name": "Multiplas Flechas"},
+	{"id": "chain_lightning", "name": "Cadeia de Raios"},
+	{"id": "move_speed", "name": "Move Speed"},
+	{"id": "life_steal", "name": "Life Steal"},
+	{"id": "gold_magnet", "name": "Ima de Gold"},
+	{"id": "dash", "name": "Dash"},
+]
+
+
+func _grant_free_random_upgrade() -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not player.has_method("apply_upgrade"):
+		return
+	var pick: Dictionary = FREE_UPGRADE_POOL[randi() % FREE_UPGRADE_POOL.size()]
+	player.apply_upgrade(pick["id"])
+	await _show_free_upgrade_popup(pick["name"])
+
+
+func _show_free_upgrade_popup(name_text: String) -> void:
+	# Popup procedural mostrando o upgrade ganho. Click ou ENTER fecha.
+	var layer := CanvasLayer.new()
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	layer.layer = 50
+	var bg := ColorRect.new()
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.color = Color(0, 0, 0, 0.78)
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	layer.add_child(bg)
+	var at01_font: Font = load("res://font/at01.ttf")
+	var title := Label.new()
+	title.set_anchors_preset(Control.PRESET_CENTER)
+	title.position = Vector2(-800, -220)
+	title.size = Vector2(1600, 100)
+	title.text = "BONUS DE BOAS-VINDAS"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3, 1.0))
+	if at01_font != null:
+		title.add_theme_font_override("font", at01_font)
+	title.add_theme_font_size_override("font_size", 64)
+	bg.add_child(title)
+	var name_label := Label.new()
+	name_label.set_anchors_preset(Control.PRESET_CENTER)
+	name_label.position = Vector2(-800, -90)
+	name_label.size = Vector2(1600, 140)
+	name_label.text = "+ %s" % name_text
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	if at01_font != null:
+		name_label.add_theme_font_override("font", at01_font)
+	name_label.add_theme_font_size_override("font_size", 96)
+	bg.add_child(name_label)
+	var btn := Button.new()
+	btn.set_anchors_preset(Control.PRESET_CENTER)
+	btn.position = Vector2(-200, 100)
+	btn.size = Vector2(400, 64)
+	btn.text = "Continuar"
+	if at01_font != null:
+		btn.add_theme_font_override("font", at01_font)
+	btn.add_theme_font_size_override("font_size", 48)
+	bg.add_child(btn)
+	get_tree().current_scene.add_child(layer)
+	await btn.pressed
+	if is_instance_valid(layer):
+		layer.queue_free()
 
 

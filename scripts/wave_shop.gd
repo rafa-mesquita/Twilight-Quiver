@@ -14,6 +14,9 @@ const TOWER_PRICE: int = 10
 # Woodwarden: 1ª compra = 6 coins. Cada compra "uppa" o aliado e aumenta custo.
 # Tabela de preços por nível atual do player → custo da próxima compra.
 const WOODWARDEN_PRICE_TABLE: Array[int] = [6, 10, 14, 18, 24, 30]
+# Sobretaxa global por estrutura já comprada nesta partida (qualquer tipo).
+# Aplica em TODAS as estruturas — desincentiva spam mesmo trocando o tipo.
+const STRUCTURE_SURCHARGE_PER_OWNED: int = 3
 
 const UPGRADE_CATALOG: Array = [
 	{"id": "hp", "name": "Mais HP"},
@@ -275,11 +278,13 @@ func _roll_slots() -> void:
 
 func _roll_struct_slots() -> void:
 	struct_slots.clear()
+	# Sobretaxa global: +N por estrutura já comprada (mesmo tipo ou não).
+	var surcharge: int = STRUCTURE_SURCHARGE_PER_OWNED * _total_structures_bought()
 	struct_slots.append({
 		"id": "arrow_tower",
 		"name": "Torre de Flechas",
 		"desc": "Atira em inimigos\nproximos. 80% dano.",
-		"price": TOWER_PRICE,
+		"price": TOWER_PRICE + surcharge,
 		"available": true,
 		"scene": "res://scenes/structures/arrow_tower.tscn",
 	})
@@ -289,7 +294,7 @@ func _roll_struct_slots() -> void:
 	if p != null and p.has_method("get_upgrade_count"):
 		ww_lvl = p.get_upgrade_count("woodwarden")
 	var ww_maxed: bool = ww_lvl >= 4
-	var ww_price: int = WOODWARDEN_PRICE_TABLE[mini(ww_lvl, WOODWARDEN_PRICE_TABLE.size() - 1)]
+	var ww_price: int = WOODWARDEN_PRICE_TABLE[mini(ww_lvl, WOODWARDEN_PRICE_TABLE.size() - 1)] + surcharge
 	var ww_desc: String
 	if ww_maxed:
 		ww_desc = "Max (4/4) atingido"
@@ -316,6 +321,10 @@ func _roll_upg_slots() -> void:
 	upg_slots.clear()
 	var player := _get_player()
 	var already_picked_ids: Array[String] = []  # evita 2 cards iguais no mesmo roll
+	# Mutex elemental: se o player já comprou um caminho (fire ou curse), o outro
+	# fica permanentemente fora do pool nesta partida.
+	var has_fire: bool = player != null and player.has_method("get_upgrade_count") and player.get_upgrade_count("fire_arrow") > 0
+	var has_curse: bool = player != null and player.has_method("get_upgrade_count") and player.get_upgrade_count("curse_arrow") > 0
 	for i in 3:
 		var pool: Array = []
 		for u in UPGRADE_CATALOG:
@@ -327,6 +336,10 @@ func _roll_upg_slots() -> void:
 			if current >= max_level:
 				continue
 			if id in already_picked_ids:
+				continue
+			if id == "fire_arrow" and has_curse:
+				continue
+			if id == "curse_arrow" and has_fire:
 				continue
 			# Pré-requisito: upgrade só entra no pool se o requires está com lvl > 0.
 			# Ex: dash_auto_attack só aparece após comprar dash.
@@ -666,6 +679,8 @@ func _refresh_button_states() -> void:
 	# pode ser usado pra novas seleções/rerolls sem estourar.
 	var pending_cost: int = _selected_total_cost_with_structure()
 	var available_gold: int = current_gold - pending_cost
+	# Mantém o label do gold sincronizado com as seleções pendentes.
+	_refresh_gold_label()
 	if _struct_reroll_btn != null:
 		var struct_max: bool = _struct_rerolls_used >= MAX_REROLLS_PER_CATEGORY
 		var struct_cost: int = _next_reroll_cost(_struct_rerolls_used)
@@ -746,11 +761,24 @@ func _set_reroll_widget_dim(widget: Control, dim: bool) -> void:
 func _refresh_gold_label() -> void:
 	var player := _get_player()
 	var g: int = player.gold if player != null else 0
-	gold_label.text = "%d coins" % g
+	# Mostra o gold "efetivo" (já descontando as seleções pendentes) pra player
+	# enxergar quanto sobra ao selecionar upgrades/estruturas. Cai pro número
+	# normal quando nada está selecionado.
+	var available: int = g - _selected_total_cost_with_structure()
+	gold_label.text = "%d coins" % available
 
 
 func _get_player() -> Node:
 	return get_tree().get_first_node_in_group("player")
+
+
+func _total_structures_bought() -> int:
+	# Lê do wave_manager: cada placement confirmado vira uma entrada em
+	# owned_structures (registrada via register_structure). Tamanho = total comprado.
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm == null or not "owned_structures" in wm:
+		return 0
+	return (wm.owned_structures as Array).size()
 
 
 func _play_buy_sound() -> void:

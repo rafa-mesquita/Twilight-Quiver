@@ -30,6 +30,13 @@ var _picked: bool = false
 var _silhouette_mat: ShaderMaterial
 # Cache lazy do player pra checar `has_gold_magnet` sem buscar no group todo frame.
 var _player_ref: Node2D = null
+# Indicador de oclusão (bolinha em z_index 100) — guardado pra trocar cor/pulse
+# durante o blink de aviso (sem ele, o aviso ficaria escondido pelo dourado).
+var _indicator: Polygon2D = null
+var _indicator_pulse_tween: Tween = null
+var _warn_active: bool = false
+const INDICATOR_BASE_COLOR: Color = Color(1.0, 0.85, 0.35, 1.0)
+const INDICATOR_WARN_COLOR: Color = Color(1.0, 0.25, 0.2, 1.0)
 
 
 func _ready() -> void:
@@ -59,15 +66,16 @@ func _create_occlusion_indicator() -> void:
 		var ang: float = TAU * float(i) / float(segments)
 		pts.append(Vector2(cos(ang) * radius, sin(ang) * radius))
 	ind.polygon = pts
-	ind.color = Color(1.0, 0.85, 0.35, 1.0)  # dourado igual à moeda
+	ind.color = INDICATOR_BASE_COLOR  # dourado igual à moeda
 	add_child(ind)
+	_indicator = ind
 	# Pulse de alpha — swing menor pra indicador ficar mais consistente/opaco
 	# (antes ia até 0.25 = quase sumia; agora mínimo 0.6 = sempre visível).
 	# Fase random pra moedas próximas não piscarem em sync.
 	ind.modulate.a = randf_range(0.7, 1.0)
-	var tw := ind.create_tween().set_loops()
-	tw.tween_property(ind, "modulate:a", 0.6, 0.55).set_trans(Tween.TRANS_SINE)
-	tw.tween_property(ind, "modulate:a", 1.0, 0.55).set_trans(Tween.TRANS_SINE)
+	_indicator_pulse_tween = ind.create_tween().set_loops()
+	_indicator_pulse_tween.tween_property(ind, "modulate:a", 0.6, 0.55).set_trans(Tween.TRANS_SINE)
+	_indicator_pulse_tween.tween_property(ind, "modulate:a", 1.0, 0.55).set_trans(Tween.TRANS_SINE)
 
 
 func magnet_to_player(target_pos_callable: Callable) -> void:
@@ -137,12 +145,25 @@ func _process(delta: float) -> void:
 	# conforme o tempo acaba. Quando tempo zera, queue_free.
 	var time_left: float = lifetime - _elapsed
 	if time_left <= blink_warn_duration:
+		# Primeira vez que entra no aviso: para o pulse normal pra indicador
+		# acompanhar o blink (senão fica em sync com o dourado e esconde o sinal).
+		if not _warn_active:
+			_warn_active = true
+			if _indicator_pulse_tween != null and _indicator_pulse_tween.is_valid():
+				_indicator_pulse_tween.kill()
+			if _indicator != null:
+				_indicator.modulate.a = 1.0
 		var ratio: float = 1.0 - time_left / blink_warn_duration  # 0 → 1
 		var freq: float = lerp(4.0, 14.0, ratio)
 		# Proporção do ciclo em branco: 40% no início → 80% no fim (cada vez mais "branco")
 		var white_threshold: float = lerp(0.4, 0.8, ratio)
 		var phase: float = fmod(_elapsed * freq, 1.0)
-		sprite.material = _silhouette_mat if phase < white_threshold else null
+		var on_flash: bool = phase < white_threshold
+		sprite.material = _silhouette_mat if on_flash else null
+		# Indicador também pisca: vermelho quando o sprite tá branco, dourado caso
+		# contrário — fica claro que a moeda tá pra sumir.
+		if _indicator != null:
+			_indicator.color = INDICATOR_WARN_COLOR if on_flash else INDICATOR_BASE_COLOR
 	else:
 		sprite.material = null
 
