@@ -231,11 +231,23 @@ func _on_hit(body: Node) -> void:
 	# Sobe o parent chain pra achar quem tem take_damage — o body que entra na
 	# colisão pode ser um StaticBody2D filho (caso da torre).
 	var target: Node = _find_damageable(body)
-	# Aliados: flecha PASSA por eles silenciosamente (sem stick, sem som).
-	# Antes parava como parede — agora atravessa pra não atrapalhar mira do player
-	# em inimigos atrás de aliados (woodwarden, torres etc).
+	# Aliado móvel (woodwarden tem "tank_ally"): flecha passa silenciosa pra não
+	# atrapalhar mira do player em inimigos atrás dele.
+	if target != null and target.is_in_group("tank_ally"):
+		_hit_bodies.erase(body)
+		return
+	# Estrutura estática aliada (torre tem "structure" + "ally" mas NÃO tank_ally):
+	# bloqueia flecha como parede (não causa dano).
+	if target != null and target.is_in_group("structure"):
+		_play_oneshot(object_impact_sound, global_position, sound_volume_db, 0.7)
+		if is_piercing:
+			_pierce_hits += 1
+			_spawn_pierce_hit_effect(_pierce_hits == 3)
+			return
+		_stick_in_place(stick_surface_duration)
+		return
+	# Outros aliados (futuros, ex: aliados convertidos pela maldição): passa também.
 	if target != null and target.is_in_group("ally"):
-		# Remove do _hit_bodies pra não bloquear se passar pelo mesmo aliado mais tarde.
 		_hit_bodies.erase(body)
 		return
 	if target != null:
