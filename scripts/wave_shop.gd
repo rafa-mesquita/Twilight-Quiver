@@ -477,26 +477,31 @@ func _aliado_target_level(slot: Dictionary) -> int:
 
 func _build_card(card: Control, slot: Dictionary, target_level: int, category: String) -> void:
 	var available: bool = slot.get("available", false)
+	# Arte por id: aplica primeiro pra saber se está em modo placeholder (sem arte
+	# própria) — placeholders tingem texto em cinza pra diferenciar visualmente.
+	_apply_card_art(card, category, slot.get("id", ""), target_level, available)
+	_ensure_coin_icon(card, category)
+	var is_placeholder: bool = bool(card.get_meta("using_placeholder", false))
 	# Title é obrigatório; Desc / Stars / Price são opcionais (cards paisagem
-	# tipicamente não têm Desc, e StarsLabel foi removido de todos — fica
-	# defensivo pra .tscn permitir ajustes livres).
+	# tipicamente não têm Desc, e StarsLabel foi removido de todos).
 	var title_label: Label = card.get_node_or_null("TitleLabel") as Label
 	if title_label != null:
 		title_label.text = slot.get("name", "—")
-		title_label.modulate = _level_tint_for_label(target_level) if (available and target_level > 0) else Color.WHITE
+		if is_placeholder:
+			title_label.modulate = PLACEHOLDER_TEXT_COLOR
+		else:
+			title_label.modulate = _level_tint_for_label(target_level) if (available and target_level > 0) else Color.WHITE
 	var desc_label: Label = card.get_node_or_null("DescLabel") as Label
 	if desc_label != null:
 		desc_label.text = slot.get("desc", "—")
+		desc_label.modulate = PLACEHOLDER_TEXT_COLOR if is_placeholder else Color.WHITE
 	var price_label: Label = card.get_node_or_null("PriceLabel") as Label
 	if price_label != null:
 		price_label.text = ("%d" % int(slot.get("price", 0))) if available else "—"
+		price_label.modulate = PLACEHOLDER_TEXT_COLOR if is_placeholder else Color.WHITE
 	var stars_label: Label = card.get_node_or_null("StarsLabel") as Label
 	if stars_label != null:
 		stars_label.text = ""
-	# Arte por id: se existe `assets/Hud/shop/<category>/<id>.png` (sprite sheet
-	# horizontal, 1 frame por nível), troca o Bg por uma AtlasTexture do frame
-	# correspondente. Senão, usa o template default do .tscn.
-	_apply_card_art(card, category, slot.get("id", ""), target_level, available)
 
 
 # Tamanho do frame por categoria (paisagem vs retrato).
@@ -507,6 +512,18 @@ const _CARD_FRAME_SIZES: Dictionary = {
 	"upgrade": Vector2i(38, 47),
 }
 
+# Cor do texto quando o card mostra a arte placeholder (sem desenho próprio
+# ainda). Cinza escuro pra avisar visualmente "card temporário".
+const PLACEHOLDER_TEXT_COLOR: Color = Color(0.35, 0.35, 0.35, 1.0)
+# Posição default do CoinIcon por categoria (relativo ao card). User pode
+# ajustar via layout editor.
+const _COIN_ICON_DEFAULTS: Dictionary = {
+	"status": Rect2(351.0, 41.0, 32.0, 48.0),
+	"estrutura": Rect2(351.0, 41.0, 32.0, 48.0),
+	"aliado": Rect2(104.0, 297.0, 32.0, 32.0),
+	"upgrade": Rect2(104.0, 297.0, 32.0, 32.0),
+}
+
 
 func _apply_card_art(card: Control, category: String, slot_id: String, target_level: int, available: bool) -> void:
 	var bg: TextureRect = card.get_node_or_null("Bg") as TextureRect
@@ -515,12 +532,14 @@ func _apply_card_art(card: Control, category: String, slot_id: String, target_le
 	# Cacheia textura default da .tscn (fallback final) na primeira passada.
 	if not card.has_meta("base_texture"):
 		card.set_meta("base_texture", bg.texture)
+	card.set_meta("using_placeholder", false)
 	# Slots vazios / indisponíveis usam o placeholder da categoria (se houver)
 	# em vez do template genérico. Mantém o visual consistente entre cards.
 	if slot_id == "" or slot_id == "soon" or slot_id == "none" or not available:
 		var placeholder_tex: Texture2D = _load_card_texture(category, "placeholder")
 		if placeholder_tex != null:
 			bg.texture = _make_card_atlas(placeholder_tex, category, target_level)
+			card.set_meta("using_placeholder", true)
 		else:
 			bg.texture = card.get_meta("base_texture")
 		return
@@ -528,6 +547,8 @@ func _apply_card_art(card: Control, category: String, slot_id: String, target_le
 	if tex == null:
 		# Card não tem arte própria: usa placeholder da categoria.
 		tex = _load_card_texture(category, "placeholder")
+		if tex != null:
+			card.set_meta("using_placeholder", true)
 	if tex == null:
 		bg.texture = card.get_meta("base_texture")
 		return
@@ -539,6 +560,34 @@ func _load_card_texture(category: String, name_id: String) -> Texture2D:
 	if not ResourceLoader.exists(path):
 		return null
 	return load(path) as Texture2D
+
+
+func _ensure_coin_icon(card: Control, category: String) -> void:
+	# Adiciona um CoinIcon (TextureRect com a moeda dourada) como filho do card,
+	# se ainda não existir. Posição default por categoria — user pode arrastar
+	# via layout editor.
+	var icon: TextureRect = card.get_node_or_null("CoinIcon") as TextureRect
+	if icon != null:
+		return
+	icon = TextureRect.new()
+	icon.name = "CoinIcon"
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Frame 0 do spritesheet de moedas (4 frames de 8×8).
+	var coin_sheet: Texture2D = load("res://assets/obecjts map/coins.png")
+	if coin_sheet != null:
+		var atlas := AtlasTexture.new()
+		atlas.atlas = coin_sheet
+		atlas.region = Rect2(0, 0, 8, 8)
+		icon.texture = atlas
+	var rect: Rect2 = _COIN_ICON_DEFAULTS.get(category, Rect2(0, 0, 32, 32))
+	icon.offset_left = rect.position.x
+	icon.offset_top = rect.position.y
+	icon.offset_right = rect.position.x + rect.size.x
+	icon.offset_bottom = rect.position.y + rect.size.y
+	card.add_child(icon)
 
 
 func _make_card_atlas(tex: Texture2D, category: String, target_level: int) -> AtlasTexture:

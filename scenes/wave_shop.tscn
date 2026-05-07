@@ -368,9 +368,9 @@ autowrap_mode = 2
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard1" unique_id=1468004879]
 layout_mode = 0
 offset_left = 16.0
-offset_top = 307.0
+offset_top = 297.0
 offset_right = 288.0
-offset_bottom = 347.0
+offset_bottom = 337.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
@@ -415,7 +415,6 @@ theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 26
 text = "—"
-horizontal_alignment = 1
 
 
 [node name="DescLabel" type="Label" parent="Root/AliadoRow/AliadoCard2" unique_id=82308045]
@@ -435,9 +434,9 @@ autowrap_mode = 2
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard2" unique_id=538757896]
 layout_mode = 0
 offset_left = 16.0
-offset_top = 307.0
+offset_top = 297.0
 offset_right = 288.0
-offset_bottom = 347.0
+offset_bottom = 337.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
@@ -482,7 +481,6 @@ theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 26
 text = "—"
-horizontal_alignment = 1
 
 
 [node name="DescLabel" type="Label" parent="Root/AliadoRow/AliadoCard3" unique_id=1406948037]
@@ -502,9 +500,9 @@ autowrap_mode = 2
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard3" unique_id=1791183174]
 layout_mode = 0
 offset_left = 16.0
-offset_top = 307.0
+offset_top = 297.0
 offset_right = 288.0
-offset_bottom = 347.0
+offset_bottom = 337.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
@@ -568,7 +566,6 @@ theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 26
 text = "—"
-horizontal_alignment = 1
 
 
 [node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard1" unique_id=189410968]
@@ -588,9 +585,9 @@ autowrap_mode = 2
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard1" unique_id=821493539]
 layout_mode = 0
 offset_left = 16.0
-offset_top = 307.0
+offset_top = 297.0
 offset_right = 288.0
-offset_bottom = 347.0
+offset_bottom = 337.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
@@ -635,7 +632,6 @@ theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 26
 text = "—"
-horizontal_alignment = 1
 
 
 [node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard2" unique_id=153398373]
@@ -655,9 +651,9 @@ autowrap_mode = 2
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard2" unique_id=47973896]
 layout_mode = 0
 offset_left = 16.0
-offset_top = 307.0
+offset_top = 297.0
 offset_right = 288.0
-offset_bottom = 347.0
+offset_bottom = 337.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
@@ -702,7 +698,6 @@ theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 26
 text = "—"
-horizontal_alignment = 1
 
 
 [node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard3" unique_id=951410516]
@@ -722,9 +717,9 @@ autowrap_mode = 2
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard3" unique_id=9334886]
 layout_mode = 0
 offset_left = 16.0
-offset_top = 307.0
+offset_top = 297.0
 offset_right = 288.0
-offset_bottom = 347.0
+offset_bottom = 337.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
