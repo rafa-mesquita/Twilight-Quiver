@@ -19,14 +19,15 @@ const WOODWARDEN_PRICE_TABLE: Array[int] = [6, 10, 14, 18, 24, 30]
 const STRUCTURE_SURCHARGE_PER_OWNED: int = 3
 
 const UPGRADE_CATALOG: Array = [
-	{"id": "hp", "name": "Mais HP"},
+	# HP saiu do catálogo aleatório — virou compra dedicada na coluna esquerda
+	# com preço escalado por nível (1, 2, 3, 4...).
 	{"id": "damage", "name": "Dano"},
 	{"id": "perfuracao", "name": "Perfuracao", "max_level": 4},
 	{"id": "attack_speed", "name": "Atack Speed"},
 	{"id": "multi_arrow", "name": "Multiplas Flechas", "max_level": 4},
 	{"id": "chain_lightning", "name": "Cadeia de Raios", "max_level": 4},
 	{"id": "move_speed", "name": "Move Speed"},
-	{"id": "life_steal", "name": "Life Steal"},
+	{"id": "life_steal", "name": "Coleta de Coracao"},
 	{"id": "gold_magnet", "name": "Ima de Gold", "max_level": 1},
 	{"id": "dash", "name": "Dash", "max_level": 1},
 	# Sub-melhorias do dash — só aparecem no roll quando pré-requisito atendido.
@@ -104,13 +105,13 @@ const DASH_DOUBLE_ARROW_DESCS: Array[String] = [
 	"Dash dispara 2 flechas\nem sequencia",
 ]
 const FIRE_ARROW_DESCS: Array[String] = [
-	"Flecha queima inimigos\n5 dmg/s por 3s",
-	"+1 dmg/s queima +\nrastro de fogo (4 dps)",
+	"Flecha queima inimigos\n10 dmg/s por 3s",
+	"+2 dmg/s queima +\nrastro de fogo (4 dps)",
 	"Skill (Q): chama em\narea (12 dps, 6s, cd 7s)",
 	"Rastro do player +30%\nem queimaduras +25% area",
 ]
 const CURSE_ARROW_DESCS: Array[String] = [
-	"Flecha amaldicoada:\nslow 35% + 4 dps toxic",
+	"Flecha amaldicoada:\nslow 35% + 7 dps toxic",
 	"18% chance: kill vira\naliado ate fim da horda",
 	"33% chance + aliados\naplicam slow/DoT",
 	"50% chance + skill (Q):\nraio roxo, cd 3s",
@@ -314,7 +315,20 @@ func _roll_struct_slots() -> void:
 		"scene": "res://scenes/woodwarden.tscn",
 		"is_ally": true,
 	})
-	struct_slots.append({"id": "soon", "name": "Em breve", "desc": "—", "price": 0, "available": false})
+	# Slot dedicado de HP (sempre disponível, preço escalonado 1, 2, 3, 4...).
+	# is_upgrade=true sinaliza pro flow de compra: aplica direto via apply_upgrade
+	# e pula placement mode.
+	var hp_lvl: int = 0
+	if p != null and p.has_method("get_upgrade_count"):
+		hp_lvl = p.get_upgrade_count("hp")
+	struct_slots.append({
+		"id": "hp",
+		"name": "Mais HP",
+		"desc": "+15 HP maximo",
+		"price": hp_lvl + 1,
+		"available": true,
+		"is_upgrade": true,
+	})
 
 
 func _roll_upg_slots() -> void:
@@ -361,7 +375,7 @@ func _roll_upg_slots() -> void:
 		if player != null and player.has_method("get_upgrade_count"):
 			current_level = player.get_upgrade_count(picked_id)
 		var target_level: int = current_level + 1
-		var price: int = _get_upgrade_price(current_level)
+		var price: int = _get_upgrade_price(picked_id, current_level)
 		upg_slots.append({
 			"id": picked_id,
 			"name": picked["name"],
@@ -372,7 +386,17 @@ func _roll_upg_slots() -> void:
 		})
 
 
-func _get_upgrade_price(player_current_level: int) -> int:
+# Override de preço por upgrade — sub-melhorias one-shot do dash são fortes
+# demais pra cair no PRICE_TABLE base (3 coins), então têm preço fixo alto.
+const UPGRADE_PRICE_OVERRIDES: Dictionary = {
+	"dash_auto_attack": 12,
+	"dash_double_arrow": 18,
+}
+
+
+func _get_upgrade_price(id: String, player_current_level: int) -> int:
+	if id in UPGRADE_PRICE_OVERRIDES:
+		return int(UPGRADE_PRICE_OVERRIDES[id])
 	if player_current_level < 0:
 		player_current_level = 0
 	if player_current_level >= PRICE_TABLE.size():
@@ -643,6 +667,11 @@ func _buy_upgrade(idx: int) -> void:
 	# Limite de seleções por round (1 ou 2 dependendo da wave).
 	if _is_upgrade_limit_reached():
 		return
+	# Mutex elemental DENTRO DO MESMO ROUND: se já tem fire ou curse selecionado,
+	# bloqueia o outro (caso ambos tenham rolado neste round antes do player ter
+	# qualquer um — o filtro do _roll_upg_slots não cobre esse caso).
+	if _is_elemental_blocked_by_selection(slot.get("id", "")):
+		return
 	var player := _get_player()
 	if player == null:
 		return
@@ -652,6 +681,17 @@ func _buy_upgrade(idx: int) -> void:
 		return
 	_selected_upgrade_idxs.append(idx)
 	_play_buy_sound()
+
+
+func _is_elemental_blocked_by_selection(id: String) -> bool:
+	# Se o id é fire/curse, bloqueia se o OUTRO elemental já está selecionado.
+	if id != "fire_arrow" and id != "curse_arrow":
+		return false
+	var counterpart: String = "curse_arrow" if id == "fire_arrow" else "fire_arrow"
+	for sel_idx in _selected_upgrade_idxs:
+		if upg_slots[sel_idx].get("id", "") == counterpart:
+			return true
+	return false
 	_refresh_button_states()
 
 
@@ -725,8 +765,10 @@ func _refresh_button_states() -> void:
 		var available: bool = slot.get("available", false)
 		var price: int = int(slot.get("price", 0))
 		var is_selected: bool = i in _selected_upgrade_idxs
-		# Pode adicionar essa nova seleção? cabem no gold + ainda dentro do limite.
-		var can_select: bool = not limit_reached and available_gold >= price
+		# Pode adicionar essa nova seleção? cabem no gold + ainda dentro do limite +
+		# não bloqueado pelo mutex elemental (fire/curse mutuamente exclusivos).
+		var blocked: bool = _is_elemental_blocked_by_selection(slot.get("id", ""))
+		var can_select: bool = not limit_reached and available_gold >= price and not blocked
 		btn.disabled = not available or (not is_selected and not can_select)
 		if not available:
 			btn.text = "—"
@@ -800,11 +842,30 @@ func _on_continue_pressed() -> void:
 		return
 	# Estrutura selecionada → entra em placement. Após confirmar o spot,
 	# os upgrades são commitados e o shop fecha (_commit_upgrades_and_close).
+	# Exceção: slot "is_upgrade" (ex: HP dedicado) aplica direto sem placement.
 	if _selected_structure_idx >= 0:
+		var sel_slot: Dictionary = struct_slots[_selected_structure_idx]
+		if sel_slot.get("is_upgrade", false):
+			_apply_struct_slot_as_upgrade(sel_slot)
+			_commit_upgrades_and_close()
+			return
 		_enter_placement_mode(_selected_structure_idx)
 		return
 	# Sem estrutura: só commita upgrades selecionados (se houver) e fecha.
 	_commit_upgrades_and_close()
+
+
+func _apply_struct_slot_as_upgrade(slot: Dictionary) -> void:
+	# Slot da coluna de "estruturas" que na verdade é um upgrade direto (ex: HP).
+	# Cobra o preço e aplica via player.apply_upgrade — sem placement mode.
+	var player := _get_player()
+	if player == null:
+		return
+	var price: int = int(slot.get("price", 0))
+	if not player.spend_gold(price):
+		return
+	if player.has_method("apply_upgrade"):
+		player.apply_upgrade(slot["id"])
 
 
 func _setup_bonus_label() -> void:

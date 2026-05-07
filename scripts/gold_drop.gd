@@ -5,7 +5,7 @@ extends RefCounted
 # Cada inimigo chama GoldDrop.try_drop(...) no death — só não dropa quem não deveria
 # (ex: inseto invocado, pra não virar exploit do mago invocador).
 
-const PICKUP_SPREAD: float = 14.0
+const PICKUP_SPREAD: float = 22.0
 # Bônus de drop chance dado pelo upgrade Imã de Gold (excalidraw: "+2% chance de drop").
 const GOLD_MAGNET_DROP_BONUS: float = 0.02
 

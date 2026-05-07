@@ -61,11 +61,20 @@ const BAR_FILL_WIDTH: float = 330.0
 var _hud_alpha_target: float = HUD_OPAQUE_ALPHA
 var _hud_alpha_tween: Tween
 
+# Pause menu (ESC) — overlay procedural, process_mode ALWAYS pra continuar
+# respondendo enquanto get_tree().paused é true.
+var _pause_layer: CanvasLayer = null
+var _pause_visible: bool = false
+
 
 func _ready() -> void:
 	add_to_group("hud")
+	# HUD precisa receber input mesmo com a árvore pausada — senão ESC pra fechar
+	# o pause não chega.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	restart_button.pressed.connect(_on_restart_pressed)
 	menu_button.pressed.connect(_on_menu_pressed)
+	_create_pause_menu()
 	# Aplica scale em runtime — no editor o HudFrame fica em 1× (45×145) pra não
 	# atrapalhar a edição do mapa.
 	hud_frame.scale = HUD_RUNTIME_SCALE
@@ -321,7 +330,91 @@ func _show_restart_button() -> void:
 
 
 func _on_menu_pressed() -> void:
+	# Garante despausar antes de trocar de cena (senão o menu carrega pausado).
+	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+
+
+# ---------- Pause menu (ESC) ----------
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not (event is InputEventKey) or not event.pressed or event.echo:
+		return
+	if event.keycode != KEY_ESCAPE:
+		return
+	# Bloqueia durante death (o menu de morte já cobre a tela) e quando outro
+	# overlay está ativo (cleared / intro / placement de estrutura).
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null and "is_dead" in player and bool(player.is_dead):
+		return
+	if cleared_overlay.visible or intro_overlay.visible:
+		return
+	if _pause_visible:
+		_close_pause()
+	else:
+		_open_pause()
+	get_viewport().set_input_as_handled()
+
+
+func _open_pause() -> void:
+	if _pause_layer == null:
+		return
+	_pause_visible = true
+	_pause_layer.visible = true
+	get_tree().paused = true
+
+
+func _close_pause() -> void:
+	if _pause_layer == null:
+		return
+	_pause_visible = false
+	_pause_layer.visible = false
+	get_tree().paused = false
+
+
+func _create_pause_menu() -> void:
+	_pause_layer = CanvasLayer.new()
+	_pause_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	_pause_layer.layer = 60
+	_pause_layer.visible = false
+	var bg := ColorRect.new()
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.color = Color(0, 0, 0, 0.78)
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	_pause_layer.add_child(bg)
+	var at01: Font = load("res://font/at01.ttf")
+	var title := Label.new()
+	title.set_anchors_preset(Control.PRESET_CENTER)
+	title.position = Vector2(-600, -260)
+	title.size = Vector2(1200, 140)
+	title.text = "PAUSADO"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if at01 != null:
+		title.add_theme_font_override("font", at01)
+	title.add_theme_font_size_override("font_size", 96)
+	title.add_theme_color_override("font_color", Color.WHITE)
+	bg.add_child(title)
+	var continue_btn := Button.new()
+	continue_btn.set_anchors_preset(Control.PRESET_CENTER)
+	continue_btn.position = Vector2(-220, -60)
+	continue_btn.size = Vector2(440, 72)
+	continue_btn.text = "Continuar"
+	if at01 != null:
+		continue_btn.add_theme_font_override("font", at01)
+	continue_btn.add_theme_font_size_override("font_size", 48)
+	continue_btn.pressed.connect(_close_pause)
+	bg.add_child(continue_btn)
+	var menu_btn := Button.new()
+	menu_btn.set_anchors_preset(Control.PRESET_CENTER)
+	menu_btn.position = Vector2(-220, 40)
+	menu_btn.size = Vector2(440, 64)
+	menu_btn.text = "Voltar ao Menu"
+	if at01 != null:
+		menu_btn.add_theme_font_override("font", at01)
+	menu_btn.add_theme_font_size_override("font_size", 36)
+	menu_btn.pressed.connect(_on_menu_pressed)
+	bg.add_child(menu_btn)
+	add_child(_pause_layer)
 
 
 # ---------- Tower attack alert ----------

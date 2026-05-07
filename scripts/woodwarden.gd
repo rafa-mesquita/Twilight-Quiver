@@ -12,12 +12,16 @@ extends CharacterBody2D
 
 signal died(woodwarden: Node)
 
-@export var max_hp: float = 200.0
+@export var max_hp: float = 320.0
 @export var damage: float = 50.0
 @export var stun_duration: float = 1.2
 @export var attack_cooldown: float = 2.4  # MUITO baixo: 1 ataque a cada 2.4s
 @export var attack_range: float = 16.0
 @export var aggro_range: float = 140.0
+# Foco do Woodwarden é DEFENDER o player — só persegue inimigos que estão
+# dentro deste raio em volta do PLAYER (não do warden). Evita correr pra
+# longe atrás de inimigo solto e deixar o player descoberto.
+@export var defense_radius: float = 110.0
 # Anel de respiro ao redor do player: woodwarden persegue se mais longe que
 # follow_max_distance, recua se mais perto que follow_min_distance, fica parado
 # entre os dois.
@@ -135,14 +139,24 @@ func _separation_force() -> Vector2:
 
 
 func _pick_enemy_target() -> Node2D:
-	# Inimigo mais próximo dentro do aggro_range.
+	# Foca em DEFENDER o player: só engaja inimigos dentro do defense_radius
+	# medido do PLAYER (não do warden). Inimigos fora desse anel ficam pro
+	# arco do player. Empate de distância: pega o mais perto do warden.
 	var nearest: Node2D = null
 	var best_dist: float = INF
+	var anchor: Vector2 = global_position
+	if player != null and is_instance_valid(player):
+		anchor = player.global_position
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e) or not (e is Node2D):
 			continue
-		var d: float = global_position.distance_to((e as Node2D).global_position)
-		if d <= aggro_range and d < best_dist:
+		var enemy_pos: Vector2 = (e as Node2D).global_position
+		# Filtro principal: inimigo precisa estar perto do PLAYER.
+		if anchor.distance_to(enemy_pos) > defense_radius:
+			continue
+		# Entre os candidatos, escolhe o mais perto do próprio warden.
+		var d: float = global_position.distance_to(enemy_pos)
+		if d < best_dist:
 			nearest = e
 			best_dist = d
 	return nearest

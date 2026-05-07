@@ -106,7 +106,7 @@ var dash_cd_reduction_level: int = 0
 var dash_fire_trail_level: int = 0
 var has_dash_auto_attack: bool = false
 var has_dash_double_arrow: bool = false
-const DASH_CD_REDUCTION_PER_STACK: float = 0.3
+const DASH_CD_REDUCTION_PER_STACK: float = 0.5
 const DASH_CD_MIN: float = 0.5
 # Trilha de poder do dash: spawna um segmento a cada N px percorridos durante
 # o dash. Cada segmento dura 3s e dá DPS roxo em inimigos na área.
@@ -459,12 +459,14 @@ func _fire_area_scale() -> float:
 
 func _fire_burn_dps() -> float:
 	# Base por nível × multiplier global.
+	# Lv1 buff: 5 → 10 (30 total dmg em 3s) pra que arrow+dmg lv1 oneshote
+	# macaco até wave ~5 (HP ~56 vs arrow 30 + dot 30 = 60).
 	var base: float = 0.0
 	match fire_arrow_level:
-		1: base = 5.0
-		2: base = 6.0
-		3: base = 7.0
-		4: base = 9.0
+		1: base = 10.0
+		2: base = 12.0
+		3: base = 14.0
+		4: base = 17.0
 	return base * _fire_burn_multiplier()
 
 
@@ -486,11 +488,13 @@ func _fire_trail_dps() -> float:
 func _curse_dps() -> float:
 	# DoT toxic da maldição. Spec só define lv1 — escalei levemente pra
 	# diferenciar níveis sem mudar o design (lv2-4 focam na conversão de aliados).
+	# Lv1 buff: 4 → 7 (28 total dmg em 4s). Junto com arrow+dmg lv1 (30) = 58
+	# pra oneshot macaco até wave ~5 (HP 56).
 	match curse_arrow_level:
-		1: return 4.0
-		2: return 5.0
-		3: return 6.0
-		4: return 8.0
+		1: return 7.0
+		2: return 8.0
+		3: return 10.0
+		4: return 12.0
 	return 0.0
 
 

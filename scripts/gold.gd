@@ -8,7 +8,7 @@ extends Area2D
 @export var bob_amplitude: float = 1.5
 @export var bob_speed: float = 4.0
 @export var pickup_sound: AudioStream
-@export var lifetime: float = 8.0
+@export var lifetime: float = 9.5
 @export var blink_warn_duration: float = 2.5
 
 const VISUAL_OFFSET_Y: float = -6.0
@@ -18,6 +18,9 @@ const HOP_DURATION: float = 0.4
 # Imã de Gold (upgrade): velocidade da perseguição contínua durante a wave.
 # Diferente do magnet de fim-de-wave que usa tween fixo de 0.55s.
 const MAGNET_PULL_SPEED: float = 130.0
+# Raio do magnet — só puxa moedas dentro deste range. Antes puxava do mapa
+# inteiro, o que removia decisão tática de "andar até a moeda".
+const MAGNET_RADIUS: float = 110.0
 # Shader que substitui RGB por branco preservando alpha — usado pro blink final.
 const SILHOUETTE_SHADER: Shader = preload("res://shaders/silhouette.gdshader")
 
@@ -173,7 +176,11 @@ func _is_player_magnet_active() -> bool:
 		_player_ref = get_tree().get_first_node_in_group("player") as Node2D
 	if _player_ref == null:
 		return false
-	return _player_ref.get("has_gold_magnet") == true
+	if _player_ref.get("has_gold_magnet") != true:
+		return false
+	# Só puxa se a moeda estiver dentro do raio do magnet — fora disso
+	# o player ainda precisa andar até a moeda (decisão tática preservada).
+	return global_position.distance_squared_to(_player_ref.global_position) <= MAGNET_RADIUS * MAGNET_RADIUS
 
 
 func _magnet_chase_player(delta: float) -> void:

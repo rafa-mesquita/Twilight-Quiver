@@ -37,6 +37,7 @@ var spawned_this_wave: Dictionary = {}  # {type_key: int}
 var total_to_spawn_this_wave: int = 0
 var last_progress_killed: int = -1  # cache pra evitar spam de update na HUD
 var _coins_dropped_this_wave: int = 0  # tracker pro pity system de gold drops da wave 1
+var _player_gold_at_wave_start: int = 0  # snapshot pro pity computar gold real ganho na wave
 
 # Registro de tipos: associa uma chave de string a (PackedScene, group_name).
 # Pra adicionar um novo tipo de inimigo: registra aqui + adiciona group no script dele.
@@ -164,6 +165,12 @@ func _start_next_wave() -> void:
 			player.reset_position()
 		if player.has_method("reset_perf_counter"):
 			player.reset_perf_counter()
+	# Snapshot do gold do player no início da wave — pity pega gold REAL ganho
+	# (já coletado + ainda no chão), não conta em "coin entries" do drop.
+	if player != null and "gold" in player:
+		_player_gold_at_wave_start = int(player.gold)
+	else:
+		_player_gold_at_wave_start = 0
 	# Renasce torres/aliados destruídos na wave anterior na mesma posição.
 	_respawn_owned_structures()
 
@@ -344,7 +351,21 @@ func notify_coin_dropped(amount: int = 1) -> void:
 func _top_up_wave1_coins() -> void:
 	if wave_number != 1 or wave1_min_guaranteed_drops <= 0:
 		return
-	var missing: int = wave1_min_guaranteed_drops - _coins_dropped_this_wave
+	# Conta gold REAL ganho na wave: (gold atual do player − snapshot inicial)
+	# + gold ainda espalhado pelo mapa (cada moeda vale `value`). Dessa forma o
+	# pity funciona mesmo se o player picou moedas durante a wave.
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	var collected_this_wave: int = 0
+	if player != null and "gold" in player:
+		collected_this_wave = int(player.gold) - _player_gold_at_wave_start
+	var ground_gold: int = 0
+	for c in get_tree().get_nodes_in_group("gold"):
+		if not is_instance_valid(c):
+			continue
+		var v: Variant = c.get("value")
+		ground_gold += int(v) if v != null else 1
+	var total_so_far: int = collected_this_wave + ground_gold
+	var missing: int = wave1_min_guaranteed_drops - total_so_far
 	if missing <= 0:
 		return
 	var gold_scene: PackedScene = load("res://scenes/gold.tscn") as PackedScene
@@ -354,7 +375,6 @@ func _top_up_wave1_coins() -> void:
 	if world == null:
 		return
 	# Spawna as faltantes perto do player (vão ser sugadas pelo magnet logo a seguir).
-	var player := get_tree().get_first_node_in_group("player") as Node2D
 	var center: Vector2 = player.global_position if player != null else Vector2.ZERO
 	for i in missing:
 		var coin: Node2D = gold_scene.instantiate()
@@ -494,14 +514,16 @@ func _apply_woodwarden_scaling_if_applicable(inst: Node2D, scene_path: String) -
 # pra não bloquear o caminho que o player quer escolher, sem sub-dash que precisa
 # de pré-requisito).
 const FREE_UPGRADE_POOL: Array[Dictionary] = [
-	{"id": "hp", "name": "Mais HP"},
+	# HP saiu do pool aleatório — agora é compra dedicada na loja com preço
+	# escalonado (1G, 2G, 3G, ...). Free upgrade não pode "queimar" o slot
+	# barato do primeiro HP.
 	{"id": "damage", "name": "Dano"},
 	{"id": "perfuracao", "name": "Perfuracao"},
 	{"id": "attack_speed", "name": "Atack Speed"},
 	{"id": "multi_arrow", "name": "Multiplas Flechas"},
 	{"id": "chain_lightning", "name": "Cadeia de Raios"},
 	{"id": "move_speed", "name": "Move Speed"},
-	{"id": "life_steal", "name": "Life Steal"},
+	{"id": "life_steal", "name": "Coleta de Coracao"},
 	{"id": "gold_magnet", "name": "Ima de Gold"},
 	{"id": "dash", "name": "Dash"},
 ]
