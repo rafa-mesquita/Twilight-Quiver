@@ -38,13 +38,35 @@ func _ready() -> void:
 	# Phase inicial random pra moedas dropadas no mesmo instante não pulsarem em sync.
 	_bob_phase = randf() * TAU
 	visual.position.y = VISUAL_OFFSET_Y
-	# Z_index alto pro visual ficar SEMPRE por cima de props/árvores (player ainda
-	# escondia moeda quando passava por trás de objeto). Mantém origem no chão
-	# pra colisão funcionar; só o desenho do sprite flutua acima.
-	visual.z_as_relative = false
-	visual.z_index = 50
 	_silhouette_mat = ShaderMaterial.new()
 	_silhouette_mat.shader = SILHOUETTE_SHADER
+	_create_occlusion_indicator()
+
+
+# Pequena bolinha dourada pulsante ACIMA da moeda, com z_index alto pra
+# renderizar sempre por cima de árvores/props/player. Solução pro problema
+# da moeda sumir atrás de objetos sem ter que jogar a moeda inteira pra cima
+# (o que ficaria estranho com o y-sort).
+func _create_occlusion_indicator() -> void:
+	var ind := Polygon2D.new()
+	ind.z_as_relative = false
+	ind.z_index = 100
+	ind.position = Vector2(0, VISUAL_OFFSET_Y - 12.0)
+	var pts := PackedVector2Array()
+	var radius: float = 2.5
+	var segments: int = 10
+	for i in segments:
+		var ang: float = TAU * float(i) / float(segments)
+		pts.append(Vector2(cos(ang) * radius, sin(ang) * radius))
+	ind.polygon = pts
+	ind.color = Color(1.0, 0.85, 0.35, 1.0)  # dourado igual à moeda
+	add_child(ind)
+	# Pulse de alpha — fade out + in suave pra chamar atenção sem ser irritante.
+	# Fase random pra moedas próximas não piscarem em sync.
+	ind.modulate.a = randf_range(0.4, 1.0)
+	var tw := ind.create_tween().set_loops()
+	tw.tween_property(ind, "modulate:a", 0.25, 0.55).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(ind, "modulate:a", 1.0, 0.55).set_trans(Tween.TRANS_SINE)
 
 
 func magnet_to_player(target_pos_callable: Callable) -> void:
