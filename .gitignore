@@ -20,6 +20,7 @@ desktop.ini
 # Builds
 /builds/
 /build/
+/web_build/
 *.exe
 *.pck
 
