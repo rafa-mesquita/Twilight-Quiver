@@ -38,6 +38,11 @@ func _ready() -> void:
 	# Phase inicial random pra moedas dropadas no mesmo instante não pulsarem em sync.
 	_bob_phase = randf() * TAU
 	visual.position.y = VISUAL_OFFSET_Y
+	# Z_index alto pro visual ficar SEMPRE por cima de props/árvores (player ainda
+	# escondia moeda quando passava por trás de objeto). Mantém origem no chão
+	# pra colisão funcionar; só o desenho do sprite flutua acima.
+	visual.z_as_relative = false
+	visual.z_index = 50
 	_silhouette_mat = ShaderMaterial.new()
 	_silhouette_mat.shader = SILHOUETTE_SHADER
 

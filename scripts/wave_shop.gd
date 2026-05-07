@@ -566,7 +566,7 @@ func _confirm_placement_at(chosen: Node2D) -> void:
 	# seja destruída pelos inimigos.
 	var wm := get_tree().get_first_node_in_group("wave_manager")
 	if wm != null and wm.has_method("register_structure"):
-		wm.register_structure(slot["scene"], chosen.global_position)
+		wm.register_structure(slot["scene"], chosen.global_position, chosen)
 	_exit_placement_mode()
 	# Após colocar a estrutura, finaliza o flow do Continue: aplica upgrades
 	# selecionados e fecha o shop.

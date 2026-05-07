@@ -231,15 +231,12 @@ func _on_hit(body: Node) -> void:
 	# Sobe o parent chain pra achar quem tem take_damage — o body que entra na
 	# colisão pode ser um StaticBody2D filho (caso da torre).
 	var target: Node = _find_damageable(body)
-	# Aliados (torres, futuras estruturas amigas): flecha do player/torre é uma
-	# arrow.gd — friendly fire bloqueado. Bate como parede sem causar dano.
+	# Aliados: flecha PASSA por eles silenciosamente (sem stick, sem som).
+	# Antes parava como parede — agora atravessa pra não atrapalhar mira do player
+	# em inimigos atrás de aliados (woodwarden, torres etc).
 	if target != null and target.is_in_group("ally"):
-		_play_oneshot(object_impact_sound, global_position, sound_volume_db, 0.7)
-		if is_piercing:
-			_pierce_hits += 1
-			_spawn_pierce_hit_effect(_pierce_hits == 3)
-			return
-		_stick_in_place(stick_surface_duration)
+		# Remove do _hit_bodies pra não bloquear se passar pelo mesmo aliado mais tarde.
+		_hit_bodies.erase(body)
 		return
 	if target != null:
 		# Aplica curse ANTES do take_damage — se o dano matar, o try_convert_on_death

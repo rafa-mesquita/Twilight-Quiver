@@ -213,7 +213,7 @@ func _spawn_woodwarden_at_player() -> void:
 		if ww.has_node("HpBar"):
 			ww.get_node("HpBar").set_ratio(1.0)
 	if wm != null and wm.has_method("register_structure"):
-		wm.register_structure("res://scenes/woodwarden.tscn", pos)
+		wm.register_structure("res://scenes/woodwarden.tscn", pos, ww)
 
 
 func _apply_upgrade(upgrade_id: String) -> void:

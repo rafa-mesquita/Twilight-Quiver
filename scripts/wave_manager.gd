@@ -371,9 +371,15 @@ func _on_player_died() -> void:
 
 
 # Chamado pelo wave_shop quando o player confirma o placement de uma estrutura.
-# Salva pra renascer entre waves se for destruída.
-func register_structure(scene_path: String, pos: Vector2) -> void:
-	owned_structures.append({"scene_path": scene_path, "position": pos})
+# Salva pra renascer entre waves se for destruída. Aceita ref do node atual
+# pra rastrear se ainda tá vivo (estruturas móveis tipo woodwarden movem do
+# spawn original — não dá pra checar só por proximidade de posição).
+func register_structure(scene_path: String, pos: Vector2, instance: Node2D = null) -> void:
+	owned_structures.append({
+		"scene_path": scene_path,
+		"position": pos,
+		"instance": instance,
+	})
 
 
 func _respawn_owned_structures() -> void:
@@ -382,21 +388,18 @@ func _respawn_owned_structures() -> void:
 	var world := get_tree().get_first_node_in_group("world")
 	if world == null:
 		return
-	# Pra cada estrutura registrada, checa se ainda há uma viva próxima do spot.
-	# Se não houver, instancia uma nova ali.
-	var alive_positions: Array[Vector2] = []
-	for s in get_tree().get_nodes_in_group("structure"):
-		if s is Node2D and is_instance_valid(s):
-			alive_positions.append((s as Node2D).global_position)
+	# Pra cada entry, verifica se a instância registrada ainda existe. Se sim,
+	# atualiza a posição salva (pra o respawn futuro acontecer onde ela morreu).
+	# Se não, spawna uma nova na última posição conhecida.
 	for entry in owned_structures:
-		var pos: Vector2 = entry["position"]
-		var still_alive: bool = false
-		for ap in alive_positions:
-			if ap.distance_to(pos) < 8.0:
-				still_alive = true
-				break
-		if still_alive:
+		var inst_ref: Variant = entry.get("instance", null)
+		if inst_ref != null and is_instance_valid(inst_ref) and (inst_ref as Node).is_inside_tree():
+			# Vivo — atualiza posição pra próxima respawn ser na última posição dele.
+			if inst_ref is Node2D:
+				entry["position"] = (inst_ref as Node2D).global_position
 			continue
+		# Morto/freed — respawna na última posição conhecida.
+		var pos: Vector2 = entry["position"]
 		var scene: PackedScene = load(entry["scene_path"])
 		if scene == null:
 			continue
@@ -404,6 +407,7 @@ func _respawn_owned_structures() -> void:
 		_apply_woodwarden_scaling_if_applicable(inst, entry["scene_path"])
 		world.add_child(inst)
 		inst.global_position = pos
+		entry["instance"] = inst
 
 
 # Aplica HP/dmg scalonado por nível do woodwarden_level do player. Cada compra
