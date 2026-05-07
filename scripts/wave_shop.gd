@@ -105,13 +105,13 @@ const DASH_DOUBLE_ARROW_DESCS: Array[String] = [
 	"Dash dispara 2 flechas\nem sequencia",
 ]
 const FIRE_ARROW_DESCS: Array[String] = [
-	"Flecha queima inimigos\n10 dmg/s por 3s",
-	"+2 dmg/s queima +\nrastro de fogo (4 dps)",
+	"Flecha queima inimigos\n4 dmg/s por 3s",
+	"+1 dmg/s queima +\nrastro de fogo (4 dps)",
 	"Skill (Q): chama em\narea (12 dps, 6s, cd 7s)",
 	"Rastro do player +30%\nem queimaduras +25% area",
 ]
 const CURSE_ARROW_DESCS: Array[String] = [
-	"Flecha amaldicoada:\nslow 35% + 7 dps toxic",
+	"Flecha amaldicoada:\nslow 35% + 3 dps toxic",
 	"18% chance: kill vira\naliado ate fim da horda",
 	"33% chance + aliados\naplicam slow/DoT",
 	"50% chance + skill (Q):\nraio roxo, cd 3s",

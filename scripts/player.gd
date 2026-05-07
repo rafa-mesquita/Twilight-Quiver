@@ -459,14 +459,15 @@ func _fire_area_scale() -> float:
 
 func _fire_burn_dps() -> float:
 	# Base por nível × multiplier global.
-	# Lv1 buff: 5 → 10 (30 total dmg em 3s) pra que arrow+dmg lv1 oneshote
-	# macaco até wave ~5 (HP ~56 vs arrow 30 + dot 30 = 60).
+	# Lv1 = 4 dps × 3s = 12 total dmg. Combinado com arrow (25) → 37 (não mata
+	# macaco wave 1 de 40 HP). Com dano lv1 (arrow=30) → 42 (mata via DoT).
+	# É o "gate" do upgrade: sem dano, o DoT não mata; com dano, mata.
 	var base: float = 0.0
 	match fire_arrow_level:
-		1: base = 10.0
-		2: base = 12.0
-		3: base = 14.0
-		4: base = 17.0
+		1: base = 4.0
+		2: base = 5.0
+		3: base = 7.0
+		4: base = 10.0
 	return base * _fire_burn_multiplier()
 
 
@@ -488,13 +489,14 @@ func _fire_trail_dps() -> float:
 func _curse_dps() -> float:
 	# DoT toxic da maldição. Spec só define lv1 — escalei levemente pra
 	# diferenciar níveis sem mudar o design (lv2-4 focam na conversão de aliados).
-	# Lv1 buff: 4 → 7 (28 total dmg em 4s). Junto com arrow+dmg lv1 (30) = 58
-	# pra oneshot macaco até wave ~5 (HP 56).
+	# Lv1 = 3 dps × 4s = 12 total dmg. Mesmo gate do fogo: sem dano, arrow(25)
+	# + DoT(12) = 37 não mata macaco wave 1 (40 HP); com dano, arrow(30) +
+	# DoT(12) = 42 mata via DoT.
 	match curse_arrow_level:
-		1: return 7.0
-		2: return 8.0
-		3: return 10.0
-		4: return 12.0
+		1: return 3.0
+		2: return 4.0
+		3: return 6.0
+		4: return 8.0
 	return 0.0
 
 
