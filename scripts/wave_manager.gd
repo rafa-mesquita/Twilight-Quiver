@@ -199,16 +199,20 @@ func _build_wave_config(num: int) -> Dictionary:
 			"mage": {"alive_target": 2, "total": 4},
 		}
 	# Wave 2: invocador entra com cota mínima, escala leve sobre wave 1.
+	# -5% aplicado nos totals (monkey 12→11; outros mantêm via arredondamento).
 	if num == 2:
 		return {
-			"monkey": {"alive_target": 4, "total": 12},
+			"monkey": {"alive_target": 4, "total": 11},
 			"mage": {"alive_target": 3, "total": 6},
 			"summoner_mage": {"alive_target": 1, "total": 2},
 		}
-	# Waves 2+: escala automática + um pouco de aleatoriedade.
+	# Waves 3+: escala automática + um pouco de aleatoriedade.
 	# Quanto maior o wave_number, mais inimigos vivos e mais total.
 	# Ratio macaco/mago varia entre ~70/30 e ~50/50 conforme a wave avança.
-	var scale: float = 1.0 + (num - 1) * 0.35  # +35% por wave
+	# `WAVE_3PLUS_REDUCTION` reduz contagem em 13% do scale linear (afeta o número
+	# de inimigos sem mexer na escala de stats).
+	const WAVE_3PLUS_REDUCTION: float = 0.87
+	var scale: float = (1.0 + (num - 1) * 0.35) * WAVE_3PLUS_REDUCTION
 	var monkey_alive: int = int(round(5 * scale + randf_range(-1.0, 2.0)))
 	var monkey_total: int = int(round(15 * scale + randf_range(0.0, 4.0)))
 	var mage_alive: int = int(round(3 * scale + randf_range(0.0, 2.0)))
