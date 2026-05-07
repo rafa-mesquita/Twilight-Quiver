@@ -1,180 +1,125 @@
 # Próxima Sessão
 
-> Última atualização: 2026-05-06
-> Sessão anterior: Shop pós-wave (upgrades + estruturas) + perfuração proc-based + scaling de waves + UX polish (rerolls, confirmação, sons)
+> Última atualização: 2026-05-07 02:30
+> Sessão anterior: Deploy GH Pages + correção massiva de bugs (laser, conversão maldição, audio, gold drop pity, scaling) + Maldição Lv2-4 (refeita pra spec correta de conversão de aliados)
 
 ## Estado atual
 
-- **Branch:** `main`. Último commit `a9f3e30` ("Add mage enemy with ranged projectile"). **TODAS as mudanças desde fev/26 ainda não commitadas** — gold system, shop, perfuração, torre, rerolls, sons.
-- **Loja pós-wave funcional**: 3 estruturas (Torre de Flechas + 2 placeholders) + 3 upgrades (HP/Dano/Perfuração) com tier (1★→4★ + cor) + reroll por categoria (1 coin, 1× por turno) + confirmação 2-cliques + popup ao prosseguir com upgrade selecionado.
-- **Torre de Flechas viva**: HP 300, 2 muzzles, 80% dano da flecha, FadeArea, off-screen alert, renasce entre waves se for destruída.
-- **Perfuração refeita** conforme spec do excalidraw: a cada 3 ataques próxima flecha procca (atravessa inimigos E objetos). Lv 1=+30% dmg, lv 2=+60%+hitbox 1.8×, lv 3=+90%, lv 4=todo ataque procca. Visual: sprite dourado + trail laranja + 1.1× scale, 3º target tem efeito 2.2× dourado.
-- **Wave scaling**: +12% HP / +8% dano por wave (linear). Mage propaga `damage_mult` pro inseto invocado. Wave 1 nerfada (sem invocador), wave 2 leve.
-- **Sons** wireados: morte (música pausa + fade-in 1.8s), buy (-16dB), coin pickup (-16dB). Wave start REMOVIDO a pedido.
+- **Branch:** `main` no `https://github.com/rafa-mesquita/Twilight-Quiver` (público). Último commit `8d27fd5`.
+- **🎮 JOGO NO AR:** `https://rafa-mesquita.github.io/Twilight-Quiver/` — auto-deploy a cada push pro main via GitHub Actions ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)). Build ~1-3min com cache.
+- **Maldição Lv1-4 100% implementada** (spec correta de conversão de aliados, NÃO o trail/skill que tinha implementado errado antes).
+- **Fogo Lv1-4 100% implementado** (BurnDoT + trail + skill Q + passivo).
+- **Aliados (woodwarden) + estruturas (torre)** funcionando, com diferenciação visual e comportamental (flecha do player passa por woodwarden mas para na torre).
+- **Wave 2 com -5% e Wave 3+ com -13% inimigos**. Wave 1 garante mínimo 4 moedas via pity system.
 
 ## Por onde começar
 
-1. **Commitar tudo desta sessão** — pelo volume (≈30+ arquivos), sugiro 3 commits temáticos. Ver seção "Commits sugeridos" abaixo.
+1. **Coletar feedback dos amigos** — o link `rafa-mesquita.github.io/Twilight-Quiver` está pra teste. Esperar reações: dificuldade, bugs visuais, performance no browser, qual elemento usaram.
 
-2. **Implementar mais 2 estruturas** (slots "Em breve" no shop) — sugestões: armadilha de espinho (área), barreira (parede destrutível bloqueia inimigos). Já tem `STRUCTURE_CATALOG` em [scripts/wave_shop.gd](scripts/wave_shop.gd) preparado pra extensão.
+2. **Restrição "uma categoria elemental por jogo"** — pendência do excalidraw, ainda não enforced. Quando player tem fogo (lv1+), curse não deveria mais aparecer no shop, e vice-versa. Implementar em `_roll_upg_slots` em [scripts/wave_shop.gd](scripts/wave_shop.gd).
 
-3. **Validar overlap nos 5 spots de placement** — atualmente posições randômicas não checam colisão com árvores/casas, podem cravar dentro de obstáculos. Solução: physics raycast ou check overlap com nodes do grupo "world" antes de listar spot como válido.
+3. **HUD do curse skill** — ícone existe ([scenes/hud.tscn](scenes/hud.tscn) `CurseSkillIcon`) e funciona, MAS está no mesmo slot do FireSkillIcon (overlap intencional já que só uma categoria por jogo). Verificar visualmente se a coexistência está OK quando ambos os elementos estão no dev mode.
 
-4. **Roadmap upgrades fase Movimentação + Aliados** — falta toda parte do excalidraw que não é Arco/HP/Perfuração. Ver `memory/project_upgrades_design.md`.
+4. **Archer enemy não suporta conversão Maldição** — pendência conhecida. Adicionar `is_curse_ally` flag + `_pick_curse_ally_target` em [scripts/archer_enemy.gd](scripts/archer_enemy.gd) seguindo o pattern do monkey_enemy.
 
 ## Contexto crítico
 
-### Perfuração é PROC, não pierce-per-level
+### NÃO desfazer: regra do "curse antes do take_damage"
+**Em todos os pontos onde aliado/laser/flecha causa dano**, a ordem é `apply_curse → take_damage`. Se inverter, a conversão da maldição NUNCA procca em kill direto (porque `try_convert_on_death` precisa do CurseDebuff já anexado). Pontos:
+- [scripts/arrow.gd](scripts/arrow.gd) `_on_hit` + `_proc_chain_lightning`
+- [scripts/curse_beam.gd](scripts/curse_beam.gd) `_apply_tick`
+- [scripts/woodwarden.gd](scripts/woodwarden.gd) `_apply_hit`
+- [scripts/monkey_enemy.gd](scripts/monkey_enemy.gd) `_on_frame_changed` (ally)
+- [scripts/mage_projectile.gd](scripts/mage_projectile.gd) `_on_body_entered` (ally)
+- [scripts/insect_projectile.gd](scripts/insect_projectile.gd) `_on_body_entered` (ally)
 
-A spec do excalidraw é que cada nível desbloqueia/intensifica uma flecha proc — **não** acumula pierces. Errei na primeira implementação (pierce += 1 por nível) e o user corrigiu mostrando o doc. Agora:
-- Player tem `_perf_shot_counter` que conta ataques. A cada 3 procca.
-- Lv 4: todo ataque procca (counter ignorado).
-- `reset_perf_counter()` chamado no `_start_next_wave` pra evitar carry-over.
+### NÃO regressar: damage_sound como filho do enemy
+[scripts/monkey_enemy.gd](scripts/monkey_enemy.gd), [scripts/mage_enemy.gd](scripts/mage_enemy.gd), [scripts/insect_enemy.gd](scripts/insect_enemy.gd) — `_play_damage_sound` agora faz `add_child(player)` (NÃO `_get_world().add_child`). Audio morre com o enemy, evita som contínuo após morte. Adicionalmente, DoTs (CurseDebuff/BurnDoT) `_apply_tick` pulam tick se `parent.hp <= 0` ou `is_queued_for_deletion`.
 
-### Friendly fire na arrow.gd
+### Maldição Lv2-4 = CONVERSÃO DE INIMIGOS, não trail/skill
+A primeira implementação tinha trail/skill area/passivo (espelhando Fogo). O user corrigiu mostrando spec real do excalidraw:
+- Lv2: 18% chance ao matar enemy → vira aliado até fim da horda
+- Lv3: 33% + todos aliados aplicam slow/DoT da maldição ao causarem dano
+- Lv4: 50% + skill Q (raio roxo gigante)
 
-- Flecha (player ou torre) NÃO causa dano em targets do grupo `"ally"` — bate como parede e crava.
-- Torre passa `arrow.source = self` pra arrow ignorar SUA própria torre (atravessa, sem cravar nem dar dano).
-- `_find_damageable(node)` sobe parent chain pra achar `take_damage` — necessário porque torre tem `Body` (StaticBody2D) filho que recebe a colisão sem ter o método.
-- Mage projectile tem mesma lógica de parent walk (sem ally check — projétil de inimigo dá dano em torre, é objetivo do mago).
+Centralizado em [scripts/curse_ally_helper.gd](scripts/curse_ally_helper.gd) (`try_convert_on_death`, `convert_to_ally`, `apply_ally_curse_on_damage`).
 
-### Câmera overview no placement
+### Diferenciação ally vs structure pra colisão de flecha
+- Tower: groups `structure` + `ally` (sem `tank_ally`) → flecha PARA (parede)
+- Woodwarden: `structure` + `ally` + `tank_ally` + `insect_immune` → flecha PASSA
+- Lógica em [scripts/arrow.gd](scripts/arrow.gd) `_on_hit`: check `tank_ally` PRIMEIRO (passa), depois `structure` (para). Ordem importa porque woodwarden está em ambos.
 
-`_set_camera_overview(true)` durante placement pra mostrar mapa inteiro (zoom 2.1×, pos 250,150). Tween 0.4s. Restaura zoom anterior ao sair (`_saved_zoom`). Se gameplay zoom mudar, overview se ajusta automaticamente.
+### Web export config (NÃO mexer sem motivo)
+[export_presets.cfg](export_presets.cfg):
+- `variant/thread_support=true` + `progressive_web_app/enabled=true` + `progressive_web_app/ensure_cross_origin_isolation_headers=true` — necessário pra threading rodar no GitHub Pages (PWA service worker injeta os headers COOP/COEP).
+- [project.godot](project.godot): `window/stretch/scale_mode="fractional"` + `window/size/resizable=true` — pro jogo escalar suavemente no browser sem cortar HUD.
 
-### Renascimento de estruturas
+### Service worker do PWA cacheia agressivamente
+Após push, o link `rafa-mesquita.github.io/Twilight-Quiver` pode mostrar versão antiga via cache do SW. Pra testar versão fresca: **aba anônima** (Ctrl+Shift+N) ou DevTools → Application → Unregister Service Worker + Clear site data.
 
-Wave_manager guarda `owned_structures: Array<{scene_path, position}>` populado pelo wave_shop em `register_structure()`. No `_start_next_wave` chama `_respawn_owned_structures()` — varre o registro, e onde não tem estrutura viva (raio 8px), instancia uma nova. Estrutura sobrevivente continua intacta.
+### Wave 1 pity é "top-up", não "boost"
+[scripts/wave_manager.gd](scripts/wave_manager.gd) `_top_up_wave1_coins` só spawna moedas faltantes pra atingir `wave1_min_guaranteed_drops` (default 4) **se RNG não dropou o suficiente naturalmente**. Se RNG já entregou ≥4, não adiciona nada (não infla). Spawn no _finish_wave perto do player → magnet absorve junto.
 
-### Cards do shop com tier visual
-
-Estrelas em Label SEPARADO (não dentro do TitleLabel) sem `theme_override_fonts/font` → usa fonte default do Godot (a at01 não tem ★). Cor do card e do título mudam por tier:
-- Lv 1: branco
-- Lv 2: azulado
-- Lv 3: roxeado
-- Lv 4+: dourado (com `+x` extra a partir do 5)
-
-### Reroll widget
-
-Estrutura: `HBoxContainer [IconWrap, Price]` onde IconWrap é um Control com Halo (TextureRect dourado scale 1.35×) + Btn (TextureButton da imagem do dado). Hover anima ambos via tween 0.12s. Disabled esconde halo + esmaece btn+price. Asset: `assets/Hud/reroll.png` (carregado via `load()` runtime — não preload — pra não quebrar se faltar).
-
-### UpgHeader fix
-
-`UpgHeader` tinha `size_flags_horizontal = 3` (EXPAND_FILL), o que jogava o reroll pro extremo direito ao lado do gold. Removi o expand e adicionei spacer Control entre reroll e gold pra manter o gold no canto.
-
-### Sons
-
-- `audios/effects/buy_1.mp3` — compra (-16dB)
-- `audios/effects/dead effect.mp3` — morte (-14dB), pausa música via fade 0.25s e retoma com fade 1.8s ao terminar
-- `audios/effects/coin-collect.mp3` — pickup (-16dB)
-- `audios/effects/wave start.mp3` — **EXISTE NO DISCO MAS NÃO É USADO** (user removeu o trigger porque incomodava)
-
-### Editor traíras (lembrança permanente)
-
-- **NÃO Ctrl+V em instâncias** — Godot cola como filho. Use Ctrl+Shift+A.
-- **Origem nos pés** pra todo prop/inimigo (offset.y negativo).
-- **Pixel font (at01)** não tem ★/↻/glifos especiais — use fonte default do Godot pra esses ou um asset.
+### Woodwarden é móvel, não tem proximidade fixa
+[scripts/wave_manager.gd](scripts/wave_manager.gd) `register_structure` aceita um 3º parâmetro `instance: Node2D` pra rastrear pelo node ref. Antes usava proximidade de posição (8px), o que falhava pro woodwarden que segue o player → respawn duplicado entre waves. Agora `_respawn_owned_structures` checa `is_instance_valid(inst_ref)` em vez de posição.
 
 ## Pendências conhecidas
 
-### Da sessão anterior (ainda valem)
-- [ ] **Skill do botão direito** placeholder em `player.gd:_use_skill`
-- [ ] **CasaB fora do mapa jogável** em `main.tscn` (pos `(1220, -26)`)
-- [ ] **Duplicatas**: `hud.tscn` no root vs `scenes/hud.tscn`; `scenes/cerca_cima.tscn` vs `scenes/props/cerca_cima.tscn`
-- [ ] **`capra jogo.png` no root** — screenshot acidental, não commitar
-- [ ] **TileMap autotile** — tiles pintados manualmente, sem terrains
-
-### Novas desta sessão
-- [ ] **Estruturas 2 e 3** são placeholder "Em breve"
-- [ ] **5 posições randômicas** de placement não checam overlap com obstáculos (árvores/casas)
-- [ ] **Mecânica de melhoria de hitbox no lv 2 da Perfuração** está aplicada como `hitbox_scale = 1.8`. Pode estar grande demais — testar.
-- [ ] **Sons no main menu / outros menus** ainda nada
-- [ ] **Música de boss / wave 5+** ainda só `Moonglass Catacombs.mp3`
-- [ ] **Roadmap upgrades**: faltam categorias Movimentação, Aliados, Elementais do excalidraw
+- [ ] **Restrição "uma categoria elemental por jogo"** — não enforced. Filtrar em `_roll_upg_slots`.
+- [ ] **Archer enemy** não suporta conversão por Maldição. Adicionar flag + pick_target invertido.
+- [ ] **Aliados convertidos** têm tint roxo mas mesma sprite — sem indicador único (poderia ter aura roxa pulsante).
+- [ ] **Insect enemy** não suporta drop de gold (anti-exploit do summoner mage). Confirmar se ainda faz sentido com o pity system de wave 1.
+- [ ] **Performance no browser** — single-thread (até desativar PWA) ou multi-thread (via PWA, agora ativo). Ainda pode ter lag em runs longas. Monitorar.
+- [ ] **Wave 4+ balance** — só wave 2 (-5%) e wave 3+ (-13%) foram balanceadas. Waves longas podem ficar abusivas.
+- [ ] **Som de hit de aliados removido** (estava bugando contínuo). Se quiser revisitar, ver decisão na seção "Decisões".
 
 ## Arquivos / locais relevantes
 
-### Cenas principais (mudanças desta sessão)
-- `scenes/wave_shop.tscn` — UI da loja; 2 colunas, ConfirmationDialog programático, PlacementHint
-- `scenes/structures/arrow_tower.tscn` — torre com Body+FadeArea+HpBar (lilás, agora visível desde o início)
-- `scenes/dev_panel.tscn` — debug; tem seção "Shop / Test" com botões de spawn/upgrade direto
-- `scenes/main_menu.tscn`, `scenes/insect_*.tscn`, `scenes/gold.tscn`, etc. — várias cenas novas
-
-### Scripts (mudanças desta sessão)
-- `scripts/wave_shop.gd` — toda lógica de loja, rolls, placement, rerolls, popups
-- `scripts/wave_manager.gd` — scaling por wave + register/respawn estruturas
-- `scripts/arrow_tower.gd` — torre HP=300, _destroy com efeito dramático
-- `scripts/arrow.gd` — `is_piercing`, friendly fire ally check, `_find_damageable`
-- `scripts/player.gd` — `_perf_shot_counter`, `reset_perf_counter`, death sound + music fade
-- `scripts/mage_enemy.gd` — `damage_mult`, `hp_mult` (propaga pro inseto)
-- `scripts/insect_enemy.gd` — `damage_mult` aplica em proj.damage e poison_damage_total
-- `scripts/camera_follow.gd` — `set_overview_mode()` para placement
-- `scripts/gold.gd` — magnet to player, blink fade, pickup -16dB
-
-### Assets novos
-- `assets/Hud/reroll.png` — ícone do dado (do user, salvo manualmente)
-- `assets/Hud/hud.png` — spritesheet de progresso
-- `assets/estruturas/torre de flechas.png` — sprite da torre
-- `assets/enemies/insect/` — sprites do inseto
-- `assets/player/player death.png` — anim morte
-- `audios/effects/buy_1.mp3`, `dead effect.mp3`, `wave start.mp3`, `coin-collect.mp3`, `mage/`
-
-### Memória relevante
-- `feature_shop_and_upgrades.md` — atualizado com perfuração proc-based correta
-- `feature_gold_system.md` — drop rules e anti-exploit insect
-- `project_upgrades_design.md` — spec original do excalidraw com 4 categorias
-
-### Constantes-chave
-- `scripts/arrow_tower.gd:max_hp = 300.0`, `damage_multiplier = 0.8`
-- `scripts/wave_manager.gd:hp_growth_per_wave = 0.12`, `damage_growth_per_wave = 0.08`
-- `scripts/wave_shop.gd:PRICE_TABLE = [4, 6, 10, 15, 20]`, `TOWER_PRICE = 10`, `REROLL_COST = 1`
-- `scripts/camera_follow.gd:overview_zoom = Vector2(2.1, 2.1)`, `overview_position = Vector2(250, 150)`
-
-## Commits sugeridos
-
-**Não commitar:**
-- `capra jogo.png` (root, screenshot acidental)
-- `hud.tscn` (root, versão antiga)
-- `scenes/cerca_cima*.tscn` (duplicatas, manter só `scenes/props/`)
-- `.claude/settings.local.json` (preferência local)
-
-**Commit 1 — Gold + Coin pickup + Anti-exploit insect**
-- scripts/gold.gd, gold_drop.gd
-- scenes/gold.tscn
-- assets/obecjts map/coins.png + .import
-- audios/effects/coin-collect.mp3 + .import
-- assets/source/coin.aseprite
-
-**Commit 2 — Insect enemy + Summoner mage + Wave manager scaling**
-- scripts/insect_enemy.gd, insect_projectile.gd, summon_effect.gd, enemy_separation.gd
-- scenes/insect_enemy.tscn, insect_projectile.tscn, insect_hit_effect.tscn, summoner_mage.tscn, summon_effect.tscn
-- assets/enemies/insect/*, assets/source/insect.aseprite
-- scripts/wave_manager.gd (scaling), mage_enemy.gd (damage_mult), insect_enemy.gd (damage_mult)
-- audios/effects/mage/*
-
-**Commit 3 — Shop + Tower + Perfuração + Reroll + Polish UX**
-- scripts/wave_shop.gd, arrow_tower.gd, dev_panel.gd, camera_follow.gd, hud_editor.gd, main_menu.gd, game_state.gd
-- scripts/arrow.gd (friendly fire + piercing), player.gd (perf counter + death sound + fade music)
-- scenes/wave_shop.tscn, structures/arrow_tower.tscn, dev_panel.tscn, hud_editor.tscn, main_menu.tscn
-- assets/Hud/* (incluindo reroll.png), assets/estruturas/*
-- audios/effects/buy_1.mp3, dead effect.mp3, wave start.mp3
-- Outros polishings (cercas top-down, player death, etc.)
+- [.github/workflows/deploy.yml](.github/workflows/deploy.yml) — auto-deploy GH Pages. Cache do Godot ativo.
+- [export_presets.cfg](export_presets.cfg) — preset Web (multi-thread + PWA + COI).
+- [project.godot](project.godot) — config window/stretch pra browser.
+- [scripts/curse_ally_helper.gd](scripts/curse_ally_helper.gd) — central da conversão de inimigos pela maldição.
+- [scripts/curse_debuff.gd](scripts/curse_debuff.gd) — slow + DoT toxic (com `release()` que restaura speed pra conversão limpa).
+- [scripts/curse_beam.gd](scripts/curse_beam.gd) + [scenes/curse_beam.tscn](scenes/curse_beam.tscn) — Skill Q lv4. **Visual editável no .tscn** (GlowUnderlay/ChargeOrb/TileTemplate/LightTemplate como nodes).
+- [scripts/wave_manager.gd](scripts/wave_manager.gd) — config de waves + pity system + respawn de aliados/torres por instance ref.
+- [scripts/gold.gd](scripts/gold.gd) — pickup com indicador pulsante pequeno (1.5px, alpha 0.6→1.0) pra moedas atrás de objetos.
+- [scripts/dev_panel.gd](scripts/dev_panel.gd) + [scenes/dev_panel.tscn](scenes/dev_panel.tscn) — upgrades organizados em sub-categorias colapsáveis.
+- [memory/feature_curse_arrow.md](memory/feature_curse_arrow.md) — spec completa da Maldição.
+- [memory/feature_fire_arrow.md](memory/feature_fire_arrow.md) — spec completa do Fogo.
 
 ## Comandos úteis
 
 ```bash
-# Status compacto
-rtk git status
+# Deploy automático: basta git push pro main
+git push
 
-# Ver dimensões PNG
-python -c "from PIL import Image; print(Image.open('caminho/file.png').size)"
+# Forçar rebuild manual sem push
+gh workflow run "Deploy to GitHub Pages" --ref main
 
-# Buscar referências de asset
-grep -rn "reroll.png" scripts/ scenes/
+# Ver status dos builds
+gh run list --limit 5
 
-# Listar exports do wave_manager
-grep "@export" scripts/wave_manager.gd
+# Ver detalhes do último build
+gh run view --log
 
-# Reimport de fonte/asset (via Godot CLI):
-# Abrir o projeto no editor → click direito no arquivo → Reimportar
+# Testar versão atual (use aba anônima pra evitar cache do PWA)
+# https://rafa-mesquita.github.io/Twilight-Quiver/
 ```
+
+## Decisões tomadas nesta sessão
+
+- **Maldição Lv2-4 refeita pra spec correta** (conversão de inimigos em aliados). Implementação anterior (trail/skill area/passivo) deletada — usuário corrigiu mostrando texto exato do excalidraw.
+- **Som de hit de aliados removido** — bug irreproduzível causava som contínuo após mortes/conversões. Múltiplas hipóteses tentadas (throttle, child do enemy, hp check em DoTs). Usuário decidiu remover ao invés de continuar tentando.
+- **Hospedagem em GitHub Pages com auto-deploy via Actions**. Repo tornado público (free tier do Pages exige). Custo zero. Trade-off: código aberto.
+- **PWA habilitado** pra suportar threading no GH Pages (COI service worker). Bonus: usuários podem "instalar" o jogo como app.
+- **Pity system de gold drop é "top-up" (só completa o que faltar)** — não inflar quando RNG já foi favorável.
+- **Indicador de moeda atrás de objetos** = bolinha dourada pequena (1.5px) pulsante (alpha 0.6→1.0) com z_index 100. Evita o hack de jogar a moeda inteira pra cima do y-sort.
+- **Waves nerf:** -5% wave 2, -13% wave 3+. Wave 1 mantida.
+- **Curse antes de damage** em TODOS os call sites de aliado — ordem invariante.
+
+## Mudanças críticas de infra desta sessão
+
+- Repo público em `https://github.com/rafa-mesquita/Twilight-Quiver`
+- Pages source: GitHub Actions (não branch)
+- Workflow runs em `ubuntu-latest`, baixa Godot 4.6.2-stable, exporta + deploya
+- `.gitignore` agora ignora `.claude/`, `capra jogo.png`, `/hud.tscn` (duplicata acidental)
