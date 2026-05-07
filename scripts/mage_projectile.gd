@@ -25,6 +25,10 @@ var spawn_position: Vector2 = Vector2.ZERO
 var halfway_distance: float = -1.0
 var has_redirected_halfway: bool = false
 var has_redirected_final: bool = false
+# Maldição: setado pelo mage convertido. Inverte alvo (mira em enemy, ignora allies).
+var is_ally_source: bool = false
+# Lv3+ da Maldição: aplica CurseDebuff no alvo (setado pelo source ao spawnar).
+var apply_curse: bool = false
 
 
 func _ready() -> void:
@@ -55,6 +59,13 @@ func set_direction(dir: Vector2) -> void:
 
 func _physics_process(delta: float) -> void:
 	position += direction * speed * delta
+	# Mago convertido: pula o redirect (anda em linha reta na direção setada).
+	if is_ally_source:
+		if trail != null:
+			trail.add_point(global_position + VISUAL_OFFSET)
+			while trail.get_point_count() > trail_max_points:
+				trail.remove_point(0)
+		return
 	if not has_redirected_halfway and halfway_distance > 0.0:
 		if spawn_position.distance_to(global_position) >= halfway_distance:
 			has_redirected_halfway = true
@@ -81,10 +92,19 @@ func _redirect_toward_player(strength: float) -> void:
 
 
 func _on_body_entered(body: Node) -> void:
-	# Sobe o parent chain pra achar take_damage — torre tem o método no root,
-	# mas o body que entra na colisão é o StaticBody2D filho.
+	if is_ally_source:
+		# Mago convertido: ignora aliados (player + tank_ally + structure), bate em enemy.
+		if body.is_in_group("ally") or body.is_in_group("player") or body.is_in_group("structure"):
+			return
+	else:
+		# Mago original: friendly fire bloqueado entre enemies.
+		if body.is_in_group("enemy"):
+			return
 	var target: Node = _find_damageable(body)
 	if target != null:
+		# Curse ANTES do take_damage pra contar na conversão se matar.
+		if apply_curse:
+			CurseAllyHelper.apply_ally_curse_on_damage(target, self)
 		target.take_damage(damage)
 	_spawn_hit_effect()
 	_die()

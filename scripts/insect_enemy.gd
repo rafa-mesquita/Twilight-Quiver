@@ -38,6 +38,8 @@ var locked_attack_dir: Vector2 = Vector2.RIGHT
 var knockback_velocity: Vector2 = Vector2.ZERO
 var _flash_tween: Tween
 var _spawning_in: bool = false
+# Maldição: convertido pra aliado (mira em enemies, projétil bate em enemies).
+var is_curse_ally: bool = false
 var _hover_phase: float = 0.0
 var _sprite_base_offset_y: float = 0.0
 
@@ -124,6 +126,18 @@ func _try_shoot() -> void:
 
 
 func _pick_target() -> Node2D:
+	# Curse ally: mira em enemy mais próximo em vez de player/structure.
+	if is_curse_ally:
+		var nearest: Node2D = null
+		var best: float = INF
+		for e in get_tree().get_nodes_in_group("enemy"):
+			if not is_instance_valid(e) or not (e is Node2D):
+				continue
+			var d: float = global_position.distance_to((e as Node2D).global_position)
+			if d < best:
+				nearest = e
+				best = d
+		return nearest
 	var player_alive: bool = player != null and is_instance_valid(player) and not (("is_dead" in player) and player.is_dead)
 	if player_alive:
 		var pdist: float = global_position.distance_to(player.global_position)
@@ -158,6 +172,9 @@ func _fire_projectile() -> void:
 		proj.damage = proj.damage * damage_mult
 	if "poison_damage_total" in proj and damage_mult != 1.0:
 		proj.poison_damage_total = proj.poison_damage_total * damage_mult
+	# Maldição: inseto convertido marca projétil pra bater em enemies.
+	if is_curse_ally and "is_ally_source" in proj:
+		proj.is_ally_source = true
 	_get_world().add_child(proj)
 	# Origem nos pés do inseto (+1 pra sortar depois dele); visual sobe internamente.
 	proj.global_position = Vector2(muzzle.global_position.x, global_position.y + 1)
@@ -190,8 +207,8 @@ func _play_damage_sound(duration: float = 0.7) -> void:
 	p.stream = damage_sound
 	p.volume_db = damage_sound_volume_db
 	p.pitch_scale = 1.15
-	_get_world().add_child(p)
-	p.global_position = global_position
+	# CHILD do enemy — morre junto no queue_free.
+	add_child(p)
 	p.play()
 	var ref: AudioStreamPlayer2D = p
 	get_tree().create_timer(duration).timeout.connect(func() -> void:

@@ -85,6 +85,18 @@ func _fire_arrow(muzzle: Marker2D, target: Node2D) -> void:
 	arrow.global_position = muzzle.global_position
 	if "damage" in arrow:
 		arrow.damage = arrow.damage * damage_multiplier
+	# Lv3+ da Maldição: todos aliados aplicam slow/DoT ao causar dano. Marca a
+	# arrow como is_curse pra ela aplicar CurseDebuff no hit.
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null and ("curse_arrow_level" in player) and int(player.curse_arrow_level) >= 3:
+		if "is_curse" in arrow:
+			arrow.is_curse = true
+		if "curse_dps" in arrow and player.has_method("_curse_dps"):
+			arrow.curse_dps = player._curse_dps()
+		if "curse_duration" in arrow and player.has_method("_curse_duration"):
+			arrow.curse_duration = player._curse_duration()
+		if "curse_slow_factor" in arrow and player.has_method("_curse_slow_factor"):
+			arrow.curse_slow_factor = player._curse_slow_factor()
 	var target_pos: Vector2 = target.global_position + Vector2(0, -12)
 	var dir: Vector2 = (target_pos - muzzle.global_position).normalized()
 	if arrow.has_method("set_direction"):

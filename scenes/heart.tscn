@@ -1,0 +1,75 @@
+[gd_scene format=3 uid="uid://diuv8x3rgs5aa"]
+
+[ext_resource type="Script" path="res://scripts/heart.gd" id="1_heart"]
+[ext_resource type="AudioStream" path="res://audios/effects/healing.mp3" id="2_heal_sfx"]
+[ext_resource type="Texture2D" path="res://assets/obecjts map/hearts.png" id="3_heart_tex"]
+
+[sub_resource type="CircleShape2D" id="CircleShape_pickup"]
+radius = 10.0
+
+[sub_resource type="Gradient" id="Grad_glow_heart"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(1, 0.55, 0.6, 0.6, 0.95, 0.25, 0.35, 0.3, 0.6, 0.1, 0.1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradTex_glow_heart"]
+gradient = SubResource("Grad_glow_heart")
+width = 64
+height = 64
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="AtlasTexture" id="A_heart_0"]
+atlas = ExtResource("3_heart_tex")
+region = Rect2(0, 0, 9, 9)
+
+[sub_resource type="AtlasTexture" id="A_heart_1"]
+atlas = ExtResource("3_heart_tex")
+region = Rect2(9, 0, 9, 9)
+
+[sub_resource type="AtlasTexture" id="A_heart_2"]
+atlas = ExtResource("3_heart_tex")
+region = Rect2(18, 0, 9, 9)
+
+[sub_resource type="AtlasTexture" id="A_heart_3"]
+atlas = ExtResource("3_heart_tex")
+region = Rect2(27, 0, 9, 9)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_heart"]
+animations = [{
+"frames": [{"duration": 1.0, "texture": SubResource("A_heart_0")},
+{"duration": 1.0, "texture": SubResource("A_heart_1")},
+{"duration": 1.0, "texture": SubResource("A_heart_2")},
+{"duration": 1.0, "texture": SubResource("A_heart_3")}],
+"loop": true,
+"name": &"default",
+"speed": 6.0
+}]
+
+[node name="Heart" type="Area2D"]
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("1_heart")
+pickup_sound = ExtResource("2_heal_sfx")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -4)
+shape = SubResource("CircleShape_pickup")
+
+[node name="Shadow" type="Polygon2D" parent="."]
+color = Color(0, 0, 0, 0.3)
+polygon = PackedVector2Array(4, 0, 3, 1, 0, 1, -3, 1, -4, 0, -3, -1, 0, -1, 3, -1)
+
+[node name="Visual" type="Node2D" parent="."]
+
+[node name="GlowLight" type="PointLight2D" parent="Visual"]
+color = Color(1, 0.4, 0.5, 1)
+energy = 0.5
+texture = SubResource("GradTex_glow_heart")
+texture_scale = 0.18
+
+[node name="Sprite" type="AnimatedSprite2D" parent="Visual"]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_heart")
+animation = &"default"
+autoplay = "default"

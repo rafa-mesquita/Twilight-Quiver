@@ -124,29 +124,177 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 16
 text = "Spawn Torre"
 
+[node name="SpawnWoodwardenBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Spawn Woodwarden"
+
 [node name="UpgradesLabel" type="Label" parent="Content/Scroll/VBox/ShopSection/ShopContent"]
 theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 14
-text = "Aplicar upgrade:"
+text = "Aplicar upgrade (por categoria):"
 
-[node name="UpgHpBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent"]
-custom_minimum_size = Vector2(0, 28)
+[node name="ArcoSection" type="VBoxContainer" parent="Content/Scroll/VBox/ShopSection/ShopContent"]
+theme_override_constants/separation = 2
+
+[node name="ArcoHeader" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/ArcoSection"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 16
-text = "+1 HP"
+text = "[+] Arco / Ataque"
+alignment = 0
 
-[node name="UpgDamageBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent"]
-custom_minimum_size = Vector2(0, 28)
+[node name="ArcoContent" type="VBoxContainer" parent="Content/Scroll/VBox/ShopSection/ShopContent/ArcoSection"]
+visible = false
+theme_override_constants/separation = 2
+
+[node name="UpgDamageBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/ArcoSection/ArcoContent"]
+custom_minimum_size = Vector2(0, 26)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 text = "+1 Dano"
 
-[node name="UpgPerfBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent"]
-custom_minimum_size = Vector2(0, 28)
+[node name="UpgAtkSpeedBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/ArcoSection/ArcoContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Atk Speed"
+
+[node name="UpgPerfBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/ArcoSection/ArcoContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Perfuracao"
+
+[node name="UpgMultiArrowBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/ArcoSection/ArcoContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Multi Arrow"
+
+[node name="UpgChainBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/ArcoSection/ArcoContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Cadeia de Raios"
+
+[node name="VidaSection" type="VBoxContainer" parent="Content/Scroll/VBox/ShopSection/ShopContent"]
+theme_override_constants/separation = 2
+
+[node name="VidaHeader" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/VidaSection"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_colors/font_color = Color(1, 0.55, 0.55, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 16
-text = "+1 Perfuracao"
+text = "[+] Vida / HP"
+alignment = 0
+
+[node name="VidaContent" type="VBoxContainer" parent="Content/Scroll/VBox/ShopSection/ShopContent/VidaSection"]
+visible = false
+theme_override_constants/separation = 2
+
+[node name="UpgHpBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/VidaSection/VidaContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 HP"
+
+[node name="UpgLifeStealBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/VidaSection/VidaContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Life Steal"
+
+[node name="MovSection" type="VBoxContainer" parent="Content/Scroll/VBox/ShopSection/ShopContent"]
+theme_override_constants/separation = 2
+
+[node name="MovHeader" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/MovSection"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_colors/font_color = Color(0.6, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "[+] Movimentacao"
+alignment = 0
+
+[node name="MovContent" type="VBoxContainer" parent="Content/Scroll/VBox/ShopSection/ShopContent/MovSection"]
+visible = false
+theme_override_constants/separation = 2
+
+[node name="UpgMoveSpeedBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/MovSection/MovContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Move Speed"
+
+[node name="UpgGoldMagnetBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/MovSection/MovContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "Ima de Gold"
+
+[node name="UpgDashBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/MovSection/MovContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "Dash"
+
+[node name="UpgDashCdBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/MovSection/MovContent"]
+visible = false
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Dash CD reduce"
+
+[node name="UpgDashFireBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/MovSection/MovContent"]
+visible = false
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Dash com Rastro de Poder"
+
+[node name="UpgDashAutoBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/MovSection/MovContent"]
+visible = false
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "Dash Auto-attack"
+
+[node name="UpgDashDoubleBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/MovSection/MovContent"]
+visible = false
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "Dash 2 Flechas"
+
+[node name="ElementaisSection" type="VBoxContainer" parent="Content/Scroll/VBox/ShopSection/ShopContent"]
+theme_override_constants/separation = 2
+
+[node name="ElementaisHeader" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/ElementaisSection"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_colors/font_color = Color(0.95, 0.6, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "[+] Elementais"
+alignment = 0
+
+[node name="ElementaisContent" type="VBoxContainer" parent="Content/Scroll/VBox/ShopSection/ShopContent/ElementaisSection"]
+visible = false
+theme_override_constants/separation = 2
+
+[node name="UpgFireArrowBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/ElementaisSection/ElementaisContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Flecha de Fogo"
+
+[node name="UpgCurseArrowBtn" type="Button" parent="Content/Scroll/VBox/ShopSection/ShopContent/ElementaisSection/ElementaisContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Flecha de Maldicao"
 
 [node name="Sep" type="HSeparator" parent="Content/Scroll/VBox"]
 

@@ -10,7 +10,7 @@ summon_effect_scene = ExtResource("3_summon")
 summon_chance = 0.45
 summon_check_every = 2
 summon_min_wave = 1
-gold_drop_chance = 0.7
+gold_drop_chance = 0.72
 gold_drop_min = 1
 gold_drop_max = 2
 

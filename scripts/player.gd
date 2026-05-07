@@ -3,6 +3,17 @@ extends CharacterBody2D
 signal hp_changed(current: float, maximum: float)
 signal gold_changed(total: int)
 signal died
+# Dash: emitido ao comprar o upgrade (HUD mostra a barra) e a cada frame
+# durante o cooldown (HUD atualiza progress).
+signal dash_unlocked
+signal dash_cooldown_changed(remaining: float, total: float)
+# Fire Skill (lv3 do elemental Fogo): emitido ao chegar no lv3 (HUD mostra ícone)
+# e a cada frame durante o cooldown.
+signal fire_skill_unlocked
+signal fire_skill_cooldown_changed(remaining: float, total: float)
+# Curse Skill (lv4 do elemental Maldição): raio roxo em linha reta, cd 3s.
+signal curse_skill_unlocked
+signal curse_skill_cooldown_changed(remaining: float, total: float)
 
 @export var speed: float = 55.0
 @export var attack_cooldown: float = 1.0
@@ -16,6 +27,7 @@ signal died
 @export var death_blackout_duration: float = 0.3  # tempo da tela ficar preta
 @export var kill_effect_scene: PackedScene = preload("res://scenes/kill_effect.tscn")
 const DEATH_SOUND: AudioStream = preload("res://audios/effects/dead effect.mp3")
+const DASH_SOUND: AudioStream = preload("res://audios/effects/player arrow/dash.mp3")
 @export var poison_number_color: Color = Color(0.55, 1.0, 0.45, 1.0)
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -33,9 +45,87 @@ var gold: int = 0
 var hp_upgrades: int = 0
 var damage_upgrades: int = 0
 var perfuracao_level: int = 0  # capa em 4 (níveis 1-4)
+var attack_speed_level: int = 0
+var multi_arrow_level: int = 0  # capa em 4 (níveis 1-4)
+var chain_lightning_level: int = 0  # capa em 4 (níveis 1-4)
+var move_speed_level: int = 0
+var life_steal_level: int = 0  # cada stack +5% chance e +10% heal nos drops de coração
+var fire_arrow_level: int = 0  # elemental Fogo (excalidraw lv1-4)
+var curse_arrow_level: int = 0  # elemental Maldição (excalidraw lv1, escala lv1-4)
+var woodwarden_level: int = 0  # aliado tank — cada compra "uppa" stats e custo
+# Fire skill (botão direito a partir do lv3 do Fogo).
+const FIRE_SKILL_COOLDOWN: float = 7.0
+const FIRE_SKILL_RANGE: float = 140.0
+const FIRE_SKILL_AREA_RADIUS: float = 32.0
+const FIRE_SKILL_DPS: float = 12.0
+const FIRE_SKILL_DURATION: float = 6.0
+const FIRE_SKILL_INDICATOR_SCENE: PackedScene = preload("res://scenes/fire_skill_indicator.tscn")
+const FIRE_SKILL_PROJECTILE_SCENE: PackedScene = preload("res://scenes/fire_skill_projectile.tscn")
+var _fire_skill_cd_remaining: float = 0.0
+var _fire_skill_targeting: bool = false
+var _fire_skill_indicator: Node2D = null
+# Curse skill (Q a partir do lv4 da Maldição): raio roxo gigante que corta o
+# mapa de um lado ao outro (ignora walls). Warmup 0.4s + sustained 5s. Cd 3s
+# começa depois que o beam acaba — total cycle = 8.4s.
+# Sem target mode — atira instant na direção do mouse.
+const CURSE_SKILL_COOLDOWN_AFTER: float = 3.0
+const CURSE_SKILL_WARMUP: float = 0.4
+const CURSE_SKILL_DURATION: float = 5.0
+const CURSE_SKILL_TOTAL_CYCLE: float = CURSE_SKILL_WARMUP + CURSE_SKILL_DURATION + CURSE_SKILL_COOLDOWN_AFTER
+# Range em CADA direção do player (total = 2× isso). Capado pra cortar o mapa
+# inteiro de ponta a ponta sem travar (mapa visível ~680×380, então 1000/lado
+# = 2000 total cobre folgado).
+const CURSE_SKILL_RANGE: float = 1000.0
+const CURSE_SKILL_DAMAGE_PER_TICK: float = 8.0
+const CURSE_BEAM_SCENE: PackedScene = preload("res://scenes/curse_beam.tscn")
+var _curse_skill_cd_remaining: float = 0.0
+# Lv4 do Fogo: rastro passivo do player + 30% global em queimaduras + 25% área lv2/lv3.
+const FIRE_LV4_BURN_MULTIPLIER: float = 1.30
+const FIRE_LV4_AREA_SCALE: float = 1.25
+const PLAYER_FIRE_TRAIL_SCENE: PackedScene = preload("res://scenes/player_fire_trail.tscn")
+const PLAYER_FIRE_TRAIL_SPACING: float = 16.0
+const PLAYER_FIRE_TRAIL_DPS: float = 3.0
+var _player_fire_trail_last_pos: Vector2 = Vector2.ZERO
+var _player_fire_trail_initialized: bool = false
+var has_gold_magnet: bool = false  # one-shot: gold persegue player quando true
+# Dash (one-shot upgrade básico — sub-níveis cooldown/rastro/etc. são separados).
+var has_dash: bool = false
+var dash_distance: float = 45.0
+var dash_duration: float = 0.22
+var dash_cooldown: float = 4.5
+var _dash_cd_remaining: float = 0.0
+var _is_dashing: bool = false
+var _dash_velocity: Vector2 = Vector2.ZERO
+var _dash_time_left: float = 0.0
+# Sub-níveis do dash (excalidraw 1.1/1.2/1.3/1.3.1).
+# 1.1: cada compra reduz cooldown em 0.3s (mínimo 0.5s).
+# 1.2: cada compra adiciona dano no rastro de fogo (TODO: rastro ainda não implementado).
+# 1.3: 1× — auto-attack no inimigo mais próximo após dash (TODO).
+# 1.3.1: 1× — 2 flechas após dash (só pode aparecer após 1.3) (TODO).
+var dash_cd_reduction_level: int = 0
+var dash_fire_trail_level: int = 0
+var has_dash_auto_attack: bool = false
+var has_dash_double_arrow: bool = false
+const DASH_CD_REDUCTION_PER_STACK: float = 0.3
+const DASH_CD_MIN: float = 0.5
+# Trilha de poder do dash: spawna um segmento a cada N px percorridos durante
+# o dash. Cada segmento dura 3s e dá DPS roxo em inimigos na área.
+const DASH_TRAIL_SCENE: PackedScene = preload("res://scenes/dash_trail.tscn")
+const DASH_TRAIL_SPACING: float = 14.0
+const DASH_TRAIL_DPS_BASE: float = 3.0
+const DASH_TRAIL_DPS_PER_STACK: float = 2.5
+var _dash_last_trail_pos: Vector2 = Vector2.ZERO
+# Delay antes da primeira flecha auto-disparada pelo dash (1.3).
+const DASH_FIRST_ARROW_DELAY: float = 0.60
+# Delay entre 1ª e 2ª flecha (1.3.1) — referente ao tempo da primeira.
+const DASH_DOUBLE_ARROW_DELAY: float = 0.40
 var arrow_damage_multiplier: float = 1.0  # aplicado ao dano da arrow no spawn
+var attack_speed_multiplier: float = 1.0  # 1.0 base, +0.30 por stack
+var move_speed_multiplier: float = 1.0  # 1.0 base, +0.17 por stack
 # Conta ataques pra decidir quando proca a flecha perfurante (a cada 3 ataques).
 # Reseta ao procar. Em level 4, todo ataque é perfurante (counter ignorado).
+# IMPORTANTE: incrementa 1× por ATAQUE (não por flecha) — a volley inteira
+# de Multiple Arrows compartilha a mesma decisão de pierce.
 var _perf_shot_counter: int = 0
 var can_attack: bool = true
 var is_attacking: bool = false
@@ -70,8 +160,21 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_update_status_effects(delta)
+	_update_dash(delta)
+	_update_fire_skill(delta)
+	_update_curse_skill(delta)
+	_update_player_fire_trail()
+	# Dash trigger lê via polling pra garantir que o cooldown decrementa ANTES
+	# do check, e que múltiplas pressões na mesma frame só viram 1 dash.
+	if has_dash and not is_dead and Input.is_action_just_pressed("dash"):
+		_try_start_dash()
 	if is_dead:
 		velocity = Vector2.ZERO
+		return
+	# Durante dash, ignora input e move com velocidade fixa pré-calculada.
+	if _is_dashing:
+		velocity = _dash_velocity
+		move_and_slide()
 		return
 	# Durante o cast (atacando), o player fica travado.
 	var input_vec := Vector2.ZERO
@@ -83,7 +186,7 @@ func _physics_process(delta: float) -> void:
 		if input_vec.length() > 1.0:
 			input_vec = input_vec.normalized()
 
-	velocity = input_vec * speed * _slow_factor
+	velocity = input_vec * speed * _slow_factor * move_speed_multiplier
 	move_and_slide()
 
 	_update_facing(input_vec)
@@ -160,9 +263,22 @@ func _unhandled_input(event: InputEvent) -> void:
 	if is_dead:
 		return
 	if event.is_action_pressed("attack") and can_attack:
-		_start_attack()
+		# Em target mode da fire skill, left-click confirma o cast em vez de
+		# atirar a flecha. Sem targeter aberto, comportamento normal.
+		if _fire_skill_targeting:
+			_confirm_fire_skill_cast()
+		else:
+			_start_attack()
 	elif event.is_action_pressed("skill"):
 		_use_skill()
+	elif event.is_action_pressed("fire_cast"):
+		# Q dispatcha pra elemental skill ativa. Fogo lv3+ → indicator+area.
+		# Maldição lv4+ → raio em linha reta instantâneo. Por design, só uma
+		# categoria por jogo. Se ambas (ex: dev mode), Fogo tem prioridade.
+		if fire_arrow_level >= 3:
+			_handle_fire_skill_press()
+		elif curse_arrow_level >= 4:
+			_cast_curse_beam()
 
 
 func _update_facing(input_vec: Vector2) -> void:
@@ -179,6 +295,10 @@ func _update_facing(input_vec: Vector2) -> void:
 func _update_animation(_input_vec: Vector2) -> void:
 	if is_attacking:
 		return
+	# Garante que walk/idle não herdem o speed_scale do ataque (attack speed
+	# upgrade só acelera a anim de ataque, não a movimentação).
+	if sprite.speed_scale != 1.0:
+		sprite.speed_scale = 1.0
 	if velocity.length() > 0.0:
 		if sprite.animation != "walk":
 			sprite.play("walk")
@@ -201,6 +321,10 @@ func _start_attack() -> void:
 	can_attack = false
 	is_attacking = true
 	is_drawing = true
+	# Attack speed: encurta cooldown e acelera a anim de ataque (release_frame chega
+	# proporcionalmente mais cedo). speed_scale só vale enquanto a anim está rolando.
+	attack_timer.wait_time = attack_cooldown / attack_speed_multiplier
+	sprite.speed_scale = attack_speed_multiplier
 	attack_timer.start()
 	sprite.play("attack")
 
@@ -209,14 +333,61 @@ func _release_arrow() -> void:
 	is_drawing = false
 	if arrow_scene == null:
 		return
+	# Decisão de pierce é feita UMA VEZ por ataque — a volley inteira de
+	# Multiple Arrows compartilha o mesmo flag (ex: lv perfuração 1 + multi lv1
+	# = a cada 3º ataque, as 3 flechas perfuram juntas).
+	var is_pierce: bool = _is_piercing_shot()
+	if is_pierce:
+		_perf_shot_counter = 0
+	else:
+		_perf_shot_counter += 1
+	var volley: Array = _build_volley()
+	for i in volley.size():
+		var shot: Dictionary = volley[i]
+		# Só a primeira flecha toca o som — evita 3-10 cópias do shoot.mp3
+		# tocando juntas (cada uma +~3dB acima da anterior).
+		# is_primary = i == 0 → flechas extras têm fogo reduzido pra 35%.
+		_spawn_arrow(shot["dir"], shot["dmg_mult"], is_pierce, i == 0, i == 0)
+
+
+# Cada entrada da volley = {dir: Vector2, dmg_mult: float} (relativo ao dmg base).
+# Multi Arrow combina com perfuração/elementais aplicando o mesmo flag em todas.
+func _build_volley() -> Array:
+	var primary: Vector2 = locked_aim_dir
+	var shots: Array = []
+	match multi_arrow_level:
+		0:
+			shots.append({"dir": primary, "dmg_mult": 1.0})
+		1:
+			shots.append({"dir": primary, "dmg_mult": 1.0})
+			shots.append({"dir": primary.rotated(deg_to_rad(30.0)), "dmg_mult": 0.5})
+			shots.append({"dir": primary.rotated(deg_to_rad(-30.0)), "dmg_mult": 0.5})
+		2:
+			shots.append({"dir": primary, "dmg_mult": 1.0})
+			shots.append({"dir": primary.rotated(deg_to_rad(30.0)), "dmg_mult": 0.8})
+			shots.append({"dir": primary.rotated(deg_to_rad(-30.0)), "dmg_mult": 0.8})
+		3:
+			shots.append({"dir": primary, "dmg_mult": 1.0})
+			shots.append({"dir": primary.rotated(deg_to_rad(15.0)), "dmg_mult": 0.8})
+			shots.append({"dir": primary.rotated(deg_to_rad(-15.0)), "dmg_mult": 0.8})
+			shots.append({"dir": primary.rotated(deg_to_rad(45.0)), "dmg_mult": 0.8})
+			shots.append({"dir": primary.rotated(deg_to_rad(-45.0)), "dmg_mult": 0.8})
+		_:
+			# Lv 4: 10 flechas em todas as direções (TAU/10 = 36°), 80% cada.
+			for i in 10:
+				var ang: float = (TAU / 10.0) * float(i)
+				shots.append({"dir": primary.rotated(ang), "dmg_mult": 0.8})
+	return shots
+
+
+func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bool, is_primary: bool = true) -> void:
 	var arrow := arrow_scene.instantiate()
 	# Configura ANTES de add_child pra _ready() já enxergar os flags.
 	arrow.global_position = muzzle.global_position
+	if "play_shoot_sound" in arrow:
+		arrow.play_shoot_sound = play_sound
 	if "damage" in arrow:
-		arrow.damage = arrow.damage * arrow_damage_multiplier
-	# Perfuração: a cada 3 ataques, próxima flecha atravessa tudo + dano bônus.
-	# Em level 4, todo ataque é perfurante.
-	var is_pierce: bool = _is_piercing_shot()
+		arrow.damage = arrow.damage * arrow_damage_multiplier * dmg_mult
 	if is_pierce:
 		if "is_piercing" in arrow:
 			arrow.is_piercing = true
@@ -224,12 +395,47 @@ func _release_arrow() -> void:
 			arrow.damage = arrow.damage * (1.0 + _perf_damage_bonus())
 		if "hitbox_scale" in arrow and perfuracao_level >= 2:
 			arrow.hitbox_scale = 1.8
-		_perf_shot_counter = 0
-	else:
-		_perf_shot_counter += 1
+	if chain_lightning_level > 0:
+		if "chain_count" in arrow:
+			arrow.chain_count = _chain_target_count()
+		if "chain_dmg_pct" in arrow:
+			arrow.chain_dmg_pct = _chain_damage_pct()
+		if "chain_bonus_chance" in arrow:
+			arrow.chain_bonus_chance = _chain_bonus_chance()
+	if fire_arrow_level > 0:
+		if "is_fire" in arrow:
+			arrow.is_fire = true
+		# Multi Arrow combo: flechas extras têm fogo reduzido. Burn (tick do
+		# hit) cai 30% (= 70% do normal); rastro cai 65% (= 35% do normal).
+		var burn_scale: float = 1.0 if is_primary else 0.70
+		var trail_scale: float = 1.0 if is_primary else 0.35
+		if "burn_dps" in arrow:
+			arrow.burn_dps = _fire_burn_dps() * burn_scale
+		if "burn_duration" in arrow:
+			arrow.burn_duration = _fire_burn_duration()
+		# Lv2+: rastro de fogo no caminho da flecha.
+		if fire_arrow_level >= 2:
+			if "fire_trail_enabled" in arrow:
+				arrow.fire_trail_enabled = true
+			if "fire_trail_dps" in arrow:
+				arrow.fire_trail_dps = _fire_trail_dps() * trail_scale
+			# Lv4: aumenta área dos segmentos de rastro em 25%.
+			if "fire_trail_scale" in arrow:
+				arrow.fire_trail_scale = _fire_area_scale()
+	if curse_arrow_level > 0:
+		if "is_curse" in arrow:
+			arrow.is_curse = true
+		# Multi Arrow combo: flechas extras com curse reduzido (igual fogo).
+		var curse_scale: float = 1.0 if is_primary else 0.70
+		if "curse_dps" in arrow:
+			arrow.curse_dps = _curse_dps() * curse_scale
+		if "curse_duration" in arrow:
+			arrow.curse_duration = _curse_duration()
+		if "curse_slow_factor" in arrow:
+			arrow.curse_slow_factor = _curse_slow_factor()
 	_get_world().add_child(arrow)
 	if arrow.has_method("set_direction"):
-		arrow.set_direction(locked_aim_dir)
+		arrow.set_direction(dir)
 
 
 func _is_piercing_shot() -> bool:
@@ -239,6 +445,113 @@ func _is_piercing_shot() -> bool:
 		return true
 	# Levels 1-3: a cada 3 ataques (shots 1,2,3 → 3rd procca).
 	return _perf_shot_counter >= 2
+
+
+func _fire_burn_multiplier() -> float:
+	# Lv4 dá +30% global em todas queimaduras (BurnDoT, fire trail, fire field).
+	return FIRE_LV4_BURN_MULTIPLIER if fire_arrow_level >= 4 else 1.0
+
+
+func _fire_area_scale() -> float:
+	# Lv4 aumenta área do rastro de flecha (lv2) e do fire field (lv3) em 25%.
+	return FIRE_LV4_AREA_SCALE if fire_arrow_level >= 4 else 1.0
+
+
+func _fire_burn_dps() -> float:
+	# Base por nível × multiplier global.
+	var base: float = 0.0
+	match fire_arrow_level:
+		1: base = 5.0
+		2: base = 6.0
+		3: base = 7.0
+		4: base = 9.0
+	return base * _fire_burn_multiplier()
+
+
+func _fire_burn_duration() -> float:
+	# 3s base por enquanto.
+	return 3.0
+
+
+func _fire_trail_dps() -> float:
+	# Lv2+ : DPS do rastro de fogo da flecha × multiplier global.
+	var base: float = 0.0
+	match fire_arrow_level:
+		2: base = 4.0
+		3: base = 5.0
+		4: base = 7.0
+	return base * _fire_burn_multiplier()
+
+
+func _curse_dps() -> float:
+	# DoT toxic da maldição. Spec só define lv1 — escalei levemente pra
+	# diferenciar níveis sem mudar o design (lv2-4 focam na conversão de aliados).
+	match curse_arrow_level:
+		1: return 4.0
+		2: return 5.0
+		3: return 6.0
+		4: return 8.0
+	return 0.0
+
+
+func _curse_duration() -> float:
+	return 4.0
+
+
+func _curse_slow_factor() -> float:
+	# Slow aplicado ao inimigo. Escala suave por nível.
+	match curse_arrow_level:
+		1: return 0.65
+		2: return 0.58
+		3: return 0.52
+		4: return 0.45
+	return 1.0
+
+
+func curse_convert_chance() -> float:
+	# Chance ao matar enemy de convertê-lo em aliado. Lv2 = 18%, lv3 = 33%, lv4 = 50%.
+	# Verificado pelo enemy.take_damage no momento da morte se tem CurseDebuff ativo.
+	match curse_arrow_level:
+		2: return 0.18
+		3: return 0.33
+		4: return 0.50
+	return 0.0
+
+
+func curse_convert_duration() -> String:
+	# Lv2: até final da horda. Lv3+: até final do turno.
+	# Como horda/turno são sinônimos no jogo, ambos usam wave_manager.end_of_wave_cleanup.
+	# Retorna string descritiva pra UI/debug.
+	if curse_arrow_level >= 3:
+		return "turno"
+	return "horda"
+
+
+func _chain_target_count() -> int:
+	# Lv4 = "todos da área" — usa um número alto (1000) que é capado pelo
+	# tamanho real de candidates no arrow.
+	match chain_lightning_level:
+		1: return 1
+		2: return 2
+		3: return 4
+		4: return 1000
+	return 0
+
+
+func _chain_damage_pct() -> float:
+	match chain_lightning_level:
+		1: return 0.30
+		2: return 0.50
+		3: return 0.60
+		4: return 1.00
+	return 0.0
+
+
+func _chain_bonus_chance() -> float:
+	# Lv2: 30% de chance de cadeiar num 3º alvo além dos 2 garantidos.
+	if chain_lightning_level == 2:
+		return 0.30
+	return 0.0
 
 
 func _perf_damage_bonus() -> float:
@@ -251,8 +564,274 @@ func _perf_damage_bonus() -> float:
 
 
 func _use_skill() -> void:
-	# placeholder — definimos a skill depois
+	# Botão direito: placeholder pra futuras skills (fire skill foi pra Q+left).
 	print("skill triggered toward: ", get_global_mouse_position())
+
+
+func _handle_fire_skill_press() -> void:
+	if _fire_skill_targeting:
+		_confirm_fire_skill_cast()
+		return
+	if _fire_skill_cd_remaining > 0.0:
+		return
+	_start_fire_skill_targeting()
+
+
+func _start_fire_skill_targeting() -> void:
+	_fire_skill_targeting = true
+	_fire_skill_indicator = FIRE_SKILL_INDICATOR_SCENE.instantiate()
+	if "range_radius" in _fire_skill_indicator:
+		_fire_skill_indicator.range_radius = FIRE_SKILL_RANGE
+	if "area_radius" in _fire_skill_indicator:
+		_fire_skill_indicator.area_radius = FIRE_SKILL_AREA_RADIUS
+	_get_world().add_child(_fire_skill_indicator)
+	_update_fire_skill_indicator()
+
+
+func _update_fire_skill_indicator() -> void:
+	if _fire_skill_indicator == null or not is_instance_valid(_fire_skill_indicator):
+		return
+	var mouse_pos: Vector2 = get_global_mouse_position()
+	var target: Vector2 = mouse_pos
+	if _fire_skill_indicator.has_method("get_clamped_target"):
+		target = _fire_skill_indicator.get_clamped_target(global_position, mouse_pos)
+	if _fire_skill_indicator.has_method("update_positions"):
+		_fire_skill_indicator.update_positions(global_position, target)
+
+
+func _confirm_fire_skill_cast() -> void:
+	if _fire_skill_indicator == null or not is_instance_valid(_fire_skill_indicator):
+		_fire_skill_targeting = false
+		return
+	var mouse_pos: Vector2 = get_global_mouse_position()
+	var target: Vector2 = mouse_pos
+	if _fire_skill_indicator.has_method("get_clamped_target"):
+		target = _fire_skill_indicator.get_clamped_target(global_position, mouse_pos)
+	# Despawn indicator
+	_fire_skill_indicator.queue_free()
+	_fire_skill_indicator = null
+	_fire_skill_targeting = false
+	# Spawn projectile (com lv4 multipliers se aplicáveis).
+	var proj: Node = FIRE_SKILL_PROJECTILE_SCENE.instantiate()
+	if "field_dps" in proj:
+		proj.field_dps = FIRE_SKILL_DPS * _fire_burn_multiplier()
+	if "field_duration" in proj:
+		proj.field_duration = FIRE_SKILL_DURATION
+	if "field_scale" in proj:
+		proj.field_scale = _fire_area_scale()
+	_get_world().add_child(proj)
+	if proj.has_method("setup"):
+		proj.setup(global_position, target)
+	# Cooldown
+	_fire_skill_cd_remaining = FIRE_SKILL_COOLDOWN
+	fire_skill_cooldown_changed.emit(_fire_skill_cd_remaining, FIRE_SKILL_COOLDOWN)
+
+
+func _update_player_fire_trail() -> void:
+	# Lv4 do Fogo: dropa segmentos de player_fire_trail enquanto o player anda.
+	# NÃO dropa parado (velocity zero) nem morto.
+	if fire_arrow_level < 4 or is_dead:
+		return
+	if velocity.length() < 1.0:
+		_player_fire_trail_initialized = false  # reset, próximo movimento dropa imediato
+		return
+	if not _player_fire_trail_initialized:
+		_player_fire_trail_initialized = true
+		_player_fire_trail_last_pos = global_position
+		_spawn_player_fire_trail_segment()
+		return
+	if global_position.distance_to(_player_fire_trail_last_pos) >= PLAYER_FIRE_TRAIL_SPACING:
+		_player_fire_trail_last_pos = global_position
+		_spawn_player_fire_trail_segment()
+
+
+func _spawn_player_fire_trail_segment() -> void:
+	if PLAYER_FIRE_TRAIL_SCENE == null:
+		return
+	var seg: Node = PLAYER_FIRE_TRAIL_SCENE.instantiate()
+	if "damage_per_second" in seg:
+		seg.damage_per_second = PLAYER_FIRE_TRAIL_DPS * _fire_burn_multiplier()
+	_get_world().add_child(seg)
+	if seg is Node2D:
+		(seg as Node2D).global_position = global_position
+
+
+func _update_fire_skill(delta: float) -> void:
+	if _fire_skill_targeting:
+		_update_fire_skill_indicator()
+	if _fire_skill_cd_remaining > 0.0:
+		_fire_skill_cd_remaining = maxf(_fire_skill_cd_remaining - delta, 0.0)
+		fire_skill_cooldown_changed.emit(_fire_skill_cd_remaining, FIRE_SKILL_COOLDOWN)
+
+
+func _cast_curse_beam() -> void:
+	# Lv4: raio roxo sustentado por CURSE_SKILL_DURATION segundos. Direção
+	# travada no momento do cast (mouse). Aplica damage + CurseDebuff por tick.
+	if _curse_skill_cd_remaining > 0.0:
+		return
+	if CURSE_BEAM_SCENE == null:
+		return
+	var mouse_pos: Vector2 = get_global_mouse_position()
+	var dir: Vector2 = (mouse_pos - global_position).normalized()
+	if dir.length() < 0.01:
+		return
+	var beam: Node = CURSE_BEAM_SCENE.instantiate()
+	if "damage_per_tick" in beam:
+		beam.damage_per_tick = CURSE_SKILL_DAMAGE_PER_TICK
+	if "max_range_per_side" in beam:
+		beam.max_range_per_side = CURSE_SKILL_RANGE
+	if "lifetime" in beam:
+		beam.lifetime = CURSE_SKILL_DURATION
+	if "warmup_duration" in beam:
+		beam.warmup_duration = CURSE_SKILL_WARMUP
+	if "curse_dps" in beam:
+		beam.curse_dps = _curse_dps()
+	if "curse_duration" in beam:
+		beam.curse_duration = _curse_duration()
+	if "curse_slow_factor" in beam:
+		beam.curse_slow_factor = _curse_slow_factor()
+	_get_world().add_child(beam)
+	if beam.has_method("setup"):
+		beam.setup(global_position, dir)
+	# Cd cobre duração do beam (5s) + cooldown limpo (3s) = 8s total cycle.
+	_curse_skill_cd_remaining = CURSE_SKILL_TOTAL_CYCLE
+	curse_skill_cooldown_changed.emit(_curse_skill_cd_remaining, CURSE_SKILL_TOTAL_CYCLE)
+
+
+func _update_curse_skill(delta: float) -> void:
+	if _curse_skill_cd_remaining > 0.0:
+		_curse_skill_cd_remaining = maxf(_curse_skill_cd_remaining - delta, 0.0)
+		curse_skill_cooldown_changed.emit(_curse_skill_cd_remaining, CURSE_SKILL_TOTAL_CYCLE)
+
+
+func _try_start_dash() -> void:
+	if _is_dashing or _dash_cd_remaining > 0.0 or is_attacking:
+		return
+	# Direção: input atual; se não tiver, dash pra onde o sprite está virado.
+	var dir := Vector2(
+		Input.get_axis("move_left", "move_right"),
+		Input.get_axis("move_up", "move_down")
+	)
+	if dir.length() < 0.1:
+		dir = Vector2.LEFT if sprite.flip_h else Vector2.RIGHT
+	dir = dir.normalized()
+	_is_dashing = true
+	_dash_time_left = dash_duration
+	_dash_velocity = dir * (dash_distance / dash_duration)
+	_dash_cd_remaining = dash_cooldown
+	# Vira o sprite na direção do dash (mantém facing se for puramente vertical).
+	if dir.x != 0.0:
+		sprite.flip_h = dir.x < 0.0
+		muzzle.position.x = -muzzle_offset_x if sprite.flip_h else muzzle_offset_x
+	# Anim "dash" se existir; senão mantém a atual.
+	if sprite.sprite_frames != null and sprite.sprite_frames.has_animation("dash"):
+		sprite.speed_scale = 1.0
+		sprite.play("dash")
+	_play_dash_sound()
+	dash_cooldown_changed.emit(_dash_cd_remaining, dash_cooldown)
+	# Trilha de poder: dropa primeiro segmento + reseta marker pra próximos.
+	if dash_fire_trail_level > 0:
+		_dash_last_trail_pos = global_position
+		_spawn_dash_trail_segment()
+	# Auto-attack: dispara flecha no inimigo mais próximo após delay
+	# (e segunda flecha após mais um delay se tiver 1.3.1).
+	if has_dash_auto_attack:
+		get_tree().create_timer(DASH_FIRST_ARROW_DELAY).timeout.connect(func() -> void:
+			if not is_dead:
+				_dash_auto_attack_volley()
+		)
+		if has_dash_double_arrow:
+			get_tree().create_timer(DASH_FIRST_ARROW_DELAY + DASH_DOUBLE_ARROW_DELAY).timeout.connect(func() -> void:
+				if not is_dead:
+					_dash_auto_attack_volley()
+			)
+
+
+func _play_dash_sound() -> void:
+	if DASH_SOUND == null:
+		return
+	var p := AudioStreamPlayer2D.new()
+	p.stream = DASH_SOUND
+	p.volume_db = -22.0
+	_get_world().add_child(p)
+	p.global_position = global_position
+	p.play()
+	var ref: AudioStreamPlayer2D = p
+	p.finished.connect(func() -> void:
+		if is_instance_valid(ref):
+			ref.queue_free()
+	)
+
+
+func _update_dash(delta: float) -> void:
+	if _is_dashing:
+		_dash_time_left -= delta
+		# Drop trail segments periodicamente conforme o player anda durante dash.
+		if dash_fire_trail_level > 0:
+			var moved: float = global_position.distance_to(_dash_last_trail_pos)
+			if moved >= DASH_TRAIL_SPACING:
+				_spawn_dash_trail_segment()
+				_dash_last_trail_pos = global_position
+		if _dash_time_left <= 0.0:
+			_is_dashing = false
+			_dash_velocity = Vector2.ZERO
+	if _dash_cd_remaining > 0.0:
+		_dash_cd_remaining = maxf(_dash_cd_remaining - delta, 0.0)
+		dash_cooldown_changed.emit(_dash_cd_remaining, dash_cooldown)
+
+
+func _spawn_dash_trail_segment() -> void:
+	if DASH_TRAIL_SCENE == null:
+		return
+	var seg: Node = DASH_TRAIL_SCENE.instantiate()
+	if "damage_per_second" in seg:
+		seg.damage_per_second = DASH_TRAIL_DPS_BASE + DASH_TRAIL_DPS_PER_STACK * float(dash_fire_trail_level - 1)
+	_get_world().add_child(seg)
+	if seg is Node2D:
+		(seg as Node2D).global_position = global_position
+
+
+func _find_nearest_enemy() -> Node2D:
+	var nearest: Node2D = null
+	var best_dist: float = INF
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not is_instance_valid(e) or not (e is Node2D):
+			continue
+		var d: float = (e as Node2D).global_position.distance_to(global_position)
+		if d < best_dist:
+			nearest = e
+			best_dist = d
+	return nearest
+
+
+func _dash_auto_attack_volley() -> void:
+	# Auto-attack durante dash: usa todos os efeitos de upgrade (multi/chain/dmg)
+	# mas NÃO incrementa _perf_shot_counter (excalidraw: "não conta como +1
+	# ataque para o terceiro do perfurante").
+	if arrow_scene == null:
+		return
+	var target: Node2D = _find_nearest_enemy()
+	if target == null:
+		return
+	var dir: Vector2 = (target.global_position - global_position).normalized()
+	if dir.length() < 0.01:
+		return
+	# Pierce: usa o estado atual do counter sem alterá-lo.
+	var is_pierce: bool = _is_piercing_shot()
+	# Move muzzle pra direção do tiro pra spawn coerente.
+	if dir.x != 0.0:
+		muzzle.position.x = -muzzle_offset_x if dir.x < 0.0 else muzzle_offset_x
+	# Trava aim no alvo — _build_volley usa locked_aim_dir como direção principal.
+	var saved_aim: Vector2 = locked_aim_dir
+	locked_aim_dir = dir
+	var volley: Array = _build_volley()
+	for i in volley.size():
+		var shot: Dictionary = volley[i]
+		_spawn_arrow(shot["dir"], shot["dmg_mult"], is_pierce, i == 0, i == 0)
+	# Restaura aim e muzzle pro estado atual do sprite (next _update_facing
+	# fixaria de qualquer forma, mas restaurar evita visual flicker).
+	locked_aim_dir = saved_aim
+	muzzle.position.x = -muzzle_offset_x if sprite.flip_h else muzzle_offset_x
 
 
 func reset_hp() -> void:
@@ -263,6 +842,16 @@ func reset_hp() -> void:
 	if hp_bar != null:
 		hp_bar.set_ratio(1.0)
 	_clear_status_effects()
+
+
+func heal(amount: float) -> void:
+	# Cura usada pelo coração de Life Steal e qualquer outro pickup curativo.
+	if is_dead or amount <= 0.0:
+		return
+	hp = minf(hp + amount, max_hp)
+	hp_changed.emit(hp, max_hp)
+	if hp_bar != null:
+		hp_bar.set_ratio(hp / max_hp)
 
 
 func add_gold(amount: int) -> void:
@@ -297,6 +886,74 @@ func apply_upgrade(upgrade_id: String) -> void:
 			arrow_damage_multiplier += 0.20
 		"perfuracao":
 			perfuracao_level = mini(perfuracao_level + 1, 4)
+		"attack_speed":
+			attack_speed_level += 1
+			# +30% por stack (aditivo). Aplica imediatamente — próximo ataque
+			# já usa o novo wait_time/speed_scale via _start_attack.
+			attack_speed_multiplier += 0.30
+		"multi_arrow":
+			multi_arrow_level = mini(multi_arrow_level + 1, 4)
+		"chain_lightning":
+			chain_lightning_level = mini(chain_lightning_level + 1, 4)
+		"move_speed":
+			move_speed_level += 1
+			# +17% por stack (aditivo). Aplica imediatamente — _physics_process
+			# usa o novo multiplier no próximo frame.
+			move_speed_multiplier += 0.17
+		"life_steal":
+			# +5% chance + +10% heal nos drops de coração por stack (sem max).
+			life_steal_level += 1
+		"fire_arrow":
+			# Elemental Fogo. Lv1: flecha de fogo + queima ao contato (DPS).
+			# Lv2: rastro de fogo. Lv3: skill direita (arremesso de área).
+			var was_below_3: bool = fire_arrow_level < 3
+			fire_arrow_level = mini(fire_arrow_level + 1, 4)
+			if was_below_3 and fire_arrow_level >= 3:
+				_fire_skill_cd_remaining = 0.0
+				fire_skill_unlocked.emit()
+				fire_skill_cooldown_changed.emit(0.0, FIRE_SKILL_COOLDOWN)
+		"curse_arrow":
+			# Elemental Maldição. Lv1: flecha amaldiçoada (slow + DoT toxic).
+			# Lv2: 18% chance ao matar → enemy vira aliado até fim da horda.
+			# Lv3: 33% + todos aliados aplicam slow/DoT ao causar dano.
+			# Lv4: 50% + skill Q (raio roxo em linha reta, cd 3s).
+			var was_below_4_curse: bool = curse_arrow_level < 4
+			curse_arrow_level = mini(curse_arrow_level + 1, 4)
+			if was_below_4_curse and curse_arrow_level >= 4:
+				_curse_skill_cd_remaining = 0.0
+				curse_skill_unlocked.emit()
+				curse_skill_cooldown_changed.emit(0.0, CURSE_SKILL_TOTAL_CYCLE)
+		"woodwarden":
+			# Cada compra do aliado conta como um "level up" — wave_manager
+			# usa o level pra escalar HP/dmg quando spawna/respawna.
+			# Max 4 compras (= 4 woodwardens, full stats).
+			woodwarden_level = mini(woodwarden_level + 1, 4)
+		"gold_magnet":
+			# One-shot: gold spawnado/restante passa a perseguir o player no _process do gold.
+			has_gold_magnet = true
+		"dash":
+			# One-shot: ganha acesso ao dash (espaço). HUD mostra a barra.
+			# Já comprado? Não faz nada (evita resetar cd via re-apply).
+			if has_dash:
+				return
+			has_dash = true
+			_dash_cd_remaining = 0.0
+			dash_unlocked.emit()
+			dash_cooldown_changed.emit(0.0, dash_cooldown)
+		"dash_cooldown":
+			# Reduz cd em DASH_CD_REDUCTION_PER_STACK, mínimo DASH_CD_MIN.
+			dash_cd_reduction_level += 1
+			dash_cooldown = maxf(dash_cooldown - DASH_CD_REDUCTION_PER_STACK, DASH_CD_MIN)
+			dash_cooldown_changed.emit(_dash_cd_remaining, dash_cooldown)
+		"dash_fire_trail":
+			# TODO: rastro com dano. Por enquanto só rastreia o nível.
+			dash_fire_trail_level += 1
+		"dash_auto_attack":
+			# TODO: auto-attack após dash. Por enquanto só seta a flag.
+			has_dash_auto_attack = true
+		"dash_double_arrow":
+			# TODO: 2 flechas após dash. Por enquanto só seta a flag.
+			has_dash_double_arrow = true
 
 
 func get_upgrade_count(upgrade_id: String) -> int:
@@ -304,6 +961,20 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"hp": return hp_upgrades
 		"damage": return damage_upgrades
 		"perfuracao": return perfuracao_level
+		"attack_speed": return attack_speed_level
+		"multi_arrow": return multi_arrow_level
+		"chain_lightning": return chain_lightning_level
+		"move_speed": return move_speed_level
+		"life_steal": return life_steal_level
+		"fire_arrow": return fire_arrow_level
+		"curse_arrow": return curse_arrow_level
+		"woodwarden": return woodwarden_level
+		"gold_magnet": return 1 if has_gold_magnet else 0
+		"dash": return 1 if has_dash else 0
+		"dash_cooldown": return dash_cd_reduction_level
+		"dash_fire_trail": return dash_fire_trail_level
+		"dash_auto_attack": return 1 if has_dash_auto_attack else 0
+		"dash_double_arrow": return 1 if has_dash_double_arrow else 0
 	return 0
 
 
@@ -469,6 +1140,9 @@ func _on_animation_finished() -> void:
 		# Garantia: se algo cortou a anim antes do release_frame, solta agora.
 		if is_drawing:
 			_release_arrow()
+		# Reseta speed_scale ANTES de tocar idle pra evitar 1 frame de idle
+		# acelerado entre o animation_finished e o próximo _physics_process.
+		sprite.speed_scale = 1.0
 		sprite.play("idle")
 
 

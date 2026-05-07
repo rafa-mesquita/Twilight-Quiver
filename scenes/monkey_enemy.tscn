@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" path="res://scenes/kill_effect.tscn" id="6_kill"]
 [ext_resource type="AudioStream" path="res://audios/effects/macaco/monkey damage.mp3" id="7_dmg_sfx"]
 [ext_resource type="PackedScene" path="res://scenes/gold.tscn" id="8_gold"]
+[ext_resource type="PackedScene" path="res://scenes/heart.tscn" id="9_heart"]
 
 [sub_resource type="AtlasTexture" id="A_idle_0"]
 atlas = ExtResource("2_sheet")
@@ -82,6 +83,7 @@ damage_number_scene = ExtResource("5_dmgnum")
 kill_effect_scene = ExtResource("6_kill")
 damage_sound = ExtResource("7_dmg_sfx")
 gold_scene = ExtResource("8_gold")
+heart_scene = ExtResource("9_heart")
 
 [node name="Shadow" type="Node2D" parent="."]
 position = Vector2(0, 0)

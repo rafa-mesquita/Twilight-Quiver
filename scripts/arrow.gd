@@ -23,6 +23,46 @@ var is_stuck: bool = false
 # Setado pelo player ANTES de add_child quando proca (a cada 3 ataques).
 var is_piercing: bool = false
 var hitbox_scale: float = 1.0  # > 1 aumenta colisão e sprite (level 2+ da perfuração)
+# Multi Arrow: só a flecha principal da volley toca o som de tiro pra evitar
+# acúmulo de db quando múltiplas flechas saem juntas. Setado pelo player.
+var play_shoot_sound: bool = true
+# Cadeia de Raios: setado pelo player ANTES de add_child. Quando > 0, a flecha
+# procca raios em N inimigos próximos ao acertar um inimigo válido.
+var chain_count: int = 0
+var chain_dmg_pct: float = 0.0
+# Chance [0..1] de cadeiar num alvo adicional além dos `chain_count` garantidos
+# (usado no lv2 da cadeia, que tem 30% de chance de pegar um 3º inimigo).
+var chain_bonus_chance: float = 0.0
+# Elemental Fogo: visual vermelho/animado + aplica BurnDoT em inimigos.
+# Setado pelo player ANTES de add_child quando has_fire_arrow.
+var is_fire: bool = false
+var burn_dps: float = 5.0
+var burn_duration: float = 3.0
+# Elemental Maldição: visual roxo + aplica CurseDebuff (slow + DoT toxic) em inimigos.
+# Setado pelo player ANTES de add_child quando curse_arrow_level > 0.
+var is_curse: bool = false
+var curse_dps: float = 4.0
+var curse_duration: float = 4.0
+var curse_slow_factor: float = 0.65  # 0.65 = 35% slow no inimigo
+# Fogo lv2: rastro de chamas no caminho da flecha (DPS area).
+var fire_trail_enabled: bool = false
+var fire_trail_dps: float = 4.0
+var fire_trail_scale: float = 1.0  # lv4 do Fogo aumenta a área dos segmentos
+const FIRE_TRAIL_SCENE: PackedScene = preload("res://scenes/fire_trail.tscn")
+const FIRE_TRAIL_SPACING: float = 18.0
+# Delay inicial pro rastro não sair colado na flecha — dá um espaço entre o
+# muzzle e o primeiro segmento, fica mais natural.
+const FIRE_TRAIL_START_DELAY: float = 0.08
+var _fire_trail_last_pos: Vector2 = Vector2.ZERO
+var _fire_trail_initialized: bool = false
+var _fire_trail_delay_remaining: float = FIRE_TRAIL_START_DELAY
+const CHAIN_RADIUS: float = 85.0
+const CHAIN_SOUND: AudioStream = preload("res://audios/upgrades/cadeia de raios/Cadeia de raios effect.mp3")
+const CHAIN_SOUND_THROTTLE_MS: int = 80
+const CHAIN_SOUND_VOLUME_DB: float = -10.0
+# Throttle global do som de chain — várias flechas (multi arrow) podem proccar
+# no mesmo frame e somar dB. Compartilhado entre todas as instâncias da arrow.
+static var _last_chain_sound_msec: int = -1000
 # Quem disparou a flecha. Usado pra ignorar colisão com o próprio shooter
 # (ex: torre não atira em si mesma, mas colide com flecha do player).
 var source: Node = null
@@ -36,11 +76,18 @@ func _ready() -> void:
 	get_tree().create_timer(lifetime).timeout.connect(_on_lifetime_expired)
 	# Defer pra detachar/tocar o som DEPOIS do spawner setar a posição da flecha.
 	if shoot_sound != null:
-		_setup_shoot_sound.call_deferred()
+		if play_shoot_sound:
+			_setup_shoot_sound.call_deferred()
+		else:
+			shoot_sound.queue_free()
 	if is_piercing:
 		_apply_piercing_visuals()
 	if hitbox_scale != 1.0:
 		_apply_hitbox_scale()
+	if is_fire:
+		_apply_fire_visuals()
+	if is_curse:
+		_apply_curse_visuals()
 
 
 const PIERCING_BASE_SCALE: float = 1.1
@@ -56,6 +103,83 @@ func _apply_piercing_visuals() -> void:
 	if trail != null:
 		trail.default_color = Color(1.0, 0.7, 0.2, 1.0)
 		trail.width *= PIERCING_BASE_SCALE
+
+
+func _try_spawn_fire_trail() -> void:
+	# Spawna 1 segmento na primeira chamada e depois 1 a cada FIRE_TRAIL_SPACING
+	# px percorridos. Cada segmento tem seu próprio lifetime/fade independente,
+	# então o primeiro spawnado é o primeiro a sumir (fade gradual ao longo do
+	# caminho).
+	if not _fire_trail_initialized:
+		_fire_trail_initialized = true
+		_fire_trail_last_pos = global_position
+		_spawn_fire_trail_segment()
+		return
+	if global_position.distance_to(_fire_trail_last_pos) >= FIRE_TRAIL_SPACING:
+		_fire_trail_last_pos = global_position
+		_spawn_fire_trail_segment()
+
+
+func _spawn_fire_trail_segment() -> void:
+	if FIRE_TRAIL_SCENE == null:
+		return
+	var seg: Node = FIRE_TRAIL_SCENE.instantiate()
+	if "damage_per_second" in seg:
+		seg.damage_per_second = fire_trail_dps
+	_get_world().add_child(seg)
+	if seg is Node2D:
+		var s2d: Node2D = seg
+		s2d.global_position = global_position
+		if not is_equal_approx(fire_trail_scale, 1.0):
+			s2d.scale = Vector2(fire_trail_scale, fire_trail_scale)
+
+
+func _apply_fire_visuals() -> void:
+	# Esconde sprite normal, mostra a flecha de fogo animada, e troca o gradient
+	# do trail por um suave 4-stop fogo (transparente→vermelho→laranja→amarelo)
+	# pra ficar smooth ao invés de cor sólida abrupta.
+	var normal_sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if normal_sprite != null:
+		normal_sprite.visible = false
+	var fire_sprite := get_node_or_null("FireSprite") as AnimatedSprite2D
+	if fire_sprite != null:
+		fire_sprite.visible = true
+		fire_sprite.modulate = Color.WHITE
+	if trail != null:
+		var grad := Gradient.new()
+		grad.offsets = PackedFloat32Array([0.0, 0.4, 0.75, 1.0])
+		grad.colors = PackedColorArray([
+			Color(0.85, 0.18, 0.10, 0.0),  # tail: vermelho-escuro transparente
+			Color(0.95, 0.30, 0.15, 0.55), # core: vermelho
+			Color(1.00, 0.55, 0.20, 0.85), # mid: laranja
+			Color(1.00, 0.85, 0.35, 0.95)  # head: amarelo-laranja brilhante
+		])
+		trail.gradient = grad
+		trail.default_color = Color.WHITE  # com gradient, default_color só multiplica
+		trail.width = 2.2  # um tico mais grosso pra ficar tipo "glow"
+
+
+func _apply_curse_visuals() -> void:
+	# Tinge sprite normal de roxo + trail roxo com gradient suave (transparente
+	# → violeta escuro → roxo brilhante). Mantém o sprite original (não swap).
+	# Compatível com piercing — multiplica o modulate em vez de sobrescrever.
+	var normal_sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if normal_sprite != null:
+		# Se já tem tint dourado do piercing, mistura — mas pra clareza visual
+		# da maldição, força o roxo (piercing curse = ainda visual de maldição).
+		normal_sprite.modulate = Color(1.5, 0.7, 1.8, 1.0)
+	if trail != null:
+		var grad := Gradient.new()
+		grad.offsets = PackedFloat32Array([0.0, 0.4, 0.75, 1.0])
+		grad.colors = PackedColorArray([
+			Color(0.30, 0.05, 0.45, 0.0),  # tail: roxo-escuro transparente
+			Color(0.45, 0.15, 0.70, 0.55), # core: violeta
+			Color(0.70, 0.30, 1.00, 0.85), # mid: roxo brilhante
+			Color(0.90, 0.65, 1.00, 0.95)  # head: lavanda clara
+		])
+		trail.gradient = grad
+		trail.default_color = Color.WHITE
+		trail.width = 2.2
 
 
 func _apply_hitbox_scale() -> void:
@@ -85,6 +209,11 @@ func _physics_process(delta: float) -> void:
 		trail.add_point(global_position)
 		while trail.get_point_count() > trail_max_points:
 			trail.remove_point(0)
+	if fire_trail_enabled:
+		if _fire_trail_delay_remaining > 0.0:
+			_fire_trail_delay_remaining -= delta
+		else:
+			_try_spawn_fire_trail()
 
 
 func _on_hit(body: Node) -> void:
@@ -113,10 +242,18 @@ func _on_hit(body: Node) -> void:
 		_stick_in_place(stick_surface_duration)
 		return
 	if target != null:
+		# Aplica curse ANTES do take_damage — se o dano matar, o try_convert_on_death
+		# precisa enxergar o CurseDebuff anexado pra rolar a chance de virar aliado.
+		# Burn pode ficar antes ou depois (não tem mecânica de conversão).
+		if is_curse:
+			_apply_curse_to(target)
 		target.take_damage(damage)
 		if target.has_method("apply_knockback"):
 			target.apply_knockback(direction, knockback_strength)
 		_play_oneshot(impact_sound, global_position, sound_volume_db, 0.7)
+		_proc_chain_lightning(target)
+		if is_fire and is_instance_valid(target):
+			_apply_burn_to(target)
 		if is_piercing:
 			_pierce_hits += 1
 			_spawn_pierce_hit_effect(_pierce_hits == 3)
@@ -260,6 +397,116 @@ func _setup_shoot_sound() -> void:
 		if is_instance_valid(sound_ref):
 			sound_ref.stop()
 			sound_ref.queue_free()
+	)
+
+
+func _apply_burn_to(target: Node) -> void:
+	# Re-aplica DoT existente (refresh duration) ou cria novo BurnDoT como child.
+	for child in target.get_children():
+		if child is BurnDoT:
+			(child as BurnDoT).refresh(burn_duration, burn_dps)
+			return
+	var dot := BurnDoT.new()
+	dot.dps = burn_dps
+	dot.duration = burn_duration
+	target.add_child(dot)
+
+
+func _apply_curse_to(target: Node) -> void:
+	# Re-aplica debuff existente (refresh) ou cria novo CurseDebuff como child.
+	# Inimigo precisa ter `speed` pra slow funcionar (todos têm); take_damage pro DoT.
+	for child in target.get_children():
+		if child is CurseDebuff:
+			(child as CurseDebuff).refresh(curse_duration, curse_dps, curse_slow_factor)
+			return
+	var deb := CurseDebuff.new()
+	deb.dps = curse_dps
+	deb.duration = curse_duration
+	deb.slow_factor = curse_slow_factor
+	target.add_child(deb)
+
+
+func _proc_chain_lightning(origin: Node) -> void:
+	# Procca quando flecha do player acerta inimigo. Encontra os N inimigos mais
+	# próximos no raio, dá dano % e desenha raios. Combos: cada flecha de uma
+	# volley multi-arrow procca seu próprio chain (audio é throttled).
+	if chain_count <= 0 or chain_dmg_pct <= 0.0:
+		return
+	if not (origin is Node2D):
+		return
+	var origin2d: Node2D = origin
+	var origin_pos: Vector2 = origin2d.global_position
+	var candidates: Array = []
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if e == origin or not is_instance_valid(e) or not (e is Node2D):
+			continue
+		if not e.has_method("take_damage"):
+			continue
+		var d: float = (e as Node2D).global_position.distance_to(origin_pos)
+		if d <= CHAIN_RADIUS:
+			candidates.append({"node": e, "dist": d})
+	if candidates.is_empty():
+		return
+	candidates.sort_custom(func(a, b): return a["dist"] < b["dist"])
+	var n: int = mini(chain_count, candidates.size())
+	# Bônus probabilístico: tenta um alvo extra além dos garantidos (lv2 = 30%).
+	if chain_bonus_chance > 0.0 and candidates.size() > n and randf() < chain_bonus_chance:
+		n += 1
+	var chain_dmg: float = damage * chain_dmg_pct
+	for i in n:
+		var enemy: Node = candidates[i]["node"]
+		if not is_instance_valid(enemy):
+			continue
+		# Curse ANTES do take_damage — pra try_convert_on_death enxergar o debuff.
+		if is_curse:
+			_apply_curse_to(enemy)
+		enemy.take_damage(chain_dmg)
+		if is_fire:
+			_apply_burn_to(enemy)
+		_spawn_lightning_visual(origin_pos, (enemy as Node2D).global_position)
+	_play_chain_sound(origin_pos)
+
+
+func _spawn_lightning_visual(from: Vector2, to: Vector2) -> void:
+	var dir: Vector2 = to - from
+	if dir.length() < 0.01:
+		return
+	var perp: Vector2 = Vector2(-dir.y, dir.x).normalized()
+	var line := Line2D.new()
+	line.width = 2.5
+	# Amarelo elétrico saturado (R/G altos, B baixo) — modulate > 1 pra brilho extra.
+	line.default_color = Color(2.2, 1.9, 0.4, 1.0)
+	line.z_index = 10
+	# Zigue-zague: 7 segmentos com offset perpendicular randômico nos pontos do meio.
+	var segments: int = 7
+	for i in segments + 1:
+		var t: float = float(i) / float(segments)
+		var p: Vector2 = from.lerp(to, t)
+		if i > 0 and i < segments:
+			p += perp * randf_range(-7.0, 7.0)
+		line.add_point(p)
+	_get_world().add_child(line)
+	line.global_position = Vector2.ZERO  # add_point usa coords absolutas
+	var tw := line.create_tween()
+	tw.tween_property(line, "modulate:a", 0.0, 0.18)
+	tw.tween_callback(line.queue_free)
+
+
+func _play_chain_sound(pos: Vector2) -> void:
+	var now: int = Time.get_ticks_msec()
+	if now - _last_chain_sound_msec < CHAIN_SOUND_THROTTLE_MS:
+		return
+	_last_chain_sound_msec = now
+	var p := AudioStreamPlayer2D.new()
+	p.stream = CHAIN_SOUND
+	p.volume_db = CHAIN_SOUND_VOLUME_DB
+	_get_world().add_child(p)
+	p.global_position = pos
+	p.play()
+	var ref: AudioStreamPlayer2D = p
+	get_tree().create_timer(2.0).timeout.connect(func() -> void:
+		if is_instance_valid(ref):
+			ref.queue_free()
 	)
 
 

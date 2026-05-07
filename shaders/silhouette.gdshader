@@ -1,8 +1,9 @@
 shader_type canvas_item;
 
-// Silhueta branca: substitui o RGB do sprite por branco puro,
-// preservando o alpha original × o modulate.a (pra dar fade).
+// Silhueta tintada: substitui o RGB do sprite pela cor do modulate (default
+// branco, mas pode ser tintada — ex: heal flash usa verde). Preserva o alpha
+// original do sprite × modulate.a (pra dar fade preservando o formato).
 void fragment() {
 	vec4 tex = texture(TEXTURE, UV);
-	COLOR = vec4(1.0, 1.0, 1.0, tex.a * COLOR.a);
+	COLOR = vec4(COLOR.rgb, tex.a * COLOR.a);
 }

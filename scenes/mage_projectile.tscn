@@ -51,7 +51,7 @@ fill_to = Vector2(1, 0.5)
 
 [node name="MageProjectile" type="Area2D"]
 collision_layer = 0
-collision_mask = 3
+collision_mask = 7
 script = ExtResource("1_proj")
 hit_effect_scene = ExtResource("4_hit")
 

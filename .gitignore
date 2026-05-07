@@ -31,3 +31,11 @@ desktop.ini
 miro key.md
 .miro_token
 miro_response.json
+
+# Claude Code local settings
+.claude/
+
+# Screenshots/files acidentais soltos na raiz
+/capra jogo.png
+/capra jogo.png.import
+/hud.tscn

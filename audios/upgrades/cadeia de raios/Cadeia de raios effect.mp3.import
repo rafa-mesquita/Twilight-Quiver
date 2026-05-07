@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://m2egs4iupovt"
+path="res://.godot/imported/Cadeia de raios effect.mp3-bb926c4536867c68bfcaa09f2d503d51.mp3str"
+
+[deps]
+
+source_file="res://audios/upgrades/cadeia de raios/Cadeia de raios effect.mp3"
+dest_files=["res://.godot/imported/Cadeia de raios effect.mp3-bb926c4536867c68bfcaa09f2d503d51.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

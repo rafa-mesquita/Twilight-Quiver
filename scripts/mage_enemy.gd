@@ -15,9 +15,10 @@ extends CharacterBody2D
 @export var damage_sound_volume_db: float = -18.0
 @export var knockback_decay: float = 400.0
 @export var gold_scene: PackedScene
-@export var gold_drop_chance: float = 0.45
+@export var gold_drop_chance: float = 0.47
 @export var gold_drop_min: int = 1
 @export var gold_drop_max: int = 2
+@export var heart_scene: PackedScene
 @export var separation_radius: float = 14.0
 @export var separation_strength: float = 25.0
 @export var tower_target_switch_distance: float = 240.0
@@ -51,7 +52,10 @@ var is_summoning: bool = false
 var attack_count: int = 0
 var locked_attack_dir: Vector2 = Vector2.RIGHT
 var knockback_velocity: Vector2 = Vector2.ZERO
+var _stun_remaining: float = 0.0
 var _flash_tween: Tween
+# Maldição: AI vira aliada ao ser convertido (mira em enemies, projétil hit them).
+var is_curse_ally: bool = false
 
 
 func _ready() -> void:
@@ -72,6 +76,12 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# Stun: bloqueia AI/ataque/invocação durante a duração.
+	if _stun_remaining > 0.0:
+		_stun_remaining -= delta
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
 	var ai_velocity: Vector2 = Vector2.ZERO
 	current_target = _pick_target()
 
@@ -118,8 +128,10 @@ func _try_shoot() -> void:
 	attack_count += 1
 
 	# Roll de invocação: a cada `summon_check_every` ataques, chance de virar summon.
-	# Só faz sentido invocar quando alvo é o player.
-	if current_target == player and _can_summon() and attack_count % summon_check_every == 0 and randf() < summon_chance:
+	# Mago original: só invoca contra o player. Mago convertido (curse ally):
+	# invoca contra qualquer enemy — o inseto invocado também vira aliado.
+	var summon_valid_target: bool = (current_target == player) or is_curse_ally
+	if summon_valid_target and _can_summon() and attack_count % summon_check_every == 0 and randf() < summon_chance:
 		is_summoning = true
 		is_attacking = true
 		sprite.play("attack")
@@ -136,6 +148,10 @@ func _try_shoot() -> void:
 func _can_summon() -> bool:
 	if insect_scene == null:
 		return false
+	# Dev mode: wave nunca inicia (wave_number=0), então o gate de summon_min_wave
+	# bloqueava todo summon. Libera no dev pra testar invocação isoladamente.
+	if GameState.dev_mode:
+		return true
 	return _current_wave_number() >= summon_min_wave
 
 
@@ -180,6 +196,9 @@ func _do_summon() -> void:
 	insect.global_position = spawn_pos
 	if insect.has_method("play_spawn_in"):
 		insect.play_spawn_in()
+	# Mago convertido pela maldição invoca insetos ALIADOS (mesma conversão).
+	if is_curse_ally:
+		CurseAllyHelper.convert_to_ally(insect)
 
 
 func _fire_projectile() -> void:
@@ -188,9 +207,18 @@ func _fire_projectile() -> void:
 	var proj := projectile_scene.instantiate()
 	if "damage" in proj and damage_mult != 1.0:
 		proj.damage = proj.damage * damage_mult
+	# Maldição: mago convertido marca projétil como ally_source (mira em enemy,
+	# sem redirect). Lv3+: marca apply_curse pra projétil aplicar slow/DoT.
+	if is_curse_ally and "is_ally_source" in proj:
+		proj.is_ally_source = true
+	if "apply_curse" in proj:
+		var p := get_tree().get_first_node_in_group("player")
+		if is_curse_ally:
+			proj.apply_curse = true
+		elif p != null and ("curse_arrow_level" in p) and int(p.curse_arrow_level) >= 3:
+			# Lv3+ não-aplica em mago original (ele é enemy), só em ally convertido.
+			pass
 	_get_world().add_child(proj)
-	# Origem do projétil 2px abaixo dos pés do mago: garante que sorteia DEPOIS do mago
-	# (mesmo Y empata; +2 força projétil na frente). Visual sobe 24px pra ficar no cajado.
 	proj.global_position = Vector2(muzzle.global_position.x, global_position.y + 2)
 	if proj.has_method("set_direction"):
 		proj.set_direction(locked_attack_dir)
@@ -205,8 +233,12 @@ func take_damage(amount: float) -> void:
 	var died := hp <= 0.0
 	_play_damage_sound(1.5 if died else 0.7)
 	if died:
+		# Maldição: chance de virar aliado em vez de morrer.
+		if not is_curse_ally and CurseAllyHelper.try_convert_on_death(self):
+			return
 		GoldDrop.try_drop(_get_world(), gold_scene, global_position,
 			gold_drop_chance, gold_drop_min, gold_drop_max)
+		HeartDrop.try_drop(_get_world(), heart_scene, global_position)
 		_spawn_kill_effect()
 		_spawn_death_silhouette()
 		queue_free()
@@ -216,6 +248,15 @@ func apply_knockback(dir: Vector2, strength: float) -> void:
 	knockback_velocity = dir.normalized() * strength
 
 
+func apply_stun(duration: float) -> void:
+	# Stun do Woodwarden: bloqueia AI/ataque/invocação. Refresca duração se reaplicado.
+	_stun_remaining = maxf(_stun_remaining, duration)
+	is_attacking = false
+	is_summoning = false
+	if sprite != null and sprite.animation == "attack":
+		sprite.play("idle")
+
+
 func _play_damage_sound(duration: float = 0.7) -> void:
 	if damage_sound == null:
 		return
@@ -223,8 +264,8 @@ func _play_damage_sound(duration: float = 0.7) -> void:
 	p.stream = damage_sound
 	p.volume_db = damage_sound_volume_db
 	p.pitch_scale = 0.8
-	_get_world().add_child(p)
-	p.global_position = global_position
+	# CHILD do enemy — morre junto no queue_free, evita som "continuo" pós-morte.
+	add_child(p)
 	p.play()
 	var ref: AudioStreamPlayer2D = p
 	get_tree().create_timer(duration).timeout.connect(func() -> void:
@@ -292,11 +333,25 @@ func _spawn_damage_number(amount: float) -> void:
 
 
 func _pick_target() -> Node2D:
+	# Curse ally: inverte alvo — busca enemies em vez de player.
+	if is_curse_ally:
+		return _pick_curse_ally_target()
+	# Player + tank allies (woodwarden) competem como alvo primário pela distância.
+	var primary: Node2D = null
+	var primary_dist: float = INF
 	var player_alive: bool = player != null and is_instance_valid(player) and not (("is_dead" in player) and player.is_dead)
 	if player_alive:
-		var pdist: float = global_position.distance_to(player.global_position)
-		if pdist <= tower_target_switch_distance:
-			return player
+		primary_dist = global_position.distance_to(player.global_position)
+		primary = player
+	for tank in get_tree().get_nodes_in_group("tank_ally"):
+		if not is_instance_valid(tank) or not (tank is Node2D):
+			continue
+		var d: float = global_position.distance_to((tank as Node2D).global_position)
+		if d < primary_dist:
+			primary = tank as Node2D
+			primary_dist = d
+	if primary != null and primary_dist <= tower_target_switch_distance:
+		return primary
 	var nearest_tower: Node2D = null
 	var nearest_dist: float = INF
 	for s in get_tree().get_nodes_in_group("structure"):
@@ -309,6 +364,19 @@ func _pick_target() -> Node2D:
 	if nearest_tower != null:
 		return nearest_tower
 	return player if player_alive else null
+
+
+func _pick_curse_ally_target() -> Node2D:
+	var nearest: Node2D = null
+	var best_dist: float = INF
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not is_instance_valid(e) or not (e is Node2D):
+			continue
+		var d: float = global_position.distance_to((e as Node2D).global_position)
+		if d < best_dist:
+			nearest = e
+			best_dist = d
+	return nearest
 
 
 func _get_world() -> Node:

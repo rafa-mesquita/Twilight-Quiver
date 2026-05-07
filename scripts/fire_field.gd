@@ -1,0 +1,61 @@
+extends Area2D
+
+# Campo de fogo deixado pela skill direita do Fogo lv3. Aplica DPS a inimigos
+# dentro da área por `duration` segundos, depois fade e some.
+
+@export var damage_per_second: float = 12.0
+@export var duration: float = 6.0
+@export var fade_duration: float = 0.6
+const TICK_INTERVAL: float = 0.5
+
+var _enemies_inside: Array[Node] = []
+var _life_remaining: float = 0.0
+var _tick_accum: float = 0.0
+
+
+func _ready() -> void:
+	_life_remaining = duration
+	body_entered.connect(_on_body_entered)
+	body_exited.connect(_on_body_exited)
+	# Stagger das anims dos sprites filhos pra parecer caos de chamas (não sync).
+	for child in get_children():
+		if child is AnimatedSprite2D and (child as AnimatedSprite2D).sprite_frames != null:
+			var sp: AnimatedSprite2D = child
+			var fc: int = sp.sprite_frames.get_frame_count("default")
+			if fc > 1:
+				sp.frame = randi() % fc
+				sp.frame_progress = randf()
+	# Fade out nos últimos `fade_duration` segundos.
+	var tw := create_tween()
+	tw.tween_interval(duration - fade_duration)
+	tw.tween_property(self, "modulate:a", 0.0, fade_duration)
+
+
+func _process(delta: float) -> void:
+	_life_remaining -= delta
+	if _life_remaining <= 0.0:
+		queue_free()
+		return
+	_tick_accum += delta
+	while _tick_accum >= TICK_INTERVAL:
+		_tick_accum -= TICK_INTERVAL
+		_apply_tick()
+
+
+func _apply_tick() -> void:
+	var amount: float = damage_per_second * TICK_INTERVAL
+	for enemy in _enemies_inside.duplicate():
+		if not is_instance_valid(enemy):
+			_enemies_inside.erase(enemy)
+			continue
+		if enemy.has_method("take_damage"):
+			enemy.take_damage(amount)
+
+
+func _on_body_entered(body: Node) -> void:
+	if body.is_in_group("enemy") and not body in _enemies_inside:
+		_enemies_inside.append(body)
+
+
+func _on_body_exited(body: Node) -> void:
+	_enemies_inside.erase(body)

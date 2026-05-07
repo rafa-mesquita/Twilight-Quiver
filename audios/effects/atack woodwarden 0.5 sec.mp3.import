@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dxyeppqft3fj8"
+path="res://.godot/imported/atack woodwarden 0.5 sec.mp3-e96ea6ea83881741f04a5a7553d4bc8b.mp3str"
+
+[deps]
+
+source_file="res://audios/effects/atack woodwarden 0.5 sec.mp3"
+dest_files=["res://.godot/imported/atack woodwarden 0.5 sec.mp3-e96ea6ea83881741f04a5a7553d4bc8b.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

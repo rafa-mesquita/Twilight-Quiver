@@ -15,6 +15,9 @@ const VISUAL_OFFSET_Y: float = -6.0
 # Hop inicial: parábola que decai durante HOP_DURATION segundos.
 const HOP_HEIGHT: float = 8.0
 const HOP_DURATION: float = 0.4
+# Imã de Gold (upgrade): velocidade da perseguição contínua durante a wave.
+# Diferente do magnet de fim-de-wave que usa tween fixo de 0.55s.
+const MAGNET_PULL_SPEED: float = 130.0
 # Shader que substitui RGB por branco preservando alpha — usado pro blink final.
 const SILHOUETTE_SHADER: Shader = preload("res://shaders/silhouette.gdshader")
 
@@ -25,6 +28,8 @@ var _elapsed: float = 0.0
 var _bob_phase: float = 0.0
 var _picked: bool = false
 var _silhouette_mat: ShaderMaterial
+# Cache lazy do player pra checar `has_gold_magnet` sem buscar no group todo frame.
+var _player_ref: Node2D = null
 
 
 func _ready() -> void:
@@ -75,6 +80,13 @@ func _process(delta: float) -> void:
 		return
 	_elapsed += delta
 
+	# Imã de Gold (upgrade): se player tem, persegue ele a velocidade fixa.
+	# Skip lifetime/hop/bob/blink — gold magnetado não expira (sempre vai chegar).
+	# A coleta acontece via body_entered quando os shapes overlap.
+	if _is_player_magnet_active():
+		_magnet_chase_player(delta)
+		return
+
 	# Tempo acabou — sai.
 	if _elapsed >= lifetime:
 		queue_free()
@@ -105,6 +117,22 @@ func _process(delta: float) -> void:
 		sprite.material = _silhouette_mat if phase < white_threshold else null
 	else:
 		sprite.material = null
+
+
+func _is_player_magnet_active() -> bool:
+	if _player_ref == null or not is_instance_valid(_player_ref):
+		_player_ref = get_tree().get_first_node_in_group("player") as Node2D
+	if _player_ref == null:
+		return false
+	return _player_ref.get("has_gold_magnet") == true
+
+
+func _magnet_chase_player(delta: float) -> void:
+	var dir: Vector2 = _player_ref.global_position - global_position
+	var dist: float = dir.length()
+	if dist < 0.5:
+		return
+	global_position += (dir / dist) * MAGNET_PULL_SPEED * delta
 
 
 func _on_body_entered(body: Node) -> void:

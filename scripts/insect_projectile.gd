@@ -18,11 +18,18 @@ const PLAYER_NODE_TARGET_OFFSET: Vector2 = Vector2(0, 12)
 @onready var trail: Line2D = get_node_or_null("Trail")
 
 var direction: Vector2 = Vector2.RIGHT
+# Maldição: setado pelo inseto convertido. Inverte alvo (bate em enemy, ignora player/ally).
+var is_ally_source: bool = false
 
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	get_tree().create_timer(lifetime).timeout.connect(_die)
+	# Inseto convertido (ally): muda mask pra detectar enemies (layer 4) em vez
+	# de player (layer 1). Mantém walls (layer 2). _on_body_entered filtra allies
+	# (que também ficam no layer 4 após conversão) via group check.
+	if is_ally_source:
+		collision_mask = 6  # 4 (enemy/ally body) + 2 (walls)
 
 
 func set_direction(dir: Vector2) -> void:
@@ -43,6 +50,17 @@ func _physics_process(delta: float) -> void:
 
 
 func _on_body_entered(body: Node) -> void:
+	if is_ally_source:
+		# Inseto convertido pela maldição: bate em enemy. Aplica damage + curse.
+		if body.is_in_group("enemy"):
+			# Curse ANTES do take_damage pra contar na conversão se matar.
+			CurseAllyHelper.apply_ally_curse_on_damage(body, self)
+			if body.has_method("take_damage"):
+				body.take_damage(damage)
+			_spawn_hit_effect()
+			_die()
+		return
+	# Inseto original: bate só no player (slow + poison existentes).
 	if body.is_in_group("player"):
 		if body.has_method("take_damage"):
 			body.take_damage(damage)

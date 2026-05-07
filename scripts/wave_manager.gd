@@ -301,8 +301,18 @@ func _finish_wave() -> void:
 	wave_active = false
 	# Garante que a barra mostra 100% antes da tela de "Wave Limpa".
 	_emit_progress()
+	# Maldição: aliados convertidos pela curse só duram até o fim da horda/turno.
+	_cleanup_curse_allies()
 	# Suga todas as moedas restantes do mapa pro player (auto-coleta).
 	_magnet_remaining_gold()
+
+
+func _cleanup_curse_allies() -> void:
+	# Remove aliados convertidos pela Maldição. "Até final da horda" (lv2) e
+	# "até final do turno" (lv3+) são equivalentes neste jogo (1 horda = 1 turno).
+	for ally in get_tree().get_nodes_in_group("curse_ally"):
+		if is_instance_valid(ally):
+			ally.queue_free()
 	# Mostra HUD em 100% por alguns segundos pro player ver o progresso completo.
 	if pre_cleared_hold > 0.0:
 		await get_tree().create_timer(pre_cleared_hold).timeout
@@ -335,6 +345,12 @@ func _magnet_remaining_gold() -> void:
 			continue
 		if coin.has_method("magnet_to_player"):
 			coin.magnet_to_player(get_player_pos)
+	# Mesmo magnet pros corações de Life Steal — sweep de pickups no fim da wave.
+	for heart in get_tree().get_nodes_in_group("heart"):
+		if not is_instance_valid(heart):
+			continue
+		if heart.has_method("magnet_to_player"):
+			heart.magnet_to_player(get_player_pos)
 
 
 func _open_shop() -> void:
@@ -385,7 +401,26 @@ func _respawn_owned_structures() -> void:
 		if scene == null:
 			continue
 		var inst: Node2D = scene.instantiate()
+		_apply_woodwarden_scaling_if_applicable(inst, entry["scene_path"])
 		world.add_child(inst)
 		inst.global_position = pos
+
+
+# Aplica HP/dmg scalonado por nível do woodwarden_level do player. Cada compra
+# aumenta os stats do aliado quando ele é spawnado (ou re-spawnado a cada round).
+func _apply_woodwarden_scaling_if_applicable(inst: Node2D, scene_path: String) -> void:
+	if not scene_path.ends_with("woodwarden.tscn"):
+		return
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not player.has_method("get_upgrade_count"):
+		return
+	var lvl: int = int(player.get_upgrade_count("woodwarden"))
+	if lvl <= 1:
+		return
+	# +25 HP, +5 dmg por level acima de 1.
+	if "max_hp" in inst:
+		inst.max_hp = inst.max_hp + 25.0 * float(lvl - 1)
+	if "damage" in inst:
+		inst.damage = inst.damage + 5.0 * float(lvl - 1)
 
 

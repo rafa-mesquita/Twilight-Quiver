@@ -1,11 +1,12 @@
 [gd_scene format=3 uid="uid://m1ohxr87abws"]
 
 [ext_resource type="Script" uid="uid://kju8061jkye0" path="res://scripts/player.gd" id="1_player"]
+[ext_resource type="Texture2D" uid="uid://cdx7el7x5u1c8" path="res://assets/player/player dash.png" id="2_dash"]
 [ext_resource type="Texture2D" uid="uid://bqhig6guua3a7" path="res://assets/player/player death.png" id="2_death"]
 [ext_resource type="Texture2D" uid="uid://brp6722o57mli" path="res://assets/player/player.png" id="2_sheet"]
 [ext_resource type="PackedScene" path="res://scenes/arrow.tscn" id="3_arrow"]
 [ext_resource type="PackedScene" path="res://scenes/damage_effect.tscn" id="4_dmg"]
-[ext_resource type="PackedScene" path="res://scenes/hp_bar.tscn" id="5_hpbar"]
+[ext_resource type="PackedScene" uid="uid://c0fhcseis1qub" path="res://scenes/hp_bar.tscn" id="5_hpbar"]
 [ext_resource type="PackedScene" path="res://scenes/damage_number.tscn" id="6_dmgnum"]
 [ext_resource type="Texture2D" uid="uid://bmmo0gn8gv3b7" path="res://assets/ui/indicador.png" id="7_ind"]
 [ext_resource type="AudioStream" uid="uid://bwcmdrpa806yk" path="res://audios/effects/damage/player damage taken.mp3" id="8_dmg_sfx"]
@@ -29,6 +30,22 @@ region = Rect2(96, 64, 32, 32)
 [sub_resource type="AtlasTexture" id="A_atk_4"]
 atlas = ExtResource("2_sheet")
 region = Rect2(128, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_dash_0"]
+atlas = ExtResource("2_dash")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_dash_1"]
+atlas = ExtResource("2_dash")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_dash_2"]
+atlas = ExtResource("2_dash")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_dash_3"]
+atlas = ExtResource("2_dash")
+region = Rect2(96, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="A_death_0"]
 atlas = ExtResource("2_death")
@@ -95,6 +112,23 @@ animations = [{
 "loop": false,
 "name": &"attack",
 "speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_dash_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_dash_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_dash_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_dash_3")
+}],
+"loop": false,
+"name": &"dash",
+"speed": 18.0
 }, {
 "frames": [{
 "duration": 1.0,

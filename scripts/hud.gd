@@ -38,6 +38,19 @@ const HUD_RUNTIME_SCALE: Vector2 = Vector2(3, 3)
 @onready var hud_frame: TextureRect = $HudFrame
 @onready var wave_number_label: Label = $HudFrame/WaveNumberLabel
 @onready var gold_count_label: Label = $GoldDisplay/CountLabel
+@onready var hp_bar: Control = $HpBar
+@onready var hp_bar_fill: ColorRect = $HpBar/Fill
+@onready var hp_bar_label: Label = $HpBar/Label
+@onready var dash_cd_bar: Control = $DashCdBar
+@onready var dash_cd_fill: ColorRect = $DashCdBar/Fill
+@onready var dash_cd_label: Label = $DashCdBar/Label
+@onready var fire_skill_icon: Control = $FireSkillIcon
+@onready var fire_skill_cd_label: Label = $FireSkillIcon/CdLabel
+@onready var curse_skill_icon: Control = $CurseSkillIcon
+@onready var curse_skill_cd_label: Label = $CurseSkillIcon/CdLabel
+
+# Largura total do Fill (sem padding agora que tirei o Bg/border).
+const BAR_FILL_WIDTH: float = 330.0
 @onready var intro_overlay: Control = $IntroOverlay
 @onready var intro_label: Label = $IntroOverlay/Label
 @onready var cleared_overlay: Control = $ClearedOverlay
@@ -59,11 +72,11 @@ func _ready() -> void:
 	# Esconde no runtime — script mostra quando a wave começa. No editor fica visível
 	# pra você poder ajustar a posição da arte e da label do número.
 	hud_frame.visible = false
-	# Conecta no signal de gold do player. Defer pra player garantidamente já estar pronto.
-	_connect_player_gold.call_deferred()
+	# Conecta nos signals de gold/hp/dash do player. Defer pra player já estar pronto.
+	_connect_player_signals.call_deferred()
 
 
-func _connect_player_gold() -> void:
+func _connect_player_signals() -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	if player == null:
 		return
@@ -71,10 +84,86 @@ func _connect_player_gold() -> void:
 		player.gold_changed.connect(_on_gold_changed)
 	if "gold" in player:
 		gold_count_label.text = str(player.gold)
+	# HP bar.
+	if player.has_signal("hp_changed") and not player.hp_changed.is_connected(_on_player_hp_changed):
+		player.hp_changed.connect(_on_player_hp_changed)
+	if "hp" in player and "max_hp" in player:
+		_on_player_hp_changed(player.hp, player.max_hp)
+	# Dash bar — só aparece quando o player tem o upgrade.
+	if player.has_signal("dash_unlocked") and not player.dash_unlocked.is_connected(_on_dash_unlocked):
+		player.dash_unlocked.connect(_on_dash_unlocked)
+	if player.has_signal("dash_cooldown_changed") and not player.dash_cooldown_changed.is_connected(_on_dash_cooldown_changed):
+		player.dash_cooldown_changed.connect(_on_dash_cooldown_changed)
+	if "has_dash" in player and player.has_dash:
+		_on_dash_unlocked()
+	# Fire skill icon — só aparece quando player chega no Fogo lv3.
+	if player.has_signal("fire_skill_unlocked") and not player.fire_skill_unlocked.is_connected(_on_fire_skill_unlocked):
+		player.fire_skill_unlocked.connect(_on_fire_skill_unlocked)
+	if player.has_signal("fire_skill_cooldown_changed") and not player.fire_skill_cooldown_changed.is_connected(_on_fire_skill_cooldown_changed):
+		player.fire_skill_cooldown_changed.connect(_on_fire_skill_cooldown_changed)
+	if "fire_arrow_level" in player and int(player.fire_arrow_level) >= 3:
+		_on_fire_skill_unlocked()
+	# Curse skill icon — só aparece quando player chega na Maldição lv4.
+	if player.has_signal("curse_skill_unlocked") and not player.curse_skill_unlocked.is_connected(_on_curse_skill_unlocked):
+		player.curse_skill_unlocked.connect(_on_curse_skill_unlocked)
+	if player.has_signal("curse_skill_cooldown_changed") and not player.curse_skill_cooldown_changed.is_connected(_on_curse_skill_cooldown_changed):
+		player.curse_skill_cooldown_changed.connect(_on_curse_skill_cooldown_changed)
+	if "curse_arrow_level" in player and int(player.curse_arrow_level) >= 4:
+		_on_curse_skill_unlocked()
 
 
 func _on_gold_changed(total: int) -> void:
 	gold_count_label.text = str(total)
+
+
+func _on_player_hp_changed(current: float, maximum: float) -> void:
+	var ratio: float = 0.0 if maximum <= 0.0 else clampf(current / maximum, 0.0, 1.0)
+	hp_bar_fill.size.x = BAR_FILL_WIDTH * ratio
+	hp_bar_label.text = "%d/%d" % [int(round(current)), int(round(maximum))]
+
+
+func _on_dash_unlocked() -> void:
+	dash_cd_bar.visible = true
+
+
+func _on_dash_cooldown_changed(remaining: float, total: float) -> void:
+	# Fill cresce do vazio (cooldown rolando) pro cheio (pronto).
+	# 0 remaining = pronto = barra cheia.
+	var ratio: float = 0.0 if total <= 0.0 else clampf(1.0 - remaining / total, 0.0, 1.0)
+	dash_cd_fill.size.x = BAR_FILL_WIDTH * ratio
+	if remaining <= 0.001:
+		dash_cd_label.text = "Pronto"
+	else:
+		dash_cd_label.text = "%.1fs" % remaining
+
+
+func _on_fire_skill_unlocked() -> void:
+	fire_skill_icon.visible = true
+
+
+func _on_fire_skill_cooldown_changed(remaining: float, _total: float) -> void:
+	# Quadrado com ícone fixo + label do tempo no centro. Quando pronto, label
+	# vazio e ícone full color. Em cooldown, ícone dimmed e label com segundos.
+	if remaining <= 0.001:
+		fire_skill_cd_label.text = ""
+		fire_skill_icon.modulate = Color.WHITE
+	else:
+		fire_skill_cd_label.text = "%d" % int(ceilf(remaining))
+		fire_skill_icon.modulate = Color(0.6, 0.55, 0.55, 1.0)
+
+
+func _on_curse_skill_unlocked() -> void:
+	curse_skill_icon.visible = true
+
+
+func _on_curse_skill_cooldown_changed(remaining: float, _total: float) -> void:
+	# Mesmo pattern do fire skill: full color quando pronto, dimmed em cd.
+	if remaining <= 0.001:
+		curse_skill_cd_label.text = ""
+		curse_skill_icon.modulate = Color.WHITE
+	else:
+		curse_skill_cd_label.text = "%d" % int(ceilf(remaining))
+		curse_skill_icon.modulate = Color(0.55, 0.50, 0.65, 1.0)
 
 
 func _process(delta: float) -> void:
