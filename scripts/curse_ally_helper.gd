@@ -96,6 +96,17 @@ static func apply_ally_curse_on_damage(target: Node, source: Node) -> void:
 	# `source` = quem atacou (woodwarden, torre, converted enemy, etc).
 	if not is_instance_valid(target):
 		return
+	# Aliados convertidos pela Maldição (group "curse_ally") NÃO propagam o
+	# curse. Isso evita: (1) escalada exponencial de conversões via aliados
+	# matando inimigos malditos, (2) build over-stacked de aliados matarem
+	# tudo. Source pode ser o próprio enemy convertido OU um projétil dele
+	# (ex: insect projectile com is_ally_source=true).
+	if source != null and is_instance_valid(source):
+		if source.is_in_group("curse_ally"):
+			return
+		# Projétil de aliado convertido: checa o owner via flag known.
+		if "is_ally_source" in source and bool(source.is_ally_source):
+			return
 	var player := target.get_tree().get_first_node_in_group("player")
 	if player == null:
 		return

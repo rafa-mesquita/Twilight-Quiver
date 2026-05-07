@@ -20,6 +20,17 @@ extends Node2D
 # Wave 4+: cresce mais devagar — curva acumulada não fica brutal em sessões longas.
 @export var hp_growth_per_wave_late: float = 0.08
 @export var damage_growth_per_wave_late: float = 0.05
+# Velocidade (movimento + atk speed) escala devagar: menos impacto que HP/dano.
+# 4% por wave inicial, 2% após wave 3 — a cada wave o inimigo fica um pouco
+# mais rápido tanto pra andar quanto pra atacar.
+@export var speed_growth_per_wave: float = 0.04
+@export var speed_growth_per_wave_late: float = 0.02
+# Milestone: a cada N waves, aplica um boost EXTRA em todos os scalings
+# (HP, dano, velocidade) — é o "salto de patamar" pra eras mais difíceis.
+@export var milestone_interval: int = 5
+@export var milestone_hp_bonus: float = 0.20
+@export var milestone_damage_bonus: float = 0.15
+@export var milestone_speed_bonus: float = 0.08
 # Wave 1 pity system: garante mínimo de N moedas pra player não ser punido por
 # RNG ruim na primeira shop. Só ATIVA se naturalmente caiu menos que N — os
 # faltantes spawnam no _finish_wave (ainda pegos pelo magnet de fim de wave).
@@ -295,11 +306,19 @@ func _spawn_one(type_key: String) -> void:
 
 func _apply_wave_scaling(enemy: Node) -> void:
 	# Curva piecewise: waves 1→3 usam taxa cheia, wave 4+ usa taxa reduzida.
-	# Ex (default): wave 4 = 1.0 + 2*0.12 + 1*0.08 = 1.32 (HP); antes era 1.36.
+	# Velocidade escala mais devagar que HP/dano (impacto direto na sobrevivência
+	# do player sente mais quando inimigo fica rápido).
+	# Milestone (a cada N waves): bonus único multiplicativo sobre cada stat —
+	# transição de "patamar" pra deixar a curva mais interessante.
 	var early_steps: float = float(mini(maxi(wave_number - 1, 0), 2))
 	var late_steps: float = float(maxi(wave_number - 3, 0))
-	var hp_mult: float = 1.0 + early_steps * hp_growth_per_wave + late_steps * hp_growth_per_wave_late
-	var dmg_mult: float = 1.0 + early_steps * damage_growth_per_wave + late_steps * damage_growth_per_wave_late
+	var milestones: int = 0 if milestone_interval <= 0 else int(wave_number / milestone_interval)
+	var hp_mult: float = (1.0 + early_steps * hp_growth_per_wave + late_steps * hp_growth_per_wave_late) \
+		* pow(1.0 + milestone_hp_bonus, milestones)
+	var dmg_mult: float = (1.0 + early_steps * damage_growth_per_wave + late_steps * damage_growth_per_wave_late) \
+		* pow(1.0 + milestone_damage_bonus, milestones)
+	var speed_mult: float = (1.0 + early_steps * speed_growth_per_wave + late_steps * speed_growth_per_wave_late) \
+		* pow(1.0 + milestone_speed_bonus, milestones)
 	if "max_hp" in enemy:
 		enemy.max_hp = enemy.max_hp * hp_mult
 	# Inimigos melee guardam dano em "damage" direto. Ranged (mage/insect) usam
@@ -310,6 +329,11 @@ func _apply_wave_scaling(enemy: Node) -> void:
 		enemy.damage_mult = dmg_mult
 	if "hp_mult" in enemy:
 		enemy.hp_mult = hp_mult
+	# Movimento e velocidade de ataque (atk speed = -atk_cooldown).
+	if "speed" in enemy:
+		enemy.speed = enemy.speed * speed_mult
+	if "attack_cooldown" in enemy and speed_mult > 0.0:
+		enemy.attack_cooldown = enemy.attack_cooldown / speed_mult
 
 
 func _pick_random_far_spawn_point() -> Vector2:
@@ -479,6 +503,14 @@ func _respawn_owned_structures() -> void:
 			# Vivo — atualiza posição pra próxima respawn ser na última posição dele.
 			if inst_ref is Node2D:
 				entry["position"] = (inst_ref as Node2D).global_position
+			# Reseta HP no começo do round (woodwarden tank precisa entrar full
+			# pro próximo round, não com o HP que sobrou do anterior).
+			if "max_hp" in inst_ref and "hp" in inst_ref:
+				inst_ref.hp = inst_ref.max_hp
+				if (inst_ref as Node).has_node("HpBar"):
+					var bar: Node = (inst_ref as Node).get_node("HpBar")
+					if bar.has_method("set_ratio"):
+						bar.set_ratio(1.0)
 			continue
 		# Morto/freed — respawna na última posição conhecida.
 		var pos: Vector2 = entry["position"]

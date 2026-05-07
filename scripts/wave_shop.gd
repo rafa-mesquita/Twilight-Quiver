@@ -114,7 +114,7 @@ const CURSE_ARROW_DESCS: Array[String] = [
 	"Flecha amaldicoada:\nslow 35% + 3 dps toxic",
 	"18% chance: kill vira\naliado ate fim da horda",
 	"33% chance + aliados\naplicam slow/DoT",
-	"50% chance + skill (Q):\nraio roxo, cd 3s",
+	"50% chance + skill (Q):\nraio roxo, cd 20s",
 ]
 
 @onready var gold_label: Label = $Root/HBox/RightCol/Header/GoldLabel

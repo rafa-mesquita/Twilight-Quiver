@@ -68,7 +68,7 @@ var _fire_skill_indicator: Node2D = null
 # mapa de um lado ao outro (ignora walls). Warmup 0.4s + sustained 5s. Cd 3s
 # começa depois que o beam acaba — total cycle = 8.4s.
 # Sem target mode — atira instant na direção do mouse.
-const CURSE_SKILL_COOLDOWN_AFTER: float = 3.0
+const CURSE_SKILL_COOLDOWN_AFTER: float = 20.0
 const CURSE_SKILL_WARMUP: float = 0.4
 const CURSE_SKILL_DURATION: float = 5.0
 const CURSE_SKILL_TOTAL_CYCLE: float = CURSE_SKILL_WARMUP + CURSE_SKILL_DURATION + CURSE_SKILL_COOLDOWN_AFTER
