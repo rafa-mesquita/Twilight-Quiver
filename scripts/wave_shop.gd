@@ -450,18 +450,32 @@ func _get_upgrade_desc(id: String, target_level: int) -> String:
 
 func _build_all_cards() -> void:
 	for i in 2:
-		_build_card(estrut_cards[i], estrutura_slots[i], 0)
+		_build_card(estrut_cards[i], estrutura_slots[i], 0, "estrutura")
 	for i in 2:
 		var tl: int = int(status_slots[i].get("target_level", 0))
-		_build_card(status_cards[i], status_slots[i], tl)
+		_build_card(status_cards[i], status_slots[i], tl, "status")
 	for i in 3:
 		var tl2: int = int(upg_slots[i].get("target_level", 0))
-		_build_card(upg_cards[i], upg_slots[i], tl2)
+		_build_card(upg_cards[i], upg_slots[i], tl2, "upgrade")
 	for i in 3:
-		_build_card(aliado_cards[i], aliado_slots[i], 0)
+		var tl3: int = _aliado_target_level(aliado_slots[i])
+		_build_card(aliado_cards[i], aliado_slots[i], tl3, "aliado")
 
 
-func _build_card(card: Control, slot: Dictionary, target_level: int) -> void:
+func _aliado_target_level(slot: Dictionary) -> int:
+	# Aliado não usa target_level no slot; calcula a partir do nível atual do
+	# player (woodwarden = nível atual + 1; futuros aliados podem seguir o
+	# mesmo padrão se forem stackable).
+	var id: String = slot.get("id", "")
+	if id == "" or id == "soon" or id == "none":
+		return 0
+	var player := _get_player()
+	if player == null or not player.has_method("get_upgrade_count"):
+		return 1
+	return int(player.get_upgrade_count(id)) + 1
+
+
+func _build_card(card: Control, slot: Dictionary, target_level: int, category: String) -> void:
 	var available: bool = slot.get("available", false)
 	# Title é obrigatório; Desc / Stars / Price são opcionais (cards paisagem
 	# tipicamente não têm Desc, e StarsLabel foi removido de todos — fica
@@ -479,6 +493,65 @@ func _build_card(card: Control, slot: Dictionary, target_level: int) -> void:
 	var stars_label: Label = card.get_node_or_null("StarsLabel") as Label
 	if stars_label != null:
 		stars_label.text = ""
+	# Arte por id: se existe `assets/Hud/shop/<category>/<id>.png` (sprite sheet
+	# horizontal, 1 frame por nível), troca o Bg por uma AtlasTexture do frame
+	# correspondente. Senão, usa o template default do .tscn.
+	_apply_card_art(card, category, slot.get("id", ""), target_level, available)
+
+
+# Tamanho do frame por categoria (paisagem vs retrato).
+const _CARD_FRAME_SIZES: Dictionary = {
+	"status": Vector2i(65, 17),
+	"estrutura": Vector2i(65, 17),
+	"aliado": Vector2i(38, 47),
+	"upgrade": Vector2i(38, 47),
+}
+
+
+func _apply_card_art(card: Control, category: String, slot_id: String, target_level: int, available: bool) -> void:
+	var bg: TextureRect = card.get_node_or_null("Bg") as TextureRect
+	if bg == null:
+		return
+	# Cacheia textura default da .tscn (fallback final) na primeira passada.
+	if not card.has_meta("base_texture"):
+		card.set_meta("base_texture", bg.texture)
+	# Slots vazios / indisponíveis usam o placeholder da categoria (se houver)
+	# em vez do template genérico. Mantém o visual consistente entre cards.
+	if slot_id == "" or slot_id == "soon" or slot_id == "none" or not available:
+		var placeholder_tex: Texture2D = _load_card_texture(category, "placeholder")
+		if placeholder_tex != null:
+			bg.texture = _make_card_atlas(placeholder_tex, category, target_level)
+		else:
+			bg.texture = card.get_meta("base_texture")
+		return
+	var tex: Texture2D = _load_card_texture(category, slot_id)
+	if tex == null:
+		# Card não tem arte própria: usa placeholder da categoria.
+		tex = _load_card_texture(category, "placeholder")
+	if tex == null:
+		bg.texture = card.get_meta("base_texture")
+		return
+	bg.texture = _make_card_atlas(tex, category, target_level)
+
+
+func _load_card_texture(category: String, name_id: String) -> Texture2D:
+	var path := "res://assets/Hud/shop/%s/%s.png" % [category, name_id]
+	if not ResourceLoader.exists(path):
+		return null
+	return load(path) as Texture2D
+
+
+func _make_card_atlas(tex: Texture2D, category: String, target_level: int) -> AtlasTexture:
+	var fsize: Vector2i = _CARD_FRAME_SIZES.get(category, Vector2i(38, 47))
+	var fw: int = fsize.x
+	var fh: int = fsize.y
+	var img_w: int = tex.get_width()
+	var frame_count: int = maxi(1, int(img_w / fw))
+	var frame_idx: int = clampi(target_level - 1, 0, frame_count - 1)
+	var atlas := AtlasTexture.new()
+	atlas.atlas = tex
+	atlas.region = Rect2(frame_idx * fw, 0, fw, fh)
+	return atlas
 
 
 func _connect_card_buttons() -> void:
