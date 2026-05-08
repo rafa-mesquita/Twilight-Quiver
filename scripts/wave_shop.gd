@@ -162,6 +162,7 @@ var _global_rerolls_used: int = 0
 @onready var global_reroll_cost: Label = $Root/GlobalReroll/CostLabel
 
 const BUY_SOUND: AudioStream = preload("res://audios/effects/buy_1.mp3")
+const NEXT_WAVE_SOUND: AudioStream = preload("res://audios/effects/Next wave.mp3")
 
 # Placement mode
 const PLACEMENT_BOUNDS: Rect2 = Rect2(-80, -40, 680, 380)
@@ -982,6 +983,7 @@ func _on_continue_pressed() -> void:
 	if _placement_active:
 		_cancel_placement()
 		return
+	_play_next_wave_sound()
 	_placement_queue.clear()
 	if _selected_estrut_idx >= 0:
 		var sel_e: Dictionary = estrutura_slots[_selected_estrut_idx]
@@ -1181,6 +1183,20 @@ func _play_buy_sound() -> void:
 	p.stream = BUY_SOUND
 	p.volume_db = -16.0
 	add_child(p)
+	p.play()
+	p.finished.connect(p.queue_free)
+
+
+func _play_next_wave_sound() -> void:
+	# Som tocado quando o player confirma "Próxima Wave" e o shop fecha pra
+	# próxima horda. Reparenteia pra raiz da scene pra continuar tocando mesmo
+	# após o WaveShop ser queue_free'd.
+	if NEXT_WAVE_SOUND == null:
+		return
+	var p := AudioStreamPlayer.new()
+	p.stream = NEXT_WAVE_SOUND
+	p.volume_db = -10.0
+	get_tree().current_scene.add_child(p)
 	p.play()
 	p.finished.connect(p.queue_free)
 
