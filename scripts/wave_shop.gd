@@ -491,10 +491,18 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 	var title_label: Label = card.get_node_or_null("TitleLabel") as Label
 	if title_label != null:
 		title_label.text = slot.get("name", "—")
-		if is_placeholder:
-			title_label.modulate = PLACEHOLDER_TEXT_COLOR
+		# Status: cor específica por id (override do font_color), modulate fica
+		# branco pra não tingir. Outras categorias: usa modulate do tier_tint.
+		var slot_id_str: String = slot.get("id", "")
+		if category == "status" and STATUS_TITLE_COLORS.has(slot_id_str):
+			title_label.add_theme_color_override("font_color", STATUS_TITLE_COLORS[slot_id_str])
+			title_label.modulate = PLACEHOLDER_TEXT_COLOR if is_placeholder else Color.WHITE
 		else:
-			title_label.modulate = _level_tint_for_label(target_level) if (available and target_level > 0) else Color.WHITE
+			title_label.remove_theme_color_override("font_color")
+			if is_placeholder:
+				title_label.modulate = PLACEHOLDER_TEXT_COLOR
+			else:
+				title_label.modulate = _level_tint_for_label(target_level) if (available and target_level > 0) else Color.WHITE
 	var desc_label: Label = card.get_node_or_null("DescLabel") as Label
 	if desc_label != null:
 		desc_label.text = slot.get("desc", "—")
@@ -530,6 +538,13 @@ const _CATEGORY_SHEETS: Dictionary = {
 # Cor do texto quando o card mostra a arte placeholder (sem desenho próprio
 # ainda). Cinza escuro pra avisar visualmente "card temporário".
 const PLACEHOLDER_TEXT_COLOR: Color = Color(0.35, 0.35, 0.35, 1.0)
+# Cor do título por status — combina com a arte de cada card.
+const STATUS_TITLE_COLORS: Dictionary = {
+	"hp": Color(0x29 / 255.0, 0x7b / 255.0, 0x59 / 255.0),  # #297b59
+	"attack_speed": Color(0xb4 / 255.0, 0x7f / 255.0, 0x0a / 255.0),  # #b47f0a
+	"damage": Color(0x34 / 255.0, 0x10 / 255.0, 0x42 / 255.0),  # #341042
+	"move_speed": Color(0x58 / 255.0, 0x58 / 255.0, 0x58 / 255.0),  # #585858
+}
 # Posição default do CoinIcon por categoria (relativo ao card). User pode
 # ajustar via layout editor. Tamanho reduzido pra não competir visualmente
 # com o número do preço.
