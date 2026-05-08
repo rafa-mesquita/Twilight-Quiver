@@ -81,6 +81,15 @@ jobs:
           ./godot --headless --export-release "Windows Desktop" build/windows/twilight-quiver.exe
           ls -la build/windows/
 
+      - name: Export macOS build
+        run: |
+          # Godot exporta macOS como .zip contendo o .app bundle (sem assinar —
+          # codesign=0 no preset). Pra rodar no Mac o usuário extrai e o sistema
+          # vai pedir pra contornar o Gatekeeper na 1ª execução (Sistema → Privacidade).
+          mkdir -p build/macos
+          ./godot --headless --export-release "macOS" build/macos/twilight-quiver.zip
+          ls -la build/macos/
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
@@ -99,6 +108,15 @@ jobs:
         with:
           name: twilight-quiver-windows
           path: build/windows/
+          if-no-files-found: error
+          retention-days: 30
+
+      # Build macOS — mesmo pattern, baixe e extraia pra rodar o .app no Mac.
+      - name: Upload macOS build
+        uses: actions/upload-artifact@v4
+        with:
+          name: twilight-quiver-macos
+          path: build/macos/
           if-no-files-found: error
           retention-days: 30
 
