@@ -55,6 +55,7 @@ region = Rect2(17, 0, 17, 16)
 [node name="WaveShop" type="CanvasLayer" unique_id=240698062]
 layer = 50
 script = ExtResource("1_shop")
+metadata/_edit_vertical_guides_ = [1564.0, 628.0, 68.0]
 
 [node name="Bg" type="ColorRect" parent="." unique_id=49855589]
 anchors_preset = 15
@@ -85,9 +86,9 @@ vertical_alignment = 1
 
 [node name="EstrutHeader" type="Label" parent="Root" unique_id=1888122245]
 layout_mode = 0
-offset_left = 60.0
+offset_left = 69.0
 offset_top = 460.0
-offset_right = 480.0
+offset_right = 489.0
 offset_bottom = 500.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -223,9 +224,9 @@ flat = true
 
 [node name="StatusHeader" type="Label" parent="Root" unique_id=1488001701]
 layout_mode = 0
-offset_left = 60.0
+offset_left = 69.0
 offset_top = 90.0
-offset_right = 480.0
+offset_right = 489.0
 offset_bottom = 130.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -361,9 +362,9 @@ flat = true
 
 [node name="AliadoHeader" type="Label" parent="Root" unique_id=745838450]
 layout_mode = 0
-offset_left = 620.0
+offset_left = 630.0
 offset_top = 540.0
-offset_right = 1480.0
+offset_right = 1490.0
 offset_bottom = 580.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -613,9 +614,9 @@ flat = true
 
 [node name="UpgHeader" type="Label" parent="Root" unique_id=2074581781]
 layout_mode = 0
-offset_left = 620.0
+offset_left = 630.0
 offset_top = 90.0
-offset_right = 1480.0
+offset_right = 1490.0
 offset_bottom = 130.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -793,7 +794,8 @@ offset_bottom = 376.0
 
 [node name="Bg" type="TextureRect" parent="Root/UpgRow/UpgCard3" unique_id=1342643091]
 texture_filter = 1
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 texture = SubResource("ATX_upg_ph")

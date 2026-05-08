@@ -87,10 +87,10 @@ const MOVE_SPEED_DESCS: Array[String] = [
 const GOLD_MAGNET_DESCS: Array[String] = ["Puxa todo gold +2%\nchance de drop"]
 const DASH_DESCS: Array[String] = ["Espaco = dash\n(cd 4.5s)"]
 const LIFE_STEAL_DESCS: Array[String] = [
-	"Inimigos: 12% drop\ncoracao cura 20% HP",
-	"+5% chance, +10%\nheal por stack",
-	"+5% chance, +10%\nheal por stack",
-	"+5% chance, +10%\nheal por stack",
+	"12% drop coracao\ncura 20% HP",
+	"+5% chance,\n+10% heal por stack",
+	"+5% chance,\n+10% heal por stack",
+	"+5% chance,\n+10% heal por stack",
 ]
 const DASH_COOLDOWN_DESCS: Array[String] = [
 	"-0.5s no cooldown\ndo dash (min 0.5s)",
@@ -98,19 +98,19 @@ const DASH_COOLDOWN_DESCS: Array[String] = [
 	"-0.5s no cooldown\ndo dash (min 0.5s)",
 	"-0.5s no cooldown\ndo dash (min 0.5s)",
 ]
-const DASH_AUTO_ATTACK_DESCS: Array[String] = ["Dash dispara flecha\nauto no inimigo proximo"]
+const DASH_AUTO_ATTACK_DESCS: Array[String] = ["Dash atira flecha\nno inimigo proximo"]
 const DASH_DOUBLE_ARROW_DESCS: Array[String] = ["Dash dispara 2 flechas\nem sequencia"]
 const FIRE_ARROW_DESCS: Array[String] = [
-	"Flecha queima inimigos\n4 dmg/s por 3s",
-	"+1 dmg/s queima +\nrastro de fogo (4 dps)",
-	"Skill (Q): chama em\narea (12 dps, 6s, cd 7s)",
-	"Rastro do player +30%\nem queimaduras +25% area",
+	"Queima inimigo\n4 dmg/s por 3s",
+	"+1 dmg/s +\nrastro de fogo",
+	"Skill Q: chama\narea 12 dps 6s",
+	"Rastro do player\n+30% queima area",
 ]
 const CURSE_ARROW_DESCS: Array[String] = [
-	"Flecha amaldicoada:\nslow 35% + 3 dps toxic",
-	"18% chance: kill vira\naliado ate fim da horda",
-	"33% chance + aliados\naplicam slow/DoT",
-	"50% chance + skill (Q):\nraio roxo, cd 20s",
+	"Slow 35%\n+ 3 dps toxic",
+	"18% chance kill\nvira aliado",
+	"33% chance + aliados\naplicam DoT",
+	"50% chance\nQ: raio roxo cd 20s",
 ]
 
 @onready var gold_label: Label = $Root/GoldLabel
