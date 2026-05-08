@@ -114,9 +114,9 @@ stretch_mode = 6
 
 [node name="TitleLabel" type="Label" parent="Root/EstrutCard1" unique_id=873349414]
 layout_mode = 0
-offset_left = 141.0
+offset_left = 168.0
 offset_top = 27.0
-offset_right = 423.0
+offset_right = 450.0
 offset_bottom = 109.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -126,9 +126,9 @@ vertical_alignment = 1
 
 [node name="PriceLabel" type="Label" parent="Root/EstrutCard1" unique_id=176611714]
 layout_mode = 0
-offset_left = 458.0
+offset_left = 412.0
 offset_top = 37.0
-offset_right = 554.0
+offset_right = 508.0
 offset_bottom = 94.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -139,9 +139,9 @@ vertical_alignment = 1
 [node name="CoinIcon" type="TextureRect" parent="Root/EstrutCard1" unique_id=1575189790]
 texture_filter = 1
 layout_mode = 0
-offset_left = 427.0
+offset_left = 381.0
 offset_top = 55.0
-offset_right = 451.0
+offset_right = 405.0
 offset_bottom = 79.0
 mouse_filter = 2
 texture = SubResource("ATX_coin")
@@ -177,9 +177,9 @@ stretch_mode = 6
 
 [node name="TitleLabel" type="Label" parent="Root/EstrutCard2" unique_id=10311668]
 layout_mode = 0
-offset_left = 141.0
+offset_left = 168.0
 offset_top = 27.0
-offset_right = 423.0
+offset_right = 450.0
 offset_bottom = 109.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -189,9 +189,9 @@ vertical_alignment = 1
 
 [node name="PriceLabel" type="Label" parent="Root/EstrutCard2" unique_id=84008440]
 layout_mode = 0
-offset_left = 458.0
+offset_left = 412.0
 offset_top = 37.0
-offset_right = 554.0
+offset_right = 508.0
 offset_bottom = 94.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -202,9 +202,9 @@ vertical_alignment = 1
 [node name="CoinIcon" type="TextureRect" parent="Root/EstrutCard2" unique_id=1241218492]
 texture_filter = 1
 layout_mode = 0
-offset_left = 427.0
+offset_left = 381.0
 offset_top = 55.0
-offset_right = 451.0
+offset_right = 405.0
 offset_bottom = 79.0
 mouse_filter = 2
 texture = SubResource("ATX_coin")
@@ -252,9 +252,9 @@ stretch_mode = 6
 
 [node name="TitleLabel" type="Label" parent="Root/StatusCard1" unique_id=1455133860]
 layout_mode = 0
-offset_left = 141.0
+offset_left = 168.0
 offset_top = 27.0
-offset_right = 423.0
+offset_right = 450.0
 offset_bottom = 109.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -264,9 +264,9 @@ vertical_alignment = 1
 
 [node name="PriceLabel" type="Label" parent="Root/StatusCard1" unique_id=124575548]
 layout_mode = 0
-offset_left = 458.0
+offset_left = 412.0
 offset_top = 37.0
-offset_right = 554.0
+offset_right = 508.0
 offset_bottom = 94.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -277,9 +277,9 @@ vertical_alignment = 1
 [node name="CoinIcon" type="TextureRect" parent="Root/StatusCard1" unique_id=1524635026]
 texture_filter = 1
 layout_mode = 0
-offset_left = 427.0
+offset_left = 381.0
 offset_top = 55.0
-offset_right = 451.0
+offset_right = 405.0
 offset_bottom = 79.0
 mouse_filter = 2
 texture = SubResource("ATX_coin")
@@ -315,9 +315,9 @@ stretch_mode = 6
 
 [node name="TitleLabel" type="Label" parent="Root/StatusCard2" unique_id=1030249282]
 layout_mode = 0
-offset_left = 141.0
+offset_left = 168.0
 offset_top = 27.0
-offset_right = 423.0
+offset_right = 450.0
 offset_bottom = 109.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -327,9 +327,9 @@ vertical_alignment = 1
 
 [node name="PriceLabel" type="Label" parent="Root/StatusCard2" unique_id=837961443]
 layout_mode = 0
-offset_left = 458.0
+offset_left = 412.0
 offset_top = 37.0
-offset_right = 554.0
+offset_right = 508.0
 offset_bottom = 94.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -340,9 +340,9 @@ vertical_alignment = 1
 [node name="CoinIcon" type="TextureRect" parent="Root/StatusCard2" unique_id=490088686]
 texture_filter = 1
 layout_mode = 0
-offset_left = 427.0
+offset_left = 381.0
 offset_top = 55.0
-offset_right = 451.0
+offset_right = 405.0
 offset_bottom = 79.0
 mouse_filter = 2
 texture = SubResource("ATX_coin")
@@ -408,23 +408,22 @@ autowrap_mode = 2
 
 [node name="DescLabel" type="Label" parent="Root/AliadoRow/AliadoCard1" unique_id=756299876]
 layout_mode = 0
-offset_left = 12.0
-offset_top = 87.0
-offset_right = 294.0
-offset_bottom = 256.0
+offset_left = -2.0
+offset_top = 107.0
+offset_right = 323.0
+offset_bottom = 257.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 18
 text = "SUA FLECHA GANHA PODER DE FOGO BLABLABLABLA"
 horizontal_alignment = 1
 vertical_alignment = 1
-autowrap_mode = 0
 
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard1" unique_id=1468004879]
 layout_mode = 0
-offset_left = 70.0
+offset_left = 130.0
 offset_top = 232.0
-offset_right = 132.0
+offset_right = 192.0
 offset_bottom = 272.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -434,9 +433,9 @@ text = "5"
 [node name="CoinIcon" type="TextureRect" parent="Root/AliadoRow/AliadoCard1" unique_id=1759985670]
 texture_filter = 1
 layout_mode = 0
-offset_left = 39.0
+offset_left = 99.0
 offset_top = 233.0
-offset_right = 63.0
+offset_right = 123.0
 offset_bottom = 257.0
 mouse_filter = 2
 texture = SubResource("ATX_coin")
@@ -464,7 +463,8 @@ offset_bottom = 376.0
 
 [node name="Bg" type="TextureRect" parent="Root/AliadoRow/AliadoCard2" unique_id=636303730]
 texture_filter = 1
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 texture = SubResource("ATX_ali_ph")
@@ -496,13 +496,12 @@ theme_override_font_sizes/font_size = 18
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
-autowrap_mode = 0
 
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard2" unique_id=538757896]
 layout_mode = 0
-offset_left = 70.0
+offset_left = 130.0
 offset_top = 232.0
-offset_right = 132.0
+offset_right = 192.0
 offset_bottom = 281.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -512,9 +511,9 @@ text = "—"
 [node name="CoinIcon" type="TextureRect" parent="Root/AliadoRow/AliadoCard2" unique_id=715277621]
 texture_filter = 1
 layout_mode = 0
-offset_left = 39.0
+offset_left = 99.0
 offset_top = 233.0
-offset_right = 63.0
+offset_right = 123.0
 offset_bottom = 257.0
 mouse_filter = 2
 texture = SubResource("ATX_coin")
@@ -574,13 +573,12 @@ theme_override_font_sizes/font_size = 18
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
-autowrap_mode = 0
 
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard3" unique_id=1791183174]
 layout_mode = 0
-offset_left = 70.0
+offset_left = 130.0
 offset_top = 232.0
-offset_right = 132.0
+offset_right = 192.0
 offset_bottom = 281.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -590,9 +588,9 @@ text = "—"
 [node name="CoinIcon" type="TextureRect" parent="Root/AliadoRow/AliadoCard3" unique_id=2131756513]
 texture_filter = 1
 layout_mode = 0
-offset_left = 39.0
+offset_left = 99.0
 offset_top = 233.0
-offset_right = 63.0
+offset_right = 123.0
 offset_bottom = 257.0
 mouse_filter = 2
 texture = SubResource("ATX_coin")
@@ -670,13 +668,12 @@ theme_override_font_sizes/font_size = 20
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
-autowrap_mode = 0
 
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard1" unique_id=821493539]
 layout_mode = 0
-offset_left = 91.0
+offset_left = 151.0
 offset_top = 284.0
-offset_right = 153.0
+offset_right = 213.0
 offset_bottom = 329.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -686,9 +683,9 @@ text = "50"
 [node name="CoinIcon" type="TextureRect" parent="Root/UpgRow/UpgCard1" unique_id=94889478]
 texture_filter = 1
 layout_mode = 0
-offset_left = 60.0
+offset_left = 120.0
 offset_top = 285.0
-offset_right = 84.0
+offset_right = 144.0
 offset_bottom = 309.0
 mouse_filter = 2
 texture = SubResource("ATX_coin")
@@ -748,13 +745,12 @@ theme_override_font_sizes/font_size = 20
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
-autowrap_mode = 0
 
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard2" unique_id=47973896]
 layout_mode = 0
-offset_left = 91.0
+offset_left = 151.0
 offset_top = 284.0
-offset_right = 153.0
+offset_right = 213.0
 offset_bottom = 333.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -764,9 +760,9 @@ text = "—"
 [node name="CoinIcon" type="TextureRect" parent="Root/UpgRow/UpgCard2" unique_id=968311531]
 texture_filter = 1
 layout_mode = 0
-offset_left = 60.0
+offset_left = 120.0
 offset_top = 285.0
-offset_right = 84.0
+offset_right = 144.0
 offset_bottom = 309.0
 mouse_filter = 2
 texture = SubResource("ATX_coin")
@@ -798,6 +794,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 texture = SubResource("ATX_upg_ph")
 expand_mode = 1
 stretch_mode = 6
@@ -827,13 +825,12 @@ theme_override_font_sizes/font_size = 20
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
-autowrap_mode = 0
 
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard3" unique_id=9334886]
 layout_mode = 0
-offset_left = 91.0
+offset_left = 151.0
 offset_top = 284.0
-offset_right = 153.0
+offset_right = 213.0
 offset_bottom = 333.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -843,9 +840,9 @@ text = "—"
 [node name="CoinIcon" type="TextureRect" parent="Root/UpgRow/UpgCard3" unique_id=1787553477]
 texture_filter = 1
 layout_mode = 0
-offset_left = 60.0
+offset_left = 120.0
 offset_top = 285.0
-offset_right = 84.0
+offset_right = 144.0
 offset_bottom = 309.0
 mouse_filter = 2
 texture = SubResource("ATX_coin")

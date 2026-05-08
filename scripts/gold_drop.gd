@@ -6,18 +6,24 @@ extends RefCounted
 # (ex: inseto invocado, pra não virar exploit do mago invocador).
 
 const PICKUP_SPREAD: float = 22.0
-# Bônus de drop chance dado pelo upgrade Imã de Gold (excalidraw: "+2% chance de drop").
-const GOLD_MAGNET_DROP_BONUS: float = 0.02
+# Bônus de drop chance da Chuva de Coins (excalidraw): L1 +5%, L2 +7%, L3+ +9%.
+# Aditivo absoluto sobre a chance base do inimigo.
+const GOLD_MAGNET_BONUS_L1: float = 0.05
+const GOLD_MAGNET_BONUS_PER_LEVEL: float = 0.02
 
 
 static func try_drop(world: Node, scene: PackedScene, position: Vector2,
 		chance: float, min_amount: int, max_amount: int) -> void:
 	if scene == null or world == null or chance <= 0.0:
 		return
-	# Player com Imã de Gold: +2% absoluto na chance de drop.
+	# Player com Chuva de Coins: bonus aditivo de drop chance escala por nível.
+	# L1 = +5%, L2 = +7%, L3+ = +9% (capa em L3 — L4 só puxa do mapa todo).
 	var player := world.get_tree().get_first_node_in_group("player")
-	if player != null and player.get("has_gold_magnet") == true:
-		chance += GOLD_MAGNET_DROP_BONUS
+	if player != null:
+		var lvl: int = int(player.get("gold_magnet_level"))
+		if lvl >= 1:
+			chance += GOLD_MAGNET_BONUS_L1
+			chance += GOLD_MAGNET_BONUS_PER_LEVEL * float(mini(lvl - 1, 2))
 	if randf() > chance:
 		return
 	var amount: int = randi_range(maxi(min_amount, 1), maxi(max_amount, min_amount))

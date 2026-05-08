@@ -40,6 +40,15 @@ var _indicator_pulse_tween: Tween = null
 var _warn_active: bool = false
 const INDICATOR_BASE_COLOR: Color = Color(1.0, 0.85, 0.35, 1.0)
 const INDICATOR_WARN_COLOR: Color = Color(1.0, 0.25, 0.2, 1.0)
+# Chuva de Coins L3: pulso amarelo ao coletar moeda aplica slow nos inimigos
+# numa área. Duração e slow_factor seguem spec do excalidraw (~3s, slow forte).
+const SLOW_PULSE_RADIUS: float = 90.0
+const SLOW_PULSE_DURATION: float = 1.0
+const SLOW_PULSE_FACTOR: float = 0.4  # 0.4 = 60% slow
+# Tempo que o ring leva pra expandir até o raio máximo. Slow é aplicado
+# progressivamente conforme o pulso alcança cada inimigo (não tudo de uma vez).
+const SLOW_PULSE_EXPAND_DURATION: float = 1.2
+const SLOW_PULSE_VISUAL_COLOR: Color = Color(1.0, 0.92, 0.35, 0.55)
 
 
 func _ready() -> void:
@@ -51,6 +60,11 @@ func _ready() -> void:
 	_silhouette_mat = ShaderMaterial.new()
 	_silhouette_mat.shader = SILHOUETTE_SHADER
 	_create_occlusion_indicator()
+	# Chuva de Coins L2+: moeda dura 2x. Lê o nível do player no spawn (player
+	# garantido instanciado antes das moedas dropáveis).
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null and int(player.get("gold_magnet_level")) >= 2:
+		lifetime *= 2.0
 
 
 # Pequena bolinha dourada pulsante ACIMA da moeda, com z_index alto pra
@@ -201,11 +215,77 @@ func _on_body_entered(body: Node) -> void:
 	_picked = true
 	body.add_gold(value)
 	_play_pickup_sound()
+	# Chuva de Coins L3: emite pulso amarelo de slow.
+	if int(body.get("gold_magnet_level")) >= 3:
+		_emit_slow_pulse()
 	# Anim de coleta: sobe e some.
 	var t := create_tween().set_parallel(true)
 	t.tween_property(visual, "position:y", VISUAL_OFFSET_Y - 12.0, 0.2)
 	t.tween_property(visual, "modulate:a", 0.0, 0.2)
 	t.chain().tween_callback(queue_free)
+
+
+func _emit_slow_pulse() -> void:
+	# Pulso amarelo que expande aos poucos e aplica slow conforme alcança cada
+	# inimigo (não instantâneo). Spawnado no world pra continuar mesmo após a
+	# moeda ser freed (moeda fade 0.2s, pulse expande SLOW_PULSE_EXPAND_DURATION).
+	var world: Node = get_tree().get_first_node_in_group("world")
+	if world == null:
+		world = get_tree().current_scene
+	# Visual: ring que expande e fade.
+	var ring := Polygon2D.new()
+	var pts := PackedVector2Array()
+	var segs: int = 28
+	for i in segs:
+		var ang: float = TAU * float(i) / float(segs)
+		pts.append(Vector2(cos(ang), sin(ang)) * 8.0)
+	ring.polygon = pts
+	ring.color = SLOW_PULSE_VISUAL_COLOR
+	ring.global_position = global_position
+	ring.z_as_relative = false
+	ring.z_index = 2
+	world.add_child(ring)
+	# Tracking dos inimigos já alcançados (não re-aplica slow a cada frame).
+	# Lambda captura `ring` em vez de `self` — gold.queue_free não derruba o pulso.
+	var slowed_set: Dictionary = {}
+	var pulse_pos: Vector2 = global_position
+	var apply_at_radius := func(current_radius: float) -> void:
+		if not is_instance_valid(ring):
+			return
+		var sq: float = current_radius * current_radius
+		for e in ring.get_tree().get_nodes_in_group("enemy"):
+			if not is_instance_valid(e) or not (e is Node2D):
+				continue
+			if e in slowed_set:
+				continue
+			if (e as Node2D).global_position.distance_squared_to(pulse_pos) > sq:
+				continue
+			slowed_set[e] = true
+			_apply_slow_static(e)
+	var tw := ring.create_tween().set_parallel(true)
+	tw.tween_property(ring, "scale", Vector2(SLOW_PULSE_RADIUS / 8.0, SLOW_PULSE_RADIUS / 8.0), SLOW_PULSE_EXPAND_DURATION)\
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_method(apply_at_radius, 0.0, SLOW_PULSE_RADIUS, SLOW_PULSE_EXPAND_DURATION)\
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(ring, "modulate:a", 0.0, SLOW_PULSE_EXPAND_DURATION)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tw.chain().tween_callback(ring.queue_free)
+
+
+static func _apply_slow_static(target: Node) -> void:
+	# Versão static — sobrevive à liberação da moeda (a lambda do tween chama
+	# isso, e a moeda já pode ter sido queue_free'd nesse momento).
+	# Skip se inimigo tem CurseDebuff (slow da maldição é mais forte e conflita).
+	for child in target.get_children():
+		if child is SlowDebuff:
+			(child as SlowDebuff).refresh(SLOW_PULSE_DURATION, SLOW_PULSE_FACTOR)
+			return
+		if child is CurseDebuff:
+			return
+	var deb := SlowDebuff.new()
+	deb.duration = SLOW_PULSE_DURATION
+	deb.slow_factor = SLOW_PULSE_FACTOR
+	target.add_child(deb)
 
 
 func _play_pickup_sound() -> void:

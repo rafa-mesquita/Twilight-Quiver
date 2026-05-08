@@ -27,6 +27,7 @@ const UPGRADE_BTNS: Array = [
 	{"id": "fire_arrow", "node": "UpgFireArrowBtn", "max": 4, "base_text": "+1 Flecha de Fogo"},
 	{"id": "curse_arrow", "node": "UpgCurseArrowBtn", "max": 4, "base_text": "+1 Disparo Profano"},
 	{"id": "ricochet_arrow", "node": "UpgRicochetBtn", "max": 4, "base_text": "+1 Flecha Ricochete"},
+	{"id": "graviton", "node": "UpgGravitonBtn", "max": 4, "base_text": "+1 Graviton"},
 	{"id": "dash", "node": "UpgDashBtn", "max": 4, "base_text": "+1 Dash"},
 ]
 
@@ -40,14 +41,15 @@ func _ready() -> void:
 	$Content/Scroll/VBox/EnemySection/EnemyContent/MageBtn.pressed.connect(_spawn.bind("mage"))
 	$Content/Scroll/VBox/EnemySection/EnemyContent/SummonerBtn.pressed.connect(_spawn.bind("summoner_mage"))
 	$Content/Scroll/VBox/EnemySection/EnemyContent/InsectBtn.pressed.connect(_spawn.bind("insect"))
-	$Content/Scroll/VBox/PlayerSection/PlayerContent/ResetHpBtn.pressed.connect(_reset_player_hp)
-	$Content/Scroll/VBox/PlayerSection/PlayerContent/ClearBtn.pressed.connect(_clear_enemies)
-	# Shop test buttons
-	$Content/Scroll/VBox/ShopSection/ShopContent/OpenShopBtn.pressed.connect(_open_shop_directly)
-	$Content/Scroll/VBox/ShopSection/ShopContent/AddGoldBtn.pressed.connect(_add_test_gold)
-	$Content/Scroll/VBox/ShopSection/ShopContent/SpawnTowerBtn.pressed.connect(_spawn_tower_at_player)
-	$Content/Scroll/VBox/ShopSection/ShopContent/SpawnWoodwardenBtn.pressed.connect(_spawn_woodwarden_at_player)
-	# Conecta todos os botões de upgrade via UPGRADE_BTNS.
+	# Stats (manipulação de player/world).
+	$Content/Scroll/VBox/StatsSection/StatsContent/ResetHpBtn.pressed.connect(_reset_player_hp)
+	$Content/Scroll/VBox/StatsSection/StatsContent/ClearBtn.pressed.connect(_clear_enemies)
+	$Content/Scroll/VBox/StatsSection/StatsContent/AddGoldBtn.pressed.connect(_add_test_gold)
+	$Content/Scroll/VBox/StatsSection/StatsContent/OpenShopBtn.pressed.connect(_open_shop_directly)
+	# Estruturas e pets.
+	$Content/Scroll/VBox/EstruturasSection/EstruturasContent/SpawnTowerBtn.pressed.connect(_spawn_tower_at_player)
+	$Content/Scroll/VBox/EstruturasSection/EstruturasContent/SpawnWoodwardenBtn.pressed.connect(_spawn_woodwarden_at_player)
+	# Conecta todos os botões de upgrade via UPGRADE_BTNS (find_child recursivo).
 	for entry in UPGRADE_BTNS:
 		var btn := _upgrade_btn(entry["node"]) as Button
 		if btn != null:
@@ -55,22 +57,24 @@ func _ready() -> void:
 	$Content/Scroll/VBox/MenuBtn.pressed.connect(_back_to_menu)
 	# Refresh inicial após o player estar pronto pra ler níveis atuais.
 	_refresh_upgrade_buttons.call_deferred()
-	# Headers das seções (já abrem/fecham seu próprio content)
+	# Headers das seções principais (4 categorias + spawn enemy).
 	_setup_section($Content/Scroll/VBox/EnemySection/EnemyHeader,
 		$Content/Scroll/VBox/EnemySection/EnemyContent, "Spawn enemy")
-	_setup_section($Content/Scroll/VBox/PlayerSection/PlayerHeader,
-		$Content/Scroll/VBox/PlayerSection/PlayerContent, "Player / world")
-	_setup_section($Content/Scroll/VBox/ShopSection/ShopHeader,
-		$Content/Scroll/VBox/ShopSection/ShopContent, "Shop / Test")
-	# Sub-seções de upgrades por categoria (ARCO/VIDA/MOV/ELEMENTAIS).
-	_setup_section($Content/Scroll/VBox/ShopSection/ShopContent/ArcoSection/ArcoHeader,
-		$Content/Scroll/VBox/ShopSection/ShopContent/ArcoSection/ArcoContent, "Arco / Ataque")
-	_setup_section($Content/Scroll/VBox/ShopSection/ShopContent/VidaSection/VidaHeader,
-		$Content/Scroll/VBox/ShopSection/ShopContent/VidaSection/VidaContent, "Vida / HP")
-	_setup_section($Content/Scroll/VBox/ShopSection/ShopContent/MovSection/MovHeader,
-		$Content/Scroll/VBox/ShopSection/ShopContent/MovSection/MovContent, "Movimentacao")
-	_setup_section($Content/Scroll/VBox/ShopSection/ShopContent/ElementaisSection/ElementaisHeader,
-		$Content/Scroll/VBox/ShopSection/ShopContent/ElementaisSection/ElementaisContent, "Elementais")
+	_setup_section($Content/Scroll/VBox/UpgPadraoSection/UpgPadraoHeader,
+		$Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent, "Upgrades padrao")
+	_setup_section($Content/Scroll/VBox/UpgElementaisSection/UpgElementaisHeader,
+		$Content/Scroll/VBox/UpgElementaisSection/UpgElementaisContent, "Upgrades elementais")
+	_setup_section($Content/Scroll/VBox/EstruturasSection/EstruturasHeader,
+		$Content/Scroll/VBox/EstruturasSection/EstruturasContent, "Estruturas e pets")
+	_setup_section($Content/Scroll/VBox/StatsSection/StatsHeader,
+		$Content/Scroll/VBox/StatsSection/StatsContent, "Stats")
+	# Sub-seções dos Upgrades padrão por ramo (ARCO/VIDA/MOV).
+	_setup_section($Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoHeader,
+		$Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent, "Arco / Ataque")
+	_setup_section($Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/VidaSection/VidaHeader,
+		$Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/VidaSection/VidaContent, "Vida / HP")
+	_setup_section($Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/MovSection/MovHeader,
+		$Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/MovSection/MovContent, "Movimentacao")
 	# Toggle principal: dropup do Content inteiro.
 	$MainToggle.pressed.connect(_on_main_toggle)
 
@@ -247,9 +251,10 @@ func _disable_focus_on_all_buttons(node: Node) -> void:
 
 
 func _upgrade_btn(node_name: String) -> Button:
-	# Busca recursiva — botões foram organizados em sub-VBoxes por categoria
-	# (ArcoSection/ArcoContent, VidaSection/VidaContent, etc.).
-	var root: Node = $Content/Scroll/VBox/ShopSection/ShopContent
+	# Busca recursiva — upgrades estão divididos entre UpgPadraoSection (com
+	# sub-VBoxes Arco/Vida/Mov) e UpgElementaisSection. Subimos pra raiz do VBox
+	# pra um único find_child cobrir tudo.
+	var root: Node = $Content/Scroll/VBox
 	var found: Node = root.find_child(node_name, true, false)
 	return found as Button
 

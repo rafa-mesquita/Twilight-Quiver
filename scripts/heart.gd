@@ -20,6 +20,11 @@ const HOP_DURATION: float = 0.4
 const SILHOUETTE_SHADER: Shader = preload("res://shaders/silhouette.gdshader")
 # Indicador vermelho acima do coração — espelha o dourado do gold.
 const INDICATOR_COLOR: Color = Color(0.95, 0.25, 0.3, 1.0)
+# Life Steal L3+: coração persegue o player. Mesmo padrão do Imã de Gold.
+# L3 limita o pull ao raio MAGNET_RADIUS (decisão tática preservada).
+# L4 ignora o raio (puxa do mapa inteiro).
+const MAGNET_PULL_SPEED: float = 130.0
+const MAGNET_RADIUS: float = 110.0
 
 @onready var visual: Node2D = $Visual
 @onready var sprite: AnimatedSprite2D = $Visual/Sprite
@@ -28,6 +33,8 @@ var _elapsed: float = 0.0
 var _bob_phase: float = 0.0
 var _picked: bool = false
 var _silhouette_mat: ShaderMaterial
+# Cache lazy do player pra checar `life_steal_level` sem buscar no group todo frame.
+var _player_ref: Node2D = null
 
 
 func magnet_to_player(target_pos_callable: Callable) -> void:
@@ -97,6 +104,11 @@ func _process(delta: float) -> void:
 	if _picked:
 		return
 	_elapsed += delta
+	# Life Steal L3+: persegue o player (L3 só dentro do raio, L4 mapa todo).
+	# Skip lifetime/hop/bob — coração magnetado não expira.
+	if _is_player_magnet_active():
+		_magnet_chase_player(delta)
+		return
 	# lifetime <= 0 = coração nunca expira (Coleta de Coração não some).
 	if lifetime > 0.0 and _elapsed >= lifetime:
 		queue_free()
@@ -121,6 +133,28 @@ func _process(delta: float) -> void:
 			sprite.material = _silhouette_mat if phase < white_threshold else null
 		else:
 			sprite.material = null
+
+
+func _is_player_magnet_active() -> bool:
+	if _player_ref == null or not is_instance_valid(_player_ref):
+		_player_ref = get_tree().get_first_node_in_group("player") as Node2D
+	if _player_ref == null:
+		return false
+	var lvl: int = int(_player_ref.get("life_steal_level"))
+	if lvl < 3:
+		return false
+	if lvl >= 4:
+		return true  # mapa todo
+	# L3: só puxa dentro do raio.
+	return global_position.distance_squared_to(_player_ref.global_position) <= MAGNET_RADIUS * MAGNET_RADIUS
+
+
+func _magnet_chase_player(delta: float) -> void:
+	var dir: Vector2 = _player_ref.global_position - global_position
+	var dist: float = dir.length()
+	if dist < 0.5:
+		return
+	global_position += (dir / dist) * MAGNET_PULL_SPEED * delta
 
 
 func _on_body_entered(body: Node) -> void:

@@ -559,6 +559,7 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	{"id": "gold_magnet", "name": "Chuva de Coins"},
 	{"id": "dash", "name": "Dash"},
 	{"id": "ricochet_arrow", "name": "Flecha Ricochete"},
+	{"id": "graviton", "name": "Graviton"},
 ]
 
 
@@ -566,7 +567,23 @@ func _grant_free_random_upgrade() -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	if player == null or not player.has_method("apply_upgrade"):
 		return
-	var pick: Dictionary = FREE_UPGRADE_POOL[randi() % FREE_UPGRADE_POOL.size()]
+	# Filtra par exclusivo: se o player já tem perfuracao, não pode ganhar
+	# ricochet_arrow (e vice-versa). Defensivo — em runtime normal, free upgrade
+	# rola depois da wave 1 e o player não tem upgrade ainda; mas via dev mode
+	# pode chegar aqui já com algum upgrade.
+	var has_perf: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("perfuracao") > 0
+	var has_ric: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("ricochet_arrow") > 0
+	var pool: Array[Dictionary] = []
+	for entry in FREE_UPGRADE_POOL:
+		var id: String = entry["id"]
+		if id == "perfuracao" and has_ric:
+			continue
+		if id == "ricochet_arrow" and has_perf:
+			continue
+		pool.append(entry)
+	if pool.is_empty():
+		return
+	var pick: Dictionary = pool[randi() % pool.size()]
 	player.apply_upgrade(pick["id"])
 	await _show_free_upgrade_popup(pick["name"])
 

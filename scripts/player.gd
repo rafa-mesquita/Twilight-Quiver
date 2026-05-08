@@ -112,7 +112,15 @@ var _dash_time_left: float = 0.0
 var has_dash_auto_attack: bool = false
 var has_dash_double_arrow: bool = false
 # Flecha de Ricochete (novo upgrade, 4 níveis). Mecânica em arrow.gd.
+# Counter incrementa por ATAQUE (não por flecha) — toda volley do Multi Arrow
+# compartilha o flag de ricochete, igual à perfuração.
+# L1: cada 3 ataques. L2+: cada 2 ataques.
 var ricochet_arrow_level: int = 0
+var _ricochet_shot_counter: int = 0
+# Graviton (ramo Arco/Ataque, 4 níveis). Mecânica do pulso em graviton_pulse.gd.
+# Counter idem ricochete: L1 cada 3 ataques, L2+ cada 2. Volley compartilha.
+var graviton_level: int = 0
+var _graviton_shot_counter: int = 0
 # Trilha de poder do dash: spawna um segmento a cada N px percorridos durante
 # o dash. Cada segmento dura 3s e dá DPS roxo em inimigos na área.
 # DPS escala com dash_level: lv2+ ativa o trail, lv3 e lv4 aumentam dano.
@@ -356,13 +364,25 @@ func _release_arrow() -> void:
 		_perf_shot_counter = 0
 	else:
 		_perf_shot_counter += 1
+	# Ricochete: mesma regra (1× por ataque, toda volley compartilha).
+	var is_ricochet: bool = _is_ricochet_shot()
+	if is_ricochet:
+		_ricochet_shot_counter = 0
+	elif ricochet_arrow_level > 0:
+		_ricochet_shot_counter += 1
+	# Graviton: mesma regra (volley compartilha o flag).
+	var is_graviton: bool = _is_graviton_shot()
+	if is_graviton:
+		_graviton_shot_counter = 0
+	elif graviton_level > 0:
+		_graviton_shot_counter += 1
 	var volley: Array = _build_volley()
 	for i in volley.size():
 		var shot: Dictionary = volley[i]
 		# Só a primeira flecha toca o som — evita 3-10 cópias do shoot.mp3
 		# tocando juntas (cada uma +~3dB acima da anterior).
 		# is_primary = i == 0 → flechas extras têm fogo reduzido pra 35%.
-		_spawn_arrow(shot["dir"], shot["dmg_mult"], is_pierce, i == 0, i == 0)
+		_spawn_arrow(shot["dir"], shot["dmg_mult"], is_pierce, i == 0, i == 0, is_ricochet, is_graviton)
 
 
 # Cada entrada da volley = {dir: Vector2, dmg_mult: float} (relativo ao dmg base).
@@ -395,7 +415,7 @@ func _build_volley() -> Array:
 	return shots
 
 
-func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bool, is_primary: bool = true) -> void:
+func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bool, is_primary: bool = true, is_ricochet: bool = false, is_graviton: bool = false) -> void:
 	var arrow := arrow_scene.instantiate()
 	# Configura ANTES de add_child pra _ready() já enxergar os flags.
 	arrow.global_position = muzzle.global_position
@@ -450,6 +470,26 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 			arrow.curse_duration = _curse_duration()
 		if "curse_slow_factor" in arrow:
 			arrow.curse_slow_factor = _curse_slow_factor()
+	if is_ricochet:
+		if "is_ricochet" in arrow:
+			arrow.is_ricochet = true
+		if "ricochet_hops_remaining" in arrow:
+			arrow.ricochet_hops_remaining = _ricochet_max_hops()
+		if "ricochet_splits_remaining" in arrow:
+			arrow.ricochet_splits_remaining = _ricochet_max_splits()
+	if is_graviton:
+		if "is_graviton" in arrow:
+			arrow.is_graviton = true
+		if "graviton_radius" in arrow:
+			arrow.graviton_radius = _graviton_radius()
+		if "graviton_lifetime" in arrow:
+			arrow.graviton_lifetime = _graviton_lifetime()
+		if "graviton_slow_factor" in arrow:
+			arrow.graviton_slow_factor = _graviton_slow_factor()
+		if "graviton_explosion_damage" in arrow:
+			arrow.graviton_explosion_damage = _graviton_explosion_damage()
+		if "source" in arrow:
+			arrow.source = self
 	_get_world().add_child(arrow)
 	if arrow.has_method("set_direction"):
 		arrow.set_direction(dir)
@@ -462,6 +502,71 @@ func _is_piercing_shot() -> bool:
 		return true
 	# Levels 1-3: a cada 3 ataques (shots 1,2,3 → 3rd procca).
 	return _perf_shot_counter >= 2
+
+
+func _is_ricochet_shot() -> bool:
+	# L1: cada 3 ataques. L2+: cada 2 ataques.
+	if ricochet_arrow_level <= 0:
+		return false
+	if ricochet_arrow_level == 1:
+		return _ricochet_shot_counter >= 2
+	return _ricochet_shot_counter >= 1
+
+
+func _ricochet_max_hops() -> int:
+	# L1/L2: 1 ricochete. L3+: 2 ricochetes.
+	if ricochet_arrow_level >= 3:
+		return 2
+	return 1
+
+
+func _ricochet_max_splits() -> int:
+	# Quantos ricochetes ainda podem se dividir em 2.
+	# L1: 0. L2: 1 (só o 1º). L3: 1 (só o 1º — 2º não divide). L4: 2 (todos dividem).
+	if ricochet_arrow_level <= 1:
+		return 0
+	if ricochet_arrow_level == 4:
+		return 2
+	return 1
+
+
+func _is_graviton_shot() -> bool:
+	# L1: cada 3 ataques. L2+: cada 2 ataques.
+	if graviton_level <= 0:
+		return false
+	if graviton_level == 1:
+		return _graviton_shot_counter >= 2
+	return _graviton_shot_counter >= 1
+
+
+func _graviton_radius() -> float:
+	# Range do pulso. Tunado pra ficar contido — L4 cresce mas não absurdo.
+	match graviton_level:
+		1: return 45.0
+		2: return 60.0
+		3: return 60.0
+		4: return 75.0
+	return 45.0
+
+
+func _graviton_lifetime() -> float:
+	# Pulso dura 3s em todos os níveis (spec não diferencia).
+	return 3.0
+
+
+func _graviton_slow_factor() -> float:
+	# Slow no campo. L1-L3 = 30% slow (factor 0.7). L4 = 45% (factor 0.55).
+	if graviton_level >= 4:
+		return 0.55
+	return 0.7
+
+
+func _graviton_explosion_damage() -> float:
+	# L3+ o pulso explode no fim. L3=30, L4=50 (área e dano aumentados).
+	match graviton_level:
+		3: return 30.0
+		4: return 50.0
+	return 0.0
 
 
 func _fire_burn_multiplier() -> float:
@@ -841,8 +946,10 @@ func _dash_auto_attack_volley() -> void:
 	var dir: Vector2 = (target.global_position - global_position).normalized()
 	if dir.length() < 0.01:
 		return
-	# Pierce: usa o estado atual do counter sem alterá-lo.
+	# Pierce/ricochete/graviton: usa estado atual dos counters sem alterá-los.
 	var is_pierce: bool = _is_piercing_shot()
+	var is_ricochet: bool = _is_ricochet_shot()
+	var is_graviton: bool = _is_graviton_shot()
 	# Move muzzle pra direção do tiro pra spawn coerente.
 	if dir.x != 0.0:
 		muzzle.position.x = -muzzle_offset_x if dir.x < 0.0 else muzzle_offset_x
@@ -852,7 +959,7 @@ func _dash_auto_attack_volley() -> void:
 	var volley: Array = _build_volley()
 	for i in volley.size():
 		var shot: Dictionary = volley[i]
-		_spawn_arrow(shot["dir"], shot["dmg_mult"], is_pierce, i == 0, i == 0)
+		_spawn_arrow(shot["dir"], shot["dmg_mult"], is_pierce, i == 0, i == 0, is_ricochet, is_graviton)
 	# Restaura aim e muzzle pro estado atual do sprite (next _update_facing
 	# fixaria de qualquer forma, mas restaurar evita visual flicker).
 	locked_aim_dir = saved_aim
@@ -980,6 +1087,11 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# Lv1-4 da flecha de ricochete. Mecânica é resolvida em arrow.gd
 			# baseada no nível atual do player.
 			ricochet_arrow_level = mini(ricochet_arrow_level + 1, 4)
+		"graviton":
+			# Lv1-4 do Graviton. Mecânica em arrow.gd + graviton_pulse.gd.
+			# L1: cada 3 ataques cria pulso ao bater. L2: cada 2 + range maior.
+			# L3: pulso explode no fim (30 dano). L4: área e dano aumentados.
+			graviton_level = mini(graviton_level + 1, 4)
 
 
 func get_upgrade_count(upgrade_id: String) -> int:
@@ -998,6 +1110,7 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"gold_magnet": return gold_magnet_level
 		"dash": return dash_level
 		"ricochet_arrow": return ricochet_arrow_level
+		"graviton": return graviton_level
 	return 0
 
 

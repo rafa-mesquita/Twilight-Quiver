@@ -44,6 +44,25 @@ var is_curse: bool = false
 var curse_dps: float = 4.0
 var curse_duration: float = 4.0
 var curse_slow_factor: float = 0.65  # 0.65 = 35% slow no inimigo
+# Flecha de Ricochete: setado pelo player ANTES de add_child quando ricochet
+# proca (cada 3 ataques no L1, cada 2 no L2+). Ao bater em inimigo, em vez de
+# cravar, redireciona pra inimigo aleatório próximo. Pode dividir em 2 (L2+/L4).
+var is_ricochet: bool = false
+var ricochet_hops_remaining: int = 0   # quantos ricochetes ainda pode fazer
+var ricochet_splits_remaining: int = 0  # de quantos ricochetes ainda divide em 2
+const RICOCHET_RADIUS: float = 220.0
+const RICOCHET_PUSH: float = 12.0  # empurra a flecha pra fora do alvo após ricochete
+const RICOCHET_DAMAGE_FALLOFF: float = 0.80  # cada ricochete corta 20% do dano
+# Graviton: setado pelo player quando o counter procca (a cada 3 ataques no L1,
+# a cada 2 no L2+). Ao bater em enemy/objeto, spawna um GravitonPulse no ponto
+# de impacto. Combina com perfuração: pulso é gerado em CADA objeto atravessado
+# e em CADA inimigo morto pela passagem da flecha (spec do excalidraw).
+var is_graviton: bool = false
+var graviton_radius: float = 60.0
+var graviton_lifetime: float = 3.0
+var graviton_slow_factor: float = 0.7
+var graviton_explosion_damage: float = 0.0
+const GRAVITON_PULSE_SCENE: PackedScene = preload("res://scenes/graviton_pulse.tscn")
 # Fogo lv2: rastro de chamas no caminho da flecha (DPS area).
 var fire_trail_enabled: bool = false
 var fire_trail_dps: float = 4.0
@@ -92,6 +111,8 @@ func _ready() -> void:
 		_apply_fire_visuals()
 	if is_curse:
 		_apply_curse_visuals()
+	if is_ricochet:
+		_apply_ricochet_visuals()
 
 
 const PIERCING_BASE_SCALE: float = 1.1
@@ -161,6 +182,20 @@ func _apply_fire_visuals() -> void:
 		trail.gradient = grad
 		trail.default_color = Color.WHITE  # com gradient, default_color só multiplica
 		trail.width = 2.2  # um tico mais grosso pra ficar tipo "glow"
+
+
+func _apply_ricochet_visuals() -> void:
+	# Tint ciano-claro discreto + trail ciano. Não sobrescreve fire/curse —
+	# multiplica pra não anular o visual elemental quando combinado.
+	var sprite_node := get_node_or_null("Sprite2D") as Sprite2D
+	if sprite_node != null:
+		var current: Color = sprite_node.modulate
+		# Mantém o tom original mas puxa pra ciano (+ no canal B/G).
+		sprite_node.modulate = Color(current.r * 0.85, current.g * 1.05, current.b * 1.4, current.a)
+	if trail != null and trail.gradient == null:
+		# Só sobrescreve trail se ainda não tem gradient elemental (fogo/maldição).
+		trail.default_color = Color(0.55, 0.95, 1.0, 0.85)
+		trail.width = max(trail.width, 1.8)
 
 
 func _apply_curse_visuals() -> void:
@@ -244,10 +279,18 @@ func _on_hit(body: Node) -> void:
 	# bloqueia flecha como parede (não causa dano).
 	if target != null and target.is_in_group("structure"):
 		_play_oneshot(object_impact_sound, global_position, sound_volume_db, 0.7)
+		# Graviton: pulso ao bater na estrutura. Com perfuração também procca em
+		# cada estrutura atravessada (a flecha continua e pode bater em outra).
+		if is_graviton:
+			_spawn_graviton_pulse()
 		if is_piercing:
 			_pierce_hits += 1
 			_spawn_pierce_hit_effect(_pierce_hits == 3)
 			return
+		# Ricochete em estrutura: redireciona pra próximo enemy (igual em walls).
+		if is_ricochet and ricochet_hops_remaining > 0:
+			if _perform_ricochet(target):
+				return
 		_stick_in_place(stick_surface_duration)
 		return
 	# Outros aliados (futuros, ex: aliados convertidos pela maldição): passa também.
@@ -276,18 +319,40 @@ func _on_hit(body: Node) -> void:
 		_proc_chain_lightning(target)
 		if is_fire and is_instance_valid(target):
 			_apply_burn_to(target)
+		# Graviton: pulso no ponto de impacto. Com perfuração: spawna apenas se o
+		# enemy morreu nesse hit (spec — "inimigos que morrerem"). Sem perfuração:
+		# spawna sempre que cravar (caso normal abaixo, antes do _stick_in_body).
+		if is_graviton:
+			if is_piercing:
+				if not is_instance_valid(target) or (("hp" in target) and float(target.hp) <= 0.0):
+					_spawn_graviton_pulse()
+			else:
+				_spawn_graviton_pulse()
 		if is_piercing:
 			_pierce_hits += 1
 			_spawn_pierce_hit_effect(_pierce_hits == 3)
 			return
+		# Ricochete: redireciona pra próximo alvo em vez de cravar. Se não acha
+		# candidato, fallback pra stick normal.
+		if is_ricochet and ricochet_hops_remaining > 0:
+			if _perform_ricochet(target):
+				return
 		_stick_in_body(body, stick_enemy_duration)
 	else:
 		# Superfície sólida sem take_damage (parede, tronco).
 		_play_oneshot(object_impact_sound, global_position, sound_volume_db, 0.7)
+		# Graviton: pulso ao bater na parede. Com perfuração, procca em CADA
+		# objeto atravessado (flecha continua viva).
+		if is_graviton:
+			_spawn_graviton_pulse()
 		if is_piercing:
 			_pierce_hits += 1
 			_spawn_pierce_hit_effect(_pierce_hits == 3)
 			return
+		# Ricochete em parede/objeto: redireciona pra próximo enemy.
+		if is_ricochet and ricochet_hops_remaining > 0:
+			if _perform_ricochet(null):
+				return
 		_stick_in_place(stick_surface_duration)
 
 
@@ -446,6 +511,161 @@ func _apply_curse_to(target: Node) -> void:
 	deb.duration = curse_duration
 	deb.slow_factor = curse_slow_factor
 	target.add_child(deb)
+
+
+func _perform_ricochet(hit_target: Node = null) -> bool:
+	# Chamado depois de aplicar dano/efeitos. Encontra próximo enemy aleatório
+	# no raio (excluindo já hitados), spawna clone se splits disponíveis, e
+	# redireciona ESTA flecha pro alvo. `hit_target` pode ser null (ricochete
+	# em parede/objeto sem damageable). Retorna false se não há candidatos.
+	var candidates: Array = []
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not is_instance_valid(e) or not (e is Node2D):
+			continue
+		if hit_target != null and e == hit_target:
+			continue
+		if e in _hit_bodies:
+			continue
+		if not e.has_method("take_damage"):
+			continue
+		if e.is_queued_for_deletion():
+			continue
+		if "hp" in e and float(e.hp) <= 0.0:
+			continue
+		# Limita ao raio — sem isso ricochete vira aimbot global.
+		if (e as Node2D).global_position.distance_squared_to(global_position) > RICOCHET_RADIUS * RICOCHET_RADIUS:
+			continue
+		candidates.append(e)
+	# Sem inimigos no raio — ricochete vai pra direção aleatória (mas ainda
+	# consome o hop, pra evitar voar pelo mapa todo procurando alvo).
+	var new_dir: Vector2
+	var primary: Node2D = null
+	var secondary: Node2D = null
+	var will_split: bool = ricochet_splits_remaining > 0
+	if candidates.is_empty():
+		# Direção aleatória dentro de ±150° da direção atual (mais natural que
+		# 360° puro — flecha não dá ré completa).
+		var random_angle: float = randf_range(-2.6, 2.6)
+		new_dir = direction.rotated(random_angle)
+		# Sem alvos = sem split (não tem clone pra spawnar nem alvo pro split).
+		will_split = false
+	else:
+		candidates.shuffle()
+		primary = candidates[0] as Node2D
+		new_dir = (primary.global_position - global_position).normalized()
+		if will_split:
+			secondary = (candidates[1] as Node2D) if candidates.size() >= 2 else primary
+	var new_hops: int = ricochet_hops_remaining - 1
+	var new_splits: int = maxi(ricochet_splits_remaining - (1 if will_split else 0), 0)
+	# Damage falloff: cada ricochete corta 20% do dano. Aplica ANTES de spawnar
+	# o clone — clone herda o dano já reduzido (ele "nasce" do ricochete, então
+	# também perdeu 20% do dano original).
+	damage *= RICOCHET_DAMAGE_FALLOFF
+	if will_split and secondary != null:
+		_spawn_ricochet_clone(secondary, new_hops, new_splits)
+	ricochet_hops_remaining = new_hops
+	ricochet_splits_remaining = new_splits
+	if new_dir.length() < 0.01:
+		return false
+	# Visual: ring ciano no ponto de impacto (claro pra ver que ricocheteou).
+	_spawn_ricochet_hit_effect()
+	# "Salto" — empurra a flecha pra fora do alvo na nova direção, pra evitar
+	# que ela continue colidindo com o body atual e perca tempo voltando.
+	# Sem isso, ela demora 2-3 frames dentro do enemy antes de sair, fica feio.
+	global_position += new_dir * RICOCHET_PUSH
+	direction = new_dir
+	rotation = direction.angle()
+	# Limpa trail pra novo segmento sair limpo da posição atual.
+	if trail != null:
+		trail.clear_points()
+		trail.add_point(global_position)
+	return true
+
+
+func _spawn_graviton_pulse() -> void:
+	if GRAVITON_PULSE_SCENE == null:
+		return
+	var pulse: Node = GRAVITON_PULSE_SCENE.instantiate()
+	if "radius" in pulse:
+		pulse.radius = graviton_radius
+	if "lifetime" in pulse:
+		pulse.lifetime = graviton_lifetime
+	if "slow_factor" in pulse:
+		pulse.slow_factor = graviton_slow_factor
+	if "explosion_damage" in pulse:
+		pulse.explosion_damage = graviton_explosion_damage
+	if "source" in pulse:
+		pulse.source = source
+	_get_world().add_child(pulse)
+	if pulse is Node2D:
+		(pulse as Node2D).global_position = global_position
+
+
+func _spawn_ricochet_hit_effect() -> void:
+	# Ring ciano que expande e fade — feedback visual claro do ricochete.
+	var ring := Polygon2D.new()
+	var pts := PackedVector2Array()
+	var segs: int = 20
+	for i in segs:
+		var ang: float = TAU * float(i) / float(segs)
+		pts.append(Vector2(cos(ang), sin(ang)) * 6.0)
+	ring.polygon = pts
+	ring.color = Color(0.55, 0.95, 1.0, 0.9)
+	ring.global_position = global_position
+	ring.z_as_relative = false
+	ring.z_index = 5
+	_get_world().add_child(ring)
+	var tw := ring.create_tween().set_parallel(true)
+	tw.tween_property(ring, "scale", Vector2(3.5, 3.5), 0.25)\
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(ring, "modulate:a", 0.0, 0.25)
+	tw.chain().tween_callback(ring.queue_free)
+
+
+func _spawn_ricochet_clone(target: Node2D, hops: int, splits: int) -> void:
+	# Clone herda dano, fire/curse/chain flags e estado de ricochete reduzido.
+	# NÃO toca shoot sound (evita stack de db). NÃO inclui o is_piercing (ricochete
+	# e perfuração são exclusivos por design).
+	var scene_path: String = scene_file_path
+	if scene_path == "":
+		return
+	var scene := load(scene_path) as PackedScene
+	if scene == null:
+		return
+	var clone: Area2D = scene.instantiate() as Area2D
+	if clone == null:
+		return
+	clone.global_position = global_position
+	# Configura ANTES de add_child pra _ready do clone enxergar os flags.
+	if "play_shoot_sound" in clone:
+		clone.play_shoot_sound = false
+	if "damage" in clone:
+		clone.damage = damage
+	if "is_fire" in clone:
+		clone.is_fire = is_fire
+		clone.burn_dps = burn_dps
+		clone.burn_duration = burn_duration
+	if "is_curse" in clone:
+		clone.is_curse = is_curse
+		clone.curse_dps = curse_dps
+		clone.curse_duration = curse_duration
+		clone.curse_slow_factor = curse_slow_factor
+	if "chain_count" in clone:
+		clone.chain_count = chain_count
+		clone.chain_dmg_pct = chain_dmg_pct
+		clone.chain_bonus_chance = chain_bonus_chance
+	if "is_ricochet" in clone:
+		clone.is_ricochet = true
+		clone.ricochet_hops_remaining = hops
+		clone.ricochet_splits_remaining = splits
+	if "source" in clone:
+		clone.source = source
+	_get_world().add_child(clone)
+	if clone.has_method("set_direction"):
+		var d: Vector2 = (target.global_position - global_position).normalized()
+		if d.length() < 0.01:
+			d = direction
+		clone.set_direction(d)
 
 
 func _proc_chain_lightning(origin: Node) -> void:

@@ -41,11 +41,22 @@ const UPGRADE_POOL: Array = [
 	{"id": "gold_magnet", "name": "Chuva de Coins", "max_level": 4},
 	{"id": "dash", "name": "Dash", "max_level": 4},
 	{"id": "ricochet_arrow", "name": "Flecha Ricochete", "max_level": 4},
+	{"id": "graviton", "name": "Graviton", "max_level": 4},
 	{"id": "fire_arrow", "name": "Flecha de Fogo", "max_level": 4},
 	{"id": "curse_arrow", "name": "Disparo Profano", "max_level": 4},
 ]
 
 const UPGRADE_PRICE_OVERRIDES: Dictionary = {}
+
+# Pares de upgrades mutuamente exclusivos no mesmo run. Se o player tem um, o
+# outro nem aparece no shop e fica bloqueado se ambos saírem na mesma rolada.
+# - Fogo ↔ Maldição (mesmo design dos elementais)
+# - Perfuração ↔ Flecha Ricochete (mesmo "slot" no design — flecha modifica o
+#   comportamento ao bater, escolha uma)
+const EXCLUSIVE_PAIRS: Array = [
+	["fire_arrow", "curse_arrow"],
+	["perfuracao", "ricochet_arrow"],
+]
 
 const HP_DESCS: Array[String] = ["+15 HP maximo", "+15 HP maximo", "+15 HP maximo", "+15 HP maximo"]
 const DAMAGE_DESCS: Array[String] = ["+20% dano da flecha", "+20% dano da flecha", "+20% dano da flecha", "+20% dano da flecha"]
@@ -102,6 +113,12 @@ const RICOCHET_ARROW_DESCS: Array[String] = [
 	"A cada 2 ataques\ndivide em 2",
 	"+1 ricochete\n(sem dividir)",
 	"2º ricochete\ndivide tambem",
+]
+const GRAVITON_DESCS: Array[String] = [
+	"Cada 3 ataques cria\ncampo gravitacional",
+	"Cada 2 ataques\n+ range maior",
+	"Pulso explode no fim\n30 dano area",
+	"+area + 50 dano\nna explosao",
 ]
 const FIRE_ARROW_DESCS: Array[String] = [
 	"Queima inimigo\n4 dmg/s por 3s",
@@ -393,8 +410,6 @@ func _roll_upg_slots() -> void:
 	upg_slots.clear()
 	var player := _get_player()
 	var already_picked_ids: Array[String] = []
-	var has_fire: bool = player != null and player.has_method("get_upgrade_count") and player.get_upgrade_count("fire_arrow") > 0
-	var has_curse: bool = player != null and player.has_method("get_upgrade_count") and player.get_upgrade_count("curse_arrow") > 0
 	for i in 3:
 		var pool: Array = []
 		for u in UPGRADE_POOL:
@@ -407,9 +422,10 @@ func _roll_upg_slots() -> void:
 				continue
 			if id in already_picked_ids:
 				continue
-			if id == "fire_arrow" and has_curse:
-				continue
-			if id == "curse_arrow" and has_fire:
+			# Bloqueia counterpart de pares exclusivos quando o player já tem 1+
+			# nível do outro lado (ex: tem Fogo → some Maldição; tem Perfuração
+			# → some Ricochete).
+			if _player_has_exclusive_counterpart(player, id):
 				continue
 			var requires: String = u.get("requires", "")
 			if requires != "":
@@ -466,6 +482,7 @@ func _get_upgrade_desc(id: String, target_level: int) -> String:
 		"fire_arrow": arr = FIRE_ARROW_DESCS
 		"curse_arrow": arr = CURSE_ARROW_DESCS
 		"ricochet_arrow": arr = RICOCHET_ARROW_DESCS
+		"graviton": arr = GRAVITON_DESCS
 		_: return ""
 	var idx: int = clampi(target_level - 1, 0, arr.size() - 1)
 	return arr[idx]
@@ -862,13 +879,33 @@ func _buy_upgrade(idx: int) -> void:
 
 
 func _is_elemental_blocked_by_selection(id: String) -> bool:
-	if id != "fire_arrow" and id != "curse_arrow":
+	# Mantém o nome legado mas hoje cobre TODOS os pares exclusivos
+	# (não só elementais — inclui Perfuração ↔ Ricochete).
+	var counterpart: String = _get_exclusive_counterpart(id)
+	if counterpart == "":
 		return false
-	var counterpart: String = "curse_arrow" if id == "fire_arrow" else "fire_arrow"
 	for sel_idx in _selected_upgrade_idxs:
 		if upg_slots[sel_idx].get("id", "") == counterpart:
 			return true
 	return false
+
+
+func _get_exclusive_counterpart(id: String) -> String:
+	for pair in EXCLUSIVE_PAIRS:
+		if pair[0] == id:
+			return pair[1]
+		if pair[1] == id:
+			return pair[0]
+	return ""
+
+
+func _player_has_exclusive_counterpart(player: Node, id: String) -> bool:
+	if player == null or not player.has_method("get_upgrade_count"):
+		return false
+	var counterpart: String = _get_exclusive_counterpart(id)
+	if counterpart == "":
+		return false
+	return player.get_upgrade_count(counterpart) > 0
 
 
 # ---------- Selection accounting ----------
