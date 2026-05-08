@@ -407,9 +407,9 @@ autowrap_mode = 2
 
 [node name="DescLabel" type="Label" parent="Root/AliadoRow/AliadoCard1" unique_id=756299876]
 layout_mode = 0
-offset_left = 48.0
+offset_left = 24.0
 offset_top = 87.0
-offset_right = 257.0
+offset_right = 282.0
 offset_bottom = 256.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -485,9 +485,9 @@ autowrap_mode = 2
 
 [node name="DescLabel" type="Label" parent="Root/AliadoRow/AliadoCard2" unique_id=82308045]
 layout_mode = 0
-offset_left = 48.0
+offset_left = 24.0
 offset_top = 87.0
-offset_right = 257.0
+offset_right = 282.0
 offset_bottom = 256.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -563,9 +563,9 @@ autowrap_mode = 2
 
 [node name="DescLabel" type="Label" parent="Root/AliadoRow/AliadoCard3" unique_id=1406948037]
 layout_mode = 0
-offset_left = 48.0
+offset_left = 24.0
 offset_top = 87.0
-offset_right = 257.0
+offset_right = 282.0
 offset_bottom = 256.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -659,9 +659,9 @@ autowrap_mode = 2
 
 [node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard1" unique_id=189410968]
 layout_mode = 0
-offset_left = 48.0
+offset_left = 24.0
 offset_top = 111.0
-offset_right = 257.0
+offset_right = 282.0
 offset_bottom = 280.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -737,9 +737,9 @@ autowrap_mode = 2
 
 [node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard2" unique_id=153398373]
 layout_mode = 0
-offset_left = 48.0
+offset_left = 24.0
 offset_top = 111.0
-offset_right = 257.0
+offset_right = 282.0
 offset_bottom = 280.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -815,9 +815,9 @@ autowrap_mode = 2
 
 [node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard3" unique_id=951410516]
 layout_mode = 0
-offset_left = 48.0
+offset_left = 24.0
 offset_top = 111.0
-offset_right = 257.0
+offset_right = 282.0
 offset_bottom = 280.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")

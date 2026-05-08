@@ -734,8 +734,12 @@ func _apply_card_glow(card: Control, text_color: Color, target_level: int, eligi
 	halo.offset_top = -card_h * radius_pct
 	halo.offset_right = card_w * (1.0 + radius_pct)
 	halo.offset_bottom = card_h * (1.0 + radius_pct)
-	# inner_pct = fração do halo (em UV) que é o card → onde o shader não desenha.
-	var inner_pct: float = 1.0 / (1.0 + 2.0 * radius_pct)
+	# inner_pct = fração do halo (em UV) onde o shader desenha. O glow penetra
+	# 2px PRA DENTRO do card pra cobrir os pixels transparentes do PNG nas
+	# cantos arredondados — sem isso, o fundo escuro do shop aparece nos cantos.
+	var halo_w: float = card_w * (1.0 + 2.0 * radius_pct)
+	var px_overlap: float = 2.0
+	var inner_pct: float = (card_w - 2.0 * px_overlap) / halo_w
 	var glow_color: Color = text_color.lerp(Color.WHITE, GLOW_LIGHTEN_AMOUNT)
 	var strength: float = GLOW_STRENGTH_BASE + GLOW_STRENGTH_PER_LEVEL * float(target_level - 1)
 	var mat := halo.material as ShaderMaterial
