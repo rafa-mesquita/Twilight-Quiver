@@ -37,20 +37,15 @@ const UPGRADE_POOL: Array = [
 	{"id": "perfuracao", "name": "Perfuracao", "max_level": 4},
 	{"id": "multi_arrow", "name": "Multiplas Flechas", "max_level": 4},
 	{"id": "chain_lightning", "name": "Cadeia de Raios", "max_level": 4},
-	{"id": "life_steal", "name": "Coleta de Coracao"},
-	# Imã de Gold removido do pool por enquanto (fora de balanceamento).
-	{"id": "dash", "name": "Dash", "max_level": 1},
-	{"id": "dash_cooldown", "name": "Dash CD Reduce", "requires": "dash"},
-	{"id": "dash_auto_attack", "name": "Dash Auto-Atk", "max_level": 1, "requires": "dash"},
-	{"id": "dash_double_arrow", "name": "Dash 2 Flechas", "max_level": 1, "requires": "dash_auto_attack"},
+	{"id": "life_steal", "name": "Coleta de Coracao", "max_level": 4},
+	{"id": "gold_magnet", "name": "Chuva de Coins", "max_level": 4},
+	{"id": "dash", "name": "Dash", "max_level": 4},
+	{"id": "ricochet_arrow", "name": "Flecha Ricochete", "max_level": 4},
 	{"id": "fire_arrow", "name": "Flecha de Fogo", "max_level": 4},
 	{"id": "curse_arrow", "name": "Disparo Profano", "max_level": 4},
 ]
 
-const UPGRADE_PRICE_OVERRIDES: Dictionary = {
-	"dash_auto_attack": 12,
-	"dash_double_arrow": 18,
-}
+const UPGRADE_PRICE_OVERRIDES: Dictionary = {}
 
 const HP_DESCS: Array[String] = ["+15 HP maximo", "+15 HP maximo", "+15 HP maximo", "+15 HP maximo"]
 const DAMAGE_DESCS: Array[String] = ["+20% dano da flecha", "+20% dano da flecha", "+20% dano da flecha", "+20% dano da flecha"]
@@ -84,22 +79,30 @@ const MOVE_SPEED_DESCS: Array[String] = [
 	"+17% velocidade de\nmovimento",
 	"+17% velocidade de\nmovimento",
 ]
-const GOLD_MAGNET_DESCS: Array[String] = ["Puxa todo gold +2%\nchance de drop"]
-const DASH_DESCS: Array[String] = ["Espaco = dash\n(cd 4.5s)"]
+const GOLD_MAGNET_DESCS: Array[String] = [
+	"+5% drop chance",
+	"Coins duram 2x\n+2% drop",
+	"+2% drop\npulso da slow",
+	"Puxa coins\nda area",
+]
+const DASH_DESCS: Array[String] = [
+	"Espaco = dash\ncd 5s",
+	"Rastro de fogo\ncd 4.5s",
+	"Auto-attack\ncd 4s",
+	"+1 flecha\ncd 3.5s",
+]
 const LIFE_STEAL_DESCS: Array[String] = [
-	"12% drop coracao\ncura 20% HP",
-	"+5% chance,\n+10% heal por stack",
-	"+5% chance,\n+10% heal por stack",
-	"+5% chance,\n+10% heal por stack",
+	"10% drop coracao\ncura 20% HP",
+	"+5% drop\n+10% cura",
+	"+5% drop, +5% cura\npuxa em area",
+	"Puxa do mapa todo",
 ]
-const DASH_COOLDOWN_DESCS: Array[String] = [
-	"-0.5s no cooldown\ndo dash (min 0.5s)",
-	"-0.5s no cooldown\ndo dash (min 0.5s)",
-	"-0.5s no cooldown\ndo dash (min 0.5s)",
-	"-0.5s no cooldown\ndo dash (min 0.5s)",
+const RICOCHET_ARROW_DESCS: Array[String] = [
+	"A cada 3 ataques\nflecha ricocheteia",
+	"A cada 2 ataques\ndivide em 2",
+	"+1 ricochete\n(sem dividir)",
+	"2º ricochete\ndivide tambem",
 ]
-const DASH_AUTO_ATTACK_DESCS: Array[String] = ["Dash atira flecha\nno inimigo proximo"]
-const DASH_DOUBLE_ARROW_DESCS: Array[String] = ["Dash dispara 2 flechas\nem sequencia"]
 const FIRE_ARROW_DESCS: Array[String] = [
 	"Queima inimigo\n4 dmg/s por 3s",
 	"+1 dmg/s +\nrastro de fogo",
@@ -462,9 +465,7 @@ func _get_upgrade_desc(id: String, target_level: int) -> String:
 		"life_steal": arr = LIFE_STEAL_DESCS
 		"fire_arrow": arr = FIRE_ARROW_DESCS
 		"curse_arrow": arr = CURSE_ARROW_DESCS
-		"dash_cooldown": arr = DASH_COOLDOWN_DESCS
-		"dash_auto_attack": arr = DASH_AUTO_ATTACK_DESCS
-		"dash_double_arrow": arr = DASH_DOUBLE_ARROW_DESCS
+		"ricochet_arrow": arr = RICOCHET_ARROW_DESCS
 		_: return ""
 	var idx: int = clampi(target_level - 1, 0, arr.size() - 1)
 	return arr[idx]

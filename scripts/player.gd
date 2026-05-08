@@ -87,29 +87,35 @@ const PLAYER_FIRE_TRAIL_SPACING: float = 16.0
 const PLAYER_FIRE_TRAIL_DPS: float = 3.0
 var _player_fire_trail_last_pos: Vector2 = Vector2.ZERO
 var _player_fire_trail_initialized: bool = false
-var has_gold_magnet: bool = false  # one-shot: gold persegue player quando true
-# Dash (one-shot upgrade básico — sub-níveis cooldown/rastro/etc. são separados).
+# Chuva de Coins — refatorado pra 4 níveis (era one-shot has_gold_magnet).
+# Lv1: +5% drop. Lv2: coins duram 2x + +2% drop. Lv3: +2% drop + pulso slow.
+# Lv4: puxa coins na area (mantém has_gold_magnet=true pro código antigo).
+var gold_magnet_level: int = 0
+var has_gold_magnet: bool = false  # legacy flag (lv4 da Chuva de Coins)
+# Dash (refatorado pra 4 níveis em um único upgrade).
+# Lv1: dash básico (5s cd). Lv2: rastro de fogo (4.5s). Lv3: auto-attack (4s).
+# Lv4: 2 flechas (3.5s).
+const DASH_LEVEL_MAX: int = 4
+const DASH_COOLDOWNS_BY_LEVEL: Array[float] = [5.0, 4.5, 4.0, 3.5]
+var dash_level: int = 0
 var has_dash: bool = false
 var dash_distance: float = 45.0
 var dash_duration: float = 0.22
-var dash_cooldown: float = 4.5
+var dash_cooldown: float = 5.0
 var _dash_cd_remaining: float = 0.0
 var _is_dashing: bool = false
 var _dash_velocity: Vector2 = Vector2.ZERO
 var _dash_time_left: float = 0.0
-# Sub-níveis do dash (excalidraw 1.1/1.2/1.3/1.3.1).
-# 1.1: cada compra reduz cooldown em 0.3s (mínimo 0.5s).
-# 1.2: cada compra adiciona dano no rastro de fogo (TODO: rastro ainda não implementado).
-# 1.3: 1× — auto-attack no inimigo mais próximo após dash (TODO).
-# 1.3.1: 1× — 2 flechas após dash (só pode aparecer após 1.3) (TODO).
-var dash_cd_reduction_level: int = 0
-var dash_fire_trail_level: int = 0
+# Flags derivadas de dash_level:
+# - has_dash_auto_attack: dash_level >= 3
+# - has_dash_double_arrow: dash_level >= 4
 var has_dash_auto_attack: bool = false
 var has_dash_double_arrow: bool = false
-const DASH_CD_REDUCTION_PER_STACK: float = 0.5
-const DASH_CD_MIN: float = 0.5
+# Flecha de Ricochete (novo upgrade, 4 níveis). Mecânica em arrow.gd.
+var ricochet_arrow_level: int = 0
 # Trilha de poder do dash: spawna um segmento a cada N px percorridos durante
 # o dash. Cada segmento dura 3s e dá DPS roxo em inimigos na área.
+# DPS escala com dash_level: lv2+ ativa o trail, lv3 e lv4 aumentam dano.
 const DASH_TRAIL_SCENE: PackedScene = preload("res://scenes/dash_trail.tscn")
 const DASH_TRAIL_SPACING: float = 14.0
 const DASH_TRAIL_DPS_BASE: float = 3.0
@@ -747,7 +753,8 @@ func _try_start_dash() -> void:
 	_play_dash_sound()
 	dash_cooldown_changed.emit(_dash_cd_remaining, dash_cooldown)
 	# Trilha de poder: dropa primeiro segmento + reseta marker pra próximos.
-	if dash_fire_trail_level > 0:
+	# Lv2+ do dash consolidado.
+	if dash_level >= 2:
 		_dash_last_trail_pos = global_position
 		_spawn_dash_trail_segment()
 	# Auto-attack: dispara flecha no inimigo mais próximo após delay
@@ -784,7 +791,7 @@ func _update_dash(delta: float) -> void:
 	if _is_dashing:
 		_dash_time_left -= delta
 		# Drop trail segments periodicamente conforme o player anda durante dash.
-		if dash_fire_trail_level > 0:
+		if dash_level >= 2:
 			var moved: float = global_position.distance_to(_dash_last_trail_pos)
 			if moved >= DASH_TRAIL_SPACING:
 				_spawn_dash_trail_segment()
@@ -802,7 +809,8 @@ func _spawn_dash_trail_segment() -> void:
 		return
 	var seg: Node = DASH_TRAIL_SCENE.instantiate()
 	if "damage_per_second" in seg:
-		seg.damage_per_second = DASH_TRAIL_DPS_BASE + DASH_TRAIL_DPS_PER_STACK * float(dash_fire_trail_level - 1)
+		# Dano cresce com dash_level (lv2 = base, lv3+ ganha bonus).
+		seg.damage_per_second = DASH_TRAIL_DPS_BASE + DASH_TRAIL_DPS_PER_STACK * float(maxi(dash_level - 2, 0))
 	_get_world().add_child(seg)
 	if seg is Node2D:
 		(seg as Node2D).global_position = global_position
@@ -946,31 +954,32 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# Max 4 compras (= 4 woodwardens, full stats).
 			woodwarden_level = mini(woodwarden_level + 1, 4)
 		"gold_magnet":
-			# One-shot: gold spawnado/restante passa a perseguir o player no _process do gold.
-			has_gold_magnet = true
+			# Refatorado pra 4 níveis (Chuva de Coins). Lv1+ habilita drop chance
+			# bonus (gold_drop.gd lê o level via get_upgrade_count).
+			gold_magnet_level = mini(gold_magnet_level + 1, 4)
+			# Lv4 (puxe global): mantém a flag legada usada por gold.gd.
+			has_gold_magnet = gold_magnet_level >= 4
 		"dash":
-			# One-shot: ganha acesso ao dash (espaço). HUD mostra a barra.
-			# Já comprado? Não faz nada (evita resetar cd via re-apply).
-			if has_dash:
+			# Refatorado pra 4 níveis. Cada nível atualiza cooldown + features.
+			# Lv1: dash básico cd 5s
+			# Lv2: rastro de fogo, cd 4.5s
+			# Lv3: auto-attack após dash, cd 4s
+			# Lv4: 2 flechas após dash, cd 3.5s
+			if dash_level >= DASH_LEVEL_MAX:
 				return
-			has_dash = true
-			_dash_cd_remaining = 0.0
-			dash_unlocked.emit()
-			dash_cooldown_changed.emit(0.0, dash_cooldown)
-		"dash_cooldown":
-			# Reduz cd em DASH_CD_REDUCTION_PER_STACK, mínimo DASH_CD_MIN.
-			dash_cd_reduction_level += 1
-			dash_cooldown = maxf(dash_cooldown - DASH_CD_REDUCTION_PER_STACK, DASH_CD_MIN)
+			dash_level = mini(dash_level + 1, DASH_LEVEL_MAX)
+			if dash_level == 1:
+				has_dash = true
+				_dash_cd_remaining = 0.0
+				dash_unlocked.emit()
+			has_dash_auto_attack = dash_level >= 3
+			has_dash_double_arrow = dash_level >= 4
+			dash_cooldown = DASH_COOLDOWNS_BY_LEVEL[dash_level - 1]
 			dash_cooldown_changed.emit(_dash_cd_remaining, dash_cooldown)
-		"dash_fire_trail":
-			# TODO: rastro com dano. Por enquanto só rastreia o nível.
-			dash_fire_trail_level += 1
-		"dash_auto_attack":
-			# TODO: auto-attack após dash. Por enquanto só seta a flag.
-			has_dash_auto_attack = true
-		"dash_double_arrow":
-			# TODO: 2 flechas após dash. Por enquanto só seta a flag.
-			has_dash_double_arrow = true
+		"ricochet_arrow":
+			# Lv1-4 da flecha de ricochete. Mecânica é resolvida em arrow.gd
+			# baseada no nível atual do player.
+			ricochet_arrow_level = mini(ricochet_arrow_level + 1, 4)
 
 
 func get_upgrade_count(upgrade_id: String) -> int:
@@ -986,12 +995,9 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"fire_arrow": return fire_arrow_level
 		"curse_arrow": return curse_arrow_level
 		"woodwarden": return woodwarden_level
-		"gold_magnet": return 1 if has_gold_magnet else 0
-		"dash": return 1 if has_dash else 0
-		"dash_cooldown": return dash_cd_reduction_level
-		"dash_fire_trail": return dash_fire_trail_level
-		"dash_auto_attack": return 1 if has_dash_auto_attack else 0
-		"dash_double_arrow": return 1 if has_dash_double_arrow else 0
+		"gold_magnet": return gold_magnet_level
+		"dash": return dash_level
+		"ricochet_arrow": return ricochet_arrow_level
 	return 0
 
 

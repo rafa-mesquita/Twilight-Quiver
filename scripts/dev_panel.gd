@@ -22,19 +22,12 @@ const UPGRADE_BTNS: Array = [
 	{"id": "multi_arrow", "node": "UpgMultiArrowBtn", "max": 4, "base_text": "+1 Multi Arrow"},
 	{"id": "chain_lightning", "node": "UpgChainBtn", "max": 4, "base_text": "+1 Cadeia de Raios"},
 	{"id": "move_speed", "node": "UpgMoveSpeedBtn", "max": INF_LEVEL, "base_text": "+1 Move Speed"},
-	{"id": "gold_magnet", "node": "UpgGoldMagnetBtn", "max": 1, "base_text": "Ima de Gold"},
-	{"id": "life_steal", "node": "UpgLifeStealBtn", "max": INF_LEVEL, "base_text": "+1 Life Steal"},
+	{"id": "gold_magnet", "node": "UpgGoldMagnetBtn", "max": 4, "base_text": "+1 Chuva de Coins"},
+	{"id": "life_steal", "node": "UpgLifeStealBtn", "max": 4, "base_text": "+1 Coleta de Coracao"},
 	{"id": "fire_arrow", "node": "UpgFireArrowBtn", "max": 4, "base_text": "+1 Flecha de Fogo"},
 	{"id": "curse_arrow", "node": "UpgCurseArrowBtn", "max": 4, "base_text": "+1 Disparo Profano"},
-	{"id": "dash", "node": "UpgDashBtn", "max": 1, "base_text": "Dash"},
-	{"id": "dash_cooldown", "node": "UpgDashCdBtn", "max": INF_LEVEL,
-		"base_text": "+1 Dash CD reduce", "requires": "dash"},
-	{"id": "dash_fire_trail", "node": "UpgDashFireBtn", "max": INF_LEVEL,
-		"base_text": "+1 Dash com Rastro de Poder", "requires": "dash"},
-	{"id": "dash_auto_attack", "node": "UpgDashAutoBtn", "max": 1,
-		"base_text": "Dash Auto-attack", "requires": "dash"},
-	{"id": "dash_double_arrow", "node": "UpgDashDoubleBtn", "max": 1,
-		"base_text": "Dash 2 Flechas", "requires": "dash_auto_attack"},
+	{"id": "ricochet_arrow", "node": "UpgRicochetBtn", "max": 4, "base_text": "+1 Flecha Ricochete"},
+	{"id": "dash", "node": "UpgDashBtn", "max": 4, "base_text": "+1 Dash"},
 ]
 
 

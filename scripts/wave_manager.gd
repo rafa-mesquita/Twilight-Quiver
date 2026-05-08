@@ -556,8 +556,9 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	{"id": "chain_lightning", "name": "Cadeia de Raios"},
 	{"id": "move_speed", "name": "Move Speed"},
 	{"id": "life_steal", "name": "Coleta de Coracao"},
-	{"id": "gold_magnet", "name": "Ima de Gold"},
+	{"id": "gold_magnet", "name": "Chuva de Coins"},
 	{"id": "dash", "name": "Dash"},
+	{"id": "ricochet_arrow", "name": "Flecha Ricochete"},
 ]
 
 
