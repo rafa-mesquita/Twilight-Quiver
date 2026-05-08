@@ -311,11 +311,11 @@ func _roll_status_slots() -> void:
 		})
 
 
-const STATUS_BASE_PRICE: int = 5
+const STATUS_BASE_PRICE: int = 4
 
 
 func _status_price_for(_id: String, current_level: int) -> int:
-	# Todos os status: 5G base, dobra a cada nível (5, 10, 20, 40, 80, ...).
+	# Todos os status: 4G base, dobra a cada nível (4, 8, 16, 32, 64, ...).
 	var lvl: int = maxi(current_level, 0)
 	return STATUS_BASE_PRICE * int(pow(2, lvl))
 
