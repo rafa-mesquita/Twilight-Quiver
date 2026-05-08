@@ -1293,7 +1293,7 @@ func _setup_bonus_label() -> void:
 	var bonus := Label.new()
 	bonus.name = "BonusUpgradeLabel"
 	bonus.text = "BONUS +1!"
-	var at01_font: Font = load("res://font/PixelifySans-VariableFont_wght.ttf")
+	var at01_font: Font = load("res://font/ByteBounce.ttf")
 	if at01_font != null:
 		bonus.add_theme_font_override("font", at01_font)
 	bonus.add_theme_font_size_override("font_size", 22)
@@ -1370,7 +1370,7 @@ func _setup_layout_editor() -> void:
 	bg.color = Color(0.08, 0.08, 0.12, 0.85)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_layout_edit_panel.add_child(bg)
-	var at01: Font = load("res://font/PixelifySans-VariableFont_wght.ttf")
+	var at01: Font = load("res://font/ByteBounce.ttf")
 	var toggle := Button.new()
 	toggle.position = Vector2(10, 10)
 	toggle.size = Vector2(320, 60)

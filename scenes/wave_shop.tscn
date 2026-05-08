@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bgolhqff1gjro"]
 
 [ext_resource type="Script" uid="uid://cnx1m6f4kyovt" path="res://scripts/wave_shop.gd" id="1_shop"]
-[ext_resource type="FontFile" uid="uid://dcgvoma2ubq55" path="res://font/PixelifySans-VariableFont_wght.ttf" id="2_font"]
+[ext_resource type="FontFile" path="res://font/ByteBounce.ttf" id="2_font"]
 [ext_resource type="Texture2D" uid="uid://pbobd2sl3nlo" path="res://assets/Hud/shop/card_status.png" id="3_card_wide"]
 [ext_resource type="Texture2D" uid="uid://biljghc02e8hc" path="res://assets/Hud/shop/reroll.png" id="5_reroll"]
 [ext_resource type="Texture2D" uid="uid://bnwjkrs8uv2an" path="res://assets/Hud/shop/upgrade/placeholder.png" id="6_upg_ph"]
