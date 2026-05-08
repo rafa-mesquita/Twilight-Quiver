@@ -179,33 +179,6 @@ var _placement_current: Dictionary = {}
 const SELECTED_TINT: Color = Color(1.4, 1.25, 0.5, 1.0)
 # Box roxa translúcida sobreposta a um card selecionado pra deixar claro.
 const SELECTION_OVERLAY_COLOR: Color = Color(0.55, 0.25, 0.85, 0.4)
-# Brilho leve em cards de nível 2+ — usa shader com falloff suave em volta do
-# card. radius_pct = fração do tamanho do card adicionada como halo
-# (0.1 = 10% maior por lado).
-const GLOW_RADIUS_PCT_BY_LEVEL: Dictionary = {2: 0.10, 3: 0.20, 4: 0.30}
-const GLOW_LIGHTEN_AMOUNT: float = 0.55  # quanto puxar pro branco (0=cor crua, 1=branco)
-const GLOW_STRENGTH_BASE: float = 0.55
-const GLOW_STRENGTH_PER_LEVEL: float = 0.10
-# Shader inline do halo: descarta fragmento na área interna (onde o card está
-# por cima) pra não pintar preto nos pixels transparentes do PNG. Fora dessa
-# área, gradient suave decaindo até a borda do halo.
-const GLOW_SHADER_CODE: String = """
-shader_type canvas_item;
-uniform vec4 glow_color : source_color = vec4(1.0);
-uniform float inner_pct : hint_range(0.0, 1.0) = 0.8;
-uniform float strength : hint_range(0.0, 2.0) = 1.0;
-void fragment() {
-	vec2 d = abs(UV - vec2(0.5)) * 2.0;
-	float m = max(d.x, d.y);
-	if (m < inner_pct) {
-		discard;
-	}
-	float t = (m - inner_pct) / (1.0 - inner_pct);
-	float a = pow(1.0 - t, 2.0) * strength;
-	COLOR = vec4(glow_color.rgb, a * glow_color.a);
-}
-"""
-
 # Layout editor (modo dev pra arrastar elementos da loja).
 var _layout_edit_active: bool = false
 var _layout_edit_panel: Control = null
@@ -535,12 +508,6 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 	var is_placeholder: bool = bool(card.get_meta("using_placeholder", false))
 	var slot_id_str: String = slot.get("id", "")
 	var text_color: Color = _resolve_text_color(category, slot_id_str, is_placeholder)
-	# Card body opaco atrás da textura — preenche os pixels transparentes dos
-	# cantos arredondados do PNG (sem isso, o fundo escuro do shop aparece
-	# vazado). Cor = versão escurecida do text_color pra "plano de fundo" do card.
-	_apply_card_body(card, text_color)
-	# Brilho leve em cards de evolução 2-4 (sem glow em placeholder/locked).
-	_apply_card_glow(card, text_color, target_level, available and not is_placeholder)
 	var title_label: Label = card.get_node_or_null("TitleLabel") as Label
 	if title_label != null:
 		title_label.text = slot.get("name", "—")
@@ -700,85 +667,6 @@ func _resolve_text_color(category: String, slot_id: String, is_placeholder: bool
 	if category == "aliado" and slot_id != "" and slot_id != "soon" and slot_id != "none":
 		return ALIADO_TEXT_COLOR
 	return Color.WHITE
-
-
-func _ensure_card_body(card: Control) -> ColorRect:
-	# ColorRect opaco do tamanho do card, drawado ATRÁS da textura. Preenche os
-	# pixels transparentes (cantos arredondados do PNG, etc.) com uma cor sólida
-	# em vez de revelar o fundo escuro do shop.
-	var body: ColorRect = card.get_node_or_null("CardBody") as ColorRect
-	if body != null:
-		return body
-	body = ColorRect.new()
-	body.name = "CardBody"
-	body.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	body.set_anchors_preset(Control.PRESET_FULL_RECT)
-	card.add_child(body)
-	# Move pra primeiro filho (atrás de tudo dentro do card).
-	card.move_child(body, 0)
-	return body
-
-
-func _apply_card_body(card: Control, text_color: Color) -> void:
-	var body: ColorRect = _ensure_card_body(card)
-	# Cor base = versão escurecida do text_color, mais próxima do "miolo" do card.
-	# 0.6 puxa pro escuro mas mantém o tom do upgrade (ex: roxo escuro pra Curse,
-	# vermelho escuro pra Fogo, etc.).
-	body.color = text_color * Color(0.6, 0.6, 0.6, 1.0)
-
-
-func _ensure_glow_halo(card: Control) -> ColorRect:
-	var halo: ColorRect = card.get_node_or_null("GlowHalo") as ColorRect
-	if halo != null:
-		return halo
-	halo = ColorRect.new()
-	halo.name = "GlowHalo"
-	halo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	halo.visible = false
-	halo.color = Color.WHITE  # base color — shader multiplica por glow_color
-	# Material com shader de glow falloff (criado uma vez por halo).
-	var sh := Shader.new()
-	sh.code = GLOW_SHADER_CODE
-	var mat := ShaderMaterial.new()
-	mat.shader = sh
-	halo.material = mat
-	card.add_child(halo)
-	# CardBody (se existir) fica em 0, GlowHalo logo após em 1, e Bg/labels/btn
-	# vêm depois. Halo só é visível FORA da área do card de qualquer forma.
-	var body_idx: int = 0
-	if card.has_node("CardBody"):
-		body_idx = 1
-	card.move_child(halo, body_idx)
-	return halo
-
-
-func _apply_card_glow(card: Control, text_color: Color, target_level: int, eligible: bool) -> void:
-	var halo: ColorRect = _ensure_glow_halo(card)
-	if not eligible or not GLOW_RADIUS_PCT_BY_LEVEL.has(target_level):
-		halo.visible = false
-		return
-	var radius_pct: float = float(GLOW_RADIUS_PCT_BY_LEVEL[target_level])
-	var card_w: float = card.offset_right - card.offset_left
-	var card_h: float = card.offset_bottom - card.offset_top
-	# Halo expande N% do tamanho do card pra cada lado.
-	halo.offset_left = -card_w * radius_pct
-	halo.offset_top = -card_h * radius_pct
-	halo.offset_right = card_w * (1.0 + radius_pct)
-	halo.offset_bottom = card_h * (1.0 + radius_pct)
-	# inner_pct = fração do halo (em UV) onde o shader desenha. O glow penetra
-	# 2px PRA DENTRO do card pra cobrir os pixels transparentes do PNG nas
-	# cantos arredondados — sem isso, o fundo escuro do shop aparece nos cantos.
-	var halo_w: float = card_w * (1.0 + 2.0 * radius_pct)
-	var px_overlap: float = 2.0
-	var inner_pct: float = (card_w - 2.0 * px_overlap) / halo_w
-	var glow_color: Color = text_color.lerp(Color.WHITE, GLOW_LIGHTEN_AMOUNT)
-	var strength: float = GLOW_STRENGTH_BASE + GLOW_STRENGTH_PER_LEVEL * float(target_level - 1)
-	var mat := halo.material as ShaderMaterial
-	if mat != null:
-		mat.set_shader_parameter("glow_color", glow_color)
-		mat.set_shader_parameter("inner_pct", inner_pct)
-		mat.set_shader_parameter("strength", strength)
-	halo.visible = true
 
 
 func _ensure_coin_icon(card: Control, category: String) -> void:
