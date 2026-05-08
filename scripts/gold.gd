@@ -60,11 +60,16 @@ func _ready() -> void:
 	_silhouette_mat = ShaderMaterial.new()
 	_silhouette_mat.shader = SILHOUETTE_SHADER
 	_create_occlusion_indicator()
-	# Chuva de Coins L2+: moeda dura 2x. Lê o nível do player no spawn (player
-	# garantido instanciado antes das moedas dropáveis).
+	# Chuva de Coins: L1 dá +25% lifetime, L2+ dobra. Stacks multiplicativamente
+	# (L2 = 1.25 × 2 = 2.5x). Lido no spawn — player garantido pronto antes das
+	# moedas dropáveis.
 	var player := get_tree().get_first_node_in_group("player")
-	if player != null and int(player.get("gold_magnet_level")) >= 2:
-		lifetime *= 2.0
+	if player != null:
+		var lvl: int = int(player.get("gold_magnet_level"))
+		if lvl >= 1:
+			lifetime *= 1.25
+		if lvl >= 2:
+			lifetime *= 2.0
 
 
 # Pequena bolinha dourada pulsante ACIMA da moeda, com z_index alto pra

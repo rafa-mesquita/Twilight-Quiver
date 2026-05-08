@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3 uid="uid://cr45noi5hwl7f"]
 
 [ext_resource type="Texture2D" uid="uid://top7hudux828" path="res://assets/obecjts map/poste.png" id="1_tex"]
 
@@ -17,23 +17,23 @@ fill = 1
 fill_from = Vector2(0.5, 0.5)
 fill_to = Vector2(1, 0.5)
 
-[node name="Poste" type="Node2D"]
+[node name="Poste" type="Node2D" unique_id=1081523774]
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=159361823]
 texture_filter = 1
 texture = ExtResource("1_tex")
 centered = false
 offset = Vector2(-16, -64)
 
-[node name="StaticBody2D" type="StaticBody2D" parent="."]
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=227673715]
 collision_layer = 2
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
-position = Vector2(0, -2)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=341918960]
+position = Vector2(-6, -4)
 shape = SubResource("RectShape_poste")
 
-[node name="LampLight" type="PointLight2D" parent="."]
+[node name="LampLight" type="PointLight2D" parent="." unique_id=519057296]
 position = Vector2(0, -52)
 color = Color(1, 0.78, 0.45, 1)
 energy = 0.8

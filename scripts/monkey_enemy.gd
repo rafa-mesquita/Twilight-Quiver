@@ -53,6 +53,24 @@ var _stuck_step_timer: float = 0.0
 var _stuck_step_dir: Vector2 = Vector2.ZERO
 var current_target: Node2D = null
 var _stun_remaining: float = 0.0
+# Anti-clumping: offset persistente em volta do alvo. Cada macaco chaseia
+# `target_pos + _chase_offset` em vez do alvo exato — forma halo no lugar de blob.
+var _chase_offset: Vector2 = Vector2.ZERO
+
+# Variedade de comportamento por macaco — rolado no _ready.
+#   NORMAL  (65%): chase direto com offset pequeno (12-24px).
+#   FLANKER (20%): offset grande (60-100px) → toma caminho lateral, fecha passagens.
+#   CAMPER  (15%): senta em cima de gold/heart e ignora player até o pickup sumir.
+enum Behavior { NORMAL, FLANKER, CAMPER }
+var _behavior: int = Behavior.NORMAL
+# Pickup que o camper está guardando. Quando vira null/inválido (foi coletado),
+# volta a se comportar como NORMAL.
+var _camp_target: Node2D = null
+const CAMPER_ARRIVED_DIST: float = 6.0
+# Distância em que o anti-clumping offset é desligado e o monkey mira direto
+# no alvo. Garante que ele entra em attack_range — sem isso, FLANKERs (offset
+# 60-100px) ficavam orbitando o halo sem nunca atacar.
+const OFFSET_BLEND_DIST: float = 35.0
 # Maldição: quando convertido por curse, AI inverte (mira em enemies em vez do player).
 var is_curse_ally: bool = false
 
@@ -66,7 +84,44 @@ func _ready() -> void:
 	sprite.frame_changed.connect(_on_frame_changed)
 	sprite_base_offset_y = sprite.offset.y
 	_last_position = global_position
+	_roll_behavior()
 	sprite.play("idle")
+
+
+func _roll_behavior() -> void:
+	# 65% normal / 20% flanker / 15% camper. Escolhe offset apropriado.
+	var roll: float = randf()
+	if roll < 0.65:
+		_behavior = Behavior.NORMAL
+		_chase_offset = Vector2.RIGHT.rotated(randf() * TAU) * randf_range(12.0, 24.0)
+	elif roll < 0.85:
+		_behavior = Behavior.FLANKER
+		# Offset grande → o macaco aponta pra um ponto bem afastado do player,
+		# pegando caminho lateral. Naturalmente fecha passagens em corredores.
+		_chase_offset = Vector2.RIGHT.rotated(randf() * TAU) * randf_range(60.0, 100.0)
+	else:
+		_behavior = Behavior.CAMPER
+		_chase_offset = Vector2.ZERO  # camper ignora offset (vai pro pickup direto)
+		_camp_target = _find_camp_target()
+		# Sem pickup no mapa — não tem o que campear, vira NORMAL.
+		if _camp_target == null:
+			_behavior = Behavior.NORMAL
+			_chase_offset = Vector2.RIGHT.rotated(randf() * TAU) * randf_range(12.0, 24.0)
+
+
+func _find_camp_target() -> Node2D:
+	# Pickup mais próximo (gold ou heart). Retorna null se não houver.
+	var best: Node2D = null
+	var best_dist_sq: float = INF
+	for grp: String in ["gold", "heart"]:
+		for n in get_tree().get_nodes_in_group(grp):
+			if not is_instance_valid(n) or not (n is Node2D):
+				continue
+			var d: float = (n as Node2D).global_position.distance_squared_to(global_position)
+			if d < best_dist_sq:
+				best_dist_sq = d
+				best = n
+	return best
 
 
 func _physics_process(delta: float) -> void:
@@ -78,17 +133,54 @@ func _physics_process(delta: float) -> void:
 		return
 	# Calcula a velocidade da AI separadamente, depois soma o knockback.
 	var ai_velocity: Vector2 = Vector2.ZERO
+
+	# Camper: anda até o pickup e senta em cima. Se o pickup for coletado,
+	# tenta achar outro; se não existe nenhum, vira NORMAL (chase player).
+	if _behavior == Behavior.CAMPER:
+		if _camp_target == null or not is_instance_valid(_camp_target) or _camp_target.is_queued_for_deletion():
+			_camp_target = _find_camp_target()
+		if _camp_target != null:
+			var to_camp: Vector2 = _camp_target.global_position - global_position
+			var dist_camp: float = to_camp.length()
+			if dist_camp > CAMPER_ARRIVED_DIST:
+				ai_velocity = (to_camp / dist_camp) * speed
+				if sprite.animation != "walk":
+					sprite.play("walk")
+				if absf(to_camp.x) > 0.001:
+					sprite.flip_h = to_camp.x < 0.0
+			else:
+				if sprite.animation != "idle":
+					sprite.play("idle")
+			# Pula a lógica de chase normal — separação/knockback ainda aplicam.
+			var sep_camp: Vector2 = EnemySeparation.compute(self, separation_radius, separation_strength)
+			velocity = ai_velocity + knockback_velocity + sep_camp
+			knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, knockback_decay * delta)
+			move_and_slide()
+			return
+		# Sem pickup pra campear — vira NORMAL pelo resto do round.
+		_behavior = Behavior.NORMAL
+		_chase_offset = Vector2.RIGHT.rotated(randf() * TAU) * randf_range(12.0, 24.0)
+
 	current_target = _pick_target()
 
 	if current_target != null and is_instance_valid(current_target) and not is_attacking:
+		# Distância REAL ao alvo — usada pra trigger de attack_range (não
+		# orbitar pelo offset).
 		var to_target: Vector2 = current_target.global_position - global_position
 		var dist: float = to_target.length()
-		var dir: Vector2 = to_target.normalized()
+		# Chase pos: quando longe, mira em (alvo + offset) pra anti-clumping
+		# espalhar a aproximação. Quando perto (dentro do limiar), mira direto
+		# no alvo pra garantir que entra em attack_range — antes o monkey ficava
+		# orbitando no halo do offset sem nunca atacar.
+		var chase_pos: Vector2 = current_target.global_position
+		if dist > OFFSET_BLEND_DIST:
+			chase_pos = current_target.global_position + _chase_offset
+		var dir_offset: Vector2 = (chase_pos - global_position).normalized()
 
 		if dist > attack_range:
 			# Direção de movimento — se está em "stuck step", usa direção lateral
-			# pra contornar obstáculos; senão direto pro alvo.
-			var move_dir: Vector2 = dir
+			# pra contornar obstáculos; senão direto pro alvo (com/sem offset).
+			var move_dir: Vector2 = dir_offset
 			if _stuck_step_timer > 0.0:
 				move_dir = _stuck_step_dir
 				_stuck_step_timer -= delta
@@ -101,8 +193,8 @@ func _physics_process(delta: float) -> void:
 			elif sprite.animation != "idle":
 				sprite.play("idle")
 
-		if absf(dir.x) > 0.001:
-			sprite.flip_h = dir.x < 0.0
+		if absf(dir_offset.x) > 0.001:
+			sprite.flip_h = dir_offset.x < 0.0
 
 	# Separação contra outros inimigos pra não empilhar.
 	var separation: Vector2 = EnemySeparation.compute(self, separation_radius, separation_strength)

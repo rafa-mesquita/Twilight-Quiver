@@ -23,8 +23,8 @@ extends Node2D
 # Velocidade (movimento + atk speed) escala devagar: menos impacto que HP/dano.
 # 4% por wave inicial, 2% após wave 3 — a cada wave o inimigo fica um pouco
 # mais rápido tanto pra andar quanto pra atacar.
-@export var speed_growth_per_wave: float = 0.04
-@export var speed_growth_per_wave_late: float = 0.02
+@export var speed_growth_per_wave: float = 0.02
+@export var speed_growth_per_wave_late: float = 0.01
 # Milestone: a cada N waves, aplica um boost EXTRA em todos os scalings
 # (HP, dano, velocidade) — é o "salto de patamar" pra eras mais difíceis.
 @export var milestone_interval: int = 5
@@ -123,6 +123,23 @@ func spawn_enemy_at(type_key: String, pos: Vector2) -> Node:
 	return enemy
 
 
+# Dev helper: spawna `count` inimigos distribuídos entre `num_points` spawn
+# points aleatórios. Cada inimigo sai de um ponto + offset pequeno pra não
+# empilhar no Marker. Útil pra testar comportamento de horda.
+func spawn_burst(type_key: String, count: int, num_points: int = 3) -> void:
+	if spawn_points.is_empty() or count <= 0:
+		return
+	var pool: Array[Marker2D] = spawn_points.duplicate()
+	pool.shuffle()
+	var picked: Array[Marker2D] = []
+	for i in mini(num_points, pool.size()):
+		picked.append(pool[i])
+	for i in count:
+		var marker: Marker2D = picked[i % picked.size()]
+		var off := Vector2(randf_range(-12.0, 12.0), randf_range(-12.0, 12.0))
+		spawn_enemy_at(type_key, marker.global_position + off)
+
+
 func _collect_spawn_points() -> void:
 	spawn_points.clear()
 	var container := get_node_or_null(spawn_points_path)
@@ -136,6 +153,7 @@ func _collect_spawn_points() -> void:
 func _process(delta: float) -> void:
 	if stopped or not wave_active:
 		return
+	_check_structure_respawns(delta)
 	_emit_progress()
 	spawn_cooldown = maxf(spawn_cooldown - delta, 0.0)
 	if spawn_cooldown > 0.0:
@@ -246,9 +264,14 @@ func _build_wave_config(num: int) -> Dictionary:
 	var monkey_total: int = int(round(15 * scale + randf_range(0.0, 4.0)))
 	var mage_alive: int = int(round(3 * scale + randf_range(0.0, 2.0)))
 	var mage_total: int = int(round(6 * scale + randf_range(0.0, 3.0)))
-	# Invocadores entram com força a partir da wave 2.
-	var summ_alive: int = int(round(1 * scale + randf_range(0.0, 1.0)))
-	var summ_total: int = int(round(3 * scale + randf_range(0.0, 2.0)))
+	# Invocadores entram com força a partir da wave 2. Waves 4-8 levam metade
+	# dos summoners pra suavizar a pressão (cada summoner spawna insetos, então
+	# escalava demais nesse range — design feedback).
+	var summ_scale_mult: float = 1.0
+	if num >= 4 and num <= 8:
+		summ_scale_mult = 0.5
+	var summ_alive: int = int(round(1 * scale * summ_scale_mult + randf_range(0.0, 1.0)))
+	var summ_total: int = int(round(3 * scale * summ_scale_mult + randf_range(0.0, 2.0)))
 	return {
 		"monkey": {"alive_target": maxi(monkey_alive, 1), "total": maxi(monkey_total, monkey_alive)},
 		"mage": {"alive_target": maxi(mage_alive, 1), "total": maxi(mage_total, mage_alive)},
@@ -486,6 +509,45 @@ func register_structure(scene_path: String, pos: Vector2, instance: Node2D = nul
 		"position": pos,
 		"instance": instance,
 	})
+
+
+const STRUCTURE_RESPAWN_DELAY: float = 15.0
+
+
+func _check_structure_respawns(delta: float) -> void:
+	# Estruturas mortas voltam 15s depois durante a wave (não precisa esperar
+	# acabar). Cada entry guarda `dead_for` (acumulador de tempo morto). Quando
+	# atinge STRUCTURE_RESPAWN_DELAY, spawna nova instância na última posição.
+	if owned_structures.is_empty():
+		return
+	var world := get_tree().get_first_node_in_group("world")
+	if world == null:
+		return
+	for entry in owned_structures:
+		var inst_ref: Variant = entry.get("instance", null)
+		var alive: bool = inst_ref != null and is_instance_valid(inst_ref) and (inst_ref as Node).is_inside_tree()
+		if alive:
+			# Vivo — atualiza posição e zera o timer (caso tenha morrido e
+			# voltado por outra via, ex: respawn de fim de wave).
+			if inst_ref is Node2D:
+				entry["position"] = (inst_ref as Node2D).global_position
+			entry["dead_for"] = 0.0
+			continue
+		# Morto — incrementa timer e respawna ao chegar no delay.
+		var dead_for: float = float(entry.get("dead_for", 0.0)) + delta
+		entry["dead_for"] = dead_for
+		if dead_for < STRUCTURE_RESPAWN_DELAY:
+			continue
+		var pos: Vector2 = entry["position"]
+		var scene: PackedScene = load(entry["scene_path"])
+		if scene == null:
+			continue
+		var inst: Node2D = scene.instantiate()
+		_apply_woodwarden_scaling_if_applicable(inst, entry["scene_path"])
+		world.add_child(inst)
+		inst.global_position = pos
+		entry["instance"] = inst
+		entry["dead_for"] = 0.0
 
 
 func _respawn_owned_structures() -> void:

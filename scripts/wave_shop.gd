@@ -14,6 +14,8 @@ signal closed
 const PRICE_TABLE: Array[int] = [4, 8, 20, 35]
 const TOWER_PRICE: int = 10
 const WOODWARDEN_PRICE_TABLE: Array[int] = [6, 10, 14, 18, 24, 30]
+# Leno (aliado voador, auto-spawn): preço sobe por compra. 4 níveis no total.
+const LENO_PRICE_TABLE: Array[int] = [4, 8, 14, 22]
 const STRUCTURE_SURCHARGE_PER_OWNED: int = 3
 # Aliados / estruturas só podem ser comprados a cada N waves.
 # Wave 3, 6, 9... = aliado unlocked. Wave 4, 8, 12... = estrutura unlocked.
@@ -29,7 +31,8 @@ const STATUS_POOL: Array = [
 	{"id": "hp", "name": "+15 HP"},
 	{"id": "damage", "name": "+20% dano"},
 	{"id": "attack_speed", "name": "+30% atk speed"},
-	{"id": "move_speed", "name": "+17% move speed"},
+	{"id": "move_speed", "name": "+10% move speed"},
+	{"id": "armor", "name": "Armadura"},
 ]
 
 # Pool dos cards de upgrade (gameplay-changing items, com requirements).
@@ -59,6 +62,13 @@ const EXCLUSIVE_PAIRS: Array = [
 ]
 
 const HP_DESCS: Array[String] = ["+15 HP maximo", "+15 HP maximo", "+15 HP maximo", "+15 HP maximo"]
+const ARMOR_DESCS: Array[String] = [
+	"5% de dano\nreduzido",
+	"7% de dano\nreduzido",
+	"10% de dano\nreduzido",
+	"13% de dano\nreduzido",
+	"+2% dano reduzido\npor compra",
+]
 const DAMAGE_DESCS: Array[String] = ["+20% dano da flecha", "+20% dano da flecha", "+20% dano da flecha", "+20% dano da flecha"]
 const PERFURACAO_DESCS: Array[String] = [
 	"A cada 3 ataques flecha\natravessa, +30% dano",
@@ -85,19 +95,19 @@ const CHAIN_LIGHTNING_DESCS: Array[String] = [
 	"100% dano em todos\nda area",
 ]
 const MOVE_SPEED_DESCS: Array[String] = [
-	"+17% velocidade de\nmovimento",
-	"+17% velocidade de\nmovimento",
-	"+17% velocidade de\nmovimento",
-	"+17% velocidade de\nmovimento",
+	"+10% velocidade de\nmovimento",
+	"+10% velocidade de\nmovimento",
+	"+10% velocidade de\nmovimento",
+	"+10% velocidade de\nmovimento",
 ]
 const GOLD_MAGNET_DESCS: Array[String] = [
-	"+5% drop chance",
+	"+5% drop +25%\nduracao das coins",
 	"Coins duram 2x\n+2% drop",
 	"+2% drop\npulso da slow",
 	"Puxa coins\nda area",
 ]
 const DASH_DESCS: Array[String] = [
-	"Espaco = dash\ncd 5s",
+	"Espaco = dash\ncd 5.5s",
 	"Rastro de fogo\ncd 4.5s",
 	"Auto-attack\ncd 4s",
 	"+1 flecha\ncd 3.5s",
@@ -119,6 +129,12 @@ const GRAVITON_DESCS: Array[String] = [
 	"Cada 2 ataques\n+ range maior",
 	"Pulso explode no fim\n30 dano area",
 	"+area + 50 dano\nna explosao",
+]
+const LENO_DESCS: Array[String] = [
+	"Aliado voador, atira\n8 dano + slow area",
+	"+atk speed,\n18 dano por ataque",
+	"+1 Leno (total 2)",
+	"+1 Leno (total 3)",
 ]
 const FIRE_ARROW_DESCS: Array[String] = [
 	"Queima inimigo\n4 dmg/s por 3s",
@@ -175,7 +191,7 @@ var _selected_upgrade_idxs: Array[int] = []
 
 # Reroll global: 1 botão reroll TUDO (status + estrutura + aliado + upgrade) ao
 # mesmo tempo. Custo escalonado e cap em N rerolls por shop.
-const GLOBAL_REROLL_COSTS: Array[int] = [3, 6, 10]
+const GLOBAL_REROLL_COSTS: Array[int] = [1, 3, 6]
 const MAX_GLOBAL_REROLLS: int = 3
 var _global_rerolls_used: int = 0
 @onready var global_reroll_btn: TextureButton = $Root/GlobalReroll/Btn
@@ -402,7 +418,23 @@ func _roll_aliado_slots() -> void:
 		"scene": "res://scenes/woodwarden.tscn",
 		"is_ally": true,
 	})
-	aliado_slots.append({"id": "soon", "name": "Em breve", "desc": "—", "price": 0, "available": false})
+	# Leno: auto-spawn (sem placement). apply_upgrade no commit cuida do spawn
+	# via player._refresh_lenos(). Compartilha o slot 2 dos aliados.
+	var leno_lvl: int = 0
+	if p != null and p.has_method("get_upgrade_count"):
+		leno_lvl = p.get_upgrade_count("leno")
+	var leno_maxed: bool = leno_lvl >= 4
+	var leno_price: int = LENO_PRICE_TABLE[mini(leno_lvl, LENO_PRICE_TABLE.size() - 1)]
+	var leno_desc: String = "Max (4/4) atingido" if leno_maxed else _get_upgrade_desc("leno", leno_lvl + 1)
+	aliado_slots.append({
+		"id": "leno",
+		"name": "Leno",
+		"desc": leno_desc,
+		"price": leno_price,
+		"available": not leno_maxed,
+		"is_ally": true,
+		"auto_spawn": true,
+	})
 	aliado_slots.append({"id": "soon", "name": "Em breve", "desc": "—", "price": 0, "available": false})
 
 
@@ -470,6 +502,7 @@ func _get_upgrade_desc(id: String, target_level: int) -> String:
 	var arr: Array
 	match id:
 		"hp": arr = HP_DESCS
+		"armor": arr = ARMOR_DESCS
 		"damage": arr = DAMAGE_DESCS
 		"perfuracao": arr = PERFURACAO_DESCS
 		"attack_speed": arr = ATTACK_SPEED_DESCS
@@ -483,6 +516,7 @@ func _get_upgrade_desc(id: String, target_level: int) -> String:
 		"curse_arrow": arr = CURSE_ARROW_DESCS
 		"ricochet_arrow": arr = RICOCHET_ARROW_DESCS
 		"graviton": arr = GRAVITON_DESCS
+		"leno": arr = LENO_DESCS
 		_: return ""
 	var idx: int = clampi(target_level - 1, 0, arr.size() - 1)
 	return arr[idx]
@@ -531,20 +565,31 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 		title_label.text = slot.get("name", "—")
 		title_label.add_theme_color_override("font_color", text_color)
 		title_label.modulate = Color.WHITE
+	# Cor do desc/price: por padrão = cor do título. Mas alguns ids têm
+	# UPGRADE_DESC_COLORS que sobrescreve só pra desc/price (título mantém o seu).
+	# Funciona tanto pra category "upgrade" quanto "aliado" (Leno usa esse override).
+	var desc_color: Color = text_color
+	if not is_placeholder and (category == "upgrade" or category == "aliado") and UPGRADE_DESC_COLORS.has(slot_id_str):
+		desc_color = UPGRADE_DESC_COLORS[slot_id_str]
 	var desc_label: Label = card.get_node_or_null("DescLabel") as Label
 	if desc_label != null:
 		desc_label.text = slot.get("desc", "—")
-		desc_label.add_theme_color_override("font_color", text_color)
+		desc_label.add_theme_color_override("font_color", desc_color)
 		desc_label.modulate = Color.WHITE
 	var price_label: Label = card.get_node_or_null("PriceLabel") as Label
 	if price_label != null:
 		price_label.text = ("%d" % int(slot.get("price", 0))) if available else "—"
-		price_label.modulate = PLACEHOLDER_TEXT_COLOR if is_placeholder else Color.WHITE
-		# Preço pega a mesma cor do título (per-id) — status, upgrade e aliado
-		# usam suas cores específicas. Estrutura mantém o dourado default.
+		# Em placeholder, modulate pega a cor de placeholder da categoria
+		# (default = cinza). Em arte real, modulate fica branco e a cor vem
+		# do font_color override mais abaixo.
+		price_label.modulate = text_color if is_placeholder else Color.WHITE
+		# Preço usa a cor de desc (que default é a cor do título, mas pode ser
+		# override pelo UPGRADE_DESC_COLORS).
 		if not is_placeholder:
 			if category == "status" and STATUS_TITLE_COLORS.has(slot_id_str):
 				price_label.add_theme_color_override("font_color", STATUS_TITLE_COLORS[slot_id_str])
+			elif (category == "upgrade" or category == "aliado") and UPGRADE_DESC_COLORS.has(slot_id_str):
+				price_label.add_theme_color_override("font_color", UPGRADE_DESC_COLORS[slot_id_str])
 			elif category == "upgrade" and UPGRADE_TITLE_COLORS.has(slot_id_str):
 				price_label.add_theme_color_override("font_color", UPGRADE_TITLE_COLORS[slot_id_str])
 			elif category == "aliado" and slot_id_str != "" and slot_id_str != "soon" and slot_id_str != "none" and slot_id_str != "locked":
@@ -580,12 +625,30 @@ const _CATEGORY_SHEETS: Dictionary = {
 # Cor do texto quando o card mostra a arte placeholder (sem desenho próprio
 # ainda) — cinza pra avisar visualmente "card temporário".
 const PLACEHOLDER_TEXT_COLOR: Color = Color(0x6e / 255.0, 0x6e / 255.0, 0x6e / 255.0)  # #6e6e6e
+# Override de cor do texto placeholder por categoria. Quando a arte do
+# placeholder é desenhada (não a default cinza), o texto pode pedir uma cor
+# que combine com a arte — ex: estrutura placeholder marrom-escuro = #392c0e.
+const PLACEHOLDER_TEXT_COLORS_BY_CATEGORY: Dictionary = {
+	"estrutura": Color(0x39 / 255.0, 0x2c / 255.0, 0x0e / 255.0),  # #392c0e
+}
+# Override de filename do placeholder por categoria. Usado quando o asset não
+# está nomeado simplesmente "placeholder.png" (ex: "estrutura card placeholder.png").
+const PLACEHOLDER_FILE_OVERRIDES: Dictionary = {
+	"estrutura": "estrutura card placeholder",
+}
 # Cor do título por status — combina com a arte de cada card.
 const STATUS_TITLE_COLORS: Dictionary = {
 	"hp": Color(0x29 / 255.0, 0x7b / 255.0, 0x59 / 255.0),  # #297b59
 	"attack_speed": Color(0xb4 / 255.0, 0x7f / 255.0, 0x0a / 255.0),  # #b47f0a
 	"damage": Color(0x34 / 255.0, 0x10 / 255.0, 0x42 / 255.0),  # #341042
 	"move_speed": Color(0x58 / 255.0, 0x58 / 255.0, 0x58 / 255.0),  # #585858
+	"armor": Color(0x1f / 255.0, 0x54 / 255.0, 0x54 / 255.0),  # #1f5454
+}
+# Override de nome de arquivo por slot_id (status). Útil quando o asset não
+# segue exatamente o padrão `<id>.png` (ex: id="armor" mas o arquivo é
+# "Armadura.png" porque o user nomeou em PT).
+const STATUS_FILE_OVERRIDES: Dictionary = {
+	"armor": "Armadura",
 }
 # Cor do título/desc por upgrade — combina com a arte de cada card. Upgrades
 # que não estão aqui (e não têm sheet próprio) caem em placeholder gray.
@@ -594,6 +657,21 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 	"multi_arrow": Color(0x3d / 255.0, 0x15 / 255.0, 0x00 / 255.0),  # #3d1500 (marrom escuro)
 	"fire_arrow": Color(0x77 / 255.0, 0x20 / 255.0, 0x00 / 255.0),  # #772000
 	"curse_arrow": Color(0x45 / 255.0, 0x14 / 255.0, 0x58 / 255.0),  # #451458
+	"leno": Color(0xfc / 255.0, 0xb4 / 255.0, 0xcc / 255.0),  # #fcb4cc
+	"woodwarden": Color(0x5d / 255.0, 0x80 / 255.0, 0x5a / 255.0),  # #5d805a
+}
+# Cor secundária (DescLabel + PriceLabel) por upgrade. Quando definido,
+# sobrescreve a cor do título nesses dois labels — útil pra cards onde título
+# e descrição têm contraste de cor (ex: Leno: rosa-claro título, rosa-escuro desc).
+const UPGRADE_DESC_COLORS: Dictionary = {
+	"leno": Color(0xab / 255.0, 0x54 / 255.0, 0x82 / 255.0),  # #ab5482
+	"woodwarden": Color(0x2d / 255.0, 0x3e / 255.0, 0x2b / 255.0),  # #2d3e2b
+}
+# Path absoluto pra arte do card por slot_id. Usado quando o asset não segue
+# o padrão `<category>/<id>.png` (ex: Leno tem subfolder e nome com espaço).
+const CARD_PATH_OVERRIDES: Dictionary = {
+	"leno": "res://assets/Hud/shop/aliado/Leno/Leno Card.png",
+	"woodwarden": "res://assets/Hud/shop/aliado/woodwarden/woodwarden card.png",
 }
 # Cor única pros aliados (todos compartilham por enquanto).
 const ALIADO_TEXT_COLOR: Color = Color(0x2c / 255.0, 0x1f / 255.0, 0x1f / 255.0)  # #2c1f1f
@@ -668,21 +746,39 @@ func _try_combined_sheet_atlas(category: String, slot_id: String, target_level: 
 
 
 func _load_card_texture(category: String, name_id: String) -> Texture2D:
-	var path := "res://assets/Hud/shop/%s/%s.png" % [category, name_id]
+	# Path absoluto override vence todo o resto (ex: Leno tem subfolder + nome
+	# com espaço — não cabe no template padrão `<category>/<id>.png`).
+	if CARD_PATH_OVERRIDES.has(name_id):
+		var override_path: String = CARD_PATH_OVERRIDES[name_id]
+		if ResourceLoader.exists(override_path):
+			return load(override_path) as Texture2D
+	var filename: String = name_id
+	if name_id == "placeholder" and PLACEHOLDER_FILE_OVERRIDES.has(category):
+		filename = PLACEHOLDER_FILE_OVERRIDES[category]
+	elif category == "status" and STATUS_FILE_OVERRIDES.has(name_id):
+		filename = STATUS_FILE_OVERRIDES[name_id]
+	var path := "res://assets/Hud/shop/%s/%s.png" % [category, filename]
 	if not ResourceLoader.exists(path):
 		return null
 	return load(path) as Texture2D
 
 
 func _resolve_text_color(category: String, slot_id: String, is_placeholder: bool) -> Color:
-	# Placeholder sempre vence (card sem arte real → texto cinza).
+	# Placeholder sempre vence (card sem arte real). Por padrão cinza, mas
+	# categorias com arte placeholder dedicada podem ter cor própria.
 	if is_placeholder:
+		if PLACEHOLDER_TEXT_COLORS_BY_CATEGORY.has(category):
+			return PLACEHOLDER_TEXT_COLORS_BY_CATEGORY[category]
 		return PLACEHOLDER_TEXT_COLOR
 	if category == "status" and STATUS_TITLE_COLORS.has(slot_id):
 		return STATUS_TITLE_COLORS[slot_id]
 	if category == "upgrade" and UPGRADE_TITLE_COLORS.has(slot_id):
 		return UPGRADE_TITLE_COLORS[slot_id]
 	if category == "aliado" and slot_id != "" and slot_id != "soon" and slot_id != "none":
+		# Aliados podem ter cor de título dedicada (Leno → pink-light).
+		# Senão caem no ALIADO_TEXT_COLOR padrão.
+		if UPGRADE_TITLE_COLORS.has(slot_id):
+			return UPGRADE_TITLE_COLORS[slot_id]
 		return ALIADO_TEXT_COLOR
 	return Color.WHITE
 
@@ -1032,10 +1128,15 @@ func _on_continue_pressed() -> void:
 			_placement_queue.append({"type": "estrutura", "slot": sel_e})
 	if _selected_aliado_idx >= 0:
 		var sel_a: Dictionary = aliado_slots[_selected_aliado_idx]
-		if sel_a.get("available", false) and "scene" in sel_a:
-			_placement_queue.append({"type": "aliado", "slot": sel_a})
+		if sel_a.get("available", false):
+			# Auto-spawn (Leno): pula placement, commitado em _commit_aliado_no_placement.
+			if sel_a.get("auto_spawn", false):
+				pass
+			elif "scene" in sel_a:
+				_placement_queue.append({"type": "aliado", "slot": sel_a})
 	if _placement_queue.is_empty():
 		_commit_status_only()
+		_commit_aliado_no_placement()
 		_commit_upgrades_and_close()
 		return
 	_process_next_placement()
@@ -1044,6 +1145,7 @@ func _on_continue_pressed() -> void:
 func _process_next_placement() -> void:
 	if _placement_queue.is_empty():
 		_commit_status_only()
+		_commit_aliado_no_placement()
 		_commit_upgrades_and_close()
 		return
 	_placement_current = _placement_queue.pop_front()
@@ -1061,6 +1163,26 @@ func _commit_status_only() -> void:
 				if player.has_method("apply_upgrade"):
 					player.apply_upgrade(slot["id"])
 		_selected_status_idx = -1
+
+
+func _commit_aliado_no_placement() -> void:
+	# Aliados com flag `auto_spawn` (ex: Leno) não passam por placement —
+	# `apply_upgrade` no player faz o spawn automaticamente. Aliados com
+	# "scene" continuam no flow de placement (woodwarden).
+	var player := _get_player()
+	if player == null:
+		return
+	if _selected_aliado_idx < 0:
+		return
+	var slot: Dictionary = aliado_slots[_selected_aliado_idx]
+	if not slot.get("auto_spawn", false):
+		return
+	if not slot.get("available", false):
+		return
+	if player.spend_gold(int(slot.get("price", 0))):
+		if player.has_method("apply_upgrade"):
+			player.apply_upgrade(slot["id"])
+	_selected_aliado_idx = -1
 
 
 func _commit_upgrades_and_close() -> void:

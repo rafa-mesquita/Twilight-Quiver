@@ -15,7 +15,7 @@ signal fire_skill_cooldown_changed(remaining: float, total: float)
 signal curse_skill_unlocked
 signal curse_skill_cooldown_changed(remaining: float, total: float)
 
-@export var speed: float = 55.0
+@export var speed: float = 55.825  # +1.5% sobre o base 55.0
 @export var attack_cooldown: float = 1.0
 @export var arrow_scene: PackedScene
 @export var damage_effect_scene: PackedScene
@@ -43,6 +43,9 @@ var hp: float
 var gold: int = 0
 # Upgrade tracking — incrementa ao comprar na shop pós-wave.
 var hp_upgrades: int = 0
+# Armor (status): reduz % do dano recebido. Computado de armor_level.
+var armor_level: int = 0
+var damage_reduction_pct: float = 0.0
 var damage_upgrades: int = 0
 var perfuracao_level: int = 0  # capa em 4 (níveis 1-4)
 var attack_speed_level: int = 0
@@ -53,6 +56,12 @@ var life_steal_level: int = 0  # cada stack +5% chance e +10% heal nos drops de 
 var fire_arrow_level: int = 0  # elemental Fogo (excalidraw lv1-4)
 var curse_arrow_level: int = 0  # elemental Maldição (excalidraw lv1, escala lv1-4)
 var woodwarden_level: int = 0  # aliado tank — cada compra "uppa" stats e custo
+# Leno (aliado voador, 4 níveis). Sem HP, orbita o player, dispara projétil
+# com slow area no impacto. L1=1 leno (20 dmg), L2=1 leno (50 dmg + atk speed),
+# L3=2 lenos, L4=3 lenos. Lenos morrem quando o player morre.
+const LENO_SCENE: PackedScene = preload("res://scenes/leno.tscn")
+var leno_level: int = 0
+var _lenos: Array[Node2D] = []
 # Fire skill (botão direito a partir do lv3 do Fogo).
 const FIRE_SKILL_COOLDOWN: float = 7.0
 const FIRE_SKILL_RANGE: float = 140.0
@@ -96,7 +105,7 @@ var has_gold_magnet: bool = false  # legacy flag (lv4 da Chuva de Coins)
 # Lv1: dash básico (5s cd). Lv2: rastro de fogo (4.5s). Lv3: auto-attack (4s).
 # Lv4: 2 flechas (3.5s).
 const DASH_LEVEL_MAX: int = 4
-const DASH_COOLDOWNS_BY_LEVEL: Array[float] = [5.0, 4.5, 4.0, 3.5]
+const DASH_COOLDOWNS_BY_LEVEL: Array[float] = [5.5, 4.5, 4.0, 3.5]
 var dash_level: int = 0
 var has_dash: bool = false
 var dash_distance: float = 45.0
@@ -135,7 +144,7 @@ const DASH_FIRST_ARROW_DELAY: float = 0.60
 const DASH_DOUBLE_ARROW_DELAY: float = 0.40
 var arrow_damage_multiplier: float = 1.0  # aplicado ao dano da arrow no spawn
 var attack_speed_multiplier: float = 1.0  # 1.0 base, +0.30 por stack
-var move_speed_multiplier: float = 1.0  # 1.0 base, +0.17 por stack
+var move_speed_multiplier: float = 1.0  # 1.0 base, +0.10 por stack
 # Conta ataques pra decidir quando proca a flecha perfurante (a cada 3 ataques).
 # Reseta ao procar. Em level 4, todo ataque é perfurante (counter ignorado).
 # IMPORTANTE: incrementa 1× por ATAQUE (não por flecha) — a volley inteira
@@ -550,7 +559,10 @@ func _graviton_radius() -> float:
 
 
 func _graviton_lifetime() -> float:
-	# Pulso dura 3s em todos os níveis (spec não diferencia).
+	# L1 nerf: dura menos pra não dominar (pulso ficava muito mais útil que custo).
+	# L2+ mantém os 3s da spec.
+	if graviton_level == 1:
+		return 1.8
 	return 3.0
 
 
@@ -580,22 +592,20 @@ func _fire_area_scale() -> float:
 
 
 func _fire_burn_dps() -> float:
-	# Base por nível × multiplier global.
-	# Lv1 = 4 dps × 3s = 12 total dmg. Combinado com arrow (25) → 37 (não mata
-	# macaco wave 1 de 40 HP). Com dano lv1 (arrow=30) → 42 (mata via DoT).
-	# É o "gate" do upgrade: sem dano, o DoT não mata; com dano, mata.
+	# Base por nível × multiplier global. tick_interval do BurnDoT é 0.5s, então
+	# +2 em dps = +1 dano por tick (balanceamento pedido pelo design).
 	var base: float = 0.0
 	match fire_arrow_level:
-		1: base = 4.0
-		2: base = 5.0
-		3: base = 7.0
-		4: base = 10.0
+		1: base = 6.0
+		2: base = 7.0
+		3: base = 9.0
+		4: base = 12.0
 	return base * _fire_burn_multiplier()
 
 
 func _fire_burn_duration() -> float:
-	# 3s base por enquanto.
-	return 3.0
+	# Tempo total que o fogo causa tick — aumentado de 3s pra 4.5s pra mais ticks.
+	return 4.5
 
 
 func _fire_trail_dps() -> float:
@@ -1012,6 +1022,9 @@ func apply_upgrade(upgrade_id: String) -> void:
 			hp_changed.emit(hp, max_hp)
 			if hp_bar != null:
 				hp_bar.set_ratio(hp / max_hp)
+		"armor":
+			armor_level += 1
+			damage_reduction_pct = _compute_damage_reduction(armor_level)
 		"damage":
 			damage_upgrades += 1
 			# +20% no dano da flecha por stack
@@ -1029,9 +1042,9 @@ func apply_upgrade(upgrade_id: String) -> void:
 			chain_lightning_level = mini(chain_lightning_level + 1, 4)
 		"move_speed":
 			move_speed_level += 1
-			# +17% por stack (aditivo). Aplica imediatamente — _physics_process
+			# +10% por stack (aditivo). Aplica imediatamente — _physics_process
 			# usa o novo multiplier no próximo frame.
-			move_speed_multiplier += 0.17
+			move_speed_multiplier += 0.10
 		"life_steal":
 			# +5% chance + +10% heal nos drops de coração por stack (sem max).
 			life_steal_level += 1
@@ -1055,6 +1068,9 @@ func apply_upgrade(upgrade_id: String) -> void:
 				_curse_skill_cd_remaining = 0.0
 				curse_skill_unlocked.emit()
 				curse_skill_cooldown_changed.emit(0.0, CURSE_SKILL_TOTAL_CYCLE)
+		"leno":
+			leno_level = mini(leno_level + 1, 4)
+			_refresh_lenos()
 		"woodwarden":
 			# Cada compra do aliado conta como um "level up" — wave_manager
 			# usa o level pra escalar HP/dmg quando spawna/respawna.
@@ -1097,6 +1113,7 @@ func apply_upgrade(upgrade_id: String) -> void:
 func get_upgrade_count(upgrade_id: String) -> int:
 	match upgrade_id:
 		"hp": return hp_upgrades
+		"armor": return armor_level
 		"damage": return damage_upgrades
 		"perfuracao": return perfuracao_level
 		"attack_speed": return attack_speed_level
@@ -1107,6 +1124,7 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"fire_arrow": return fire_arrow_level
 		"curse_arrow": return curse_arrow_level
 		"woodwarden": return woodwarden_level
+		"leno": return leno_level
 		"gold_magnet": return gold_magnet_level
 		"dash": return dash_level
 		"ricochet_arrow": return ricochet_arrow_level
@@ -1129,6 +1147,68 @@ func reset_position() -> void:
 	velocity = Vector2.ZERO
 
 
+func _refresh_lenos() -> void:
+	# Spawna/remove lenos pra match o target_count + atualiza stats em todos.
+	# L1: 1 leno @ 20 dmg / 1.4s cd. L2: 1 leno @ 50 dmg / 0.95s cd (mais speed).
+	# L3: 2 lenos. L4: 3 lenos. Phase offset garante orbits espaçadas.
+	var target_count: int = _leno_target_count()
+	# L1=8 dmg / 2.3s cd. L2+=18 dmg / 1.6s cd (boost de speed e dano sem
+	# one-shotar macaco wave 1 que tem 40 HP).
+	var dmg: float = 18.0 if leno_level >= 2 else 8.0
+	var atk_cd: float = 1.6 if leno_level >= 2 else 2.3
+	# Limpa entries inválidos (queue_freed entre rounds, etc).
+	var alive: Array[Node2D] = []
+	for l in _lenos:
+		if is_instance_valid(l):
+			alive.append(l)
+	_lenos = alive
+	while _lenos.size() < target_count:
+		var leno: Node2D = LENO_SCENE.instantiate()
+		_lenos.append(leno)
+		_get_world().add_child(leno)
+	while _lenos.size() > target_count:
+		var extra: Node2D = _lenos.pop_back()
+		if is_instance_valid(extra):
+			extra.queue_free()
+	# Atualiza stats e phase em todos (re-distribui órbita).
+	for i in _lenos.size():
+		var l: Node2D = _lenos[i]
+		if "damage" in l:
+			l.damage = dmg
+		if "attack_cooldown" in l:
+			l.attack_cooldown = atk_cd
+		if "phase_offset" in l:
+			l.phase_offset = TAU * float(i) / float(maxi(target_count, 1))
+
+
+func _leno_target_count() -> int:
+	match leno_level:
+		1: return 1
+		2: return 1
+		3: return 2
+		4: return 3
+	return 0
+
+
+func _cleanup_lenos() -> void:
+	for l in _lenos:
+		if is_instance_valid(l):
+			l.queue_free()
+	_lenos.clear()
+
+
+func _compute_damage_reduction(level: int) -> float:
+	# Armor: L1=5%, L2=7%, L3=10%, L4=13%, L5+=+2% por stack após L4. Cap em
+	# 75% pra evitar invencibilidade absoluta.
+	match level:
+		0: return 0.0
+		1: return 0.05
+		2: return 0.07
+		3: return 0.10
+		4: return 0.13
+	return minf(0.13 + 0.02 * float(level - 4), 0.75)
+
+
 func reset_perf_counter() -> void:
 	# Chamado pelo wave_manager no início de cada wave pra evitar que o counter
 	# persistente faça a 1ª flecha do round virar perfurante.
@@ -1138,13 +1218,16 @@ func reset_perf_counter() -> void:
 func take_damage(amount: float) -> void:
 	if is_dead:
 		return
-	hp = maxf(hp - amount, 0.0)
-	notify_damage_taken(amount)
+	# Armor: reduz dano antes de aplicar — número/notify usam o valor reduzido,
+	# pra a UI mostrar o que de fato saiu do HP do player.
+	var reduced: float = amount * (1.0 - damage_reduction_pct)
+	hp = maxf(hp - reduced, 0.0)
+	notify_damage_taken(reduced)
 	hp_changed.emit(hp, max_hp)
 	hp_bar.set_ratio(hp / max_hp)
 	_flash_damage()
 	_spawn_damage_effect()
-	_spawn_damage_number(amount)
+	_spawn_damage_number(reduced)
 	if damage_audio != null:
 		damage_audio.play()
 	if hp == 0.0:
@@ -1159,6 +1242,8 @@ func _die() -> void:
 		sprite.stop()
 	if hp_bar != null:
 		hp_bar.visible = false
+	# Lenos morrem com o player (spec do excalidraw).
+	_cleanup_lenos()
 	_stop_world_audio()
 	# Som de morte tem que vir DEPOIS do _stop_world_audio pra não ser cortado.
 	# Anexa no scene root (fora do "world") pra sobreviver à animação de morte.

@@ -173,9 +173,34 @@ func _on_animation_finished() -> void:
 		sprite.play("walk")
 
 
+func _get_map_center() -> Vector2:
+	# Acha o centro do mapa via TileMapLayer "Ground" (used_rect × tile_size).
+	# Fallback: posição do nó Map. Último fallback: Vector2.ZERO.
+	var map := get_tree().get_first_node_in_group("map") as Node2D
+	if map == null:
+		return Vector2.ZERO
+	var ground := map.get_node_or_null("Ground")
+	if ground is TileMapLayer:
+		var tml: TileMapLayer = ground
+		if tml.tile_set != null:
+			var rect: Rect2i = tml.get_used_rect()
+			var tile_size: Vector2i = tml.tile_set.tile_size
+			var center_local := Vector2(
+				float(rect.position.x + rect.size.x / 2) * float(tile_size.x),
+				float(rect.position.y + rect.size.y / 2) * float(tile_size.y)
+			)
+			return tml.to_global(center_local)
+	return map.global_position
+
+
 func _do_summon() -> void:
-	# Posição alvo: 3 tiles do mago em direção aleatória (com pequena variação no raio).
-	var angle: float = randf() * TAU
+	# Posição alvo: 3 tiles do mago em direção AO CENTRO DO MAPA (com spread).
+	# Antes era 360° aleatório — às vezes o inseto saía atrás das cercas/limites.
+	# Fixar o ângulo na direção do centro garante que o inseto fica no mapa,
+	# e o spread de ±60° mantém variedade visual.
+	var to_center: Vector2 = _get_map_center() - global_position
+	var base_angle: float = to_center.angle() if to_center.length_squared() > 1.0 else randf() * TAU
+	var angle: float = base_angle + randf_range(-PI / 3.0, PI / 3.0)
 	var radius: float = summon_distance_tiles * summon_tile_size + randf_range(-4.0, 4.0)
 	var spawn_pos: Vector2 = global_position + Vector2(cos(angle), sin(angle)) * radius
 

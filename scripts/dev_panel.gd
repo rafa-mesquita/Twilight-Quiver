@@ -16,6 +16,7 @@ var _last_upgrade_id: String = ""
 # `base_text` = label original; o painel adiciona "[X/Y]" ou "[máx]" dinamicamente.
 const UPGRADE_BTNS: Array = [
 	{"id": "hp", "node": "UpgHpBtn", "max": INF_LEVEL, "base_text": "+1 HP"},
+	{"id": "armor", "node": "UpgArmorBtn", "max": INF_LEVEL, "base_text": "+1 Armadura"},
 	{"id": "damage", "node": "UpgDamageBtn", "max": INF_LEVEL, "base_text": "+1 Dano"},
 	{"id": "perfuracao", "node": "UpgPerfBtn", "max": 4, "base_text": "+1 Perfuracao"},
 	{"id": "attack_speed", "node": "UpgAtkSpeedBtn", "max": INF_LEVEL, "base_text": "+1 Atk Speed"},
@@ -28,6 +29,7 @@ const UPGRADE_BTNS: Array = [
 	{"id": "curse_arrow", "node": "UpgCurseArrowBtn", "max": 4, "base_text": "+1 Disparo Profano"},
 	{"id": "ricochet_arrow", "node": "UpgRicochetBtn", "max": 4, "base_text": "+1 Flecha Ricochete"},
 	{"id": "graviton", "node": "UpgGravitonBtn", "max": 4, "base_text": "+1 Graviton"},
+	{"id": "leno", "node": "UpgLenoBtn", "max": 4, "base_text": "+1 Leno"},
 	{"id": "dash", "node": "UpgDashBtn", "max": 4, "base_text": "+1 Dash"},
 ]
 
@@ -41,6 +43,7 @@ func _ready() -> void:
 	$Content/Scroll/VBox/EnemySection/EnemyContent/MageBtn.pressed.connect(_spawn.bind("mage"))
 	$Content/Scroll/VBox/EnemySection/EnemyContent/SummonerBtn.pressed.connect(_spawn.bind("summoner_mage"))
 	$Content/Scroll/VBox/EnemySection/EnemyContent/InsectBtn.pressed.connect(_spawn.bind("insect"))
+	$Content/Scroll/VBox/EnemySection/EnemyContent/Burst10MonkeyBtn.pressed.connect(_spawn_burst_monkeys)
 	# Stats (manipulação de player/world).
 	$Content/Scroll/VBox/StatsSection/StatsContent/ResetHpBtn.pressed.connect(_reset_player_hp)
 	$Content/Scroll/VBox/StatsSection/StatsContent/ClearBtn.pressed.connect(_clear_enemies)
@@ -106,6 +109,16 @@ func _spawn(type_key: String) -> void:
 		_spawn_insect_direct(pos)
 		return
 	wm.spawn_enemy_at(type_key, pos)
+
+
+func _spawn_burst_monkeys() -> void:
+	# Spawna 10 macacos distribuídos em 3 spawn points aleatórios — útil pra
+	# testar comportamento de horda (anti-clumping, separation, atk speed dos
+	# aliados etc).
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm == null or not wm.has_method("spawn_burst"):
+		return
+	wm.spawn_burst("monkey", 10, 3)
 
 
 func _spawn_insect_direct(pos: Vector2 = Vector2.INF) -> void:

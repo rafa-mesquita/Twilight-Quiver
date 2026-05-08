@@ -66,6 +66,13 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 16
 text = "Insect"
 
+[node name="Burst10MonkeyBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_colors/font_color = Color(1, 0.7, 0.3, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Spawn 10 Monkeys (3 spawns)"
+
 [node name="UpgPadraoSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
 theme_override_constants/separation = 4
 
@@ -159,6 +166,12 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 14
 text = "+1 HP"
 
+[node name="UpgArmorBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/VidaSection/VidaContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Armadura"
+
 [node name="UpgLifeStealBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/VidaSection/VidaContent"]
 custom_minimum_size = Vector2(0, 26)
 theme_override_fonts/font = ExtResource("2_font")
@@ -251,6 +264,12 @@ custom_minimum_size = Vector2(0, 28)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 16
 text = "Spawn Woodwarden"
+
+[node name="UpgLenoBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "+1 Leno"
 
 [node name="StatsSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
 theme_override_constants/separation = 4
