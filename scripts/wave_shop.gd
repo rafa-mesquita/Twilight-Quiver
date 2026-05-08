@@ -488,25 +488,18 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 	var is_placeholder: bool = bool(card.get_meta("using_placeholder", false))
 	# Title é obrigatório; Desc / Stars / Price são opcionais (cards paisagem
 	# tipicamente não têm Desc, e StarsLabel foi removido de todos).
+	var slot_id_str: String = slot.get("id", "")
+	var text_color: Color = _resolve_text_color(category, slot_id_str, is_placeholder)
 	var title_label: Label = card.get_node_or_null("TitleLabel") as Label
 	if title_label != null:
 		title_label.text = slot.get("name", "—")
-		# Status: cor específica por id (override do font_color), modulate fica
-		# branco pra não tingir. Outras categorias: usa modulate do tier_tint.
-		var slot_id_str: String = slot.get("id", "")
-		if category == "status" and STATUS_TITLE_COLORS.has(slot_id_str):
-			title_label.add_theme_color_override("font_color", STATUS_TITLE_COLORS[slot_id_str])
-			title_label.modulate = PLACEHOLDER_TEXT_COLOR if is_placeholder else Color.WHITE
-		else:
-			title_label.remove_theme_color_override("font_color")
-			if is_placeholder:
-				title_label.modulate = PLACEHOLDER_TEXT_COLOR
-			else:
-				title_label.modulate = _level_tint_for_label(target_level) if (available and target_level > 0) else Color.WHITE
+		title_label.add_theme_color_override("font_color", text_color)
+		title_label.modulate = Color.WHITE
 	var desc_label: Label = card.get_node_or_null("DescLabel") as Label
 	if desc_label != null:
 		desc_label.text = slot.get("desc", "—")
-		desc_label.modulate = PLACEHOLDER_TEXT_COLOR if is_placeholder else Color.WHITE
+		desc_label.add_theme_color_override("font_color", text_color)
+		desc_label.modulate = Color.WHITE
 	var price_label: Label = card.get_node_or_null("PriceLabel") as Label
 	if price_label != null:
 		price_label.text = ("%d" % int(slot.get("price", 0))) if available else "—"
@@ -536,8 +529,8 @@ const _CATEGORY_SHEETS: Dictionary = {
 }
 
 # Cor do texto quando o card mostra a arte placeholder (sem desenho próprio
-# ainda). Cinza escuro pra avisar visualmente "card temporário".
-const PLACEHOLDER_TEXT_COLOR: Color = Color(0.35, 0.35, 0.35, 1.0)
+# ainda) — cinza pra avisar visualmente "card temporário".
+const PLACEHOLDER_TEXT_COLOR: Color = Color(0x6e / 255.0, 0x6e / 255.0, 0x6e / 255.0)  # #6e6e6e
 # Cor do título por status — combina com a arte de cada card.
 const STATUS_TITLE_COLORS: Dictionary = {
 	"hp": Color(0x29 / 255.0, 0x7b / 255.0, 0x59 / 255.0),  # #297b59
@@ -545,6 +538,16 @@ const STATUS_TITLE_COLORS: Dictionary = {
 	"damage": Color(0x34 / 255.0, 0x10 / 255.0, 0x42 / 255.0),  # #341042
 	"move_speed": Color(0x58 / 255.0, 0x58 / 255.0, 0x58 / 255.0),  # #585858
 }
+# Cor do título/desc por upgrade — combina com a arte de cada card. Upgrades
+# que não estão aqui (e não têm sheet próprio) caem em placeholder gray.
+const UPGRADE_TITLE_COLORS: Dictionary = {
+	"chain_lightning": Color(0xa7 / 255.0, 0x8f / 255.0, 0x24 / 255.0),  # #a78f24
+	"multi_arrow": Color(0x77 / 255.0, 0x20 / 255.0, 0x00 / 255.0),  # #772000
+	"fire_arrow": Color(0x77 / 255.0, 0x20 / 255.0, 0x00 / 255.0),  # #772000
+	"curse_arrow": Color(0x45 / 255.0, 0x14 / 255.0, 0x58 / 255.0),  # #451458
+}
+# Cor única pros aliados (todos compartilham por enquanto).
+const ALIADO_TEXT_COLOR: Color = Color(0x2c / 255.0, 0x1f / 255.0, 0x1f / 255.0)  # #2c1f1f
 # Posição default do CoinIcon por categoria (relativo ao card). User pode
 # ajustar via layout editor. Tamanho reduzido pra não competir visualmente
 # com o número do preço.
@@ -620,6 +623,19 @@ func _load_card_texture(category: String, name_id: String) -> Texture2D:
 	if not ResourceLoader.exists(path):
 		return null
 	return load(path) as Texture2D
+
+
+func _resolve_text_color(category: String, slot_id: String, is_placeholder: bool) -> Color:
+	# Placeholder sempre vence (card sem arte real → texto cinza).
+	if is_placeholder:
+		return PLACEHOLDER_TEXT_COLOR
+	if category == "status" and STATUS_TITLE_COLORS.has(slot_id):
+		return STATUS_TITLE_COLORS[slot_id]
+	if category == "upgrade" and UPGRADE_TITLE_COLORS.has(slot_id):
+		return UPGRADE_TITLE_COLORS[slot_id]
+	if category == "aliado" and slot_id != "" and slot_id != "soon" and slot_id != "none":
+		return ALIADO_TEXT_COLOR
+	return Color.WHITE
 
 
 func _ensure_coin_icon(card: Control, category: String) -> void:
