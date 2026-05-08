@@ -82,9 +82,9 @@ vertical_alignment = 1
 [node name="EstrutHeader" type="Label" parent="Root" unique_id=1888122245]
 layout_mode = 0
 offset_left = 60.0
-offset_top = 90.0
+offset_top = 460.0
 offset_right = 480.0
-offset_bottom = 130.0
+offset_bottom = 500.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 48
@@ -94,9 +94,9 @@ vertical_alignment = 1
 [node name="EstrutCard1" type="Control" parent="Root" unique_id=1735365319]
 anchors_preset = 0
 offset_left = 60.0
-offset_top = 140.0
+offset_top = 510.0
 offset_right = 580.0
-offset_bottom = 276.0
+offset_bottom = 646.0
 
 [node name="Bg" type="TextureRect" parent="Root/EstrutCard1" unique_id=1044503886]
 texture_filter = 1
@@ -145,9 +145,9 @@ flat = true
 [node name="EstrutCard2" type="Control" parent="Root" unique_id=1632876653]
 anchors_preset = 0
 offset_left = 60.0
-offset_top = 290.0
+offset_top = 660.0
 offset_right = 580.0
-offset_bottom = 426.0
+offset_bottom = 796.0
 
 [node name="Bg" type="TextureRect" parent="Root/EstrutCard2" unique_id=1847850390]
 texture_filter = 1
@@ -196,9 +196,9 @@ flat = true
 [node name="StatusHeader" type="Label" parent="Root" unique_id=1488001701]
 layout_mode = 0
 offset_left = 60.0
-offset_top = 460.0
+offset_top = 90.0
 offset_right = 480.0
-offset_bottom = 500.0
+offset_bottom = 130.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 48
@@ -208,9 +208,9 @@ vertical_alignment = 1
 [node name="StatusCard1" type="Control" parent="Root" unique_id=765996937]
 anchors_preset = 0
 offset_left = 60.0
-offset_top = 510.0
+offset_top = 140.0
 offset_right = 580.0
-offset_bottom = 646.0
+offset_bottom = 276.0
 
 [node name="Bg" type="TextureRect" parent="Root/StatusCard1" unique_id=430825257]
 texture_filter = 1
@@ -259,9 +259,9 @@ flat = true
 [node name="StatusCard2" type="Control" parent="Root" unique_id=1197613021]
 anchors_preset = 0
 offset_left = 60.0
-offset_top = 660.0
+offset_top = 290.0
 offset_right = 580.0
-offset_bottom = 796.0
+offset_bottom = 426.0
 
 [node name="Bg" type="TextureRect" parent="Root/StatusCard2" unique_id=488209667]
 texture_filter = 1

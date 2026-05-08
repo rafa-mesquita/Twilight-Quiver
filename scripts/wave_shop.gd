@@ -15,6 +15,12 @@ const PRICE_TABLE: Array[int] = [4, 8, 20, 35]
 const TOWER_PRICE: int = 10
 const WOODWARDEN_PRICE_TABLE: Array[int] = [6, 10, 14, 18, 24, 30]
 const STRUCTURE_SURCHARGE_PER_OWNED: int = 3
+# Aliados / estruturas só podem ser comprados a cada N waves.
+# Wave 3, 6, 9... = aliado unlocked. Wave 4, 8, 12... = estrutura unlocked.
+# Quando locked, a categoria mostra "Desbloqueia em X turnos" e nenhum slot é
+# selecionável.
+const ALIADO_UNLOCK_INTERVAL: int = 3
+const ESTRUT_UNLOCK_INTERVAL: int = 4
 
 # Pool dos cards de status (passive stats — escalonáveis ilimitadamente).
 # `name` é o título do card (descrição breve, já que a card paisagem não tem
@@ -170,6 +176,8 @@ var _placement_queue: Array[Dictionary] = []
 var _placement_current: Dictionary = {}
 
 const SELECTED_TINT: Color = Color(1.4, 1.25, 0.5, 1.0)
+# Box roxa translúcida sobreposta a um card selecionado pra deixar claro.
+const SELECTION_OVERLAY_COLOR: Color = Color(0.55, 0.25, 0.85, 0.4)
 
 # Layout editor (modo dev pra arrastar elementos da loja).
 var _layout_edit_active: bool = false
@@ -322,6 +330,12 @@ func _status_price_for(_id: String, current_level: int) -> int:
 
 func _roll_estrutura_slots() -> void:
 	estrutura_slots.clear()
+	var lock_remaining: int = _waves_until_unlock(ESTRUT_UNLOCK_INTERVAL)
+	if lock_remaining > 0:
+		var msg: String = _build_lock_title(lock_remaining)
+		for i in 2:
+			estrutura_slots.append({"id": "locked", "name": msg, "desc": "", "price": 0, "available": false})
+		return
 	var surcharge: int = STRUCTURE_SURCHARGE_PER_OWNED * _total_structures_bought()
 	estrutura_slots.append({
 		"id": "arrow_tower",
@@ -336,6 +350,12 @@ func _roll_estrutura_slots() -> void:
 
 func _roll_aliado_slots() -> void:
 	aliado_slots.clear()
+	var lock_remaining: int = _waves_until_unlock(ALIADO_UNLOCK_INTERVAL)
+	if lock_remaining > 0:
+		var lock_desc: String = _build_lock_desc(lock_remaining)
+		for i in 3:
+			aliado_slots.append({"id": "locked", "name": "Bloqueado", "desc": lock_desc, "price": 0, "available": false})
+		return
 	var surcharge: int = STRUCTURE_SURCHARGE_PER_OWNED * _total_structures_bought()
 	var ww_lvl: int = 0
 	var p := _get_player()
@@ -916,20 +936,37 @@ func _apply_card_state(card: Control, slot: Dictionary, is_selected: bool, can_b
 	var available: bool = slot.get("available", false)
 	var bg: TextureRect = card.get_node_or_null("Bg") as TextureRect
 	if bg != null:
-		# Mantém o tint base configurado na .tscn (ex: laranja do upgrade card)
-		# e multiplica por SELECTED_TINT quando selecionado.
+		# Mantém o tint base configurado na .tscn (ex: laranja do upgrade card).
+		# Selection agora é mostrado por um overlay roxo, não por tint.
 		if not card.has_meta("base_tint"):
 			card.set_meta("base_tint", bg.modulate)
 		var base_tint: Color = card.get_meta("base_tint")
-		if not available:
-			bg.modulate = base_tint * Color(0.5, 0.5, 0.5, 0.7)
-		elif is_selected:
-			bg.modulate = base_tint * SELECTED_TINT
-		else:
-			bg.modulate = base_tint
+		bg.modulate = base_tint * Color(0.5, 0.5, 0.5, 0.7) if not available else base_tint
+	# Box roxa por cima quando selecionado.
+	_ensure_selection_overlay(card)
+	var overlay: ColorRect = card.get_node_or_null("SelectionOverlay") as ColorRect
+	if overlay != null:
+		overlay.visible = is_selected
 	var btn: Button = card.get_node_or_null("BuyBtn") as Button
 	if btn != null:
 		btn.disabled = not available or (not is_selected and not can_buy)
+
+
+func _ensure_selection_overlay(card: Control) -> void:
+	var existing: ColorRect = card.get_node_or_null("SelectionOverlay") as ColorRect
+	if existing != null:
+		return
+	var overlay := ColorRect.new()
+	overlay.name = "SelectionOverlay"
+	overlay.color = SELECTION_OVERLAY_COLOR
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.visible = false
+	card.add_child(overlay)
+	# Fica logo após o Bg pra Labels e BuyBtn aparecerem por cima do overlay.
+	var bg_node: Node = card.get_node_or_null("Bg")
+	if bg_node != null:
+		card.move_child(overlay, bg_node.get_index() + 1)
 
 
 # ---------- Continue & placement queue ----------
@@ -1095,6 +1132,32 @@ func _refresh_gold_label() -> void:
 
 func _get_player() -> Node:
 	return get_tree().get_first_node_in_group("player")
+
+
+func _waves_until_unlock(interval: int) -> int:
+	# Retorna 0 se a categoria está desbloqueada NESTE shop, senão o número de
+	# turnos restantes até o próximo unlock.
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm == null or not "wave_number" in wm:
+		return interval
+	var w: int = int(wm.wave_number)
+	if w <= 0:
+		return interval
+	if w % interval == 0:
+		return 0
+	return interval - (w % interval)
+
+
+func _build_lock_title(turns_left: int) -> String:
+	# Versão curta pra paisagem cards (status/estrutura — sem DescLabel).
+	var s: String = "turno" if turns_left == 1 else "turnos"
+	return "Desbloqueia em\n%d %s" % [turns_left, s]
+
+
+func _build_lock_desc(turns_left: int) -> String:
+	# Versão pro DescLabel dos retrato cards (aliado).
+	var s: String = "turno" if turns_left == 1 else "turnos"
+	return "Desbloqueia em\n%d %s" % [turns_left, s]
 
 
 func _total_structures_bought() -> int:
