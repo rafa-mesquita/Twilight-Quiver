@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://biljghc02e8hc" path="res://assets/Hud/shop/reroll.png" id="5_reroll"]
 [ext_resource type="Texture2D" path="res://assets/Hud/shop/upgrade/placeholder.png" id="6_upg_ph"]
 [ext_resource type="Texture2D" path="res://assets/Hud/shop/aliado/placeholder.png" id="7_ali_ph"]
+[ext_resource type="Texture2D" path="res://assets/obecjts map/coins.png" id="8_coin"]
 
 [sub_resource type="AtlasTexture" id="ATX_upg_ph"]
 atlas = ExtResource("6_upg_ph")
@@ -15,6 +16,10 @@ region = Rect2(0, 0, 38, 47)
 [sub_resource type="AtlasTexture" id="ATX_ali_ph"]
 atlas = ExtResource("7_ali_ph")
 region = Rect2(0, 0, 38, 47)
+
+[sub_resource type="AtlasTexture" id="ATX_coin"]
+atlas = ExtResource("8_coin")
+region = Rect2(0, 0, 8, 8)
 
 [sub_resource type="StyleBoxFlat" id="SBF_btn_disabled"]
 bg_color = Color(0.1, 0.08, 0.13, 0.85)
@@ -131,6 +136,18 @@ theme_override_font_sizes/font_size = 36
 text = "5"
 vertical_alignment = 1
 
+[node name="CoinIcon" type="TextureRect" parent="Root/EstrutCard1"]
+texture_filter = 1
+layout_mode = 0
+offset_left = 360.0
+offset_top = 51.0
+offset_right = 384.0
+offset_bottom = 75.0
+mouse_filter = 2
+texture = SubResource("ATX_coin")
+expand_mode = 1
+stretch_mode = 5
+
 [node name="BuyBtn" type="Button" parent="Root/EstrutCard1" unique_id=1106766686]
 layout_mode = 0
 offset_right = 520.0
@@ -181,6 +198,18 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
 text = "—"
 vertical_alignment = 1
+
+[node name="CoinIcon" type="TextureRect" parent="Root/EstrutCard2"]
+texture_filter = 1
+layout_mode = 0
+offset_left = 360.0
+offset_top = 51.0
+offset_right = 384.0
+offset_bottom = 75.0
+mouse_filter = 2
+texture = SubResource("ATX_coin")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="BuyBtn" type="Button" parent="Root/EstrutCard2" unique_id=1693976863]
 layout_mode = 0
@@ -245,6 +274,18 @@ theme_override_font_sizes/font_size = 36
 text = "—"
 vertical_alignment = 1
 
+[node name="CoinIcon" type="TextureRect" parent="Root/StatusCard1"]
+texture_filter = 1
+layout_mode = 0
+offset_left = 360.0
+offset_top = 51.0
+offset_right = 384.0
+offset_bottom = 75.0
+mouse_filter = 2
+texture = SubResource("ATX_coin")
+expand_mode = 1
+stretch_mode = 5
+
 [node name="BuyBtn" type="Button" parent="Root/StatusCard1" unique_id=60940745]
 layout_mode = 0
 offset_right = 520.0
@@ -295,6 +336,18 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
 text = "—"
 vertical_alignment = 1
+
+[node name="CoinIcon" type="TextureRect" parent="Root/StatusCard2"]
+texture_filter = 1
+layout_mode = 0
+offset_left = 360.0
+offset_top = 51.0
+offset_right = 384.0
+offset_bottom = 75.0
+mouse_filter = 2
+texture = SubResource("ATX_coin")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="BuyBtn" type="Button" parent="Root/StatusCard2" unique_id=497875442]
 layout_mode = 0
@@ -367,15 +420,27 @@ autowrap_mode = 2
 
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard1" unique_id=1468004879]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 234.0
-offset_right = 288.0
-offset_bottom = 274.0
+offset_left = 236.0
+offset_top = 12.0
+offset_right = 290.0
+offset_bottom = 50.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
 text = "5"
-horizontal_alignment = 1
+horizontal_alignment = 0
+
+[node name="CoinIcon" type="TextureRect" parent="Root/AliadoRow/AliadoCard1"]
+texture_filter = 1
+layout_mode = 0
+offset_left = 208.0
+offset_top = 16.0
+offset_right = 232.0
+offset_bottom = 40.0
+mouse_filter = 2
+texture = SubResource("ATX_coin")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="BuyBtn" type="Button" parent="Root/AliadoRow/AliadoCard1" unique_id=281946209]
 layout_mode = 0
@@ -432,15 +497,27 @@ autowrap_mode = 2
 
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard2" unique_id=538757896]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 234.0
-offset_right = 288.0
-offset_bottom = 283.0
+offset_left = 236.0
+offset_top = 12.0
+offset_right = 290.0
+offset_bottom = 50.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
 text = "—"
-horizontal_alignment = 1
+horizontal_alignment = 0
+
+[node name="CoinIcon" type="TextureRect" parent="Root/AliadoRow/AliadoCard2"]
+texture_filter = 1
+layout_mode = 0
+offset_left = 208.0
+offset_top = 16.0
+offset_right = 232.0
+offset_bottom = 40.0
+mouse_filter = 2
+texture = SubResource("ATX_coin")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="BuyBtn" type="Button" parent="Root/AliadoRow/AliadoCard2" unique_id=1097910089]
 layout_mode = 0
@@ -497,15 +574,27 @@ autowrap_mode = 2
 
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard3" unique_id=1791183174]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 234.0
-offset_right = 288.0
-offset_bottom = 283.0
+offset_left = 236.0
+offset_top = 12.0
+offset_right = 290.0
+offset_bottom = 50.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
 text = "—"
-horizontal_alignment = 1
+horizontal_alignment = 0
+
+[node name="CoinIcon" type="TextureRect" parent="Root/AliadoRow/AliadoCard3"]
+texture_filter = 1
+layout_mode = 0
+offset_left = 208.0
+offset_top = 16.0
+offset_right = 232.0
+offset_bottom = 40.0
+mouse_filter = 2
+texture = SubResource("ATX_coin")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="BuyBtn" type="Button" parent="Root/AliadoRow/AliadoCard3" unique_id=1927213949]
 layout_mode = 0
@@ -580,15 +669,27 @@ autowrap_mode = 2
 
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard1" unique_id=821493539]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 234.0
-offset_right = 288.0
-offset_bottom = 283.0
+offset_left = 236.0
+offset_top = 12.0
+offset_right = 290.0
+offset_bottom = 50.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
 text = "—"
-horizontal_alignment = 1
+horizontal_alignment = 0
+
+[node name="CoinIcon" type="TextureRect" parent="Root/UpgRow/UpgCard1"]
+texture_filter = 1
+layout_mode = 0
+offset_left = 208.0
+offset_top = 16.0
+offset_right = 232.0
+offset_bottom = 40.0
+mouse_filter = 2
+texture = SubResource("ATX_coin")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="BuyBtn" type="Button" parent="Root/UpgRow/UpgCard1" unique_id=2005207542]
 layout_mode = 0
@@ -645,15 +746,27 @@ autowrap_mode = 2
 
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard2" unique_id=47973896]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 234.0
-offset_right = 288.0
-offset_bottom = 283.0
+offset_left = 236.0
+offset_top = 12.0
+offset_right = 290.0
+offset_bottom = 50.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
 text = "—"
-horizontal_alignment = 1
+horizontal_alignment = 0
+
+[node name="CoinIcon" type="TextureRect" parent="Root/UpgRow/UpgCard2"]
+texture_filter = 1
+layout_mode = 0
+offset_left = 208.0
+offset_top = 16.0
+offset_right = 232.0
+offset_bottom = 40.0
+mouse_filter = 2
+texture = SubResource("ATX_coin")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="BuyBtn" type="Button" parent="Root/UpgRow/UpgCard2" unique_id=932829087]
 layout_mode = 0
@@ -710,15 +823,27 @@ autowrap_mode = 2
 
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard3" unique_id=9334886]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 234.0
-offset_right = 288.0
-offset_bottom = 283.0
+offset_left = 236.0
+offset_top = 12.0
+offset_right = 290.0
+offset_bottom = 50.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
 text = "—"
-horizontal_alignment = 1
+horizontal_alignment = 0
+
+[node name="CoinIcon" type="TextureRect" parent="Root/UpgRow/UpgCard3"]
+texture_filter = 1
+layout_mode = 0
+offset_left = 208.0
+offset_top = 16.0
+offset_right = 232.0
+offset_bottom = 40.0
+mouse_filter = 2
+texture = SubResource("ATX_coin")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="BuyBtn" type="Button" parent="Root/UpgRow/UpgCard3" unique_id=1185188050]
 layout_mode = 0
