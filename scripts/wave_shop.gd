@@ -524,6 +524,13 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 	if price_label != null:
 		price_label.text = ("%d" % int(slot.get("price", 0))) if available else "—"
 		price_label.modulate = PLACEHOLDER_TEXT_COLOR if is_placeholder else Color.WHITE
+		# Em cards de status, o número do preço pega a mesma cor do título
+		# (HP=verde, AtkSpeed=dourado, Damage=roxo, MoveSpeed=cinza). Outras
+		# categorias mantêm a cor dourada default da .tscn.
+		if category == "status" and not is_placeholder and STATUS_TITLE_COLORS.has(slot_id_str):
+			price_label.add_theme_color_override("font_color", STATUS_TITLE_COLORS[slot_id_str])
+		else:
+			price_label.remove_theme_color_override("font_color")
 	var stars_label: Label = card.get_node_or_null("StarsLabel") as Label
 	if stars_label != null:
 		stars_label.text = ""
