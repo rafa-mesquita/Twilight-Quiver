@@ -516,6 +516,17 @@ const _CARD_FRAME_SIZES: Dictionary = {
 	"upgrade": Vector2i(38, 47),
 }
 
+# Sheets combinados por categoria: 1 arquivo PNG com várias linhas, cada linha
+# = um id da categoria, cada coluna = um nível (1, 2, 3, 4, 4+). Tem
+# prioridade sobre os arquivos individuais `<category>/<id>.png` quando o id
+# está na tabela `rows`.
+const _CATEGORY_SHEETS: Dictionary = {
+	"status": {
+		"path": "res://assets/Hud/shop/status/HP - atck speed - Move speed - Atck Dmg.png",
+		"rows": {"hp": 0, "attack_speed": 1, "move_speed": 2, "damage": 3},
+	},
+}
+
 # Cor do texto quando o card mostra a arte placeholder (sem desenho próprio
 # ainda). Cinza escuro pra avisar visualmente "card temporário".
 const PLACEHOLDER_TEXT_COLOR: Color = Color(0.35, 0.35, 0.35, 1.0)
@@ -548,9 +559,15 @@ func _apply_card_art(card: Control, category: String, slot_id: String, target_le
 		else:
 			bg.texture = card.get_meta("base_texture")
 		return
+	# 1) Sheet combinado da categoria (várias rows = vários ids num PNG só).
+	var combined_atlas: AtlasTexture = _try_combined_sheet_atlas(category, slot_id, target_level)
+	if combined_atlas != null:
+		bg.texture = combined_atlas
+		return
+	# 2) Arquivo individual `<category>/<id>.png` (1 row, várias colunas).
 	var tex: Texture2D = _load_card_texture(category, slot_id)
 	if tex == null:
-		# Card não tem arte própria: usa placeholder da categoria.
+		# 3) Placeholder da categoria.
 		tex = _load_card_texture(category, "placeholder")
 		if tex != null:
 			card.set_meta("using_placeholder", true)
@@ -558,6 +575,29 @@ func _apply_card_art(card: Control, category: String, slot_id: String, target_le
 		bg.texture = card.get_meta("base_texture")
 		return
 	bg.texture = _make_card_atlas(tex, category, target_level)
+
+
+func _try_combined_sheet_atlas(category: String, slot_id: String, target_level: int) -> AtlasTexture:
+	if not _CATEGORY_SHEETS.has(category):
+		return null
+	var sheet: Dictionary = _CATEGORY_SHEETS[category]
+	var rows: Dictionary = sheet.get("rows", {})
+	if not rows.has(slot_id):
+		return null
+	var path: String = sheet.get("path", "")
+	if path == "" or not ResourceLoader.exists(path):
+		return null
+	var tex: Texture2D = load(path) as Texture2D
+	if tex == null:
+		return null
+	var fsize: Vector2i = _CARD_FRAME_SIZES.get(category, Vector2i(38, 47))
+	var col_count: int = maxi(1, int(tex.get_width() / fsize.x))
+	var col: int = clampi(target_level - 1, 0, col_count - 1)
+	var row: int = int(rows[slot_id])
+	var atlas := AtlasTexture.new()
+	atlas.atlas = tex
+	atlas.region = Rect2(col * fsize.x, row * fsize.y, fsize.x, fsize.y)
+	return atlas
 
 
 func _load_card_texture(category: String, name_id: String) -> Texture2D:
