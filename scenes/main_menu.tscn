@@ -1,7 +1,7 @@
 [gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/main_menu.gd" id="1_menu"]
-[ext_resource type="FontFile" uid="uid://b13jsxnoofsxm" path="res://font/at01.ttf" id="2_font"]
+[ext_resource type="FontFile" uid="uid://dcgvoma2ubq55" path="res://font/PixelifySans-VariableFont_wght.ttf" id="2_font"]
 [ext_resource type="PackedScene" path="res://scenes/cursor.tscn" id="3_cursor"]
 
 [sub_resource type="StyleBoxFlat" id="SBF_btn_normal"]

@@ -405,7 +405,7 @@ func _create_pause_menu() -> void:
 	bg.color = Color(0, 0, 0, 0.78)
 	bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	_pause_layer.add_child(bg)
-	var at01: Font = load("res://font/at01.ttf")
+	var at01: Font = load("res://font/PixelifySans-VariableFont_wght.ttf")
 	var title := Label.new()
 	title.set_anchors_preset(Control.PRESET_CENTER)
 	title.position = Vector2(-600, -260)
