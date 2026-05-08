@@ -179,6 +179,12 @@ var _placement_current: Dictionary = {}
 const SELECTED_TINT: Color = Color(1.4, 1.25, 0.5, 1.0)
 # Box roxa translúcida sobreposta a um card selecionado pra deixar claro.
 const SELECTION_OVERLAY_COLOR: Color = Color(0.55, 0.25, 0.85, 0.4)
+# Brilho leve em cards de nível 2+ — radius em pixels e alpha cresce com level.
+# Cor base do brilho = cor do texto do card lerpada com branco (tom mais claro).
+const GLOW_RADIUS_PX_BY_LEVEL: Dictionary = {2: 4, 3: 8, 4: 12}
+const GLOW_LIGHTEN_AMOUNT: float = 0.55  # quanto puxar pro branco (0=cor crua, 1=branco)
+const GLOW_ALPHA_BASE: float = 0.35
+const GLOW_ALPHA_PER_LEVEL: float = 0.08
 
 # Layout editor (modo dev pra arrastar elementos da loja).
 var _layout_edit_active: bool = false
@@ -507,6 +513,8 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 	_apply_card_art(card, category, slot.get("id", ""), target_level, available)
 	_ensure_coin_icon(card, category)
 	var is_placeholder: bool = bool(card.get_meta("using_placeholder", false))
+	# Brilho leve em cards de evolução 2-4 (sem glow em placeholder/locked).
+	_apply_card_glow(card, _resolve_text_color(category, slot.get("id", ""), is_placeholder), target_level, available and not is_placeholder)
 	# Title é obrigatório; Desc / Stars / Price são opcionais (cards paisagem
 	# tipicamente não têm Desc, e StarsLabel foi removido de todos).
 	var slot_id_str: String = slot.get("id", "")
@@ -525,11 +533,17 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 	if price_label != null:
 		price_label.text = ("%d" % int(slot.get("price", 0))) if available else "—"
 		price_label.modulate = PLACEHOLDER_TEXT_COLOR if is_placeholder else Color.WHITE
-		# Em cards de status, o número do preço pega a mesma cor do título
-		# (HP=verde, AtkSpeed=dourado, Damage=roxo, MoveSpeed=cinza). Outras
-		# categorias mantêm a cor dourada default da .tscn.
-		if category == "status" and not is_placeholder and STATUS_TITLE_COLORS.has(slot_id_str):
-			price_label.add_theme_color_override("font_color", STATUS_TITLE_COLORS[slot_id_str])
+		# Preço pega a mesma cor do título (per-id) — status, upgrade e aliado
+		# usam suas cores específicas. Estrutura mantém o dourado default.
+		if not is_placeholder:
+			if category == "status" and STATUS_TITLE_COLORS.has(slot_id_str):
+				price_label.add_theme_color_override("font_color", STATUS_TITLE_COLORS[slot_id_str])
+			elif category == "upgrade" and UPGRADE_TITLE_COLORS.has(slot_id_str):
+				price_label.add_theme_color_override("font_color", UPGRADE_TITLE_COLORS[slot_id_str])
+			elif category == "aliado" and slot_id_str != "" and slot_id_str != "soon" and slot_id_str != "none" and slot_id_str != "locked":
+				price_label.add_theme_color_override("font_color", ALIADO_TEXT_COLOR)
+			else:
+				price_label.remove_theme_color_override("font_color")
 		else:
 			price_label.remove_theme_color_override("font_color")
 	var stars_label: Label = card.get_node_or_null("StarsLabel") as Label
@@ -570,7 +584,7 @@ const STATUS_TITLE_COLORS: Dictionary = {
 # que não estão aqui (e não têm sheet próprio) caem em placeholder gray.
 const UPGRADE_TITLE_COLORS: Dictionary = {
 	"chain_lightning": Color(0xa7 / 255.0, 0x8f / 255.0, 0x24 / 255.0),  # #a78f24
-	"multi_arrow": Color(0x77 / 255.0, 0x20 / 255.0, 0x00 / 255.0),  # #772000
+	"multi_arrow": Color(0x3d / 255.0, 0x15 / 255.0, 0x00 / 255.0),  # #3d1500 (marrom escuro)
 	"fire_arrow": Color(0x77 / 255.0, 0x20 / 255.0, 0x00 / 255.0),  # #772000
 	"curse_arrow": Color(0x45 / 255.0, 0x14 / 255.0, 0x58 / 255.0),  # #451458
 }
@@ -664,6 +678,39 @@ func _resolve_text_color(category: String, slot_id: String, is_placeholder: bool
 	if category == "aliado" and slot_id != "" and slot_id != "soon" and slot_id != "none":
 		return ALIADO_TEXT_COLOR
 	return Color.WHITE
+
+
+func _ensure_glow_halo(card: Control) -> ColorRect:
+	var halo: ColorRect = card.get_node_or_null("GlowHalo") as ColorRect
+	if halo != null:
+		return halo
+	halo = ColorRect.new()
+	halo.name = "GlowHalo"
+	halo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	halo.visible = false
+	card.add_child(halo)
+	# Move pra primeiro filho → desenha atrás de tudo (Bg, labels, coin, btn).
+	card.move_child(halo, 0)
+	return halo
+
+
+func _apply_card_glow(card: Control, text_color: Color, target_level: int, eligible: bool) -> void:
+	var halo: ColorRect = _ensure_glow_halo(card)
+	if not eligible or not GLOW_RADIUS_PX_BY_LEVEL.has(target_level):
+		halo.visible = false
+		return
+	var radius: int = int(GLOW_RADIUS_PX_BY_LEVEL[target_level])
+	var card_w: float = card.offset_right - card.offset_left
+	var card_h: float = card.offset_bottom - card.offset_top
+	halo.offset_left = -radius
+	halo.offset_top = -radius
+	halo.offset_right = card_w + radius
+	halo.offset_bottom = card_h + radius
+	# Tom mais claro da cor do texto + alpha que cresce com o nível.
+	var glow_color: Color = text_color.lerp(Color.WHITE, GLOW_LIGHTEN_AMOUNT)
+	glow_color.a = GLOW_ALPHA_BASE + GLOW_ALPHA_PER_LEVEL * float(target_level - 1)
+	halo.color = glow_color
+	halo.visible = true
 
 
 func _ensure_coin_icon(card: Control, category: String) -> void:
@@ -1189,15 +1236,16 @@ func _play_buy_sound() -> void:
 
 func _play_next_wave_sound() -> void:
 	# Som tocado quando o player confirma "Próxima Wave" e o shop fecha pra
-	# próxima horda. Reparenteia pra raiz da scene pra continuar tocando mesmo
-	# após o WaveShop ser queue_free'd.
+	# próxima horda. Pula os 0.2s iniciais (silêncio do mp3) usando play(from).
+	# Reparenteia pra raiz da scene pra continuar tocando mesmo após o
+	# WaveShop ser queue_free'd.
 	if NEXT_WAVE_SOUND == null:
 		return
 	var p := AudioStreamPlayer.new()
 	p.stream = NEXT_WAVE_SOUND
 	p.volume_db = -10.0
 	get_tree().current_scene.add_child(p)
-	p.play()
+	p.play(0.2)
 	p.finished.connect(p.queue_free)
 
 
