@@ -186,8 +186,9 @@ const GLOW_RADIUS_PCT_BY_LEVEL: Dictionary = {2: 0.10, 3: 0.20, 4: 0.30}
 const GLOW_LIGHTEN_AMOUNT: float = 0.55  # quanto puxar pro branco (0=cor crua, 1=branco)
 const GLOW_STRENGTH_BASE: float = 0.55
 const GLOW_STRENGTH_PER_LEVEL: float = 0.10
-# Shader inline do halo: 0 alpha no interior do card, gradient suave decaindo
-# pra fora até a borda do halo.
+# Shader inline do halo: descarta fragmento na área interna (onde o card está
+# por cima) pra não pintar preto nos pixels transparentes do PNG. Fora dessa
+# área, gradient suave decaindo até a borda do halo.
 const GLOW_SHADER_CODE: String = """
 shader_type canvas_item;
 uniform vec4 glow_color : source_color = vec4(1.0);
@@ -197,12 +198,11 @@ void fragment() {
 	vec2 d = abs(UV - vec2(0.5)) * 2.0;
 	float m = max(d.x, d.y);
 	if (m < inner_pct) {
-		COLOR = vec4(0.0);
-	} else {
-		float t = (m - inner_pct) / (1.0 - inner_pct);
-		float a = pow(1.0 - t, 2.0) * strength;
-		COLOR = vec4(glow_color.rgb, a * glow_color.a);
+		discard;
 	}
+	float t = (m - inner_pct) / (1.0 - inner_pct);
+	float a = pow(1.0 - t, 2.0) * strength;
+	COLOR = vec4(glow_color.rgb, a * glow_color.a);
 }
 """
 
