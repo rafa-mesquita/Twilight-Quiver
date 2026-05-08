@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bgolhqff1gjro"]
 
 [ext_resource type="Script" uid="uid://cnx1m6f4kyovt" path="res://scripts/wave_shop.gd" id="1_shop"]
-[ext_resource type="FontFile" path="res://font/ByteBounce.ttf" id="2_font"]
+[ext_resource type="FontFile" uid="uid://bw54fcmefpqf1" path="res://font/ByteBounce.ttf" id="2_font"]
 [ext_resource type="Texture2D" uid="uid://pbobd2sl3nlo" path="res://assets/Hud/shop/card_status.png" id="3_card_wide"]
 [ext_resource type="Texture2D" uid="uid://biljghc02e8hc" path="res://assets/Hud/shop/reroll.png" id="5_reroll"]
 [ext_resource type="Texture2D" uid="uid://bnwjkrs8uv2an" path="res://assets/Hud/shop/upgrade/placeholder.png" id="6_upg_ph"]
@@ -394,13 +394,13 @@ stretch_mode = 6
 
 [node name="TitleLabel" type="Label" parent="Root/AliadoRow/AliadoCard1" unique_id=937330821]
 layout_mode = 0
-offset_left = 28.0
-offset_top = 20.0
-offset_right = 280.0
-offset_bottom = 110.0
+offset_left = 38.0
+offset_top = 11.0
+offset_right = 290.0
+offset_bottom = 101.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 25
 text = "FLECHA DE FOGO"
 vertical_alignment = 1
 autowrap_mode = 2
@@ -408,9 +408,9 @@ autowrap_mode = 2
 [node name="DescLabel" type="Label" parent="Root/AliadoRow/AliadoCard1" unique_id=756299876]
 layout_mode = 0
 offset_left = 48.0
-offset_top = 111.0
+offset_top = 87.0
 offset_right = 257.0
-offset_bottom = 280.0
+offset_bottom = 256.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 18
@@ -421,10 +421,10 @@ autowrap_mode = 2
 
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard1" unique_id=1468004879]
 layout_mode = 0
-offset_left = 138.0
-offset_top = 297.0
-offset_right = 200.0
-offset_bottom = 337.0
+offset_left = 70.0
+offset_top = 232.0
+offset_right = 132.0
+offset_bottom = 272.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
@@ -433,10 +433,10 @@ text = "5"
 [node name="CoinIcon" type="TextureRect" parent="Root/AliadoRow/AliadoCard1" unique_id=1759985670]
 texture_filter = 1
 layout_mode = 0
-offset_left = 108.0
-offset_top = 305.0
-offset_right = 132.0
-offset_bottom = 329.0
+offset_left = 39.0
+offset_top = 233.0
+offset_right = 63.0
+offset_bottom = 257.0
 mouse_filter = 2
 texture = SubResource("ATX_coin")
 expand_mode = 1
@@ -472,13 +472,13 @@ stretch_mode = 6
 
 [node name="TitleLabel" type="Label" parent="Root/AliadoRow/AliadoCard2" unique_id=551482595]
 layout_mode = 0
-offset_left = 28.0
-offset_top = 20.0
-offset_right = 280.0
-offset_bottom = 110.0
+offset_left = 38.0
+offset_top = 11.0
+offset_right = 290.0
+offset_bottom = 101.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 25
 text = "—"
 vertical_alignment = 1
 autowrap_mode = 2
@@ -486,9 +486,9 @@ autowrap_mode = 2
 [node name="DescLabel" type="Label" parent="Root/AliadoRow/AliadoCard2" unique_id=82308045]
 layout_mode = 0
 offset_left = 48.0
-offset_top = 111.0
+offset_top = 87.0
 offset_right = 257.0
-offset_bottom = 280.0
+offset_bottom = 256.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 18
@@ -499,10 +499,10 @@ autowrap_mode = 2
 
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard2" unique_id=538757896]
 layout_mode = 0
-offset_left = 138.0
-offset_top = 297.0
-offset_right = 200.0
-offset_bottom = 337.0
+offset_left = 70.0
+offset_top = 232.0
+offset_right = 132.0
+offset_bottom = 281.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
@@ -511,10 +511,10 @@ text = "—"
 [node name="CoinIcon" type="TextureRect" parent="Root/AliadoRow/AliadoCard2" unique_id=715277621]
 texture_filter = 1
 layout_mode = 0
-offset_left = 108.0
-offset_top = 305.0
-offset_right = 132.0
-offset_bottom = 329.0
+offset_left = 39.0
+offset_top = 233.0
+offset_right = 63.0
+offset_bottom = 257.0
 mouse_filter = 2
 texture = SubResource("ATX_coin")
 expand_mode = 1
@@ -550,13 +550,13 @@ stretch_mode = 6
 
 [node name="TitleLabel" type="Label" parent="Root/AliadoRow/AliadoCard3" unique_id=1597010928]
 layout_mode = 0
-offset_left = 28.0
-offset_top = 20.0
-offset_right = 280.0
-offset_bottom = 110.0
+offset_left = 38.0
+offset_top = 11.0
+offset_right = 290.0
+offset_bottom = 101.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 25
 text = "—"
 vertical_alignment = 1
 autowrap_mode = 2
@@ -564,9 +564,9 @@ autowrap_mode = 2
 [node name="DescLabel" type="Label" parent="Root/AliadoRow/AliadoCard3" unique_id=1406948037]
 layout_mode = 0
 offset_left = 48.0
-offset_top = 111.0
+offset_top = 87.0
 offset_right = 257.0
-offset_bottom = 280.0
+offset_bottom = 256.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 18
@@ -577,10 +577,10 @@ autowrap_mode = 2
 
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard3" unique_id=1791183174]
 layout_mode = 0
-offset_left = 138.0
-offset_top = 297.0
-offset_right = 200.0
-offset_bottom = 337.0
+offset_left = 70.0
+offset_top = 232.0
+offset_right = 132.0
+offset_bottom = 281.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
@@ -589,10 +589,10 @@ text = "—"
 [node name="CoinIcon" type="TextureRect" parent="Root/AliadoRow/AliadoCard3" unique_id=2131756513]
 texture_filter = 1
 layout_mode = 0
-offset_left = 108.0
-offset_top = 305.0
-offset_right = 132.0
-offset_bottom = 329.0
+offset_left = 39.0
+offset_top = 233.0
+offset_right = 63.0
+offset_bottom = 257.0
 mouse_filter = 2
 texture = SubResource("ATX_coin")
 expand_mode = 1
@@ -646,14 +646,14 @@ stretch_mode = 6
 
 [node name="TitleLabel" type="Label" parent="Root/UpgRow/UpgCard1" unique_id=115035667]
 layout_mode = 0
-offset_left = 28.0
-offset_top = 20.0
-offset_right = 280.0
-offset_bottom = 110.0
+offset_left = 38.0
+offset_top = 18.0
+offset_right = 290.0
+offset_bottom = 108.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
-text = "—"
+theme_override_font_sizes/font_size = 25
+text = "Disparo Profano"
 vertical_alignment = 1
 autowrap_mode = 2
 
@@ -673,14 +673,14 @@ autowrap_mode = 2
 
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard1" unique_id=821493539]
 layout_mode = 0
-offset_left = 90.0
-offset_top = 277.0
-offset_right = 152.0
-offset_bottom = 322.0
+offset_left = 91.0
+offset_top = 284.0
+offset_right = 153.0
+offset_bottom = 329.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
-text = "—"
+text = "50"
 
 [node name="CoinIcon" type="TextureRect" parent="Root/UpgRow/UpgCard1" unique_id=94889478]
 texture_filter = 1
@@ -724,13 +724,13 @@ stretch_mode = 6
 
 [node name="TitleLabel" type="Label" parent="Root/UpgRow/UpgCard2" unique_id=278028073]
 layout_mode = 0
-offset_left = 28.0
-offset_top = 20.0
-offset_right = 280.0
-offset_bottom = 110.0
+offset_left = 38.0
+offset_top = 18.0
+offset_right = 290.0
+offset_bottom = 108.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 25
 text = "—"
 vertical_alignment = 1
 autowrap_mode = 2
@@ -751,10 +751,10 @@ autowrap_mode = 2
 
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard2" unique_id=47973896]
 layout_mode = 0
-offset_left = 90.0
-offset_top = 277.0
-offset_right = 152.0
-offset_bottom = 322.0
+offset_left = 91.0
+offset_top = 284.0
+offset_right = 153.0
+offset_bottom = 333.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
@@ -802,13 +802,13 @@ stretch_mode = 6
 
 [node name="TitleLabel" type="Label" parent="Root/UpgRow/UpgCard3" unique_id=986227068]
 layout_mode = 0
-offset_left = 28.0
-offset_top = 20.0
-offset_right = 280.0
-offset_bottom = 110.0
+offset_left = 38.0
+offset_top = 18.0
+offset_right = 290.0
+offset_bottom = 108.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 25
 text = "—"
 vertical_alignment = 1
 autowrap_mode = 2
@@ -829,10 +829,10 @@ autowrap_mode = 2
 
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard3" unique_id=9334886]
 layout_mode = 0
-offset_left = 90.0
-offset_top = 277.0
-offset_right = 152.0
-offset_bottom = 322.0
+offset_left = 91.0
+offset_top = 284.0
+offset_right = 153.0
+offset_bottom = 333.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
