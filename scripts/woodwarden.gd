@@ -15,7 +15,7 @@ signal died(woodwarden: Node)
 @export var max_hp: float = 320.0
 @export var damage: float = 50.0
 @export var stun_duration: float = 1.2
-@export var attack_cooldown: float = 2.4  # MUITO baixo: 1 ataque a cada 2.4s
+@export var attack_cooldown: float = 1.6  # 1 ataque a cada 1.6s (era 2.4)
 @export var attack_range: float = 16.0
 @export var aggro_range: float = 140.0
 # Foco do Woodwarden é DEFENDER o player — só persegue inimigos que estão

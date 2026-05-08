@@ -24,13 +24,13 @@ const UPGRADE_BTNS: Array = [
 	{"id": "chain_lightning", "node": "UpgChainBtn", "max": 4, "base_text": "+1 Cadeia de Raios"},
 	{"id": "move_speed", "node": "UpgMoveSpeedBtn", "max": INF_LEVEL, "base_text": "+1 Move Speed"},
 	{"id": "gold_magnet", "node": "UpgGoldMagnetBtn", "max": 4, "base_text": "+1 Chuva de Coins"},
-	{"id": "life_steal", "node": "UpgLifeStealBtn", "max": 4, "base_text": "+1 Coleta de Coracao"},
+	{"id": "life_steal", "node": "UpgLifeStealBtn", "max": 4, "base_text": "+1 Mestre da Cura"},
 	{"id": "fire_arrow", "node": "UpgFireArrowBtn", "max": 4, "base_text": "+1 Flecha de Fogo"},
 	{"id": "curse_arrow", "node": "UpgCurseArrowBtn", "max": 4, "base_text": "+1 Disparo Profano"},
 	{"id": "ricochet_arrow", "node": "UpgRicochetBtn", "max": 4, "base_text": "+1 Flecha Ricochete"},
 	{"id": "graviton", "node": "UpgGravitonBtn", "max": 4, "base_text": "+1 Graviton"},
 	{"id": "leno", "node": "UpgLenoBtn", "max": 4, "base_text": "+1 Leno"},
-	{"id": "dash", "node": "UpgDashBtn", "max": 4, "base_text": "+1 Dash"},
+	{"id": "dash", "node": "UpgDashBtn", "max": 4, "base_text": "+1 Deslizando"},
 ]
 
 

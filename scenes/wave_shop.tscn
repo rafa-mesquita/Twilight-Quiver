@@ -395,9 +395,9 @@ stretch_mode = 6
 
 [node name="TitleLabel" type="Label" parent="Root/AliadoRow/AliadoCard1" unique_id=937330821]
 layout_mode = 0
-offset_left = 38.0
+offset_left = 47.0
 offset_top = 11.0
-offset_right = 290.0
+offset_right = 299.0
 offset_bottom = 101.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -467,15 +467,17 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 texture = SubResource("ATX_ali_ph")
 expand_mode = 1
 stretch_mode = 6
 
 [node name="TitleLabel" type="Label" parent="Root/AliadoRow/AliadoCard2" unique_id=551482595]
 layout_mode = 0
-offset_left = 38.0
+offset_left = 47.0
 offset_top = 11.0
-offset_right = 290.0
+offset_right = 299.0
 offset_bottom = 101.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -550,9 +552,9 @@ stretch_mode = 6
 
 [node name="TitleLabel" type="Label" parent="Root/AliadoRow/AliadoCard3" unique_id=1597010928]
 layout_mode = 0
-offset_left = 38.0
+offset_left = 47.0
 offset_top = 11.0
-offset_right = 290.0
+offset_right = 299.0
 offset_bottom = 101.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -645,9 +647,9 @@ stretch_mode = 6
 
 [node name="TitleLabel" type="Label" parent="Root/UpgRow/UpgCard1" unique_id=115035667]
 layout_mode = 0
-offset_left = 38.0
+offset_left = 47.0
 offset_top = 18.0
-offset_right = 290.0
+offset_right = 299.0
 offset_bottom = 108.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -722,9 +724,9 @@ stretch_mode = 6
 
 [node name="TitleLabel" type="Label" parent="Root/UpgRow/UpgCard2" unique_id=278028073]
 layout_mode = 0
-offset_left = 38.0
+offset_left = 47.0
 offset_top = 18.0
-offset_right = 290.0
+offset_right = 299.0
 offset_bottom = 108.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -802,9 +804,9 @@ stretch_mode = 6
 
 [node name="TitleLabel" type="Label" parent="Root/UpgRow/UpgCard3" unique_id=986227068]
 layout_mode = 0
-offset_left = 38.0
+offset_left = 47.0
 offset_top = 18.0
-offset_right = 290.0
+offset_right = 299.0
 offset_bottom = 108.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")

@@ -81,8 +81,26 @@ func _ready() -> void:
 	# Esconde no runtime — script mostra quando a wave começa. No editor fica visível
 	# pra você poder ajustar a posição da arte e da label do número.
 	hud_frame.visible = false
+	# Marca todos os Controls gameplay como MOUSE_FILTER_IGNORE pra cliques sobre
+	# eles (ex: barra de HP) não bloquearem o tiro do player. Buttons da tela de
+	# morte/pausa precisam receber input — esses estão em DeathTopLayer/pause_layer
+	# (separados, não tocados aqui).
+	for control_path in [
+		"HudFrame", "HpBar", "DashCdBar", "FireSkillIcon", "CurseSkillIcon",
+		"GoldDisplay", "TowerAlertIndicator",
+	]:
+		var n := get_node_or_null(control_path)
+		if n != null:
+			_set_mouse_filter_recursive(n)
 	# Conecta nos signals de gold/hp/dash do player. Defer pra player já estar pronto.
 	_connect_player_signals.call_deferred()
+
+
+func _set_mouse_filter_recursive(node: Node) -> void:
+	if node is Control:
+		(node as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for child in node.get_children():
+		_set_mouse_filter_recursive(child)
 
 
 func _connect_player_signals() -> void:

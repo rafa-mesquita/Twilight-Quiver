@@ -13,9 +13,9 @@ signal closed
 
 const PRICE_TABLE: Array[int] = [4, 8, 20, 35]
 const TOWER_PRICE: int = 10
-const WOODWARDEN_PRICE_TABLE: Array[int] = [6, 10, 14, 18, 24, 30]
-# Leno (aliado voador, auto-spawn): preço sobe por compra. 4 níveis no total.
-const LENO_PRICE_TABLE: Array[int] = [4, 8, 14, 22]
+const WOODWARDEN_PRICE_TABLE: Array[int] = [5, 10, 14, 18, 24, 30]
+# Leno (aliado voador, auto-spawn): L1 = 5g, demais níveis seguem escalonamento.
+const LENO_PRICE_TABLE: Array[int] = [5, 8, 14, 22]
 const STRUCTURE_SURCHARGE_PER_OWNED: int = 3
 # Aliados / estruturas só podem ser comprados a cada N waves.
 # Wave 3, 6, 9... = aliado unlocked. Wave 4, 8, 12... = estrutura unlocked.
@@ -32,7 +32,7 @@ const STATUS_POOL: Array = [
 	{"id": "damage", "name": "+20% dano"},
 	{"id": "attack_speed", "name": "+30% atk speed"},
 	{"id": "move_speed", "name": "+10% move speed"},
-	{"id": "armor", "name": "Armadura"},
+	{"id": "armor", "name": "+5% dano reduzido"},
 ]
 
 # Pool dos cards de upgrade (gameplay-changing items, com requirements).
@@ -40,9 +40,9 @@ const UPGRADE_POOL: Array = [
 	{"id": "perfuracao", "name": "Perfuracao", "max_level": 4},
 	{"id": "multi_arrow", "name": "Multiplas Flechas", "max_level": 4},
 	{"id": "chain_lightning", "name": "Cadeia de Raios", "max_level": 4},
-	{"id": "life_steal", "name": "Coleta de Coracao", "max_level": 4},
+	{"id": "life_steal", "name": "Mestre da Cura", "max_level": 4},
 	{"id": "gold_magnet", "name": "Chuva de Coins", "max_level": 4},
-	{"id": "dash", "name": "Dash", "max_level": 4},
+	{"id": "dash", "name": "Deslizando", "max_level": 4},
 	{"id": "ricochet_arrow", "name": "Flecha Ricochete", "max_level": 4},
 	{"id": "graviton", "name": "Graviton", "max_level": 4},
 	{"id": "fire_arrow", "name": "Flecha de Fogo", "max_level": 4},
@@ -428,7 +428,7 @@ func _roll_aliado_slots() -> void:
 	var leno_desc: String = "Max (4/4) atingido" if leno_maxed else _get_upgrade_desc("leno", leno_lvl + 1)
 	aliado_slots.append({
 		"id": "leno",
-		"name": "Leno",
+		"name": "Meu amigo Leno",
 		"desc": leno_desc,
 		"price": leno_price,
 		"available": not leno_maxed,
@@ -653,12 +653,13 @@ const STATUS_FILE_OVERRIDES: Dictionary = {
 # Cor do título/desc por upgrade — combina com a arte de cada card. Upgrades
 # que não estão aqui (e não têm sheet próprio) caem em placeholder gray.
 const UPGRADE_TITLE_COLORS: Dictionary = {
-	"chain_lightning": Color(0xa7 / 255.0, 0x8f / 255.0, 0x24 / 255.0),  # #a78f24
+	"chain_lightning": Color(0xfb / 255.0, 0xdd / 255.0, 0x82 / 255.0),  # #fbdd82
 	"multi_arrow": Color(0x3d / 255.0, 0x15 / 255.0, 0x00 / 255.0),  # #3d1500 (marrom escuro)
 	"fire_arrow": Color(0x77 / 255.0, 0x20 / 255.0, 0x00 / 255.0),  # #772000
 	"curse_arrow": Color(0x45 / 255.0, 0x14 / 255.0, 0x58 / 255.0),  # #451458
 	"leno": Color(0xfc / 255.0, 0xb4 / 255.0, 0xcc / 255.0),  # #fcb4cc
 	"woodwarden": Color(0x5d / 255.0, 0x80 / 255.0, 0x5a / 255.0),  # #5d805a
+	"graviton": Color.WHITE,
 }
 # Cor secundária (DescLabel + PriceLabel) por upgrade. Quando definido,
 # sobrescreve a cor do título nesses dois labels — útil pra cards onde título
@@ -666,12 +667,14 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 const UPGRADE_DESC_COLORS: Dictionary = {
 	"leno": Color(0xab / 255.0, 0x54 / 255.0, 0x82 / 255.0),  # #ab5482
 	"woodwarden": Color(0x2d / 255.0, 0x3e / 255.0, 0x2b / 255.0),  # #2d3e2b
+	"graviton": Color(0x61 / 255.0, 0x61 / 255.0, 0x61 / 255.0),  # #616161
 }
 # Path absoluto pra arte do card por slot_id. Usado quando o asset não segue
 # o padrão `<category>/<id>.png` (ex: Leno tem subfolder e nome com espaço).
 const CARD_PATH_OVERRIDES: Dictionary = {
 	"leno": "res://assets/Hud/shop/aliado/Leno/Leno Card.png",
 	"woodwarden": "res://assets/Hud/shop/aliado/woodwarden/woodwarden card.png",
+	"graviton": "res://assets/Hud/shop/upgrade/graviton/graviton card-Sheet.png",
 }
 # Cor única pros aliados (todos compartilham por enquanto).
 const ALIADO_TEXT_COLOR: Color = Color(0x2c / 255.0, 0x1f / 255.0, 0x1f / 255.0)  # #2c1f1f

@@ -67,6 +67,12 @@ var _behavior: int = Behavior.NORMAL
 # volta a se comportar como NORMAL.
 var _camp_target: Node2D = null
 const CAMPER_ARRIVED_DIST: float = 6.0
+# FLANKER: lado preferido (-1 ou +1) e distância perpendicular. O ponto-alvo é
+# calculado a CADA frame como `player + perp(player→monkey) * lado * dist`,
+# então o monkey sempre curva pra um dos LADOS do player (nunca corre pra
+# longe, bug que existia com offset fixo).
+var _flank_side: float = 1.0
+var _flank_distance: float = 0.0
 # Distância em que o anti-clumping offset é desligado e o monkey mira direto
 # no alvo. Garante que ele entra em attack_range — sem isso, FLANKERs (offset
 # 60-100px) ficavam orbitando o halo sem nunca atacar.
@@ -89,16 +95,24 @@ func _ready() -> void:
 
 
 func _roll_behavior() -> void:
-	# 65% normal / 20% flanker / 15% camper. Escolhe offset apropriado.
+	# Distribuição depende da wave:
+	#   Wave 1-4: 80% normal / 20% flanker (sem camper — wave inicial mais limpa)
+	#   Wave 5+: 75% normal / 15% flanker / 10% camper
+	var camper_unlocked: bool = _current_wave_number() >= 5
 	var roll: float = randf()
-	if roll < 0.65:
+	var normal_threshold: float = 0.75 if camper_unlocked else 0.80
+	var flanker_threshold: float = 0.90 if camper_unlocked else 1.00
+	if roll < normal_threshold:
 		_behavior = Behavior.NORMAL
 		_chase_offset = Vector2.RIGHT.rotated(randf() * TAU) * randf_range(12.0, 24.0)
-	elif roll < 0.85:
+	elif roll < flanker_threshold:
 		_behavior = Behavior.FLANKER
-		# Offset grande → o macaco aponta pra um ponto bem afastado do player,
-		# pegando caminho lateral. Naturalmente fecha passagens em corredores.
-		_chase_offset = Vector2.RIGHT.rotated(randf() * TAU) * randf_range(60.0, 100.0)
+		# Per-monkey: lado (esquerdo/direito do player) e distância perpendicular.
+		# Cálculo do chase_pos é em runtime, sempre PERPENDICULAR à linha
+		# monkey→player — nunca aponta pra trás (bug do offset fixo).
+		_flank_side = -1.0 if randf() < 0.5 else 1.0
+		_flank_distance = randf_range(60.0, 100.0)
+		_chase_offset = Vector2.ZERO
 	else:
 		_behavior = Behavior.CAMPER
 		_chase_offset = Vector2.ZERO  # camper ignora offset (vai pro pickup direto)
@@ -107,6 +121,13 @@ func _roll_behavior() -> void:
 		if _camp_target == null:
 			_behavior = Behavior.NORMAL
 			_chase_offset = Vector2.RIGHT.rotated(randf() * TAU) * randf_range(12.0, 24.0)
+
+
+func _current_wave_number() -> int:
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm != null and "wave_number" in wm:
+		return int(wm.wave_number)
+	return 1
 
 
 func _find_camp_target() -> Node2D:
@@ -168,13 +189,18 @@ func _physics_process(delta: float) -> void:
 		# orbitar pelo offset).
 		var to_target: Vector2 = current_target.global_position - global_position
 		var dist: float = to_target.length()
-		# Chase pos: quando longe, mira em (alvo + offset) pra anti-clumping
-		# espalhar a aproximação. Quando perto (dentro do limiar), mira direto
-		# no alvo pra garantir que entra em attack_range — antes o monkey ficava
-		# orbitando no halo do offset sem nunca atacar.
+		# Chase pos: quando longe, mira em ponto offset; quando perto, direto.
+		# - NORMAL: offset pequeno fixo (anti-clumping/halo).
+		# - FLANKER: offset PERPENDICULAR à linha monkey→player a cada frame, do
+		#   lado escolhido. Sempre aponta pra um lado, nunca pra trás.
 		var chase_pos: Vector2 = current_target.global_position
 		if dist > OFFSET_BLEND_DIST:
-			chase_pos = current_target.global_position + _chase_offset
+			if _behavior == Behavior.FLANKER and dist > 0.01:
+				var dir_to: Vector2 = to_target / dist
+				var perp: Vector2 = Vector2(-dir_to.y, dir_to.x) * _flank_side
+				chase_pos = current_target.global_position + perp * _flank_distance
+			else:
+				chase_pos = current_target.global_position + _chase_offset
 		var dir_offset: Vector2 = (chase_pos - global_position).normalized()
 
 		if dist > attack_range:

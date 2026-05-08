@@ -176,7 +176,7 @@ text = "+1 Armadura"
 custom_minimum_size = Vector2(0, 26)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 14
-text = "+1 Coleta de Coracao"
+text = "+1 Mestre da Cura"
 
 [node name="MovSection" type="VBoxContainer" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent"]
 theme_override_constants/separation = 2
@@ -209,7 +209,7 @@ text = "+1 Chuva de Coins"
 custom_minimum_size = Vector2(0, 26)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 14
-text = "+1 Dash"
+text = "+1 Deslizando"
 
 [node name="UpgElementaisSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
 theme_override_constants/separation = 4

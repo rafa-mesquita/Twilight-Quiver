@@ -1386,6 +1386,21 @@ func notify_ally_made() -> void:
 func notify_damage_dealt(amount: float) -> void:
 	if amount > 0.0:
 		stats_damage_dealt += amount
+		_heal_woodwardens_from_damage(amount)
+
+
+const WOODWARDEN_HEAL_FROM_DAMAGE: float = 0.50  # 50% do dano vira cura
+
+func _heal_woodwardens_from_damage(amount: float) -> void:
+	# Cada woodwarden vivo cura por % do dano causado pelo player.
+	# Identifica via grupo "tank_ally" (woodwarden é o único nesse grupo hoje).
+	var heal_amount: float = amount * WOODWARDEN_HEAL_FROM_DAMAGE
+	if heal_amount <= 0.0:
+		return
+	for ally in get_tree().get_nodes_in_group("tank_ally"):
+		if not is_instance_valid(ally) or not ally.has_method("heal"):
+			continue
+		ally.heal(heal_amount)
 
 
 func notify_damage_taken(amount: float) -> void:

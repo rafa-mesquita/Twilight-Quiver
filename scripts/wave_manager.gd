@@ -244,13 +244,11 @@ func _build_wave_config(num: int) -> Dictionary:
 			"monkey": {"alive_target": 3, "total": 8},
 			"mage": {"alive_target": 2, "total": 4},
 		}
-	# Wave 2: invocador entra com cota mínima, escala leve sobre wave 1.
-	# -5% aplicado nos totals (monkey 12→11; outros mantêm via arredondamento).
+	# Wave 2: ainda sem invocador (entra só na wave 3). Escala leve sobre wave 1.
 	if num == 2:
 		return {
 			"monkey": {"alive_target": 4, "total": 11},
 			"mage": {"alive_target": 3, "total": 6},
-			"summoner_mage": {"alive_target": 1, "total": 2},
 		}
 	# Waves 3+: escala automática + um pouco de aleatoriedade.
 	# Quanto maior o wave_number, mais inimigos vivos e mais total.
@@ -264,11 +262,12 @@ func _build_wave_config(num: int) -> Dictionary:
 	var monkey_total: int = int(round(15 * scale + randf_range(0.0, 4.0)))
 	var mage_alive: int = int(round(3 * scale + randf_range(0.0, 2.0)))
 	var mage_total: int = int(round(6 * scale + randf_range(0.0, 3.0)))
-	# Invocadores entram com força a partir da wave 2. Waves 4-8 levam metade
-	# dos summoners pra suavizar a pressão (cada summoner spawna insetos, então
-	# escalava demais nesse range — design feedback).
+	# Invocadores entram a partir da wave 3. Wave 3 é a estreia (cota bem
+	# reduzida, ~1 summoner). Waves 4-8 levam metade. Wave 9+ valor cheio.
 	var summ_scale_mult: float = 1.0
-	if num >= 4 and num <= 8:
+	if num == 3:
+		summ_scale_mult = 0.35
+	elif num >= 4 and num <= 8:
 		summ_scale_mult = 0.5
 	var summ_alive: int = int(round(1 * scale * summ_scale_mult + randf_range(0.0, 1.0)))
 	var summ_total: int = int(round(3 * scale * summ_scale_mult + randf_range(0.0, 2.0)))
@@ -617,11 +616,13 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	{"id": "multi_arrow", "name": "Multiplas Flechas"},
 	{"id": "chain_lightning", "name": "Cadeia de Raios"},
 	{"id": "move_speed", "name": "Move Speed"},
-	{"id": "life_steal", "name": "Coleta de Coracao"},
+	{"id": "life_steal", "name": "Mestre da Cura"},
 	{"id": "gold_magnet", "name": "Chuva de Coins"},
-	{"id": "dash", "name": "Dash"},
+	{"id": "dash", "name": "Deslizando"},
 	{"id": "ricochet_arrow", "name": "Flecha Ricochete"},
 	{"id": "graviton", "name": "Graviton"},
+	{"id": "armor", "name": "Armadura"},
+	{"id": "leno", "name": "Meu amigo Leno"},
 ]
 
 
