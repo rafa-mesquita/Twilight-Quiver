@@ -418,7 +418,7 @@ theme_override_font_sizes/font_size = 18
 text = "SUA FLECHA GANHA PODER DE FOGO BLABLABLABLA"
 horizontal_alignment = 1
 vertical_alignment = 1
-autowrap_mode = 2
+autowrap_mode = 0
 
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard1" unique_id=1468004879]
 layout_mode = 0
@@ -496,7 +496,7 @@ theme_override_font_sizes/font_size = 18
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
-autowrap_mode = 2
+autowrap_mode = 0
 
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard2" unique_id=538757896]
 layout_mode = 0
@@ -574,7 +574,7 @@ theme_override_font_sizes/font_size = 18
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
-autowrap_mode = 2
+autowrap_mode = 0
 
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard3" unique_id=1791183174]
 layout_mode = 0
@@ -670,7 +670,7 @@ theme_override_font_sizes/font_size = 20
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
-autowrap_mode = 2
+autowrap_mode = 0
 
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard1" unique_id=821493539]
 layout_mode = 0
@@ -748,7 +748,7 @@ theme_override_font_sizes/font_size = 20
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
-autowrap_mode = 2
+autowrap_mode = 0
 
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard2" unique_id=47973896]
 layout_mode = 0
@@ -827,7 +827,7 @@ theme_override_font_sizes/font_size = 20
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
-autowrap_mode = 2
+autowrap_mode = 0
 
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard3" unique_id=9334886]
 layout_mode = 0
