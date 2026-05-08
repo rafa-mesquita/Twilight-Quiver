@@ -179,12 +179,32 @@ var _placement_current: Dictionary = {}
 const SELECTED_TINT: Color = Color(1.4, 1.25, 0.5, 1.0)
 # Box roxa translúcida sobreposta a um card selecionado pra deixar claro.
 const SELECTION_OVERLAY_COLOR: Color = Color(0.55, 0.25, 0.85, 0.4)
-# Brilho leve em cards de nível 2+ — radius em pixels e alpha cresce com level.
-# Cor base do brilho = cor do texto do card lerpada com branco (tom mais claro).
-const GLOW_RADIUS_PX_BY_LEVEL: Dictionary = {2: 4, 3: 8, 4: 12}
+# Brilho leve em cards de nível 2+ — usa shader com falloff suave em volta do
+# card. radius_pct = fração do tamanho do card adicionada como halo
+# (0.1 = 10% maior por lado).
+const GLOW_RADIUS_PCT_BY_LEVEL: Dictionary = {2: 0.10, 3: 0.20, 4: 0.30}
 const GLOW_LIGHTEN_AMOUNT: float = 0.55  # quanto puxar pro branco (0=cor crua, 1=branco)
-const GLOW_ALPHA_BASE: float = 0.35
-const GLOW_ALPHA_PER_LEVEL: float = 0.08
+const GLOW_STRENGTH_BASE: float = 0.55
+const GLOW_STRENGTH_PER_LEVEL: float = 0.10
+# Shader inline do halo: 0 alpha no interior do card, gradient suave decaindo
+# pra fora até a borda do halo.
+const GLOW_SHADER_CODE: String = """
+shader_type canvas_item;
+uniform vec4 glow_color : source_color = vec4(1.0);
+uniform float inner_pct : hint_range(0.0, 1.0) = 0.8;
+uniform float strength : hint_range(0.0, 2.0) = 1.0;
+void fragment() {
+	vec2 d = abs(UV - vec2(0.5)) * 2.0;
+	float m = max(d.x, d.y);
+	if (m < inner_pct) {
+		COLOR = vec4(0.0);
+	} else {
+		float t = (m - inner_pct) / (1.0 - inner_pct);
+		float a = pow(1.0 - t, 2.0) * strength;
+		COLOR = vec4(glow_color.rgb, a * glow_color.a);
+	}
+}
+"""
 
 # Layout editor (modo dev pra arrastar elementos da loja).
 var _layout_edit_active: bool = false
@@ -688,6 +708,13 @@ func _ensure_glow_halo(card: Control) -> ColorRect:
 	halo.name = "GlowHalo"
 	halo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	halo.visible = false
+	halo.color = Color.WHITE  # base color — shader multiplica por glow_color
+	# Material com shader de glow falloff (criado uma vez por halo).
+	var sh := Shader.new()
+	sh.code = GLOW_SHADER_CODE
+	var mat := ShaderMaterial.new()
+	mat.shader = sh
+	halo.material = mat
 	card.add_child(halo)
 	# Move pra primeiro filho → desenha atrás de tudo (Bg, labels, coin, btn).
 	card.move_child(halo, 0)
@@ -696,20 +723,26 @@ func _ensure_glow_halo(card: Control) -> ColorRect:
 
 func _apply_card_glow(card: Control, text_color: Color, target_level: int, eligible: bool) -> void:
 	var halo: ColorRect = _ensure_glow_halo(card)
-	if not eligible or not GLOW_RADIUS_PX_BY_LEVEL.has(target_level):
+	if not eligible or not GLOW_RADIUS_PCT_BY_LEVEL.has(target_level):
 		halo.visible = false
 		return
-	var radius: int = int(GLOW_RADIUS_PX_BY_LEVEL[target_level])
+	var radius_pct: float = float(GLOW_RADIUS_PCT_BY_LEVEL[target_level])
 	var card_w: float = card.offset_right - card.offset_left
 	var card_h: float = card.offset_bottom - card.offset_top
-	halo.offset_left = -radius
-	halo.offset_top = -radius
-	halo.offset_right = card_w + radius
-	halo.offset_bottom = card_h + radius
-	# Tom mais claro da cor do texto + alpha que cresce com o nível.
+	# Halo expande N% do tamanho do card pra cada lado.
+	halo.offset_left = -card_w * radius_pct
+	halo.offset_top = -card_h * radius_pct
+	halo.offset_right = card_w * (1.0 + radius_pct)
+	halo.offset_bottom = card_h * (1.0 + radius_pct)
+	# inner_pct = fração do halo (em UV) que é o card → onde o shader não desenha.
+	var inner_pct: float = 1.0 / (1.0 + 2.0 * radius_pct)
 	var glow_color: Color = text_color.lerp(Color.WHITE, GLOW_LIGHTEN_AMOUNT)
-	glow_color.a = GLOW_ALPHA_BASE + GLOW_ALPHA_PER_LEVEL * float(target_level - 1)
-	halo.color = glow_color
+	var strength: float = GLOW_STRENGTH_BASE + GLOW_STRENGTH_PER_LEVEL * float(target_level - 1)
+	var mat := halo.material as ShaderMaterial
+	if mat != null:
+		mat.set_shader_parameter("glow_color", glow_color)
+		mat.set_shader_parameter("inner_pct", inner_pct)
+		mat.set_shader_parameter("strength", strength)
 	halo.visible = true
 
 
