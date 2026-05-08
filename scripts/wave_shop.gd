@@ -533,12 +533,14 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 	_apply_card_art(card, category, slot.get("id", ""), target_level, available)
 	_ensure_coin_icon(card, category)
 	var is_placeholder: bool = bool(card.get_meta("using_placeholder", false))
-	# Brilho leve em cards de evolução 2-4 (sem glow em placeholder/locked).
-	_apply_card_glow(card, _resolve_text_color(category, slot.get("id", ""), is_placeholder), target_level, available and not is_placeholder)
-	# Title é obrigatório; Desc / Stars / Price são opcionais (cards paisagem
-	# tipicamente não têm Desc, e StarsLabel foi removido de todos).
 	var slot_id_str: String = slot.get("id", "")
 	var text_color: Color = _resolve_text_color(category, slot_id_str, is_placeholder)
+	# Card body opaco atrás da textura — preenche os pixels transparentes dos
+	# cantos arredondados do PNG (sem isso, o fundo escuro do shop aparece
+	# vazado). Cor = versão escurecida do text_color pra "plano de fundo" do card.
+	_apply_card_body(card, text_color)
+	# Brilho leve em cards de evolução 2-4 (sem glow em placeholder/locked).
+	_apply_card_glow(card, text_color, target_level, available and not is_placeholder)
 	var title_label: Label = card.get_node_or_null("TitleLabel") as Label
 	if title_label != null:
 		title_label.text = slot.get("name", "—")
@@ -700,6 +702,31 @@ func _resolve_text_color(category: String, slot_id: String, is_placeholder: bool
 	return Color.WHITE
 
 
+func _ensure_card_body(card: Control) -> ColorRect:
+	# ColorRect opaco do tamanho do card, drawado ATRÁS da textura. Preenche os
+	# pixels transparentes (cantos arredondados do PNG, etc.) com uma cor sólida
+	# em vez de revelar o fundo escuro do shop.
+	var body: ColorRect = card.get_node_or_null("CardBody") as ColorRect
+	if body != null:
+		return body
+	body = ColorRect.new()
+	body.name = "CardBody"
+	body.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	body.set_anchors_preset(Control.PRESET_FULL_RECT)
+	card.add_child(body)
+	# Move pra primeiro filho (atrás de tudo dentro do card).
+	card.move_child(body, 0)
+	return body
+
+
+func _apply_card_body(card: Control, text_color: Color) -> void:
+	var body: ColorRect = _ensure_card_body(card)
+	# Cor base = versão escurecida do text_color, mais próxima do "miolo" do card.
+	# 0.6 puxa pro escuro mas mantém o tom do upgrade (ex: roxo escuro pra Curse,
+	# vermelho escuro pra Fogo, etc.).
+	body.color = text_color * Color(0.6, 0.6, 0.6, 1.0)
+
+
 func _ensure_glow_halo(card: Control) -> ColorRect:
 	var halo: ColorRect = card.get_node_or_null("GlowHalo") as ColorRect
 	if halo != null:
@@ -716,8 +743,12 @@ func _ensure_glow_halo(card: Control) -> ColorRect:
 	mat.shader = sh
 	halo.material = mat
 	card.add_child(halo)
-	# Move pra primeiro filho → desenha atrás de tudo (Bg, labels, coin, btn).
-	card.move_child(halo, 0)
+	# CardBody (se existir) fica em 0, GlowHalo logo após em 1, e Bg/labels/btn
+	# vêm depois. Halo só é visível FORA da área do card de qualquer forma.
+	var body_idx: int = 0
+	if card.has_node("CardBody"):
+		body_idx = 1
+	card.move_child(halo, body_idx)
 	return halo
 
 
