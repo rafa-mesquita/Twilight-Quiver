@@ -25,7 +25,7 @@ const UPGRADE_BTNS: Array = [
 	{"id": "gold_magnet", "node": "UpgGoldMagnetBtn", "max": 1, "base_text": "Ima de Gold"},
 	{"id": "life_steal", "node": "UpgLifeStealBtn", "max": INF_LEVEL, "base_text": "+1 Life Steal"},
 	{"id": "fire_arrow", "node": "UpgFireArrowBtn", "max": 4, "base_text": "+1 Flecha de Fogo"},
-	{"id": "curse_arrow", "node": "UpgCurseArrowBtn", "max": 4, "base_text": "+1 Flecha de Maldicao"},
+	{"id": "curse_arrow", "node": "UpgCurseArrowBtn", "max": 4, "base_text": "+1 Disparo Profano"},
 	{"id": "dash", "node": "UpgDashBtn", "max": 1, "base_text": "Dash"},
 	{"id": "dash_cooldown", "node": "UpgDashCdBtn", "max": INF_LEVEL,
 		"base_text": "+1 Dash CD reduce", "requires": "dash"},

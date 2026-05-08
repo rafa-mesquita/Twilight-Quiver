@@ -44,7 +44,7 @@ const UPGRADE_POOL: Array = [
 	{"id": "dash_auto_attack", "name": "Dash Auto-Atk", "max_level": 1, "requires": "dash"},
 	{"id": "dash_double_arrow", "name": "Dash 2 Flechas", "max_level": 1, "requires": "dash_auto_attack"},
 	{"id": "fire_arrow", "name": "Flecha de Fogo", "max_level": 4},
-	{"id": "curse_arrow", "name": "Flecha de Maldição", "max_level": 4},
+	{"id": "curse_arrow", "name": "Disparo Profano", "max_level": 4},
 ]
 
 const UPGRADE_PRICE_OVERRIDES: Dictionary = {
