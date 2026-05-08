@@ -48,7 +48,7 @@ animations = [{
 }]
 
 [node name="FireTrail" type="Area2D"]
-modulate = Color(1, 1, 1, 0.85)
+modulate = Color(1, 1, 1, 0.45)
 collision_layer = 0
 collision_mask = 4
 script = ExtResource("1_script")

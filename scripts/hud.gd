@@ -314,7 +314,7 @@ func _show_restart_button() -> void:
 	var wm := get_tree().get_first_node_in_group("wave_manager")
 	if wm != null and "wave_number" in wm:
 		wave_num = int(wm.wave_number)
-	survival_label.text = "Sobreviveu %d waves" % wave_num
+	survival_label.text = "Sobreviveu %d waves\n%s" % [wave_num, _build_death_stats_block()]
 	survival_label.modulate.a = 0.0
 	survival_label.visible = true
 
@@ -333,6 +333,29 @@ func _on_menu_pressed() -> void:
 	# Garante despausar antes de trocar de cena (senão o menu carrega pausado).
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+
+
+# ---------- Death stats ----------
+
+func _build_death_stats_block() -> String:
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null:
+		return ""
+	var time_str: String = "0:00"
+	if p.has_method("get_run_time_msec"):
+		time_str = _format_run_time(int(p.get_run_time_msec()))
+	var kills: int = int(p.get("stats_enemies_killed")) if "stats_enemies_killed" in p else 0
+	var allies: int = int(p.get("stats_allies_made")) if "stats_allies_made" in p else 0
+	var dmg_dealt: int = int(round(float(p.get("stats_damage_dealt")))) if "stats_damage_dealt" in p else 0
+	var dmg_taken: int = int(round(float(p.get("stats_damage_taken")))) if "stats_damage_taken" in p else 0
+	return "Tempo: %s\nInimigos mortos: %d\nAliados feitos: %d\nDano causado: %d\nDano sofrido: %d" % [time_str, kills, allies, dmg_dealt, dmg_taken]
+
+
+func _format_run_time(msec: int) -> String:
+	var total_sec: int = msec / 1000
+	var minutes: int = total_sec / 60
+	var seconds: int = total_sec % 60
+	return "%d:%02d" % [minutes, seconds]
 
 
 # ---------- Pause menu (ESC) ----------

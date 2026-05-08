@@ -168,6 +168,11 @@ func _on_attack_cooldown_done() -> void:
 
 
 func take_damage(amount: float) -> void:
+	# Stats: contabiliza dano dealt no player (dano em aliados convertidos não conta).
+	if not is_curse_ally:
+		var p := get_tree().get_first_node_in_group("player")
+		if p != null and p.has_method("notify_damage_dealt"):
+			p.notify_damage_dealt(amount)
 	hp = maxf(hp - amount, 0.0)
 	hp_bar.set_ratio(hp / max_hp)
 	_flash_damage()
@@ -176,13 +181,18 @@ func take_damage(amount: float) -> void:
 	var died := hp <= 0.0
 	_play_damage_sound(1.5 if died else 0.7)
 	if died:
-		# Maldição: chance de virar aliado em vez de morrer (lv2-4 da curse).
-		# Só roda se ainda for enemy (não duplo-converte aliado já convertido).
-		if not is_curse_ally and CurseAllyHelper.try_convert_on_death(self):
-			return
-		GoldDrop.try_drop(_get_world(), gold_scene, global_position,
-			gold_drop_chance, gold_drop_min, gold_drop_max)
-		HeartDrop.try_drop(_get_world(), heart_scene, global_position)
+		if not is_curse_ally:
+			# Maldição: chance de virar aliado em vez de morrer (lv2-4 da curse).
+			if CurseAllyHelper.try_convert_on_death(self):
+				return
+			# Morte normal: drops + count na stat de kills.
+			GoldDrop.try_drop(_get_world(), gold_scene, global_position,
+				gold_drop_chance, gold_drop_min, gold_drop_max)
+			HeartDrop.try_drop(_get_world(), heart_scene, global_position)
+			var p2 := get_tree().get_first_node_in_group("player")
+			if p2 != null and p2.has_method("notify_enemy_killed"):
+				p2.notify_enemy_killed()
+		# Curse_ally morrendo: sem drop e sem kill count (já foi seu aliado).
 		_spawn_kill_effect()
 		_spawn_death_silhouette()
 		queue_free()

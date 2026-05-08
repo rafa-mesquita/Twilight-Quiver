@@ -68,6 +68,9 @@ static var _last_chain_sound_msec: int = -1000
 var source: Node = null
 var _hit_bodies: Array[Node] = []
 var _pierce_hits: int = 0  # quantos targets a flecha perfurante já atravessou
+# Multiplicador de dano aplicado SÓ no primeiro alvo (perfuracao bonus). Após
+# o primeiro hit, alvos seguintes recebem `damage` cru (sem o bonus).
+var pierce_first_dmg_mult: float = 1.0
 
 
 func _ready() -> void:
@@ -256,7 +259,12 @@ func _on_hit(body: Node) -> void:
 		# Burn pode ficar antes ou depois (não tem mecânica de conversão).
 		if is_curse:
 			_apply_curse_to(target)
-		target.take_damage(damage)
+		# Perfuracao bonus só no 1º alvo (pierce_hits == 0). Alvos seguintes
+		# atravessados pela mesma flecha recebem `damage` base.
+		var dmg_to_apply: float = damage
+		if _pierce_hits == 0:
+			dmg_to_apply *= pierce_first_dmg_mult
+		target.take_damage(dmg_to_apply)
 		if target.has_method("apply_knockback"):
 			target.apply_knockback(direction, knockback_strength)
 		_play_oneshot(impact_sound, global_position, sound_volume_db, 0.7)

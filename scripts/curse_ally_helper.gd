@@ -77,6 +77,10 @@ static func convert_to_ally(enemy: Node) -> void:
 			bar.set_ratio(1.0)
 	# Anima conversão com o mesmo summon effect lilás do summoner mage.
 	_spawn_summon_effect(enemy)
+	# Stat: contabiliza aliados feitos pra tela de morte.
+	var p := enemy.get_tree().get_first_node_in_group("player")
+	if p != null and p.has_method("notify_ally_made"):
+		p.notify_ally_made()
 
 
 static func _spawn_summon_effect(enemy: Node) -> void:

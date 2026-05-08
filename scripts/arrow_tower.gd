@@ -63,17 +63,27 @@ func _try_shoot(muzzle: Marker2D, timer: Timer) -> void:
 
 
 func _find_nearest_enemy() -> Node2D:
-	var nearest: Node2D = null
-	var nearest_dist: float = detection_range
+	# Prioriza magos / summoner_mages dentro do range. Se não houver, cai no
+	# inimigo mais próximo de qualquer tipo.
+	var priority: Node2D = null
+	var priority_dist: float = detection_range
+	var fallback: Node2D = null
+	var fallback_dist: float = detection_range
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e):
 			continue
 		var enemy: Node2D = e as Node2D
 		var dist: float = global_position.distance_to(enemy.global_position)
-		if dist < nearest_dist:
-			nearest = enemy
-			nearest_dist = dist
-	return nearest
+		if dist >= fallback_dist:
+			continue
+		if enemy.is_in_group("mage") or enemy.is_in_group("summoner_mage"):
+			if dist < priority_dist:
+				priority = enemy
+				priority_dist = dist
+		if dist < fallback_dist:
+			fallback = enemy
+			fallback_dist = dist
+	return priority if priority != null else fallback
 
 
 func _fire_arrow(muzzle: Marker2D, target: Node2D) -> void:
@@ -85,18 +95,8 @@ func _fire_arrow(muzzle: Marker2D, target: Node2D) -> void:
 	arrow.global_position = muzzle.global_position
 	if "damage" in arrow:
 		arrow.damage = arrow.damage * damage_multiplier
-	# Lv3+ da Maldição: todos aliados aplicam slow/DoT ao causar dano. Marca a
-	# arrow como is_curse pra ela aplicar CurseDebuff no hit.
-	var player := get_tree().get_first_node_in_group("player")
-	if player != null and ("curse_arrow_level" in player) and int(player.curse_arrow_level) >= 3:
-		if "is_curse" in arrow:
-			arrow.is_curse = true
-		if "curse_dps" in arrow and player.has_method("_curse_dps"):
-			arrow.curse_dps = player._curse_dps()
-		if "curse_duration" in arrow and player.has_method("_curse_duration"):
-			arrow.curse_duration = player._curse_duration()
-		if "curse_slow_factor" in arrow and player.has_method("_curse_slow_factor"):
-			arrow.curse_slow_factor = player._curse_slow_factor()
+	# Torre NÃO propaga curse on-hit — flecha da torre é dano puro, não pode
+	# converter inimigos em aliados (evita escalada de conversões via torre).
 	var target_pos: Vector2 = target.global_position + Vector2(0, -12)
 	var dir: Vector2 = (target_pos - muzzle.global_position).normalized()
 	if arrow.has_method("set_direction"):

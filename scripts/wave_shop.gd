@@ -32,7 +32,7 @@ const UPGRADE_POOL: Array = [
 	{"id": "multi_arrow", "name": "Multiplas Flechas", "max_level": 4},
 	{"id": "chain_lightning", "name": "Cadeia de Raios", "max_level": 4},
 	{"id": "life_steal", "name": "Coleta de Coracao"},
-	{"id": "gold_magnet", "name": "Ima de Gold", "max_level": 1},
+	# Imã de Gold removido do pool por enquanto (fora de balanceamento).
 	{"id": "dash", "name": "Dash", "max_level": 1},
 	{"id": "dash_cooldown", "name": "Dash CD Reduce", "requires": "dash"},
 	{"id": "dash_auto_attack", "name": "Dash Auto-Atk", "max_level": 1, "requires": "dash"},

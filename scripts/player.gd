@@ -142,6 +142,13 @@ var _poison_dps: float = 0.0
 var _poison_remaining: float = 0.0
 var _poison_tick_accum: float = 0.0
 
+# Run stats — exibidos na tela de morte. Tudo zerado em _ready.
+var _run_start_msec: int = 0
+var stats_enemies_killed: int = 0
+var stats_allies_made: int = 0
+var stats_damage_dealt: float = 0.0
+var stats_damage_taken: float = 0.0
+
 
 func _ready() -> void:
 	add_to_group("player")
@@ -149,6 +156,7 @@ func _ready() -> void:
 	reset_hp()
 	hp_changed.emit(hp, max_hp)
 	hp_bar.set_ratio(1.0)
+	_run_start_msec = Time.get_ticks_msec()
 
 	attack_timer.wait_time = attack_cooldown
 	attack_timer.one_shot = true
@@ -238,6 +246,7 @@ func _apply_poison_tick(amount: float) -> void:
 	if is_dead or amount <= 0.0:
 		return
 	hp = maxf(hp - amount, 0.0)
+	notify_damage_taken(amount)
 	hp_changed.emit(hp, max_hp)
 	if hp_bar != null:
 		hp_bar.set_ratio(hp / max_hp)
@@ -391,8 +400,10 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 	if is_pierce:
 		if "is_piercing" in arrow:
 			arrow.is_piercing = true
-		if "damage" in arrow:
-			arrow.damage = arrow.damage * (1.0 + _perf_damage_bonus())
+		# Bonus de dano da perfuração entra como multiplicador do PRIMEIRO alvo
+		# atingido. Os demais que a flecha atravessar recebem `damage` base.
+		if "pierce_first_dmg_mult" in arrow:
+			arrow.pierce_first_dmg_mult = 1.0 + _perf_damage_bonus()
 		if "hitbox_scale" in arrow and perfuracao_level >= 2:
 			arrow.hitbox_scale = 1.8
 	if chain_lightning_level > 0:
@@ -1009,6 +1020,7 @@ func take_damage(amount: float) -> void:
 	if is_dead:
 		return
 	hp = maxf(hp - amount, 0.0)
+	notify_damage_taken(amount)
 	hp_changed.emit(hp, max_hp)
 	hp_bar.set_ratio(hp / max_hp)
 	_flash_damage()
@@ -1155,3 +1167,27 @@ func _on_animation_finished() -> void:
 func _on_frame_changed() -> void:
 	if is_drawing and sprite.animation == "attack" and sprite.frame == RELEASE_FRAME:
 		_release_arrow()
+
+
+# ---------- Run stats (death screen) ----------
+
+func notify_enemy_killed() -> void:
+	stats_enemies_killed += 1
+
+
+func notify_ally_made() -> void:
+	stats_allies_made += 1
+
+
+func notify_damage_dealt(amount: float) -> void:
+	if amount > 0.0:
+		stats_damage_dealt += amount
+
+
+func notify_damage_taken(amount: float) -> void:
+	if amount > 0.0:
+		stats_damage_taken += amount
+
+
+func get_run_time_msec() -> int:
+	return Time.get_ticks_msec() - _run_start_msec
