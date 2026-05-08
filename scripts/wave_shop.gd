@@ -11,7 +11,7 @@ extends CanvasLayer
 
 signal closed
 
-const PRICE_TABLE: Array[int] = [3, 6, 10, 15, 20]
+const PRICE_TABLE: Array[int] = [4, 8, 20, 35]
 const TOWER_PRICE: int = 10
 const WOODWARDEN_PRICE_TABLE: Array[int] = [6, 10, 14, 18, 24, 30]
 const STRUCTURE_SURCHARGE_PER_OWNED: int = 3
