@@ -383,12 +383,33 @@ func _roll_status_slots() -> void:
 		var price: int = _status_price_for(picked_id, current_level)
 		status_slots.append({
 			"id": picked_id,
-			"name": picked["name"],
+			"name": _status_title_for(picked_id, target_level, picked["name"]),
 			"desc": _get_upgrade_desc(picked_id, target_level),
 			"price": price,
 			"available": true,
 			"target_level": target_level,
 		})
+
+
+# HP e armor têm progressão per-level (não constante), então o título do card
+# tem que acompanhar o nível. Outros stats (dano/atk speed/move speed) ganham
+# a mesma quantia por nível, então o nome estático do STATUS_POOL serve.
+func _status_title_for(id: String, target_level: int, fallback_name: String) -> String:
+	match id:
+		"hp":
+			match target_level:
+				1: return "+18 HP"
+				2: return "+20 HP"
+				3: return "+22 HP"
+				_: return "+25 HP"
+		"armor":
+			match target_level:
+				1: return "+8% dano reduzido"
+				2: return "+12% dano reduzido"
+				3: return "+16% dano reduzido"
+				4: return "+20% dano reduzido"
+				_: return "+3% dano reduzido"
+	return fallback_name
 
 
 const STATUS_BASE_PRICE: int = 4
