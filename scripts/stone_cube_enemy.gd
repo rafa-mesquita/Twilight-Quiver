@@ -85,6 +85,8 @@ var is_curse_ally: bool = false
 func _ready() -> void:
 	add_to_group("enemy")
 	add_to_group("stone_cube")
+	# Imune a CC: slow, knockback, stun, pull do graviton.
+	add_to_group("cc_immune")
 	hp = max_hp
 	player = get_tree().get_first_node_in_group("player")
 	sprite.animation_finished.connect(_on_animation_finished)
@@ -363,18 +365,14 @@ func _flash_damage() -> void:
 	_flash_tween.tween_property(sprite, "modulate", Color.WHITE, 0.2)
 
 
-func apply_knockback(dir: Vector2, strength: float) -> void:
-	knockback_velocity = dir.normalized() * strength
+func apply_knockback(_dir: Vector2, _strength: float) -> void:
+	# Imune a knockback (CC).
+	pass
 
 
-func apply_stun(duration: float) -> void:
-	_stun_remaining = maxf(_stun_remaining, duration)
-	_stop_run_sound()
-	if _state == State.ATTACK:
-		_state = State.DEFENSE
-		_hit_applied = false
-		if sprite != null:
-			sprite.play("defense")
+func apply_stun(_duration: float) -> void:
+	# Imune a stun (CC).
+	pass
 
 
 func _spawn_damage_effect() -> void:

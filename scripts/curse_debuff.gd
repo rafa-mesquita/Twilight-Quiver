@@ -45,6 +45,9 @@ func _apply_slow() -> void:
 	var parent: Node = get_parent()
 	if parent == null or not is_instance_valid(parent):
 		return
+	# CC immune: skip slow (mantém DoT, só não mexe no speed).
+	if parent.is_in_group("cc_immune"):
+		return
 	if not ("speed" in parent):
 		return
 	if _original_speed < 0.0:

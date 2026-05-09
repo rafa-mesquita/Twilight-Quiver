@@ -31,6 +31,9 @@ func _process(delta: float) -> void:
 func _on_body_entered(body: Node) -> void:
 	if not body.is_in_group("enemy"):
 		return
+	# CC immune: skip totalmente.
+	if body.is_in_group("cc_immune"):
+		return
 	# Reaproveita SlowDebuff existente (refresh) ou cria novo. CurseDebuff
 	# já dá slow + DoT, então não conflita — pula.
 	for c in body.get_children():

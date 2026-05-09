@@ -14,6 +14,11 @@ var _original_speed: float = -1.0
 
 func _ready() -> void:
 	_remaining = duration
+	# Imunidade a CC: se o parent (inimigo) estiver no grupo "cc_immune", auto-destrói.
+	var parent: Node = get_parent()
+	if parent != null and parent.is_in_group("cc_immune"):
+		queue_free()
+		return
 	_apply_slow()
 
 

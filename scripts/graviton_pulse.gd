@@ -111,6 +111,9 @@ func _apply_field(delta: float) -> void:
 			if _flash_timers.has(e):
 				_flash_timers.erase(e)
 			continue
+		# CC immune: skip slow + pull (mas continua sofrendo dano da explosão final).
+		if e.is_in_group("cc_immune"):
+			continue
 		# Garante slow ativo no inimigo dentro do campo.
 		if not _affected.has(e):
 			_apply_slow_to(e)
