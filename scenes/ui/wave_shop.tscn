@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://du8vqcoebjapl" path="res://assets/Hud/shop/aliado/placeholder.png" id="7_ali_ph"]
 [ext_resource type="Texture2D" uid="uid://43kh6plt35ba" path="res://assets/obecjts map/coins.png" id="8_coin"]
 [ext_resource type="PackedScene" uid="uid://b8tw1gv0vqlbl" path="res://scenes/ui/version_label.tscn" id="9_version"]
+[ext_resource type="Texture2D" path="res://assets/Hud/shop/persoangem shop.png" id="10_pface"]
 
 [sub_resource type="AtlasTexture" id="ATX_coin"]
 atlas = ExtResource("8_coin")
@@ -52,6 +53,78 @@ region = Rect2(0, 0, 17, 16)
 [sub_resource type="AtlasTexture" id="ATX_reroll_pressed"]
 atlas = ExtResource("5_reroll")
 region = Rect2(17, 0, 17, 16)
+
+[sub_resource type="AtlasTexture" id="ATX_pface_0"]
+atlas = ExtResource("10_pface")
+region = Rect2(0, 0, 66, 66)
+
+[sub_resource type="AtlasTexture" id="ATX_pface_1"]
+atlas = ExtResource("10_pface")
+region = Rect2(66, 0, 66, 66)
+
+[sub_resource type="AtlasTexture" id="ATX_pface_2"]
+atlas = ExtResource("10_pface")
+region = Rect2(132, 0, 66, 66)
+
+[sub_resource type="AtlasTexture" id="ATX_pface_3"]
+atlas = ExtResource("10_pface")
+region = Rect2(198, 0, 66, 66)
+
+[sub_resource type="AtlasTexture" id="ATX_pface_4"]
+atlas = ExtResource("10_pface")
+region = Rect2(264, 0, 66, 66)
+
+[sub_resource type="AtlasTexture" id="ATX_pface_5"]
+atlas = ExtResource("10_pface")
+region = Rect2(330, 0, 66, 66)
+
+[sub_resource type="AtlasTexture" id="ATX_pface_6"]
+atlas = ExtResource("10_pface")
+region = Rect2(396, 0, 66, 66)
+
+[sub_resource type="AtlasTexture" id="ATX_pface_7"]
+atlas = ExtResource("10_pface")
+region = Rect2(462, 0, 66, 66)
+
+[sub_resource type="AtlasTexture" id="ATX_pface_8"]
+atlas = ExtResource("10_pface")
+region = Rect2(528, 0, 66, 66)
+
+[sub_resource type="AtlasTexture" id="ATX_pface_9"]
+atlas = ExtResource("10_pface")
+region = Rect2(594, 0, 66, 66)
+
+[sub_resource type="AtlasTexture" id="ATX_pface_10"]
+atlas = ExtResource("10_pface")
+region = Rect2(660, 0, 66, 66)
+
+[sub_resource type="AtlasTexture" id="ATX_pface_11"]
+atlas = ExtResource("10_pface")
+region = Rect2(726, 0, 66, 66)
+
+[sub_resource type="AtlasTexture" id="ATX_pface_12"]
+atlas = ExtResource("10_pface")
+region = Rect2(792, 0, 66, 66)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_pface"]
+animations = [{
+"frames": [{"duration": 1.0, "texture": SubResource("ATX_pface_0")},
+{"duration": 1.0, "texture": SubResource("ATX_pface_1")},
+{"duration": 1.0, "texture": SubResource("ATX_pface_2")},
+{"duration": 1.0, "texture": SubResource("ATX_pface_3")},
+{"duration": 1.0, "texture": SubResource("ATX_pface_4")},
+{"duration": 1.0, "texture": SubResource("ATX_pface_5")},
+{"duration": 1.0, "texture": SubResource("ATX_pface_6")},
+{"duration": 1.0, "texture": SubResource("ATX_pface_7")},
+{"duration": 1.0, "texture": SubResource("ATX_pface_8")},
+{"duration": 1.0, "texture": SubResource("ATX_pface_9")},
+{"duration": 1.0, "texture": SubResource("ATX_pface_10")},
+{"duration": 1.0, "texture": SubResource("ATX_pface_11")},
+{"duration": 1.0, "texture": SubResource("ATX_pface_12")}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}]
 
 [node name="WaveShop" type="CanvasLayer" unique_id=240698062]
 layer = 50
@@ -935,5 +1008,13 @@ theme_override_font_sizes/font_size = 28
 text = "Escolha um dos 5 pontos para posicionar  -  Aperte Z para voltar"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="PlayerFace" type="AnimatedSprite2D" parent="Root" unique_id=305011001]
+texture_filter = 1
+position = Vector2(1820, 1000)
+scale = Vector2(2, 2)
+sprite_frames = SubResource("SpriteFrames_pface")
+animation = &"idle"
+autoplay = "idle"
 
 [node name="VersionLabel" parent="." instance=ExtResource("9_version")]

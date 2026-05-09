@@ -14,6 +14,9 @@ signal fire_skill_cooldown_changed(remaining: float, total: float)
 # Curse Skill (lv4 do elemental Maldição): raio roxo em linha reta, cd 3s.
 signal curse_skill_unlocked
 signal curse_skill_cooldown_changed(remaining: float, total: float)
+# Disparado a cada compra/aquisição de upgrade. HUD escuta pra atualizar a
+# coluna de upgrades adquiridos.
+signal upgrade_applied(id: String, level: int)
 
 @export var speed: float = 58.058  # base 55 + 1.5% + 4% = 58.058
 @export var attack_cooldown: float = 0.90  # ~+11% atk speed sobre o base 1.0
@@ -1149,6 +1152,8 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# L1: cada 3 ataques cria pulso ao bater. L2: cada 2 + range maior.
 			# L3: pulso explode no fim (30 dano). L4: área e dano aumentados.
 			graviton_level = mini(graviton_level + 1, 4)
+	# Notifica HUD/listeners. Emitido SEMPRE no fim, independente do match.
+	upgrade_applied.emit(upgrade_id, get_upgrade_count(upgrade_id))
 
 
 func get_upgrade_count(upgrade_id: String) -> int:

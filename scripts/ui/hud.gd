@@ -56,6 +56,53 @@ const HUD_RUNTIME_SCALE: Vector2 = Vector2(3, 3)
 @onready var fire_skill_cd_label: Label = $FireSkillIcon/CdLabel
 @onready var curse_skill_icon: Control = $CurseSkillIcon
 @onready var curse_skill_cd_label: Label = $CurseSkillIcon/CdLabel
+@onready var upgrade_column_vbox: VBoxContainer = $UpgradeColumn/VBox
+
+# Coluna de upgrades adquiridos (right edge da HUD).
+const UPGRADE_DISPLAY_ORDER: Array[String] = [
+	# Status primeiro (sempre visíveis assim que comprados)
+	"hp", "armor", "damage", "attack_speed", "move_speed",
+	# Upgrades de gameplay
+	"perfuracao", "ricochet_arrow", "multi_arrow", "chain_lightning",
+	"fire_arrow", "curse_arrow", "graviton", "life_steal", "dash",
+	"gold_magnet",
+	# Aliados
+	"woodwarden", "leno", "capivara_joe",
+]
+# Caps onde "MAX" substitui "Lx" no badge (status escala infinito → sem cap).
+const _UPG_CAPS: Dictionary = {
+	"perfuracao": 4, "ricochet_arrow": 4, "multi_arrow": 4, "chain_lightning": 4,
+	"fire_arrow": 4, "curse_arrow": 4, "graviton": 4, "life_steal": 4,
+	"dash": 4, "gold_magnet": 4,
+	"woodwarden": 4, "leno": 4, "capivara_joe": 4,
+}
+const _UPG_STATUS_COMBINED_PATH: String = "res://assets/Hud/shop/status/HP - atck speed - Move speed - Atck Dmg.png"
+const _UPG_STATUS_COMBINED_ROWS: Dictionary = {"hp": 0, "attack_speed": 1, "move_speed": 2, "damage": 3}
+# Path direto pra cada id que tem arte própria. Faltantes caem em placeholder
+# de upgrade ou aliado (categoria detectada pela posição na ordem).
+const _UPG_PATHS: Dictionary = {
+	"armor": "res://assets/Hud/shop/status/Armadura.png",
+	"fire_arrow": "res://assets/Hud/shop/upgrade/fire_arrow.png",
+	"curse_arrow": "res://assets/Hud/shop/upgrade/curse_arrow.png",
+	"multi_arrow": "res://assets/Hud/shop/upgrade/multi_arrow.png",
+	"chain_lightning": "res://assets/Hud/shop/upgrade/chain_lightning.png",
+	"graviton": "res://assets/Hud/shop/upgrade/graviton/graviton card-Sheet.png",
+	"leno": "res://assets/Hud/shop/aliado/Leno/Leno Card.png",
+	"woodwarden": "res://assets/Hud/shop/aliado/woodwarden/woodwarden card.png",
+}
+const _UPG_FALLBACK_UPGRADE: String = "res://assets/Hud/shop/upgrade/placeholder.png"
+const _UPG_FALLBACK_ALIADO: String = "res://assets/Hud/shop/aliado/placeholder.png"
+# Tamanho da célula da arte (atlas é 4 cells lado-a-lado por nível).
+const _UPG_FRAME_NORMAL: Vector2i = Vector2i(38, 47)  # upgrade/aliado
+const _UPG_FRAME_STATUS: Vector2i = Vector2i(65, 17)  # status/armor (faixa horizontal)
+# IDs por categoria (pra resolver fallback e tamanho de célula).
+const _UPG_STATUS_IDS: Array[String] = ["hp", "armor", "damage", "attack_speed", "move_speed"]
+const _UPG_ALIADO_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe"]
+# Largura/altura de cada chip na coluna. Status são wide (65×17), upgrade/aliado
+# são quase quadrados (38×47); chip único acomoda os dois com letterbox.
+const _UPG_CHIP_SIZE: Vector2 = Vector2(72, 44)
+const _UPG_BADGE_FONT: Font = preload("res://font/ByteBounce.ttf")
+const _UPG_BADGE_COLOR: Color = Color(1.0, 0.93, 0.4, 1.0)
 
 # Largura total do Fill (sem padding agora que tirei o Bg/border).
 const BAR_FILL_WIDTH: float = 330.0
@@ -100,6 +147,8 @@ func _ready() -> void:
 		var n := get_node_or_null(control_path)
 		if n != null:
 			_set_mouse_filter_recursive(n)
+	# Marca a coluna de upgrades como mouse-pass-through (consistente com resto da HUD).
+	_set_mouse_filter_recursive($UpgradeColumn)
 	# Conecta nos signals de gold/hp/dash do player. Defer pra player já estar pronto.
 	_connect_player_signals.call_deferred()
 
@@ -145,6 +194,102 @@ func _connect_player_signals() -> void:
 		player.curse_skill_cooldown_changed.connect(_on_curse_skill_cooldown_changed)
 	if "curse_arrow_level" in player and int(player.curse_arrow_level) >= 4:
 		_on_curse_skill_unlocked()
+	# Coluna de upgrades adquiridos: rebuild on signal.
+	if player.has_signal("upgrade_applied") and not player.upgrade_applied.is_connected(_on_upgrade_applied):
+		player.upgrade_applied.connect(_on_upgrade_applied)
+	# Estado inicial — caso já tenha algum upgrade aplicado (free upgrade da wave 1
+	# pode ter rolado antes do HUD conectar).
+	_refresh_upgrade_column()
+
+
+func _on_upgrade_applied(_id: String, _level: int) -> void:
+	_refresh_upgrade_column()
+
+
+func _refresh_upgrade_column() -> void:
+	if upgrade_column_vbox == null:
+		return
+	for c in upgrade_column_vbox.get_children():
+		c.queue_free()
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not player.has_method("get_upgrade_count"):
+		return
+	for id in UPGRADE_DISPLAY_ORDER:
+		var lvl: int = int(player.get_upgrade_count(id))
+		if lvl <= 0:
+			continue
+		upgrade_column_vbox.add_child(_build_upgrade_chip(id, lvl))
+
+
+func _build_upgrade_chip(id: String, lvl: int) -> Control:
+	var chip := Control.new()
+	chip.custom_minimum_size = _UPG_CHIP_SIZE
+	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Icon ocupa o chip inteiro com KEEP_ASPECT_CENTERED — célula da carta nunca
+	# distorce, fica letterboxed nos lados.
+	var icon := TextureRect.new()
+	icon.texture = _get_upgrade_icon_atlas(id)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.anchor_right = 1.0
+	icon.anchor_bottom = 1.0
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chip.add_child(icon)
+	# Badge com nivel (ou MAX). Bottom-right do chip, com outline preto.
+	var badge := Label.new()
+	var capped: bool = _UPG_CAPS.has(id) and lvl >= int(_UPG_CAPS[id])
+	badge.text = "MAX" if capped else "L%d" % lvl
+	badge.add_theme_font_override("font", _UPG_BADGE_FONT)
+	badge.add_theme_font_size_override("font_size", 18)
+	badge.add_theme_color_override("font_color", _UPG_BADGE_COLOR)
+	badge.add_theme_color_override("font_outline_color", Color.BLACK)
+	badge.add_theme_constant_override("outline_size", 4)
+	badge.anchor_left = 1.0
+	badge.anchor_top = 1.0
+	badge.anchor_right = 1.0
+	badge.anchor_bottom = 1.0
+	badge.offset_left = -36.0
+	badge.offset_top = -22.0
+	badge.offset_right = -2.0
+	badge.offset_bottom = -2.0
+	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	badge.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chip.add_child(badge)
+	return chip
+
+
+func _get_upgrade_icon_atlas(id: String) -> AtlasTexture:
+	# Sheet combinado de status (HP/atk/move/dmg) — cada id é uma row, célula
+	# do nível 1 (col 0).
+	var path: String = ""
+	var fw: int = 0
+	var fh: int = 0
+	var x_offset: int = 0
+	var y_offset: int = 0
+	if _UPG_STATUS_COMBINED_ROWS.has(id):
+		path = _UPG_STATUS_COMBINED_PATH
+		fw = _UPG_FRAME_STATUS.x
+		fh = _UPG_FRAME_STATUS.y
+		y_offset = int(_UPG_STATUS_COMBINED_ROWS[id]) * fh
+	elif _UPG_PATHS.has(id):
+		path = _UPG_PATHS[id]
+		var is_status: bool = _UPG_STATUS_IDS.has(id)
+		fw = _UPG_FRAME_STATUS.x if is_status else _UPG_FRAME_NORMAL.x
+		fh = _UPG_FRAME_STATUS.y if is_status else _UPG_FRAME_NORMAL.y
+	else:
+		# Sem arte mapeada — placeholder por categoria (aliado vs upgrade).
+		path = _UPG_FALLBACK_ALIADO if _UPG_ALIADO_IDS.has(id) else _UPG_FALLBACK_UPGRADE
+		fw = _UPG_FRAME_NORMAL.x
+		fh = _UPG_FRAME_NORMAL.y
+	var tex: Texture2D = load(path) as Texture2D
+	if tex == null:
+		return null
+	var atlas := AtlasTexture.new()
+	atlas.atlas = tex
+	atlas.region = Rect2(x_offset, y_offset, fw, fh)
+	return atlas
 
 
 func _on_gold_changed(total: int) -> void:
