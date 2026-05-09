@@ -680,6 +680,25 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 	var stars_label: Label = card.get_node_or_null("StarsLabel") as Label
 	if stars_label != null:
 		stars_label.text = ""
+	# Cards específicos pedem título + desc centralizados (em vez do layout
+	# default que tem título offset à direita pra dar espaço pra arte à
+	# esquerda). Coin master tem arte central então texto centralizado fica
+	# melhor visualmente.
+	if CENTERED_TEXT_IDS.has(slot_id_str):
+		if title_label != null:
+			title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			title_label.offset_left = 12.0
+			title_label.offset_right = 292.0
+		if desc_label != null:
+			desc_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			desc_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+
+# IDs de upgrade cujo título + desc devem ser centralizados horizontal e
+# verticalmente (em vez do layout default que deixa o título encostado à
+# direita pra dar espaço pra arte à esquerda).
+const CENTERED_TEXT_IDS: Array[String] = ["gold_magnet", "life_steal"]
 
 
 # Tamanho do frame por categoria (paisagem vs retrato).
@@ -742,6 +761,7 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 	"perfuracao": Color.WHITE,
 	"ricochet_arrow": Color.WHITE,
 	"gold_magnet": Color(0x6a / 255.0, 0x53 / 255.0, 0x0b / 255.0),  # #6a530b
+	"life_steal": Color(0x58 / 255.0, 0x14 / 255.0, 0x1f / 255.0),  # #58141f
 }
 # Cor secundária (DescLabel + PriceLabel) por upgrade. Quando definido,
 # sobrescreve a cor do título nesses dois labels — útil pra cards onde título
@@ -763,6 +783,8 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	"ricochet_arrow": "res://assets/Hud/shop/upgrade/ricochete.png",
 	# id é "gold_magnet" mas o arquivo é "coin master.png" (com espaço).
 	"gold_magnet": "res://assets/Hud/shop/upgrade/coin master.png",
+	# id "life_steal" mas arquivo é "life steal.png" (com espaço).
+	"life_steal": "res://assets/Hud/shop/upgrade/life steal.png",
 }
 # Cor única pros aliados (todos compartilham por enquanto).
 const ALIADO_TEXT_COLOR: Color = Color(0x2c / 255.0, 0x1f / 255.0, 0x1f / 255.0)  # #2c1f1f
