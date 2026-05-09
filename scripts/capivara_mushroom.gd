@@ -17,6 +17,8 @@ extends Area2D
 @export var l3_atk_speed_amount: float = 0.50  # +50%
 # Threshold de HP pra escolher cura vs speed.
 @export var heal_threshold_pct: float = 0.50
+# Cura fixa do cogumelo (HP) — usada quando o player está abaixo do threshold.
+@export var heal_amount: float = 35.0
 # Som tocado quando o player coleta (mesmo do coração do Life Steal).
 @export var pickup_sound: AudioStream
 # Som tocado quando o inimigo pisa no cogumelo de dano.
@@ -71,10 +73,8 @@ func _apply_buff_to_player(player: Node) -> void:
 	if lvl >= 3:
 		should_heal = true
 		should_speed = true
-	if should_heal and "max_hp" in player and "hp" in player:
-		var missing: float = float(player.max_hp) - float(player.hp)
-		if missing > 0.0 and player.has_method("heal"):
-			player.heal(missing)
+	if should_heal and player.has_method("heal"):
+		player.heal(heal_amount)
 	if should_speed and player.has_method("apply_capivara_speed_buff"):
 		player.apply_capivara_speed_buff(buff_speed_amount, buff_duration)
 	if lvl >= 3 and player.has_method("apply_capivara_atk_speed_buff"):

@@ -1221,9 +1221,9 @@ func _leno_target_count() -> int:
 
 
 func _refresh_capivaras() -> void:
-	# L1-L3: 1 capivara. L4: 2. Drop interval: L1=14s, L2+=7s.
+	# L1-L3: 1 capivara. L4: 2. Drop interval: L1=17.5s, L2+=8.75s.
 	var target_count: int = 2 if capivara_joe_level >= 4 else (1 if capivara_joe_level >= 1 else 0)
-	var interval: float = 7.0 if capivara_joe_level >= 2 else 14.0
+	var interval: float = 8.75 if capivara_joe_level >= 2 else 17.5
 	# Limpa entries inválidos.
 	var alive: Array[Node2D] = []
 	for c in _capivaras:

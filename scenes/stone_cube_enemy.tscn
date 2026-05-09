@@ -1,0 +1,132 @@
+[gd_scene format=3 uid="uid://dt78ddts01nok"]
+
+[ext_resource type="Script" uid="uid://dby8ruc32hm42" path="res://scripts/stone_cube_enemy.gd" id="1_stone"]
+[ext_resource type="Texture2D" uid="uid://bvxi8kqgr4ijy" path="res://assets/enemies/stone cube/stone cube-Sheet.png" id="2_sheet"]
+[ext_resource type="PackedScene" path="res://scenes/damage_effect.tscn" id="3_dmg"]
+[ext_resource type="PackedScene" uid="uid://c0fhcseis1qub" path="res://scenes/hp_bar.tscn" id="4_hpbar"]
+[ext_resource type="PackedScene" path="res://scenes/damage_number.tscn" id="5_dmgnum"]
+[ext_resource type="PackedScene" path="res://scenes/kill_effect.tscn" id="6_kill"]
+[ext_resource type="AudioStream" uid="uid://bagfltj6e5u80" path="res://assets/enemies/stone cube/stone cube sofrer dano.mp3" id="7_dmg_sfx"]
+[ext_resource type="PackedScene" path="res://scenes/gold.tscn" id="8_gold"]
+[ext_resource type="PackedScene" path="res://scenes/heart.tscn" id="9_heart"]
+[ext_resource type="AudioStream" uid="uid://c1mv34klawvre" path="res://assets/enemies/stone cube/stone cube impact.mp3" id="10_impact_sfx"]
+[ext_resource type="AudioStream" path="res://assets/enemies/stone cube/audio run stone cube.mp3" id="11_run_sfx"]
+
+[sub_resource type="AtlasTexture" id="A_atk_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_atk_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_atk_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(64, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_def_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_def_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_walk_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_walk_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_stone"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_atk_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_atk_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_atk_2")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 7.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_def_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_def_1")
+}],
+"loop": true,
+"name": &"defense",
+"speed": 3.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_walk_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_walk_1")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 10.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_stone"]
+radius = 8.0
+height = 18.0
+
+[node name="StoneCubeEnemy" type="CharacterBody2D" unique_id=1897985146]
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_stone")
+damage_effect_scene = ExtResource("3_dmg")
+damage_number_scene = ExtResource("5_dmgnum")
+kill_effect_scene = ExtResource("6_kill")
+damage_sound = ExtResource("7_dmg_sfx")
+impact_sound = ExtResource("10_impact_sfx")
+run_sound = ExtResource("11_run_sfx")
+gold_scene = ExtResource("8_gold")
+heart_scene = ExtResource("9_heart")
+
+[node name="Shadow" type="Node2D" parent="." unique_id=1187460786]
+
+[node name="Inner" type="Polygon2D" parent="Shadow" unique_id=622918503]
+position = Vector2(-1, -1)
+scale = Vector2(2, 2)
+color = Color(0, 0, 0, 0.35)
+polygon = PackedVector2Array(3, 0, 3.5, 1, 1.5, 1.5, -1.5, 1.5, -4.5, 0, -4, -1.5, 0, -1, 2, -1)
+
+[node name="Middle" type="Polygon2D" parent="Shadow" unique_id=441829548]
+position = Vector2(-0.9999999, -0.9999981)
+scale = Vector2(1.75, 1.75)
+color = Color(0, 0, 0, 0.25)
+polygon = PackedVector2Array(6, 0, 6.8571424, 1.142856, 3, 2, 0, 2, -3, 2, -5, 1, -6.8571424, -1.0728836e-06, -6.285714, -1.7142867, -2.8571427, -2.285715, 0, -2, 3, -2, 5, -1)
+
+[node name="Outer" type="Polygon2D" parent="Shadow" unique_id=225896376]
+position = Vector2(-0.9999988, -0.9999992)
+scale = Vector2(1.5555558, 1.6666669)
+color = Color(0, 0, 0, 0.18)
+polygon = PackedVector2Array(9.000001, 0, 8.400001, 1.2, 6, 2.4, 3, 3, 0, 3, -3, 3, -6, 2, -8, 1, -9, 0, -8.4, -1.2, -6.428571, -3, -3, -3, 0, -3, 3, -3, 6, -2, 8, -1)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=731757847]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_stone")
+animation = &"defense"
+autoplay = "defense"
+offset = Vector2(0, -10)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=294778187]
+position = Vector2(0, -10)
+shape = SubResource("CapsuleShape2D_stone")
+
+[node name="HpBar" parent="." unique_id=1603952413 instance=ExtResource("4_hpbar")]
+position = Vector2(-8, -28)
+fg_color = Color(0.431, 0.129, 0.129, 1)

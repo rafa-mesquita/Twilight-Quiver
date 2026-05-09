@@ -17,6 +17,7 @@
 [ext_resource type="PackedScene" path="res://grass.tscn" id="15_jkv2x"]
 [ext_resource type="PackedScene" path="res://scenes/mage_enemy.tscn" id="16_mage"]
 [ext_resource type="PackedScene" path="res://scenes/summoner_mage.tscn" id="17_smage"]
+[ext_resource type="PackedScene" path="res://scenes/stone_cube_enemy.tscn" id="18_stone"]
 
 [sub_resource type="RectangleShape2D" id="RectShape_bound_h"]
 size = Vector2(842, 10)
@@ -29,6 +30,7 @@ script = ExtResource("11_wave")
 monkey_scene = ExtResource("10_monkey")
 mage_scene = ExtResource("16_mage")
 summoner_mage_scene = ExtResource("17_smage")
+stone_cube_scene = ExtResource("18_stone")
 spawn_points_path = NodePath("Entities/SpawnPoints")
 
 [node name="Map" type="Node2D" parent="." unique_id=10101010 groups=["map"]]

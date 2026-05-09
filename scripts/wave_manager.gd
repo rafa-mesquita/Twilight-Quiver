@@ -9,6 +9,7 @@ extends Node2D
 @export var monkey_scene: PackedScene
 @export var mage_scene: PackedScene
 @export var summoner_mage_scene: PackedScene
+@export var stone_cube_scene: PackedScene
 @export var spawn_delay: float = 0.5
 @export var inter_wave_delay: float = 2.0
 @export var pre_cleared_hold: float = 2.0  # tempo segurando 100% antes da tela "Wave Limpa"
@@ -69,6 +70,7 @@ func _ready() -> void:
 		"monkey": {"scene": monkey_scene, "group": "monkey"},
 		"mage": {"scene": mage_scene, "group": "mage"},
 		"summoner_mage": {"scene": summoner_mage_scene, "group": "summoner_mage"},
+		"stone_cube": {"scene": stone_cube_scene, "group": "stone_cube"},
 	}
 	var player := get_tree().get_first_node_in_group("player")
 	if player != null and player.has_signal("died"):
@@ -281,11 +283,30 @@ func _build_wave_config(num: int) -> Dictionary:
 		summ_total = mini(summ_total, 1)
 		monkey_alive = maxi(monkey_alive - 1, 1)
 		monkey_total = maxi(monkey_total - 1, monkey_alive)
-	return {
+	# Stone cube só aparece em rounds específicos:
+	#   Wave 3: estreia, 1 cubo.
+	#   Wave 5: max 5 cubos.
+	#   Wave 8, 11, 14, 17...: a cada 3 rounds, count escala junto com o round
+	#   (ex: round 8 = 8 cubos totais, round 11 = 11 totais).
+	var stone_alive: int = 0
+	var stone_total: int = 0
+	if num == 3:
+		stone_total = 1
+		stone_alive = 1
+	elif num == 5:
+		stone_total = 5
+		stone_alive = 3
+	elif num >= 8 and (num - 5) % 3 == 0:
+		stone_total = num
+		stone_alive = maxi(int(round(float(num) * 0.5)), 3)
+	var cfg: Dictionary = {
 		"monkey": {"alive_target": maxi(monkey_alive, 1), "total": maxi(monkey_total, monkey_alive)},
 		"mage": {"alive_target": maxi(mage_alive, 1), "total": maxi(mage_total, mage_alive)},
 		"summoner_mage": {"alive_target": maxi(summ_alive, 1), "total": maxi(summ_total, summ_alive)},
 	}
+	if stone_total > 0:
+		cfg["stone_cube"] = {"alive_target": maxi(stone_alive, 1), "total": maxi(stone_total, stone_alive)}
+	return cfg
 
 
 func _spawn_delay_for_wave() -> float:

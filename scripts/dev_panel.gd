@@ -43,6 +43,7 @@ func _ready() -> void:
 	$Content/Scroll/VBox/EnemySection/EnemyContent/MonkeyBtn.pressed.connect(_spawn.bind("monkey"))
 	$Content/Scroll/VBox/EnemySection/EnemyContent/MageBtn.pressed.connect(_spawn.bind("mage"))
 	$Content/Scroll/VBox/EnemySection/EnemyContent/SummonerBtn.pressed.connect(_spawn.bind("summoner_mage"))
+	$Content/Scroll/VBox/EnemySection/EnemyContent/StoneCubeBtn.pressed.connect(_spawn.bind("stone_cube"))
 	$Content/Scroll/VBox/EnemySection/EnemyContent/InsectBtn.pressed.connect(_spawn.bind("insect"))
 	$Content/Scroll/VBox/EnemySection/EnemyContent/Burst10MonkeyBtn.pressed.connect(_spawn_burst_monkeys)
 	# Stats (manipulação de player/world).

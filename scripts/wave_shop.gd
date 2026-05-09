@@ -141,8 +141,8 @@ const LENO_DESCS: Array[String] = [
 	"+1 Leno (total 3)",
 ]
 const CAPIVARA_JOE_DESCS: Array[String] = [
-	"Vagueia, dropa\ncogumelo cura/speed",
-	"7s, alterna buff/dano\n40 dmg area roxa",
+	"Cogumelo a cada 17,5s\ncura 35 HP / speed",
+	"8,75s alterna buff/dano\n40 dmg area roxa",
 	"Buff cura+speed\n+atk speed 50%",
 	"+1 Capivara\n(total 2)",
 ]
@@ -434,13 +434,13 @@ func _roll_aliado_slots() -> void:
 		for i in 3:
 			aliado_slots.append({"id": "locked", "name": "Bloqueado", "desc": lock_desc, "price": 0, "available": false})
 		return
-	var surcharge: int = STRUCTURE_SURCHARGE_PER_OWNED * _total_structures_bought()
 	var ww_lvl: int = 0
 	var p := _get_player()
 	if p != null and p.has_method("get_upgrade_count"):
 		ww_lvl = p.get_upgrade_count("woodwarden")
 	var ww_maxed: bool = ww_lvl >= 4
-	var ww_price: int = WOODWARDEN_PRICE_TABLE[mini(ww_lvl, WOODWARDEN_PRICE_TABLE.size() - 1)] + surcharge
+	# Woodwarden virou aliado (sem surcharge de estruturas).
+	var ww_price: int = WOODWARDEN_PRICE_TABLE[mini(ww_lvl, WOODWARDEN_PRICE_TABLE.size() - 1)]
 	var ww_desc: String
 	if ww_maxed:
 		ww_desc = "Max (4/4) atingido"
