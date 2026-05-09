@@ -12,13 +12,13 @@ extends Area2D
 # Buff de speed (variante buff): adiciona +X ao move_speed_multiplier do player
 # por buff_duration segundos. (X é grande pra ser "forte" como pediu o design.)
 @export var buff_speed_amount: float = 0.80  # +80% durante o buff
-@export var buff_duration: float = 1.0
+@export var buff_duration: float = 1.3
 # L3+: atk speed também (mesma duração).
 @export var l3_atk_speed_amount: float = 0.50  # +50%
 # Threshold de HP pra escolher cura vs speed.
 @export var heal_threshold_pct: float = 0.50
 # Cura fixa do cogumelo (HP) — usada quando o player está abaixo do threshold.
-@export var heal_amount: float = 35.0
+@export var heal_amount: float = 36.75
 # Som tocado quando o player coleta (mesmo do coração do Life Steal).
 @export var pickup_sound: AudioStream
 # Som tocado quando o inimigo pisa no cogumelo de dano.
@@ -26,6 +26,8 @@ extends Area2D
 @export var explode_sound_volume_db: float = -10.0
 
 const PURPLE_TINT: Color = Color(0.78, 0.45, 0.95, 1.0)
+# L1/L2: chance de o cogumelo dar os dois buffs (cura + speed) num único pickup.
+const BLESSED_MUSHROOM_CHANCE: float = 0.05
 const PICKUP_ANIM_DURATION: float = 0.22
 const EXPLODE_ANIM_DURATION: float = 0.28
 const EXPLODE_SCALE_TARGET: float = 2.6
@@ -69,6 +71,11 @@ func _apply_buff_to_player(player: Node) -> void:
 	var hp_ratio: float = _player_hp_ratio(player)
 	var should_heal: bool = hp_ratio < heal_threshold_pct
 	var should_speed: bool = not should_heal
+	# L1/L2: 5% de chance de dropar um cogumelo "abençoado" que dá os DOIS efeitos
+	# (sem o atk speed, que continua exclusivo do L3+).
+	if lvl < 3 and randf() < BLESSED_MUSHROOM_CHANCE:
+		should_heal = true
+		should_speed = true
 	# L3+: dá os DOIS efeitos sempre + atk speed buff.
 	if lvl >= 3:
 		should_heal = true

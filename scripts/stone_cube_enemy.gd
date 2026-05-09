@@ -13,10 +13,14 @@ extends CharacterBody2D
 # Multiplicadores de dano por estado:
 #   DEFENSE + STAND: 0.05 (95% redução)
 #   DEFENSE + WALK:  0.35 (65% redução)
-#   CHARGE / ATTACK: 1.10 (recebe 10% a mais — vulnerável correndo)
+#   CHARGE / ATTACK: 1.20 (recebe 20% a mais — vulnerável correndo)
 @export var dmg_mult_defense_stand: float = 0.05
 @export var dmg_mult_defense_walk: float = 0.35
-@export var dmg_mult_vulnerable: float = 1.10
+@export var dmg_mult_vulnerable: float = 1.20
+# Quando só restam stone cubes no mapa, abaixa a redução pra não arrastar a
+# wave: STAND 95%→30% redução (mult 0.70), WALK 65%→15% redução (mult 0.85).
+@export var dmg_mult_defense_stand_lone: float = 0.70
+@export var dmg_mult_defense_walk_lone: float = 0.85
 @export var attack_range: float = 18.0  # range do slam (contato)
 @export var detect_range: float = 95.0  # distância em que sai de defense pra charge
 @export var leash_range: float = 200.0  # distância em que volta pra defense
@@ -78,6 +82,10 @@ var _run_sfx_player: AudioStreamPlayer2D = null
 # Trava em DEFENSE após o ataque — durante esse tempo não vira CHARGE
 # mesmo com player perto.
 var _defense_lock_remaining: float = 0.0
+# Flag setada pela arrow.gd antes de chamar take_damage quando o hit é da
+# flecha do player (auto-attack / pierce / ricochet). Só esse tipo de dano
+# cancela CHARGE/ATTACK; ticks (DoT, burn, curse), aliados e estruturas não.
+var _arrow_hit_flag: bool = false
 # Curse ally: convertido pela maldição, AI inverte (mira em enemies).
 var is_curse_ally: bool = false
 
@@ -249,19 +257,21 @@ func _on_animation_finished() -> void:
 
 func take_damage(amount: float) -> void:
 	# Multiplicador de dano por estado:
-	#   DEFENSE + STAND: 0.05 (95% redução)
-	#   DEFENSE + WALK:  0.35 (65% redução)
-	#   CHARGE / ATTACK: 1.10 (vulnerável)
+	#   DEFENSE + STAND: 0.05 (95% redução) — ou 0.70 se só restam stone cubes
+	#   DEFENSE + WALK:  0.35 (65% redução) — ou 0.85 se só restam stone cubes
+	#   CHARGE / ATTACK: 1.20 (vulnerável)
+	var lone: bool = _only_stone_cubes_remaining()
 	var mult: float = dmg_mult_vulnerable
 	if _state == State.DEFENSE:
 		if _defense_mode == DefenseMode.STAND:
-			mult = dmg_mult_defense_stand
+			mult = dmg_mult_defense_stand_lone if lone else dmg_mult_defense_stand
 		else:
-			mult = dmg_mult_defense_walk
+			mult = dmg_mult_defense_walk_lone if lone else dmg_mult_defense_walk
 	var actual: float = amount * mult
-	# Cancela CHARGE/ATTACK ao tomar dano: cubo recua pro modo STAND parado.
-	# Trava em DEFENSE pelo lock pós-ataque (mesmo se ainda não atacou) pra
-	# dar uma janela de descanso após levar o hit.
+	# Só dano da flecha do player (auto-attack, pierce, ricochet) cancela
+	# CHARGE/ATTACK. Ticks (burn/curse), aliados e estruturas não interrompem.
+	var from_arrow: bool = _arrow_hit_flag
+	_arrow_hit_flag = false
 	var was_aggressive: bool = _state == State.CHARGE or _state == State.ATTACK
 	if not is_curse_ally:
 		var p := get_tree().get_first_node_in_group("player")
@@ -274,9 +284,9 @@ func take_damage(amount: float) -> void:
 	_spawn_damage_number(actual)
 	var died: bool = hp <= 0.0
 	_play_damage_sound(1.5 if died else 0.7)
-	# Interrompe CHARGE/ATTACK se levou hit: força modo STAND parado e trava
-	# em DEFENSE por post_attack_defense_lock segundos. Cancela ataque em curso.
-	if not died and was_aggressive:
+	# Interrompe CHARGE/ATTACK só se o hit veio de uma flecha do player.
+	# DoT/aliado/estrutura batem normal mas não cancelam o ataque.
+	if not died and was_aggressive and from_arrow:
 		_state = State.DEFENSE
 		_defense_mode = DefenseMode.STAND
 		_defense_lock_remaining = post_attack_defense_lock
@@ -435,6 +445,17 @@ func _pick_curse_ally_target() -> Node2D:
 			nearest = e
 			best_dist = d
 	return nearest
+
+
+func _only_stone_cubes_remaining() -> bool:
+	# Verdadeiro quando todo enemy vivo no mapa é stone_cube — usado pra reduzir
+	# a redução de dano e não arrastar a wave.
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not is_instance_valid(e):
+			continue
+		if not (e as Node).is_in_group("stone_cube"):
+			return false
+	return true
 
 
 func _get_world() -> Node:

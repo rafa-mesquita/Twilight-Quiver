@@ -27,7 +27,7 @@ animations = [{
 
 [node name="InsectHitEffect" type="AnimatedSprite2D"]
 texture_filter = 1
-modulate = Color(1, 1, 1, 0.6)
+modulate = Color(1.1, 1.1, 1.1, 0.6)
 sprite_frames = SubResource("SpriteFrames_hit")
 autoplay = "default"
 script = ExtResource("1_effect")

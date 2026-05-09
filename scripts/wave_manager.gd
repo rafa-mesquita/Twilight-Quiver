@@ -196,6 +196,8 @@ func _start_next_wave() -> void:
 			player.reset_position()
 		if player.has_method("reset_perf_counter"):
 			player.reset_perf_counter()
+		if player.has_method("reset_woodwardens_hp"):
+			player.reset_woodwardens_hp()
 	# Snapshot do gold do player no início da wave — pity pega gold REAL ganho
 	# (já coletado + ainda no chão), não conta em "coin entries" do drop.
 	if player != null and "gold" in player:
@@ -421,6 +423,9 @@ func _finish_wave() -> void:
 	_emit_progress()
 	# Maldição: aliados convertidos pela curse só duram até o fim da horda/turno.
 	_cleanup_curse_allies()
+	# Cogumelos da Capivara Joe não persistem entre raids — limpa o que ficou no
+	# chão (buff e damage variants).
+	_cleanup_capivara_mushrooms()
 	# Wave 1 pity: se RNG não dropou as N mínimas, completa AGORA (antes do
 	# magnet sugar pro player). Wave 2+ não tem pity, RNG normal.
 	_top_up_wave1_coins()
@@ -466,6 +471,30 @@ func _top_up_wave1_coins() -> void:
 		world.add_child(coin)
 		var off := Vector2(randf_range(-24.0, 24.0), randf_range(-24.0, 24.0))
 		coin.global_position = center + off
+
+
+const CAPIVARA_MUSHROOM_KEEP_MAX: int = 7
+
+
+func _cleanup_capivara_mushrooms() -> void:
+	# Damage variants somem sempre. Buff variants persistem entre raids, mas com
+	# cap de CAPIVARA_MUSHROOM_KEEP_MAX (sorteio aleatório se passar).
+	var buffs: Array[Node] = []
+	for m in get_tree().get_nodes_in_group("capivara_mushroom"):
+		if not is_instance_valid(m):
+			continue
+		var is_dmg: bool = false
+		if "is_damage_variant" in m:
+			is_dmg = bool(m.is_damage_variant)
+		if is_dmg:
+			m.queue_free()
+		else:
+			buffs.append(m)
+	if buffs.size() <= CAPIVARA_MUSHROOM_KEEP_MAX:
+		return
+	buffs.shuffle()
+	for i in range(CAPIVARA_MUSHROOM_KEEP_MAX, buffs.size()):
+		buffs[i].queue_free()
 
 
 func _cleanup_curse_allies() -> void:
@@ -661,6 +690,7 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	{"id": "ricochet_arrow", "name": "Flecha Ricochete"},
 	{"id": "graviton", "name": "Graviton"},
 	{"id": "armor", "name": "Armadura"},
+	{"id": "woodwarden", "name": "Woodwarden"},
 	{"id": "leno", "name": "Amigo Leno"},
 	{"id": "capivara_joe", "name": "Capivara Joe"},
 ]

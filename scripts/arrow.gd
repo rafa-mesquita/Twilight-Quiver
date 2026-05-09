@@ -313,6 +313,10 @@ func _on_hit(body: Node) -> void:
 			dmg_to_apply *= pierce_first_dmg_mult
 		elif _pierce_hits >= 2:
 			dmg_to_apply *= PIERCE_LATE_DMG_MULT
+		# Sinaliza pro stone_cube que esse hit é de flecha (cancela ataque dele).
+		# Ticks/aliados/estruturas não setam o flag e não cancelam.
+		if target.is_in_group("stone_cube"):
+			target._arrow_hit_flag = true
 		target.take_damage(dmg_to_apply)
 		if target.has_method("apply_knockback"):
 			target.apply_knockback(direction, knockback_strength)

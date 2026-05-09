@@ -60,7 +60,7 @@ var woodwarden_level: int = 0  # aliado tank — cada compra "uppa" stats e cust
 # do wave_manager). Cada entry: {"instance", "last_pos", "dead_for"}.
 const WOODWARDEN_SCENE: PackedScene = preload("res://scenes/woodwarden.tscn")
 const WOODWARDEN_SPAWN_FX_SCENE: PackedScene = preload("res://scenes/woodwarden_spawn_effect.tscn")
-const WOODWARDEN_RESPAWN_DELAY: float = 21.0
+const WOODWARDEN_RESPAWN_DELAY: float = 15.5
 var _woodwardens: Array[Dictionary] = []
 # Leno (aliado voador, 4 níveis). Sem HP, orbita o player, dispara projétil
 # com slow area no impacto. L1=1 leno (20 dmg), L2=1 leno (50 dmg + atk speed),
@@ -132,6 +132,9 @@ var _dash_cd_remaining: float = 0.0
 var _is_dashing: bool = false
 var _dash_velocity: Vector2 = Vector2.ZERO
 var _dash_time_left: float = 0.0
+# I-frames concedidos ao iniciar o dash (player imune a dano por X segundos).
+const DASH_IFRAMES_DURATION: float = 0.3
+var _iframes_remaining: float = 0.0
 # Flags derivadas de dash_level:
 # - has_dash_auto_attack: dash_level >= 3
 # - has_dash_double_arrow: dash_level >= 4
@@ -883,6 +886,7 @@ func _try_start_dash() -> void:
 	_dash_time_left = dash_duration
 	_dash_velocity = dir * (dash_distance / dash_duration)
 	_dash_cd_remaining = dash_cooldown
+	_iframes_remaining = DASH_IFRAMES_DURATION
 	# Vira o sprite na direção do dash (mantém facing se for puramente vertical).
 	if dir.x != 0.0:
 		sprite.flip_h = dir.x < 0.0
@@ -943,6 +947,8 @@ func _update_dash(delta: float) -> void:
 	if _dash_cd_remaining > 0.0:
 		_dash_cd_remaining = maxf(_dash_cd_remaining - delta, 0.0)
 		dash_cooldown_changed.emit(_dash_cd_remaining, dash_cooldown)
+	if _iframes_remaining > 0.0:
+		_iframes_remaining = maxf(_iframes_remaining - delta, 0.0)
 
 
 func _spawn_dash_trail_segment() -> void:
@@ -1042,9 +1048,15 @@ func apply_upgrade(upgrade_id: String) -> void:
 	match upgrade_id:
 		"hp":
 			hp_upgrades += 1
-			# +15% do max_hp original (60) por stack
-			max_hp += 15.0
-			hp = min(hp + 15.0, max_hp)
+			# Curva por nível: L1=+18, L2=+20, L3=+22, L4+=+25.
+			var hp_gain: float = 25.0
+			match hp_upgrades:
+				1: hp_gain = 18.0
+				2: hp_gain = 20.0
+				3: hp_gain = 22.0
+				_: hp_gain = 25.0
+			max_hp += hp_gain
+			hp = min(hp + hp_gain, max_hp)
 			hp_changed.emit(hp, max_hp)
 			if hp_bar != null:
 				hp_bar.set_ratio(hp / max_hp)
@@ -1326,7 +1338,7 @@ func _apply_woodwarden_stats(ww: Node) -> void:
 
 
 func _check_woodwarden_respawns(delta: float) -> void:
-	# Respawn nativo: 15s após woodwarden morrer, spawna novo na última posição.
+	# Respawn nativo: 15.5s após woodwarden morrer, spawna novo na última posição.
 	# Sem sistema de structure do wave_manager (mantém só pra torres).
 	for entry in _woodwardens:
 		var inst: Variant = entry.get("instance")
@@ -1358,6 +1370,22 @@ func _spawn_woodwarden_portal_fx(pos: Vector2) -> void:
 	fx.global_position = pos
 
 
+func reset_woodwardens_hp() -> void:
+	# Chamado pelo wave_manager no início de cada wave: woodwardens vivos voltam
+	# full HP (mesma lógica do owned_structures pra torres). Mortos seguem o
+	# timer de respawn nativo.
+	for entry in _woodwardens:
+		var inst: Variant = entry.get("instance")
+		if inst == null or not is_instance_valid(inst):
+			continue
+		if "max_hp" in inst and "hp" in inst:
+			inst.hp = inst.max_hp
+			if (inst as Node).has_node("HpBar"):
+				var bar: Node = (inst as Node).get_node("HpBar")
+				if bar.has_method("set_ratio"):
+					bar.set_ratio(1.0)
+
+
 func _cleanup_woodwardens() -> void:
 	for entry in _woodwardens:
 		var inst: Variant = entry.get("instance")
@@ -1374,15 +1402,15 @@ func _cleanup_lenos() -> void:
 
 
 func _compute_damage_reduction(level: int) -> float:
-	# Armor: L1=5%, L2=7%, L3=10%, L4=13%, L5+=+2% por stack após L4. Cap em
+	# Armor: L1=8%, L2=12%, L3=16%, L4=20%, L5+=+3% por stack após L4. Cap em
 	# 75% pra evitar invencibilidade absoluta.
 	match level:
 		0: return 0.0
-		1: return 0.05
-		2: return 0.07
-		3: return 0.10
-		4: return 0.13
-	return minf(0.13 + 0.02 * float(level - 4), 0.75)
+		1: return 0.08
+		2: return 0.12
+		3: return 0.16
+		4: return 0.20
+	return minf(0.20 + 0.03 * float(level - 4), 0.75)
 
 
 func reset_perf_counter() -> void:
@@ -1393,6 +1421,9 @@ func reset_perf_counter() -> void:
 
 func take_damage(amount: float) -> void:
 	if is_dead:
+		return
+	# I-frames do dash: ignora dano (inclui DoT/curse/burn que chamem take_damage).
+	if _iframes_remaining > 0.0:
 		return
 	# Armor: reduz dano antes de aplicar — número/notify usam o valor reduzido,
 	# pra a UI mostrar o que de fato saiu do HP do player.

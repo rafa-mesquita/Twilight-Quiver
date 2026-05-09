@@ -13,6 +13,3 @@ summon_min_wave = 1
 gold_drop_chance = 0.72
 gold_drop_min = 1
 gold_drop_max = 2
-
-[node name="AnimatedSprite2D" parent="." index="1"]
-self_modulate = Color(0.9, 0.7, 1.05, 1)

@@ -32,11 +32,11 @@ const ESTRUT_UNLOCK_INTERVAL: int = 4
 # `name` é o título do card (descrição breve, já que a card paisagem não tem
 # DescLabel). Ex: "+15 HP" em vez de "Mais HP".
 const STATUS_POOL: Array = [
-	{"id": "hp", "name": "+15 HP"},
+	{"id": "hp", "name": "+18 HP"},
 	{"id": "damage", "name": "+20% dano"},
 	{"id": "attack_speed", "name": "+27% atk speed"},
 	{"id": "move_speed", "name": "+10% move speed"},
-	{"id": "armor", "name": "+5% dano reduzido"},
+	{"id": "armor", "name": "+8% dano reduzido"},
 ]
 
 # Pool dos cards de upgrade (gameplay-changing items, com requirements).
@@ -65,13 +65,13 @@ const EXCLUSIVE_PAIRS: Array = [
 	["perfuracao", "ricochet_arrow"],
 ]
 
-const HP_DESCS: Array[String] = ["+15 HP maximo", "+15 HP maximo", "+15 HP maximo", "+15 HP maximo"]
+const HP_DESCS: Array[String] = ["+18 HP maximo", "+20 HP maximo", "+22 HP maximo", "+25 HP maximo"]
 const ARMOR_DESCS: Array[String] = [
-	"5% de dano\nreduzido",
-	"7% de dano\nreduzido",
-	"10% de dano\nreduzido",
-	"13% de dano\nreduzido",
-	"+2% dano reduzido\npor compra",
+	"8% de dano\nreduzido",
+	"12% de dano\nreduzido",
+	"16% de dano\nreduzido",
+	"20% de dano\nreduzido",
+	"+3% dano reduzido\npor compra",
 ]
 const DAMAGE_DESCS: Array[String] = ["+20% dano da flecha", "+20% dano da flecha", "+20% dano da flecha", "+20% dano da flecha"]
 const PERFURACAO_DESCS: Array[String] = [

@@ -34,6 +34,9 @@ extends CharacterBody2D
 @export var summon_tile_size: float = 16.0
 
 const SILHOUETTE_SHADER: Shader = preload("res://shaders/silhouette.gdshader")
+# Sprite do mago invocador: swap do atlas em runtime (mesmas regiões do sheet
+# base, layout idêntico). Substitui o filtro lilás antigo por arte dedicada.
+const SUMMONER_TEXTURE: Texture2D = preload("res://assets/enemies/mage/mage-summ-Sheet-export.png")
 const MUZZLE_OFFSET_X: float = 8.0
 const BODY_CENTER_OFFSET: Vector2 = Vector2(0, -16)
 
@@ -64,6 +67,7 @@ func _ready() -> void:
 	# poder balancear quantos de cada tipo aparecem na horda.
 	if insect_scene != null:
 		add_to_group("summoner_mage")
+		_apply_summoner_skin()
 	else:
 		add_to_group("mage")
 	hp = max_hp
@@ -73,6 +77,23 @@ func _ready() -> void:
 	shoot_timer.start()
 	sprite.animation_finished.connect(_on_animation_finished)
 	sprite.play("walk")
+
+
+func _apply_summoner_skin() -> void:
+	# Swap do atlas de cada AtlasTexture pra textura do mago invocador. Duplica
+	# o SpriteFrames e cada AtlasTexture pra não vazar pros magos comuns.
+	if sprite == null or sprite.sprite_frames == null:
+		return
+	var sf: SpriteFrames = sprite.sprite_frames.duplicate(true)
+	for anim_name: StringName in sf.get_animation_names():
+		var n: int = sf.get_frame_count(anim_name)
+		for i in n:
+			var tex: Texture2D = sf.get_frame_texture(anim_name, i)
+			if tex is AtlasTexture:
+				var new_atlas: AtlasTexture = (tex as AtlasTexture).duplicate()
+				new_atlas.atlas = SUMMONER_TEXTURE
+				sf.set_frame(anim_name, i, new_atlas)
+	sprite.sprite_frames = sf
 
 
 func _physics_process(delta: float) -> void:
@@ -247,6 +268,34 @@ func _fire_projectile() -> void:
 	proj.global_position = Vector2(muzzle.global_position.x, global_position.y + 2)
 	if proj.has_method("set_direction"):
 		proj.set_direction(locked_attack_dir)
+	# Mago invocador: tinta o projétil de azul (sprite + trail + glow) pra
+	# combinar com a paleta dele.
+	if insect_scene != null:
+		_apply_summoner_projectile_skin(proj)
+
+
+const SUMMONER_PROJ_TINT: Color = Color(0.55, 0.75, 1.0, 1.0)
+const SUMMONER_PROJ_TRAIL_TIP: Color = Color(0.4, 0.65, 1.0, 0.7)
+const SUMMONER_PROJ_TRAIL_HEAD: Color = Color(0.4, 0.65, 1.0, 0.0)
+
+
+func _apply_summoner_projectile_skin(proj: Node) -> void:
+	var s: Node = proj.get_node_or_null("AnimatedSprite2D")
+	if s is CanvasItem:
+		(s as CanvasItem).modulate = SUMMONER_PROJ_TINT
+	var glow: Node = proj.get_node_or_null("GlowLight")
+	if glow is PointLight2D:
+		(glow as PointLight2D).color = SUMMONER_PROJ_TINT
+	var trail: Node = proj.get_node_or_null("Trail")
+	if trail is Line2D:
+		var l: Line2D = trail as Line2D
+		l.default_color = SUMMONER_PROJ_TINT
+		if l.gradient != null:
+			# Gradient é compartilhado com outros projéteis — duplica antes de
+			# editar pra não vazar nos magos comuns.
+			var g: Gradient = l.gradient.duplicate() as Gradient
+			g.colors = PackedColorArray([SUMMONER_PROJ_TRAIL_HEAD, SUMMONER_PROJ_TRAIL_TIP])
+			l.gradient = g
 
 
 func take_damage(amount: float) -> void:

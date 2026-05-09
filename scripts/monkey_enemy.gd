@@ -20,6 +20,9 @@ extends CharacterBody2D
 @export var separation_strength: float = 25.0
 
 const SILHOUETTE_SHADER: Shader = preload("res://shaders/silhouette.gdshader")
+# Skin alternativa pro FLANKER. Mesmas regiões do sheet padrão — só swap do
+# atlas de cada AtlasTexture do SpriteFrames.
+const FLANKER_TEXTURE: Texture2D = preload("res://assets/enemies/monkey/enemy monkey flank-Sheet.png")
 # Knockback: decai linearmente até zero. Maior valor = decai mais rápido.
 @export var knockback_decay: float = 400.0
 # Pulinho durante walk: sprite sobe N pixels nos frames pares.
@@ -103,6 +106,25 @@ func _roll_behavior() -> void:
 		_flank_side = -1.0 if randf() < 0.5 else 1.0
 		_flank_distance = randf_range(60.0, 100.0)
 		_chase_offset = Vector2.ZERO
+		_apply_flanker_skin()
+
+
+func _apply_flanker_skin() -> void:
+	# Swap do atlas de cada AtlasTexture do SpriteFrames pro sheet do flanker.
+	# Duplica o SpriteFrames (e cada AtlasTexture) pra não vazar a alteração
+	# pros monkeys NORMAIS — instâncias compartilham sub_resource por padrão.
+	if sprite == null or sprite.sprite_frames == null:
+		return
+	var sf: SpriteFrames = sprite.sprite_frames.duplicate(true)
+	for anim_name: StringName in sf.get_animation_names():
+		var n: int = sf.get_frame_count(anim_name)
+		for i in n:
+			var tex: Texture2D = sf.get_frame_texture(anim_name, i)
+			if tex is AtlasTexture:
+				var new_atlas: AtlasTexture = (tex as AtlasTexture).duplicate()
+				new_atlas.atlas = FLANKER_TEXTURE
+				sf.set_frame(anim_name, i, new_atlas)
+	sprite.sprite_frames = sf
 
 
 func _physics_process(delta: float) -> void:
