@@ -283,22 +283,30 @@ func _build_wave_config(num: int) -> Dictionary:
 		summ_total = mini(summ_total, 1)
 		monkey_alive = maxi(monkey_alive - 1, 1)
 		monkey_total = maxi(monkey_total - 1, monkey_alive)
-	# Stone cube só aparece em rounds específicos:
+	# Stone cube spawn pattern:
 	#   Wave 3: estreia, 1 cubo.
-	#   Wave 5: max 5 cubos.
-	#   Wave 8, 11, 14, 17...: a cada 3 rounds, count escala junto com o round
-	#   (ex: round 8 = 8 cubos totais, round 11 = 11 totais).
+	#   Wave 4: 2-3 cubos.
+	#   Wave 5: pula.
+	#   Wave 6, 8, 10, 12...: a cada 2 waves pares. Count escala progressivamente
+	#   (+1 por wave) e alive_target fica baixo (2-3) pra dispersar os spawns
+	#   ao longo do tempo da wave.
+	#   Wave 7, 9, 11...: pula.
 	var stone_alive: int = 0
 	var stone_total: int = 0
 	if num == 3:
 		stone_total = 1
 		stone_alive = 1
-	elif num == 5:
-		stone_total = 5
-		stone_alive = 3
-	elif num >= 8 and (num - 5) % 3 == 0:
-		stone_total = num
-		stone_alive = maxi(int(round(float(num) * 0.5)), 3)
+	elif num == 4:
+		stone_total = 1
+		stone_alive = 1
+	elif num >= 6 and num % 2 == 0:
+		# step_count: wave 6 = 0, wave 8 = 1, wave 10 = 2, ...
+		var step_count: int = (num - 6) / 2
+		# Total cresce 1 por wave e tem 1 de variância (3-4, 4-5, 5-6, ...).
+		stone_total = randi_range(3 + step_count, 4 + step_count)
+		# Alive baixo (2-3) pra dispersar — cubos são tanks lentos, não spawnam
+		# todos juntos: trickle conforme os anteriores morrem.
+		stone_alive = mini(2 + step_count / 2, stone_total)
 	var cfg: Dictionary = {
 		"monkey": {"alive_target": maxi(monkey_alive, 1), "total": maxi(monkey_total, monkey_alive)},
 		"mage": {"alive_target": maxi(mage_alive, 1), "total": maxi(mage_total, mage_alive)},
