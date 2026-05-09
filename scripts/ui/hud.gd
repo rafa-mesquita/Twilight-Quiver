@@ -101,8 +101,24 @@ const _UPG_ALIADO_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe"]
 # Largura/altura de cada chip na coluna. Status são wide (65×17), upgrade/aliado
 # são quase quadrados (38×47); chip único acomoda os dois com letterbox.
 const _UPG_CHIP_SIZE: Vector2 = Vector2(72, 44)
-const _UPG_BADGE_FONT: Font = preload("res://font/ByteBounce.ttf")
+# Quantidade de cells (níveis) por categoria de arte. Status (HP/armor/etc)
+# tem 5 frames (1-5); upgrade/aliado tem 4 (1-4). Usado pra mapear o nível
+# atual no cell certo do atlas.
+const _UPG_MAX_CELLS_NORMAL: int = 4
+const _UPG_MAX_CELLS_STATUS: int = 5
 const _UPG_BADGE_COLOR: Color = Color(1.0, 0.93, 0.4, 1.0)
+# Badge usa fonte do sistema (não ByteBounce) pra renderizar o caractere ★.
+# SystemFont escolhe automaticamente uma fonte instalada que suporte unicode.
+var _upg_badge_font: SystemFont = null
+
+
+func _get_upg_badge_font() -> SystemFont:
+	if _upg_badge_font != null:
+		return _upg_badge_font
+	var sf := SystemFont.new()
+	sf.font_names = PackedStringArray(["Segoe UI", "Arial", "Helvetica", "DejaVu Sans", "Noto Sans"])
+	_upg_badge_font = sf
+	return sf
 
 # Largura total do Fill (sem padding agora que tirei o Bg/border).
 const BAR_FILL_WIDTH: float = 330.0
@@ -226,9 +242,10 @@ func _build_upgrade_chip(id: String, lvl: int) -> Control:
 	chip.custom_minimum_size = _UPG_CHIP_SIZE
 	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Icon ocupa o chip inteiro com KEEP_ASPECT_CENTERED — célula da carta nunca
-	# distorce, fica letterboxed nos lados.
+	# distorce, fica letterboxed nos lados. Usa o cell do nível atual (lvl-1
+	# clampeado pelo número de cells daquela arte).
 	var icon := TextureRect.new()
-	icon.texture = _get_upgrade_icon_atlas(id)
+	icon.texture = _get_upgrade_icon_atlas(id, lvl)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -236,12 +253,13 @@ func _build_upgrade_chip(id: String, lvl: int) -> Control:
 	icon.anchor_bottom = 1.0
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	chip.add_child(icon)
-	# Badge com nivel (ou MAX). Bottom-right do chip, com outline preto.
+	# Badge com nível (★ N). Bottom-right do chip, com outline preto. Fonte do
+	# sistema porque ByteBounce não tem o caractere de estrela.
 	var badge := Label.new()
 	var capped: bool = _UPG_CAPS.has(id) and lvl >= int(_UPG_CAPS[id])
-	badge.text = "MAX" if capped else "L%d" % lvl
-	badge.add_theme_font_override("font", _UPG_BADGE_FONT)
-	badge.add_theme_font_size_override("font_size", 18)
+	badge.text = "★ MAX" if capped else "★ %d" % lvl
+	badge.add_theme_font_override("font", _get_upg_badge_font())
+	badge.add_theme_font_size_override("font_size", 14)
 	badge.add_theme_color_override("font_color", _UPG_BADGE_COLOR)
 	badge.add_theme_color_override("font_outline_color", Color.BLACK)
 	badge.add_theme_constant_override("outline_size", 4)
@@ -249,7 +267,7 @@ func _build_upgrade_chip(id: String, lvl: int) -> Control:
 	badge.anchor_top = 1.0
 	badge.anchor_right = 1.0
 	badge.anchor_bottom = 1.0
-	badge.offset_left = -36.0
+	badge.offset_left = -54.0
 	badge.offset_top = -22.0
 	badge.offset_right = -2.0
 	badge.offset_bottom = -2.0
@@ -260,35 +278,39 @@ func _build_upgrade_chip(id: String, lvl: int) -> Control:
 	return chip
 
 
-func _get_upgrade_icon_atlas(id: String) -> AtlasTexture:
-	# Sheet combinado de status (HP/atk/move/dmg) — cada id é uma row, célula
-	# do nível 1 (col 0).
+func _get_upgrade_icon_atlas(id: String, level: int) -> AtlasTexture:
+	# Mapa: path da arte + tamanho do cell + row (pra status combined). Pega o
+	# cell correspondente ao NÍVEL ATUAL (lvl-1 clampeado pelo número de cells).
 	var path: String = ""
 	var fw: int = 0
 	var fh: int = 0
-	var x_offset: int = 0
+	var max_cells: int = 0
 	var y_offset: int = 0
 	if _UPG_STATUS_COMBINED_ROWS.has(id):
 		path = _UPG_STATUS_COMBINED_PATH
 		fw = _UPG_FRAME_STATUS.x
 		fh = _UPG_FRAME_STATUS.y
+		max_cells = _UPG_MAX_CELLS_STATUS
 		y_offset = int(_UPG_STATUS_COMBINED_ROWS[id]) * fh
 	elif _UPG_PATHS.has(id):
 		path = _UPG_PATHS[id]
 		var is_status: bool = _UPG_STATUS_IDS.has(id)
 		fw = _UPG_FRAME_STATUS.x if is_status else _UPG_FRAME_NORMAL.x
 		fh = _UPG_FRAME_STATUS.y if is_status else _UPG_FRAME_NORMAL.y
+		max_cells = _UPG_MAX_CELLS_STATUS if is_status else _UPG_MAX_CELLS_NORMAL
 	else:
 		# Sem arte mapeada — placeholder por categoria (aliado vs upgrade).
 		path = _UPG_FALLBACK_ALIADO if _UPG_ALIADO_IDS.has(id) else _UPG_FALLBACK_UPGRADE
 		fw = _UPG_FRAME_NORMAL.x
 		fh = _UPG_FRAME_NORMAL.y
+		max_cells = _UPG_MAX_CELLS_NORMAL
 	var tex: Texture2D = load(path) as Texture2D
 	if tex == null:
 		return null
+	var frame_idx: int = clampi(level - 1, 0, max_cells - 1)
 	var atlas := AtlasTexture.new()
 	atlas.atlas = tex
-	atlas.region = Rect2(x_offset, y_offset, fw, fh)
+	atlas.region = Rect2(frame_idx * fw, y_offset, fw, fh)
 	return atlas
 
 

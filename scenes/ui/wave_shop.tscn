@@ -8,7 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://du8vqcoebjapl" path="res://assets/Hud/shop/aliado/placeholder.png" id="7_ali_ph"]
 [ext_resource type="Texture2D" uid="uid://43kh6plt35ba" path="res://assets/obecjts map/coins.png" id="8_coin"]
 [ext_resource type="PackedScene" uid="uid://b8tw1gv0vqlbl" path="res://scenes/ui/version_label.tscn" id="9_version"]
-[ext_resource type="Texture2D" path="res://assets/Hud/shop/persoangem shop.png" id="10_pface"]
+[ext_resource type="Texture2D" uid="uid://d3mws3bmk28y1" path="res://assets/Hud/shop/persoangem shop.png" id="10_pface"]
 
 [sub_resource type="AtlasTexture" id="ATX_coin"]
 atlas = ExtResource("8_coin")
@@ -108,19 +108,46 @@ region = Rect2(792, 0, 66, 66)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_pface"]
 animations = [{
-"frames": [{"duration": 1.0, "texture": SubResource("ATX_pface_0")},
-{"duration": 1.0, "texture": SubResource("ATX_pface_1")},
-{"duration": 1.0, "texture": SubResource("ATX_pface_2")},
-{"duration": 1.0, "texture": SubResource("ATX_pface_3")},
-{"duration": 1.0, "texture": SubResource("ATX_pface_4")},
-{"duration": 1.0, "texture": SubResource("ATX_pface_5")},
-{"duration": 1.0, "texture": SubResource("ATX_pface_6")},
-{"duration": 1.0, "texture": SubResource("ATX_pface_7")},
-{"duration": 1.0, "texture": SubResource("ATX_pface_8")},
-{"duration": 1.0, "texture": SubResource("ATX_pface_9")},
-{"duration": 1.0, "texture": SubResource("ATX_pface_10")},
-{"duration": 1.0, "texture": SubResource("ATX_pface_11")},
-{"duration": 1.0, "texture": SubResource("ATX_pface_12")}],
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("ATX_pface_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("ATX_pface_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("ATX_pface_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("ATX_pface_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("ATX_pface_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("ATX_pface_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("ATX_pface_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("ATX_pface_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("ATX_pface_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("ATX_pface_9")
+}, {
+"duration": 1.0,
+"texture": SubResource("ATX_pface_10")
+}, {
+"duration": 1.0,
+"texture": SubResource("ATX_pface_11")
+}, {
+"duration": 1.0,
+"texture": SubResource("ATX_pface_12")
+}],
 "loop": true,
 "name": &"idle",
 "speed": 6.0
@@ -953,16 +980,18 @@ text = "Proxima Wave"
 
 [node name="GlobalReroll" type="Control" parent="Root" unique_id=707134856]
 anchors_preset = 0
-offset_left = 1640.0
-offset_top = 700.0
-offset_right = 1860.0
-offset_bottom = 880.0
+offset_left = 1584.0
+offset_top = 153.0
+offset_right = 1804.0
+offset_bottom = 333.0
 
 [node name="Btn" type="TextureButton" parent="Root/GlobalReroll" unique_id=2071134746]
 texture_filter = 1
 layout_mode = 0
-offset_right = 142.0
-offset_bottom = 128.0
+offset_left = 19.0
+offset_top = -3.0
+offset_right = 161.0
+offset_bottom = 125.0
 texture_normal = SubResource("ATX_reroll_normal")
 texture_pressed = SubResource("ATX_reroll_pressed")
 ignore_texture_size = true
@@ -970,10 +999,10 @@ stretch_mode = 5
 
 [node name="CostLabel" type="Label" parent="Root/GlobalReroll" unique_id=1797799376]
 layout_mode = 0
-offset_left = 71.0
-offset_top = 141.0
-offset_right = 135.0
-offset_bottom = 171.0
+offset_left = 213.0
+offset_top = 54.0
+offset_right = 277.0
+offset_bottom = 84.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 26
@@ -982,14 +1011,22 @@ text = "3"
 [node name="CoinIcon" type="TextureRect" parent="Root/GlobalReroll" unique_id=1794206202]
 texture_filter = 1
 layout_mode = 0
-offset_left = 30.0
-offset_top = 136.0
-offset_right = 54.0
-offset_bottom = 160.0
+offset_left = 178.0
+offset_top = 50.0
+offset_right = 202.0
+offset_bottom = 74.0
 mouse_filter = 2
 texture = SubResource("ATX_coin")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="PlayerFace" type="AnimatedSprite2D" parent="Root" unique_id=305011001]
+texture_filter = 1
+position = Vector2(1743.9999, 799)
+scale = Vector2(4.651514, 4.651514)
+sprite_frames = SubResource("SpriteFrames_pface")
+animation = &"idle"
+autoplay = "idle"
 
 [node name="PlacementHint" type="Label" parent="." unique_id=1961918498]
 visible = false
@@ -1009,12 +1046,4 @@ text = "Escolha um dos 5 pontos para posicionar  -  Aperte Z para voltar"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="PlayerFace" type="AnimatedSprite2D" parent="Root" unique_id=305011001]
-texture_filter = 1
-position = Vector2(1820, 1000)
-scale = Vector2(2, 2)
-sprite_frames = SubResource("SpriteFrames_pface")
-animation = &"idle"
-autoplay = "idle"
-
-[node name="VersionLabel" parent="." instance=ExtResource("9_version")]
+[node name="VersionLabel" parent="." unique_id=1909627319 instance=ExtResource("9_version")]
