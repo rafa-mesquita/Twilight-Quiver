@@ -8,7 +8,7 @@ extends CanvasLayer
 # Em pixels do viewport native (1920×1080); 12 = ~3px do mundo após zoom 4× da câmera.
 const DEATH_SPRITE_Y_OFFSET: float = 12.0
 # Tempo do clone deslizar da posição real do player até o centro (evita teleporte abrupto).
-const MOVE_TO_CENTER_DURATION: float = 0.4
+const MOVE_TO_CENTER_DURATION: float = 0.25
 
 @onready var death_overlay: ColorRect = $DeathOverlay
 @onready var death_top_layer: CanvasLayer = $DeathTopLayer
@@ -16,12 +16,18 @@ const MOVE_TO_CENTER_DURATION: float = 0.4
 @onready var menu_button: Button = $DeathTopLayer/MenuButton
 @onready var survival_label: Label = $DeathTopLayer/SurvivalLabel
 @onready var score_label: Label = $DeathTopLayer/ScoreLabel
+@onready var unlock_panel: Panel = $DeathTopLayer/UnlockPanel
+@onready var unlock_title: Label = $DeathTopLayer/UnlockPanel/Margin/VBox/UnlockTitle
+@onready var unlock_preview: Node2D = $DeathTopLayer/UnlockPanel/Margin/VBox/PreviewBox/UnlockPreview
+@onready var unlock_name_label: Label = $DeathTopLayer/UnlockPanel/Margin/VBox/UnlockName
+@onready var unlock_quest_label: Label = $DeathTopLayer/UnlockPanel/Margin/VBox/UnlockQuestLabel
 @onready var tower_alert: Control = $TowerAlertIndicator
 
 # Leaderboard: auto-submit silencioso em build de release. Cliente HTTP é
 # instanciado lazy quando player morre (em release). Em debug, nada é enviado.
 const _LEADERBOARD_CLIENT := preload("res://scripts/systems/leaderboard_client.gd")
 const _SCORE_CALC := preload("res://scripts/systems/score_calc.gd")
+const _PLAYER_PREVIEW_SCENE: PackedScene = preload("res://scenes/ui/player_preview.tscn")
 const _SETTINGS_PATH: String = "user://settings.cfg"
 var _leaderboard_client: Node = null
 
@@ -140,6 +146,11 @@ var _hud_alpha_tween: Tween
 # respondendo enquanto get_tree().paused é true.
 var _pause_layer: CanvasLayer = null
 var _pause_visible: bool = false
+
+# Settings overlay aberto a partir do botão "Configurações" no menu de pausa.
+# Reusa a cena scenes/ui/settings_menu.tscn em modo overlay.
+const _SETTINGS_MENU_SCENE: PackedScene = preload("res://scenes/ui/settings_menu.tscn")
+var _settings_overlay_layer: CanvasLayer = null
 
 
 func _ready() -> void:
@@ -453,65 +464,71 @@ func play_death_sequence(
 	hud_frame.visible = false
 
 	var center: Vector2 = get_viewport().get_visible_rect().size / 2.0
-	# Câmera tem zoom (atualmente 4×) — clone fica em CanvasLayer NÃO afetado pela câmera,
+	# Câmera tem zoom (atualmente 4×) — preview fica em CanvasLayer NÃO afetado pela câmera,
 	# então precisa escalar manualmente pra parecer do mesmo tamanho que o player na tela.
 	var camera := player_sprite.get_viewport().get_camera_2d()
 	var zoom: Vector2 = camera.zoom if camera != null else Vector2.ONE
 
 	# Posição REAL do player na tela (considera câmera, mesmo se ela bateu na borda do mapa).
-	# Sprite tem offset.y=-16 em world space; multiplica pelo zoom pra virar offset de tela.
 	var player_screen: Vector2 = player_sprite.get_global_transform_with_canvas().origin
-	var initial_clone_pos: Vector2 = player_screen + Vector2(0.0, player_sprite.offset.y * zoom.y)
 
 	# Tela escurece.
 	var fade_in := create_tween()
 	fade_in.tween_property(death_overlay, "modulate:a", 1.0, blackout_duration)
 
-	# Clone do sprite do player no top layer — começa onde o player ESTÁ na tela
-	# e desliza até o centro (em paralelo ao fade preto). Evita teleporte abrupto
-	# quando o player morre perto da borda do mapa.
-	var clone := AnimatedSprite2D.new()
-	clone.sprite_frames = player_sprite.sprite_frames
-	clone.animation = player_sprite.animation
-	clone.frame = player_sprite.frame
-	clone.pause()
-	clone.flip_h = player_sprite.flip_h
-	clone.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	clone.scale = zoom
-	clone.position = initial_clone_pos
-	death_top_layer.add_child(clone)
+	# Instancia o player_preview (body + todos os layers + bow) e aplica o loadout
+	# atual do jogador. Anima junto durante a sequência. Posicionado pra coincidir
+	# com a posição visível do player na tela.
+	var preview: Node2D = _PLAYER_PREVIEW_SCENE.instantiate()
+	preview.scale = zoom
+	preview.position = player_screen
+	death_top_layer.add_child(preview)
+	SkinLoadout.apply_to(preview)
+	var preview_body: AnimatedSprite2D = preview.get_node("Body")
+	preview_body.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	preview_body.flip_h = player_sprite.flip_h
+	if preview_body.sprite_frames != null and preview_body.sprite_frames.has_animation(player_sprite.animation):
+		preview_body.play(player_sprite.animation)
+	preview_body.frame = player_sprite.frame
+	preview_body.pause()
 
-	# Desliza pro centro da tela.
+	# Desliza pro centro. preview.position é a origem do Node2D — body tem offset
+	# (0, -16), então o sprite renderiza acima da posição. Pra terminar com sprite
+	# no centro, compensa o offset.
+	var center_target: Vector2 = center - Vector2(0.0, preview_body.offset.y * zoom.y)
 	var move_tween := create_tween()
 	move_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	move_tween.tween_property(clone, "position", center, MOVE_TO_CENTER_DURATION)
+	move_tween.tween_property(preview, "position", center_target, MOVE_TO_CENTER_DURATION)
 	await move_tween.finished
 
 	# Player parado por X segundos (drama).
 	await get_tree().create_timer(freeze_duration).timeout
 
-	# Anim de morte (4 frames @ speed 2.5 = mesmo ritmo da árvore).
-	# Desce o sprite 3px só durante a anim (visualmente o personagem cai um pouco).
-	clone.position.y += DEATH_SPRITE_Y_OFFSET
-	clone.play("death")
-	await clone.animation_finished
+	# Anim de morte (4 frames @ speed 2.5). Desce o sprite alguns px durante a anim
+	# (visualmente o personagem cai um pouco). SkinManager._process detecta a troca
+	# de anim e propaga pra todos os layers.
+	preview.position.y += DEATH_SPRITE_Y_OFFSET
+	preview_body.play("death")
+	await preview_body.animation_finished
 
-	# Player some.
-	var fade_clone := create_tween()
-	fade_clone.tween_property(clone, "modulate:a", 0.0, fadeout_duration)
-	await fade_clone.finished
+	# Player some (fade out de tudo — preview é Node2D, modulate cascateia pros filhos).
+	var fade_preview := create_tween()
+	fade_preview.tween_property(preview, "modulate:a", 0.0, fadeout_duration)
+	await fade_preview.finished
 
 	# Mostra botão de jogar novamente.
 	_show_restart_button()
 
 
 func _show_restart_button() -> void:
-	# Mensagem de wave alcançada antes do botão. Sem acentos — fonte at01 não tem.
+	# Sequência: (1) atualiza stats e detecta unlock. (2) Se tem unlock, mostra
+	# notificação primeiro com hold de 2.5s. (3) Depois reveal do score+stats+botões.
 	var wave_num: int = 1
 	var wm := get_tree().get_first_node_in_group("wave_manager")
 	if wm != null and "wave_number" in wm:
 		wave_num = int(wm.wave_number)
-	# Score em destaque (calculado a partir das mesmas stats que vão pro leaderboard).
+
+	# Pre-arma os elementos invisíveis — todos com modulate.a=0, vão fadear depois.
 	var score: int = _SCORE_CALC.calc(_collect_run_stats(wave_num))
 	score_label.text = "SCORE %d" % score
 	score_label.modulate.a = 0.0
@@ -526,16 +543,66 @@ func _show_restart_button() -> void:
 	menu_button.modulate.a = 0.0
 	menu_button.visible = true
 
-	var t := create_tween().set_parallel(true)
-	t.tween_property(score_label, "modulate:a", 1.0, 0.4)
-	t.tween_property(survival_label, "modulate:a", 1.0, 0.4)
-	t.tween_property(restart_button, "modulate:a", 1.0, 0.4)
-	t.tween_property(menu_button, "modulate:a", 1.0, 0.4)
+	unlock_panel.visible = false  # default — só aparece se unlock detectado
 
-	# Envio silencioso pro leaderboard — fire-and-forget. Em debug nem instancia
-	# o cliente (evita poluir leaderboard com runs de dev).
+	# Atualiza stats persistentes e detecta novos unlocks NESSA run.
+	var run_stats: Dictionary = _collect_run_stats(wave_num)
+	var newly_unlocked: Array = SkinLoadout.record_run(run_stats)
+
+	# Envio silencioso pro leaderboard (paralelo, não bloqueia UI).
 	if not OS.is_debug_build():
 		_auto_submit_score()
+
+	# Se há unlocks: mostra notificações em SEQUÊNCIA (uma de cada vez).
+	# Cada uma: fade in (0.5s) → hold (2.5s) → fade out (0.3s, só se tiver próxima).
+	# Múltiplos unlocks numa run só: cada skin ganha seu momento próprio.
+	for i in range(newly_unlocked.size()):
+		_show_unlock_notification(String(newly_unlocked[i]))
+		var unlock_in := create_tween()
+		unlock_in.tween_property(unlock_panel, "modulate:a", 1.0, 0.5)
+		await unlock_in.finished
+		await get_tree().create_timer(2.5).timeout
+		# Se tiver próxima skin pra mostrar, fade out antes pra dar transição.
+		if i < newly_unlocked.size() - 1:
+			var unlock_out := create_tween()
+			unlock_out.tween_property(unlock_panel, "modulate:a", 0.0, 0.3)
+			await unlock_out.finished
+
+	# Reveal final: score, stats, botões aparecem juntos.
+	var reveal := create_tween().set_parallel(true)
+	reveal.tween_property(score_label, "modulate:a", 1.0, 0.4)
+	reveal.tween_property(survival_label, "modulate:a", 1.0, 0.4)
+	reveal.tween_property(restart_button, "modulate:a", 1.0, 0.4)
+	reveal.tween_property(menu_button, "modulate:a", 1.0, 0.4)
+
+
+func _show_unlock_notification(skin_name: String) -> void:
+	# Aplica a skin desbloqueada no preview animado e mostra o painel.
+	# Usa as sprite_frames do AnimatedSprite2D do player do hud (acessível via grupo).
+	var preview_body: AnimatedSprite2D = unlock_preview.get_node_or_null("Body") as AnimatedSprite2D
+	var preview_skin: Node = unlock_preview.get_node_or_null("Skin")
+	if preview_body == null or preview_skin == null:
+		return
+	# sprite_frames vem do player ativo na tree (mesmas regions/anims que a skin usa).
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null:
+		var player_sprite: AnimatedSprite2D = player.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+		if player_sprite != null and player_sprite.sprite_frames != null:
+			preview_body.sprite_frames = player_sprite.sprite_frames
+	preview_body.play("walk")
+	# Aplica o set inteiro da skin desbloqueada.
+	var parts: Dictionary = SkinLoadout.get_parts_by_skin_name(skin_name)
+	for slot in SkinLoadout.SLOTS:
+		var part: SkinPart = parts.get(slot)
+		if preview_skin.has_method("set_part"):
+			preview_skin.set_part(slot, part)
+	unlock_name_label.text = skin_name
+	# Label da quest (ex: "Alcance a raid 10") — extraída do SKIN_QUESTS pra
+	# o jogador entender o que fez pra liberar.
+	var quest: Dictionary = SkinLoadout.get_quest_for(skin_name)
+	unlock_quest_label.text = String(quest.get("label", ""))
+	unlock_panel.modulate.a = 0.0
+	unlock_panel.visible = true
 
 
 func _on_menu_pressed() -> void:
@@ -642,6 +709,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if cleared_overlay.visible or intro_overlay.visible:
 		return
+	# Settings overlay aberto: ESC fecha ele, deixa o pause atrás como estava.
+	if _settings_overlay_layer != null:
+		_close_settings_overlay()
+		get_viewport().set_input_as_handled()
+		return
 	if _pause_visible:
 		_close_pause()
 	else:
@@ -663,6 +735,30 @@ func _close_pause() -> void:
 	_pause_visible = false
 	_pause_layer.visible = false
 	get_tree().paused = false
+
+
+# ---------- Settings overlay (a partir do menu de pausa) ----------
+
+func _open_settings_overlay() -> void:
+	if _settings_overlay_layer != null:
+		return
+	# CanvasLayer próprio acima do pause (layer 60) pra renderizar por cima.
+	_settings_overlay_layer = CanvasLayer.new()
+	_settings_overlay_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	_settings_overlay_layer.layer = 70
+	var settings: Control = _SETTINGS_MENU_SCENE.instantiate()
+	settings.as_overlay = true
+	settings.process_mode = Node.PROCESS_MODE_ALWAYS
+	settings.closed.connect(_close_settings_overlay)
+	_settings_overlay_layer.add_child(settings)
+	add_child(_settings_overlay_layer)
+
+
+func _close_settings_overlay() -> void:
+	if _settings_overlay_layer == null:
+		return
+	_settings_overlay_layer.queue_free()
+	_settings_overlay_layer = null
 
 
 func _create_pause_menu() -> void:
@@ -689,7 +785,7 @@ func _create_pause_menu() -> void:
 	bg.add_child(title)
 	var continue_btn := Button.new()
 	continue_btn.set_anchors_preset(Control.PRESET_CENTER)
-	continue_btn.position = Vector2(-220, -60)
+	continue_btn.position = Vector2(-220, -80)
 	continue_btn.size = Vector2(440, 72)
 	continue_btn.text = "Continuar"
 	if at01 != null:
@@ -697,9 +793,19 @@ func _create_pause_menu() -> void:
 	continue_btn.add_theme_font_size_override("font_size", 48)
 	continue_btn.pressed.connect(_close_pause)
 	bg.add_child(continue_btn)
+	var settings_btn := Button.new()
+	settings_btn.set_anchors_preset(Control.PRESET_CENTER)
+	settings_btn.position = Vector2(-220, 10)
+	settings_btn.size = Vector2(440, 64)
+	settings_btn.text = "Configuracoes"
+	if at01 != null:
+		settings_btn.add_theme_font_override("font", at01)
+	settings_btn.add_theme_font_size_override("font_size", 36)
+	settings_btn.pressed.connect(_open_settings_overlay)
+	bg.add_child(settings_btn)
 	var menu_btn := Button.new()
 	menu_btn.set_anchors_preset(Control.PRESET_CENTER)
-	menu_btn.position = Vector2(-220, 40)
+	menu_btn.position = Vector2(-220, 100)
 	menu_btn.size = Vector2(440, 64)
 	menu_btn.text = "Voltar ao Menu"
 	if at01 != null:

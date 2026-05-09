@@ -108,6 +108,21 @@ theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/focus = SubResource("SBF_btn_focus")
 text = "Start Game"
 
+[node name="SkinsButton" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(440, 72)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_styles/pressed = SubResource("SBF_btn_pressed")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/focus = SubResource("SBF_btn_focus")
+text = "Player"
+
 [node name="LeaderboardButton" type="Button" parent="Center/VBox"]
 custom_minimum_size = Vector2(440, 72)
 layout_mode = 2

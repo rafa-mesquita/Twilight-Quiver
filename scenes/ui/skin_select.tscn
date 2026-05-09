@@ -1,0 +1,203 @@
+[gd_scene load_steps=10 format=3 uid="uid://csh7n4kxvjt8b"]
+
+[ext_resource type="Script" path="res://scripts/ui/skin_select.gd" id="1_skin"]
+[ext_resource type="FontFile" path="res://font/ByteBounce.ttf" id="2_font"]
+[ext_resource type="PackedScene" uid="uid://b8tw1gv0vqlbl" path="res://scenes/ui/version_label.tscn" id="3_version"]
+[ext_resource type="PackedScene" path="res://scenes/player/cursor.tscn" id="4_cursor"]
+[ext_resource type="PackedScene" uid="uid://drv5fwt92gxqc" path="res://scenes/ui/player_preview.tscn" id="5_preview"]
+
+[sub_resource type="StyleBoxFlat" id="SBF_btn_normal"]
+bg_color = Color(0.13, 0.1, 0.18, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.45, 0.32, 0.6, 1)
+corner_detail = 1
+
+[sub_resource type="StyleBoxFlat" id="SBF_btn_hover"]
+bg_color = Color(0.22, 0.15, 0.32, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.85, 0.6, 1, 1)
+corner_detail = 1
+
+[sub_resource type="StyleBoxFlat" id="SBF_btn_pressed"]
+bg_color = Color(0.08, 0.05, 0.12, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.95, 0.75, 1, 1)
+corner_detail = 1
+
+[sub_resource type="StyleBoxFlat" id="SBF_preview_bg"]
+bg_color = Color(0.08, 0.06, 0.12, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.22, 0.42, 1)
+
+[node name="SkinSelect" type="Control"]
+texture_filter = 1
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_skin")
+
+[node name="Bg" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.05, 0.04, 0.09, 1)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Panel" type="Panel" parent="Center"]
+custom_minimum_size = Vector2(1300, 820)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="Center/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 56
+text = "PLAYER"
+horizontal_alignment = 1
+
+[node name="Body" type="HBoxContainer" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+
+[node name="LeftCol" type="VBoxContainer" parent="Center/Panel/Margin/VBox/Body"]
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 3
+theme_override_constants/separation = 14
+
+[node name="PreviewSection" type="Panel" parent="Center/Panel/Margin/VBox/Body/LeftCol"]
+custom_minimum_size = Vector2(380, 380)
+layout_mode = 2
+size_flags_vertical = 3
+clip_contents = true
+theme_override_styles/panel = SubResource("SBF_preview_bg")
+
+[node name="PlayerPreview" parent="Center/Panel/Margin/VBox/Body/LeftCol/PreviewSection" instance=ExtResource("5_preview")]
+position = Vector2(190, 320)
+scale = Vector2(6, 6)
+
+[node name="StatsPanel" type="Panel" parent="Center/Panel/Margin/VBox/Body/LeftCol"]
+custom_minimum_size = Vector2(380, 200)
+layout_mode = 2
+theme_override_styles/panel = SubResource("SBF_preview_bg")
+
+[node name="Margin" type="MarginContainer" parent="Center/Panel/Margin/VBox/Body/LeftCol/StatsPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="Center/Panel/Margin/VBox/Body/LeftCol/StatsPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="EditSection" type="VBoxContainer" parent="Center/Panel/Margin/VBox/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="Tabs" type="HBoxContainer" parent="Center/Panel/Margin/VBox/Body/EditSection"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="EmptyLabel" type="Label" parent="Center/Panel/Margin/VBox/Body/EditSection"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.7, 0.95, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "Nenhuma skin disponivel.
+Drop PNGs em assets/player/<slot>/ pra criar variantes."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="CardsScroll" type="ScrollContainer" parent="Center/Panel/Margin/VBox/Body/EditSection"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CardsGrid" type="GridContainer" parent="Center/Panel/Margin/VBox/Body/EditSection/CardsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+columns = 4
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 14
+
+[node name="StatusLabel" type="Label" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = ""
+horizontal_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="BackButton" type="Button" parent="Center/Panel/Margin/VBox/Buttons"]
+custom_minimum_size = Vector2(280, 56)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/pressed = SubResource("SBF_btn_pressed")
+text = "Voltar"
+
+[node name="SaveButton" type="Button" parent="Center/Panel/Margin/VBox/Buttons"]
+custom_minimum_size = Vector2(280, 56)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/pressed = SubResource("SBF_btn_pressed")
+text = "Salvar"
+
+[node name="VersionLabel" parent="." instance=ExtResource("3_version")]
+
+[node name="Cursor" parent="." instance=ExtResource("4_cursor")]

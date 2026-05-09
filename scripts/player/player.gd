@@ -25,7 +25,7 @@ signal upgrade_applied(id: String, level: int)
 @export var damage_number_scene: PackedScene
 @export var max_hp: float = 100.0
 @export var muzzle_offset_x: float = 8.0
-@export var death_freeze_duration: float = 1.5  # tempo parado antes da animação de morte
+@export var death_freeze_duration: float = 0.4  # tempo parado antes da animação de morte
 @export var death_fadeout_duration: float = 0.4  # tempo do sprite sumir após kill_effect
 @export var death_blackout_duration: float = 0.3  # tempo da tela ficar preta
 @export var kill_effect_scene: PackedScene = preload("res://scenes/effects/kill_effect.tscn")
@@ -210,6 +210,10 @@ func _ready() -> void:
 	sprite.animation_finished.connect(_on_animation_finished)
 	sprite.frame_changed.connect(_on_frame_changed)
 	sprite.play("idle")
+	# Aplica skin salva (peças layered em cima do body). Sem efeito até o
+	# usuário ter peças configuradas em assets/player/skin_parts/ e selecionadas
+	# pela UI de skin.
+	SkinLoadout.apply_to(self)
 
 
 func _physics_process(delta: float) -> void:
@@ -1514,12 +1518,23 @@ func _stop_audio_in_subtree(node: Node) -> void:
 
 func _play_death_sequence() -> void:
 	# Toda a sequência roda na HUD (CanvasLayer top), pra ficar por cima do preto.
-	# O player "real" no mundo é escondido — o clone na HUD que aparece.
+	# O player "real" no mundo é escondido — o player_preview na HUD que aparece.
 	var hud := get_tree().get_first_node_in_group("hud")
 	if hud == null or not hud.has_method("play_death_sequence"):
 		return
+	# Esconde toda a estrutura visual do player no mundo (body + layers + bow back
+	# + dash effect). Senão eles continuariam visíveis na posição do player real.
 	if sprite != null:
 		sprite.visible = false
+	var skin := get_node_or_null("Skin")
+	if skin != null:
+		skin.visible = false
+	var bow_back := get_node_or_null("BowBackSprite")
+	if bow_back != null:
+		bow_back.visible = false
+	var dash_fx := get_node_or_null("DashEffectSprite")
+	if dash_fx != null:
+		dash_fx.visible = false
 	hud.play_death_sequence(
 		sprite,
 		kill_effect_scene,

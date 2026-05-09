@@ -2,6 +2,17 @@ extends Control
 
 # Menu de configuração: modo de janela + resolução. Persiste em user://settings.cfg
 # (seção [display]). game_state.gd aplica essas configs no startup.
+#
+# Pode ser usado standalone (cena rodando direto, ex: do main menu) ou como
+# overlay no meio do jogo (a partir do menu de pausa). Em modo overlay:
+#  - Voltar emite signal `closed` em vez de change_scene
+#  - Cursor + VersionLabel são removidos (HUD já tem os deles)
+
+signal closed
+
+# Setado pelo opener antes de adicionar à árvore. Quando true, comportamento
+# de Voltar muda pra emitir signal em vez de trocar de cena.
+@export var as_overlay: bool = false
 
 const _SETTINGS_PATH: String = "user://settings.cfg"
 const _MAIN_MENU_PATH: String = "res://scenes/ui/main_menu.tscn"
@@ -28,6 +39,15 @@ const _DISPLAY_MODE_ITEMS: Array[String] = [
 
 
 func _ready() -> void:
+	if as_overlay:
+		# Em overlay, removemos o cursor e o version label próprios — o HUD
+		# do jogo já está renderizando os dele atrás.
+		var c := get_node_or_null("Cursor")
+		if c != null:
+			c.queue_free()
+		var v := get_node_or_null("VersionLabel")
+		if v != null:
+			v.queue_free()
 	apply_button.pressed.connect(_on_apply_pressed)
 	back_button.pressed.connect(_on_back_pressed)
 	display_mode_dropdown.item_selected.connect(_on_display_mode_changed)
@@ -89,4 +109,6 @@ func _on_apply_pressed() -> void:
 
 
 func _on_back_pressed() -> void:
-	get_tree().change_scene_to_file(_MAIN_MENU_PATH)
+	closed.emit()
+	if not as_overlay:
+		get_tree().change_scene_to_file(_MAIN_MENU_PATH)
