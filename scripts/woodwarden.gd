@@ -62,9 +62,11 @@ var _is_dead: bool = false
 
 func _ready() -> void:
 	add_to_group("ally")
-	add_to_group("structure")  # respawn pattern + estrutura para inimigos quando longe do player
 	add_to_group("tank_ally")  # _pick_target dos enemies considera estes além do player
 	add_to_group("insect_immune")  # insect_projectile pula este alvo
+	# Não está em "structure" — woodwarden tem respawn próprio gerenciado pelo
+	# player (não pelo wave_manager). Sem o grupo, enemies a longa distância não
+	# o consideram como "torre alternativa", mas tank_ally ainda pega na mira.
 	hp = max_hp
 	if hp_bar != null:
 		hp_bar.set_ratio(1.0)

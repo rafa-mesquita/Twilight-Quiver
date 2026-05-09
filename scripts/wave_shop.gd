@@ -415,8 +415,8 @@ func _roll_aliado_slots() -> void:
 		"desc": ww_desc,
 		"price": ww_price,
 		"available": not ww_maxed,
-		"scene": "res://scenes/woodwarden.tscn",
 		"is_ally": true,
+		"auto_spawn": true,
 	})
 	# Leno: auto-spawn (sem placement). apply_upgrade no commit cuida do spawn
 	# via player._refresh_lenos(). Compartilha o slot 2 dos aliados.
@@ -1170,9 +1170,9 @@ func _commit_status_only() -> void:
 
 
 func _commit_aliado_no_placement() -> void:
-	# Aliados com flag `auto_spawn` (ex: Leno) não passam por placement —
-	# `apply_upgrade` no player faz o spawn automaticamente. Aliados com
-	# "scene" continuam no flow de placement (woodwarden).
+	# Aliados com flag `auto_spawn` (Leno + Woodwarden hoje) não passam por
+	# placement — `apply_upgrade` no player faz o spawn automaticamente.
+	# Aliados com "scene" usam placement (não há mais nenhum hoje).
 	var player := _get_player()
 	if player == null:
 		return

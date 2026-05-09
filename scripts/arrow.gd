@@ -38,6 +38,7 @@ var chain_bonus_chance: float = 0.0
 var is_fire: bool = false
 var burn_dps: float = 5.0
 var burn_duration: float = 3.0
+var burn_final_bonus: float = 0.0  # dano extra no fim do burn (último tick)
 # Elemental Maldição: visual roxo + aplica CurseDebuff (slow + DoT toxic) em inimigos.
 # Setado pelo player ANTES de add_child quando curse_arrow_level > 0.
 var is_curse: bool = false
@@ -492,10 +493,14 @@ func _apply_burn_to(target: Node) -> void:
 	for child in target.get_children():
 		if child is BurnDoT:
 			(child as BurnDoT).refresh(burn_duration, burn_dps)
+			# Atualiza bonus final pro maior valor (mesma lógica do dps).
+			if burn_final_bonus > (child as BurnDoT).final_bonus_damage:
+				(child as BurnDoT).final_bonus_damage = burn_final_bonus
 			return
 	var dot := BurnDoT.new()
 	dot.dps = burn_dps
 	dot.duration = burn_duration
+	dot.final_bonus_damage = burn_final_bonus
 	target.add_child(dot)
 
 

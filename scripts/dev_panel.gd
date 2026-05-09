@@ -199,31 +199,11 @@ func _spawn_tower_at_player() -> void:
 
 
 func _spawn_woodwarden_at_player() -> void:
-	# Increment level + spawn novo woodwarden + register pra respawnar entre rounds.
-	var player := get_tree().get_first_node_in_group("player") as Node2D
-	if player == null:
-		return
-	if player.has_method("apply_upgrade"):
+	# apply_upgrade("woodwarden") já cuida do level up + spawn (player gerencia
+	# o ciclo de vida nativo agora — não passa mais pelo wave_manager).
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null and player.has_method("apply_upgrade"):
 		player.apply_upgrade("woodwarden")
-	var world := get_tree().get_first_node_in_group("world")
-	if world == null:
-		return
-	var ww_scene: PackedScene = load("res://scenes/woodwarden.tscn")
-	if ww_scene == null:
-		return
-	var ww := ww_scene.instantiate()
-	var wm := get_tree().get_first_node_in_group("wave_manager")
-	if wm != null and wm.has_method("_apply_woodwarden_scaling_if_applicable"):
-		wm._apply_woodwarden_scaling_if_applicable(ww, "res://scenes/woodwarden.tscn")
-	world.add_child(ww)
-	var pos: Vector2 = player.global_position + Vector2(48, 0)
-	ww.global_position = pos
-	if "max_hp" in ww and "hp" in ww:
-		ww.hp = ww.max_hp
-		if ww.has_node("HpBar"):
-			ww.get_node("HpBar").set_ratio(1.0)
-	if wm != null and wm.has_method("register_structure"):
-		wm.register_structure("res://scenes/woodwarden.tscn", pos, ww)
 
 
 func _apply_upgrade(upgrade_id: String) -> void:

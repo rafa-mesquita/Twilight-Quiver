@@ -56,6 +56,12 @@ var life_steal_level: int = 0  # cada stack +5% chance e +10% heal nos drops de 
 var fire_arrow_level: int = 0  # elemental Fogo (excalidraw lv1-4)
 var curse_arrow_level: int = 0  # elemental Maldição (excalidraw lv1, escala lv1-4)
 var woodwarden_level: int = 0  # aliado tank — cada compra "uppa" stats e custo
+# Tracking dos woodwardens com respawn nativo (não usa o sistema de structure
+# do wave_manager). Cada entry: {"instance", "last_pos", "dead_for"}.
+const WOODWARDEN_SCENE: PackedScene = preload("res://scenes/woodwarden.tscn")
+const WOODWARDEN_SPAWN_FX_SCENE: PackedScene = preload("res://scenes/woodwarden_spawn_effect.tscn")
+const WOODWARDEN_RESPAWN_DELAY: float = 21.0
+var _woodwardens: Array[Dictionary] = []
 # Leno (aliado voador, 4 níveis). Sem HP, orbita o player, dispara projétil
 # com slow area no impacto. L1=1 leno (20 dmg), L2=1 leno (50 dmg + atk speed),
 # L3=2 lenos, L4=3 lenos. Lenos morrem quando o player morre.
@@ -195,6 +201,7 @@ func _physics_process(delta: float) -> void:
 	_update_fire_skill(delta)
 	_update_curse_skill(delta)
 	_update_player_fire_trail()
+	_check_woodwarden_respawns(delta)
 	# Dash trigger lê via polling pra garantir que o cooldown decrementa ANTES
 	# do check, e que múltiplas pressões na mesma frame só viram 1 dash.
 	if has_dash and not is_dead and Input.is_action_just_pressed("dash"):
@@ -459,6 +466,10 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 			arrow.burn_dps = _fire_burn_dps() * burn_scale
 		if "burn_duration" in arrow:
 			arrow.burn_duration = _fire_burn_duration()
+		if "burn_final_bonus" in arrow:
+			# Último tick do burn dá um dano extra fixo (ignora burn_scale —
+			# bonus pequeno, não vale a pena dividir entre flechas extras).
+			arrow.burn_final_bonus = 5.0
 		# Lv2+: rastro de fogo no caminho da flecha.
 		if fire_arrow_level >= 2:
 			if "fire_trail_enabled" in arrow:
@@ -604,8 +615,9 @@ func _fire_burn_dps() -> float:
 
 
 func _fire_burn_duration() -> float:
-	# Tempo total que o fogo causa tick — aumentado de 3s pra 4.5s pra mais ticks.
-	return 4.5
+	# Tempo total do fogo (tick_interval=0.5s no BurnDoT, então cada +0.5s = +1 tick).
+	# 5.0s → 10 ticks por fogo.
+	return 5.0
 
 
 func _fire_trail_dps() -> float:
@@ -1072,10 +1084,10 @@ func apply_upgrade(upgrade_id: String) -> void:
 			leno_level = mini(leno_level + 1, 4)
 			_refresh_lenos()
 		"woodwarden":
-			# Cada compra do aliado conta como um "level up" — wave_manager
-			# usa o level pra escalar HP/dmg quando spawna/respawna.
-			# Max 4 compras (= 4 woodwardens, full stats).
+			# Cada compra: +1 level (max 4). Sobe stats em todos os existentes
+			# e spawna 1 novo woodwarden no player se ainda não tem todos.
 			woodwarden_level = mini(woodwarden_level + 1, 4)
+			_refresh_woodwardens()
 		"gold_magnet":
 			# Refatorado pra 4 níveis (Chuva de Coins). Lv1+ habilita drop chance
 			# bonus (gold_drop.gd lê o level via get_upgrade_count).
@@ -1190,6 +1202,85 @@ func _leno_target_count() -> int:
 	return 0
 
 
+func _refresh_woodwardens() -> void:
+	# Spawna woodwardens faltantes pra match o level. Atualiza stats em todos
+	# os vivos. Spawn em volta do player (offset random pra não empilhar).
+	var target_count: int = woodwarden_level
+	# Limpa entries totalmente sem instance + sem timer (raro — só edge case
+	# em que ainda não foi spawnado).
+	while _woodwardens.size() < target_count:
+		var ww: Node2D = WOODWARDEN_SCENE.instantiate()
+		_apply_woodwarden_stats(ww)
+		var spawn_pos: Vector2 = global_position + Vector2(randf_range(-32.0, 32.0), randf_range(-16.0, 16.0))
+		_get_world().add_child(ww)
+		ww.global_position = spawn_pos
+		_woodwardens.append({"instance": ww, "last_pos": spawn_pos, "dead_for": 0.0})
+	# Atualiza stats em todos os vivos.
+	for entry in _woodwardens:
+		var inst: Node = entry.get("instance")
+		if inst != null and is_instance_valid(inst):
+			_apply_woodwarden_stats(inst)
+
+
+func _apply_woodwarden_stats(ww: Node) -> void:
+	# Scaling por level: +25 HP e +5 dmg por nível acima de 1 (mesma curva
+	# que o wave_manager._apply_woodwarden_scaling_if_applicable usava).
+	if not ("max_hp" in ww and "damage" in ww):
+		return
+	var lvl: int = woodwarden_level
+	if lvl <= 1:
+		return
+	ww.max_hp = ww.max_hp + 25.0 * float(lvl - 1)
+	ww.damage = ww.damage + 5.0 * float(lvl - 1)
+	if "hp" in ww:
+		ww.hp = ww.max_hp
+	if ww.has_node("HpBar"):
+		var bar: Node = ww.get_node("HpBar")
+		if bar.has_method("set_ratio"):
+			bar.set_ratio(1.0)
+
+
+func _check_woodwarden_respawns(delta: float) -> void:
+	# Respawn nativo: 15s após woodwarden morrer, spawna novo na última posição.
+	# Sem sistema de structure do wave_manager (mantém só pra torres).
+	for entry in _woodwardens:
+		var inst: Variant = entry.get("instance")
+		var alive: bool = inst != null and is_instance_valid(inst) and (inst as Node).is_inside_tree()
+		if alive:
+			if inst is Node2D:
+				entry["last_pos"] = (inst as Node2D).global_position
+			entry["dead_for"] = 0.0
+			continue
+		var dead_for: float = float(entry.get("dead_for", 0.0)) + delta
+		entry["dead_for"] = dead_for
+		if dead_for < WOODWARDEN_RESPAWN_DELAY:
+			continue
+		var spawn_pos: Vector2 = entry.get("last_pos", global_position)
+		_spawn_woodwarden_portal_fx(spawn_pos)
+		var ww: Node2D = WOODWARDEN_SCENE.instantiate()
+		_apply_woodwarden_stats(ww)
+		_get_world().add_child(ww)
+		ww.global_position = spawn_pos
+		entry["instance"] = ww
+		entry["dead_for"] = 0.0
+
+
+func _spawn_woodwarden_portal_fx(pos: Vector2) -> void:
+	if WOODWARDEN_SPAWN_FX_SCENE == null:
+		return
+	var fx: Node2D = WOODWARDEN_SPAWN_FX_SCENE.instantiate()
+	_get_world().add_child(fx)
+	fx.global_position = pos
+
+
+func _cleanup_woodwardens() -> void:
+	for entry in _woodwardens:
+		var inst: Variant = entry.get("instance")
+		if inst != null and is_instance_valid(inst):
+			(inst as Node).queue_free()
+	_woodwardens.clear()
+
+
 func _cleanup_lenos() -> void:
 	for l in _lenos:
 		if is_instance_valid(l):
@@ -1244,6 +1335,7 @@ func _die() -> void:
 		hp_bar.visible = false
 	# Lenos morrem com o player (spec do excalidraw).
 	_cleanup_lenos()
+	_cleanup_woodwardens()
 	_stop_world_audio()
 	# Som de morte tem que vir DEPOIS do _stop_world_audio pra não ser cortado.
 	# Anexa no scene root (fora do "world") pra sobreviver à animação de morte.

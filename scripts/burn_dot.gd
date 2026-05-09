@@ -8,6 +8,9 @@ extends Node
 @export var dps: float = 5.0
 @export var duration: float = 3.0
 @export var tick_interval: float = 0.5
+# Dano extra aplicado uma única vez quando o burn TERMINA por timeout natural
+# (não quando o inimigo morre antes). 0 = desabilitado.
+@export var final_bonus_damage: float = 0.0
 
 var _remaining: float = 0.0
 var _tick_accum: float = 0.0
@@ -20,6 +23,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_remaining -= delta
 	if _remaining <= 0.0:
+		_apply_final_bonus()
 		queue_free()
 		return
 	_tick_accum += delta
@@ -51,3 +55,18 @@ func refresh(new_duration: float, new_dps: float) -> void:
 	_remaining = maxf(_remaining, new_duration)
 	if new_dps > dps:
 		dps = new_dps
+
+
+func _apply_final_bonus() -> void:
+	if final_bonus_damage <= 0.0:
+		return
+	var parent: Node = get_parent()
+	if parent == null or not is_instance_valid(parent):
+		return
+	if parent.is_queued_for_deletion():
+		return
+	if "hp" in parent and float(parent.hp) <= 0.0:
+		return
+	if not parent.has_method("take_damage"):
+		return
+	parent.take_damage(final_bonus_damage)
