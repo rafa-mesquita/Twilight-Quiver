@@ -120,15 +120,24 @@ const PIERCING_BASE_SCALE: float = 1.1
 
 
 func _apply_piercing_visuals() -> void:
-	# Tint dourado + trail laranja + sprite/trail 1.1× pra destacar.
+	# Tint azul + trail azul + sprite/trail 1.1× pra destacar.
 	var sprite_node := get_node_or_null("Sprite2D")
 	if sprite_node is CanvasItem:
-		(sprite_node as CanvasItem).modulate = Color(1.7, 1.25, 0.45, 1.0)
+		(sprite_node as CanvasItem).modulate = Color(0.55, 0.85, 1.7, 1.0)
 	if sprite_node is Node2D:
 		(sprite_node as Node2D).scale = Vector2.ONE * PIERCING_BASE_SCALE
 	if trail != null:
-		trail.default_color = Color(1.0, 0.7, 0.2, 1.0)
+		trail.default_color = Color(0.35, 0.65, 1.0, 1.0)
 		trail.width *= PIERCING_BASE_SCALE
+		# Substitui o gradient default (roxo) por um gradient azul — sem isso o
+		# default_color não aparece (gradient sobrescreve a cor da linha).
+		var grad := Gradient.new()
+		grad.offsets = PackedFloat32Array([0.0, 1.0])
+		grad.colors = PackedColorArray([
+			Color(0.35, 0.65, 1.0, 0.0),
+			Color(0.35, 0.65, 1.0, 0.85),
+		])
+		trail.gradient = grad
 
 
 func _try_spawn_fire_trail() -> void:
@@ -440,7 +449,7 @@ func _spawn_hit_effect() -> void:
 	fx.global_position = global_position
 
 
-# Efeito específico de perfuração. No 3º hit, fica maior e dourado pra
+# Efeito específico de perfuração. No 3º hit, fica maior e azul saturado pra
 # sinalizar que foi uma perfuração "potente".
 func _spawn_pierce_hit_effect(is_third: bool) -> void:
 	if hit_effect_scene == null:
@@ -448,10 +457,13 @@ func _spawn_pierce_hit_effect(is_third: bool) -> void:
 	var fx := hit_effect_scene.instantiate()
 	_get_world().add_child(fx)
 	fx.global_position = global_position
+	# Tinta o efeito de azul mesmo nos hits normais — match com o trail/sprite.
+	if fx is CanvasItem:
+		(fx as CanvasItem).modulate = Color(0.5, 0.8, 1.4, 1.0)
 	if is_third and fx is Node2D:
 		var fx2d: Node2D = fx
 		fx2d.scale = Vector2(2.2, 2.2)
-		fx2d.modulate = Color(1.6, 1.1, 0.3, 1.0)
+		fx2d.modulate = Color(0.45, 0.85, 1.6, 1.0)
 
 
 func _get_world() -> Node:

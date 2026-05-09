@@ -739,6 +739,9 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 	"leno": Color(0xfc / 255.0, 0xb4 / 255.0, 0xcc / 255.0),  # #fcb4cc
 	"woodwarden": Color(0x5d / 255.0, 0x80 / 255.0, 0x5a / 255.0),  # #5d805a
 	"graviton": Color.WHITE,
+	"perfuracao": Color.WHITE,
+	"ricochet_arrow": Color.WHITE,
+	"gold_magnet": Color(0x6a / 255.0, 0x53 / 255.0, 0x0b / 255.0),  # #6a530b
 }
 # Cor secundária (DescLabel + PriceLabel) por upgrade. Quando definido,
 # sobrescreve a cor do título nesses dois labels — útil pra cards onde título
@@ -755,6 +758,11 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	"leno": "res://assets/Hud/shop/aliado/Leno/Leno Card.png",
 	"woodwarden": "res://assets/Hud/shop/aliado/woodwarden/woodwarden card.png",
 	"graviton": "res://assets/Hud/shop/upgrade/graviton/graviton card-Sheet.png",
+	# id é "ricochet_arrow" mas o arquivo é "ricochete.png" (PT). Override pra
+	# o loader achar a arte certa.
+	"ricochet_arrow": "res://assets/Hud/shop/upgrade/ricochete.png",
+	# id é "gold_magnet" mas o arquivo é "coin master.png" (com espaço).
+	"gold_magnet": "res://assets/Hud/shop/upgrade/coin master.png",
 }
 # Cor única pros aliados (todos compartilham por enquanto).
 const ALIADO_TEXT_COLOR: Color = Color(0x2c / 255.0, 0x1f / 255.0, 0x1f / 255.0)  # #2c1f1f
