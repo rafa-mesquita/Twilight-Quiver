@@ -118,9 +118,20 @@ func _die_no_hit() -> void:
 
 
 func _spawn_slow_area() -> void:
-	var area: Node2D = SLOW_AREA_SCENE.instantiate()
+	# Spawna 5 áreas: centro + 4 satélites (cima/baixo/esq/dir) formando uma cruz.
+	# Offset = ~2x raio do círculo (12px) com leve overlap pra cobertura contínua.
+	const SAT_OFFSET: float = 22.0
 	var world: Node = get_tree().get_first_node_in_group("world")
 	if world == null:
 		world = get_tree().current_scene
-	world.add_child(area)
-	area.global_position = global_position
+	var offsets: Array[Vector2] = [
+		Vector2.ZERO,
+		Vector2(0, -SAT_OFFSET),
+		Vector2(0, SAT_OFFSET),
+		Vector2(-SAT_OFFSET, 0),
+		Vector2(SAT_OFFSET, 0),
+	]
+	for off in offsets:
+		var area: Node2D = SLOW_AREA_SCENE.instantiate()
+		world.add_child(area)
+		area.global_position = global_position + off

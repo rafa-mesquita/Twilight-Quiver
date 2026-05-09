@@ -12,10 +12,10 @@ extends CanvasLayer
 signal closed
 
 const PRICE_TABLE: Array[int] = [4, 8, 20, 35]
-const TOWER_PRICE: int = 10
-const WOODWARDEN_PRICE_TABLE: Array[int] = [5, 10, 14, 18, 24, 30]
-# Leno (aliado voador, auto-spawn): L1 = 5g, demais níveis seguem escalonamento.
-const LENO_PRICE_TABLE: Array[int] = [5, 8, 14, 22]
+const TOWER_PRICE: int = 7
+const WOODWARDEN_PRICE_TABLE: Array[int] = [5, 7, 10, 12]
+# Leno (aliado voador, auto-spawn): mesmo escalonamento dos aliados.
+const LENO_PRICE_TABLE: Array[int] = [5, 7, 10, 12]
 const STRUCTURE_SURCHARGE_PER_OWNED: int = 3
 # Aliados / estruturas só podem ser comprados a cada N waves.
 # Wave 3, 6, 9... = aliado unlocked. Wave 4, 8, 12... = estrutura unlocked.
@@ -174,7 +174,7 @@ const CURSE_ARROW_DESCS: Array[String] = [
 	$Root/AliadoRow/AliadoCard3,
 ]
 
-# Bonus +1 upgrade alterna por wave: pares (2,4,6...) liberam 2 upgrades.
+# Bonus +1 upgrade: começa na wave 3 e depois nas pares (3, 4, 6, 8...).
 var max_upgrades_this_round: int = 1
 
 # Slots
@@ -226,8 +226,10 @@ const LAYOUT_EDIT_HIGHLIGHT: Color = Color(1.5, 0.6, 0.6, 1.0)
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var wm := get_tree().get_first_node_in_group("wave_manager")
-	if wm != null and "wave_number" in wm and int(wm.wave_number) % 2 == 0:
-		max_upgrades_this_round = 2
+	if wm != null and "wave_number" in wm:
+		var wn: int = int(wm.wave_number)
+		if wn == 3 or (wn >= 4 and wn % 2 == 0):
+			max_upgrades_this_round = 2
 	continue_btn.pressed.connect(_on_continue_pressed)
 	global_reroll_btn.pressed.connect(_on_global_reroll)
 	_setup_bonus_label()

@@ -254,9 +254,13 @@ func _build_wave_config(num: int) -> Dictionary:
 	# Quanto maior o wave_number, mais inimigos vivos e mais total.
 	# Ratio macaco/mago varia entre ~70/30 e ~50/50 conforme a wave avança.
 	# Wave 3 leva um corte extra (curva de aprendizado pós-wave 2).
+	# Wave 5 também leva um corte (introdução do macaco camper + escala ficava
+	# pesada com 47-56 mobs totais).
 	var reduction: float = 0.87
 	if num == 3:
 		reduction = 0.72
+	elif num == 5:
+		reduction = 0.76
 	var scale: float = (1.0 + (num - 1) * 0.35) * reduction
 	var monkey_alive: int = int(round(5 * scale + randf_range(-1.0, 2.0)))
 	var monkey_total: int = int(round(15 * scale + randf_range(0.0, 4.0)))
@@ -271,6 +275,12 @@ func _build_wave_config(num: int) -> Dictionary:
 		summ_scale_mult = 0.5
 	var summ_alive: int = int(round(1 * scale * summ_scale_mult + randf_range(0.0, 1.0)))
 	var summ_total: int = int(round(3 * scale * summ_scale_mult + randf_range(0.0, 2.0)))
+	# Wave 3: cap em 1 summoner total e -1 macaco (curva de estreia do invocador).
+	if num == 3:
+		summ_alive = mini(summ_alive, 1)
+		summ_total = mini(summ_total, 1)
+		monkey_alive = maxi(monkey_alive - 1, 1)
+		monkey_total = maxi(monkey_total - 1, monkey_alive)
 	return {
 		"monkey": {"alive_target": maxi(monkey_alive, 1), "total": maxi(monkey_total, monkey_alive)},
 		"mage": {"alive_target": maxi(mage_alive, 1), "total": maxi(mage_total, mage_alive)},

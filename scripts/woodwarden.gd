@@ -28,6 +28,11 @@ signal died(woodwarden: Node)
 @export var follow_min_distance: float = 28.0
 @export var follow_max_distance: float = 50.0
 @export var speed: float = 38.0
+# Buff de move speed quando o warden está LONGE do player. Ajuda a alcançar
+# em situações de kite/parede etc. Lerp entre 1.0 (perto) e MAX_MULT (muito longe).
+@export var far_speed_mult_max: float = 1.8
+@export var far_speed_threshold_start: float = 80.0  # dist em que começa a buffar
+@export var far_speed_threshold_full: float = 200.0  # dist em que pega o buff total
 # Anti-overlap entre múltiplos woodwardens — se outro está mais perto que isso,
 # aplica força de separação lateral pra não ficarem em cima um do outro.
 @export var separation_radius: float = 20.0
@@ -117,10 +122,25 @@ func _physics_process(delta: float) -> void:
 			move_vec = -to_player.normalized()
 	# Separation: empurra pra longe de outros woodwardens próximos.
 	var sep: Vector2 = _separation_force()
-	velocity = move_vec * speed + knockback_velocity + sep
+	# Buff de speed quando longe do player — lerp linear entre threshold start
+	# (sem buff) e threshold full (buff máximo).
+	var effective_speed: float = speed * _far_speed_multiplier()
+	velocity = move_vec * effective_speed + knockback_velocity + sep
 	move_and_slide()
 	_update_facing(move_vec)
 	_update_animation(move_vec)
+
+
+func _far_speed_multiplier() -> float:
+	if player == null or not is_instance_valid(player):
+		return 1.0
+	var d: float = global_position.distance_to(player.global_position)
+	if d <= far_speed_threshold_start:
+		return 1.0
+	if d >= far_speed_threshold_full:
+		return far_speed_mult_max
+	var t: float = (d - far_speed_threshold_start) / (far_speed_threshold_full - far_speed_threshold_start)
+	return lerp(1.0, far_speed_mult_max, t)
 
 
 func _separation_force() -> Vector2:

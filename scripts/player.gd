@@ -141,7 +141,7 @@ var _graviton_shot_counter: int = 0
 # DPS escala com dash_level: lv2+ ativa o trail, lv3 e lv4 aumentam dano.
 const DASH_TRAIL_SCENE: PackedScene = preload("res://scenes/dash_trail.tscn")
 const DASH_TRAIL_SPACING: float = 14.0
-const DASH_TRAIL_DPS_BASE: float = 3.0
+const DASH_TRAIL_DPS_BASE: float = 5.0
 const DASH_TRAIL_DPS_PER_STACK: float = 2.5
 var _dash_last_trail_pos: Vector2 = Vector2.ZERO
 # Delay antes da primeira flecha auto-disparada pelo dash (1.3).
