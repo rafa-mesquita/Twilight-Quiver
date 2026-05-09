@@ -64,7 +64,7 @@ const DEFAULT_PREFERENCES: Dictionary = {
 const SKIN_QUESTS: Dictionary = {
 	"Red_Velvet": {
 		"type": "wave_reached",
-		"value": 2,
+		"value": 10,
 		"label": "Alcance a raid 10",
 		"hidden": false,
 	},
@@ -157,16 +157,26 @@ static func scan_available_parts() -> Dictionary:
 		if dir == null:
 			continue
 		var parts: Array = []
+		# Em build exportado, os .png originais NÃO ficam no .pck — só os
+		# .png.import (metadata) + .ctex (textura binária). No editor, ambos
+		# existem. Aceita os dois formatos e dedupe pelo nome final do PNG.
+		var seen_png: Dictionary = {}
 		dir.list_dir_begin()
 		var file: String = dir.get_next()
 		while file != "":
-			if not dir.current_is_dir() and file.to_lower().ends_with(".png"):
-				if slot == &"bow" and file.to_lower().ends_with("_back.png"):
-					file = dir.get_next()
-					continue
-				var part: SkinPart = _build_part(slot, dir_path, file)
-				if part != null:
-					parts.append(part)
+			if not dir.current_is_dir():
+				var lower: String = file.to_lower()
+				var png_name: String = ""
+				if lower.ends_with(".png"):
+					png_name = file
+				elif lower.ends_with(".png.import"):
+					png_name = file.substr(0, file.length() - 7)  # tira ".import"
+				if not png_name.is_empty() and not seen_png.has(png_name):
+					seen_png[png_name] = true
+					if not (slot == &"bow" and png_name.to_lower().ends_with("_back.png")):
+						var part: SkinPart = _build_part(slot, dir_path, png_name)
+						if part != null:
+							parts.append(part)
 			file = dir.get_next()
 		dir.list_dir_end()
 		parts.sort_custom(func(a: SkinPart, b: SkinPart) -> bool:
