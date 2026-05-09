@@ -4,7 +4,7 @@ extends Area2D
 # Aplica SlowDebuff em inimigos que entram, dura `lifetime` segundos.
 
 @export var slow_factor: float = 0.85  # 15% slow (suave — antes 35% inviabilizava melees acertar player)
-@export var lifetime: float = 2.0
+@export var lifetime: float = 7.0
 @export var fade_duration: float = 0.4
 
 var _life: float = 0.0

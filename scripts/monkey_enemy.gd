@@ -131,17 +131,16 @@ func _current_wave_number() -> int:
 
 
 func _find_camp_target() -> Node2D:
-	# Pickup mais próximo (gold ou heart). Retorna null se não houver.
+	# Camper só guarda moedas (gold). Heart/coração fica livre pro player coletar.
 	var best: Node2D = null
 	var best_dist_sq: float = INF
-	for grp: String in ["gold", "heart"]:
-		for n in get_tree().get_nodes_in_group(grp):
-			if not is_instance_valid(n) or not (n is Node2D):
-				continue
-			var d: float = (n as Node2D).global_position.distance_squared_to(global_position)
-			if d < best_dist_sq:
-				best_dist_sq = d
-				best = n
+	for n in get_tree().get_nodes_in_group("gold"):
+		if not is_instance_valid(n) or not (n is Node2D):
+			continue
+		var d: float = (n as Node2D).global_position.distance_squared_to(global_position)
+		if d < best_dist_sq:
+			best_dist_sq = d
+			best = n
 	return best
 
 

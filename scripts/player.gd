@@ -15,8 +15,8 @@ signal fire_skill_cooldown_changed(remaining: float, total: float)
 signal curse_skill_unlocked
 signal curse_skill_cooldown_changed(remaining: float, total: float)
 
-@export var speed: float = 55.825  # +1.5% sobre o base 55.0
-@export var attack_cooldown: float = 1.0
+@export var speed: float = 58.058  # base 55 + 1.5% + 4% = 58.058
+@export var attack_cooldown: float = 0.90  # ~+11% atk speed sobre o base 1.0
 @export var arrow_scene: PackedScene
 @export var damage_effect_scene: PackedScene
 @export var damage_number_scene: PackedScene
@@ -143,7 +143,7 @@ const DASH_FIRST_ARROW_DELAY: float = 0.60
 # Delay entre 1ª e 2ª flecha (1.3.1) — referente ao tempo da primeira.
 const DASH_DOUBLE_ARROW_DELAY: float = 0.40
 var arrow_damage_multiplier: float = 1.0  # aplicado ao dano da arrow no spawn
-var attack_speed_multiplier: float = 1.0  # 1.0 base, +0.30 por stack
+var attack_speed_multiplier: float = 1.0  # 1.0 base, +0.27 por stack
 var move_speed_multiplier: float = 1.0  # 1.0 base, +0.10 por stack
 # Conta ataques pra decidir quando proca a flecha perfurante (a cada 3 ataques).
 # Reseta ao procar. Em level 4, todo ataque é perfurante (counter ignorado).
@@ -1033,9 +1033,9 @@ func apply_upgrade(upgrade_id: String) -> void:
 			perfuracao_level = mini(perfuracao_level + 1, 4)
 		"attack_speed":
 			attack_speed_level += 1
-			# +30% por stack (aditivo). Aplica imediatamente — próximo ataque
+			# +27% por stack (aditivo). Aplica imediatamente — próximo ataque
 			# já usa o novo wait_time/speed_scale via _start_attack.
-			attack_speed_multiplier += 0.30
+			attack_speed_multiplier += 0.27
 		"multi_arrow":
 			multi_arrow_level = mini(multi_arrow_level + 1, 4)
 		"chain_lightning":
@@ -1389,7 +1389,7 @@ func notify_damage_dealt(amount: float) -> void:
 		_heal_woodwardens_from_damage(amount)
 
 
-const WOODWARDEN_HEAL_FROM_DAMAGE: float = 0.50  # 50% do dano vira cura
+const WOODWARDEN_HEAL_FROM_DAMAGE: float = 0.20  # 20% do dano vira cura
 
 func _heal_woodwardens_from_damage(amount: float) -> void:
 	# Cada woodwarden vivo cura por % do dano causado pelo player.

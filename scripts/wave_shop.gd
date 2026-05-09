@@ -30,7 +30,7 @@ const ESTRUT_UNLOCK_INTERVAL: int = 4
 const STATUS_POOL: Array = [
 	{"id": "hp", "name": "+15 HP"},
 	{"id": "damage", "name": "+20% dano"},
-	{"id": "attack_speed", "name": "+30% atk speed"},
+	{"id": "attack_speed", "name": "+27% atk speed"},
 	{"id": "move_speed", "name": "+10% move speed"},
 	{"id": "armor", "name": "+5% dano reduzido"},
 ]
@@ -77,10 +77,10 @@ const PERFURACAO_DESCS: Array[String] = [
 	"Todo ataque atravessa",
 ]
 const ATTACK_SPEED_DESCS: Array[String] = [
-	"+30% velocidade de\nataque",
-	"+30% velocidade de\nataque",
-	"+30% velocidade de\nataque",
-	"+30% velocidade de\nataque",
+	"+27% velocidade de\nataque",
+	"+27% velocidade de\nataque",
+	"+27% velocidade de\nataque",
+	"+27% velocidade de\nataque",
 ]
 const MULTI_ARROW_DESCS: Array[String] = [
 	"+2 flechas a 30°\n(50% dano)",
@@ -668,6 +668,7 @@ const UPGRADE_DESC_COLORS: Dictionary = {
 	"leno": Color(0xab / 255.0, 0x54 / 255.0, 0x82 / 255.0),  # #ab5482
 	"woodwarden": Color(0x2d / 255.0, 0x3e / 255.0, 0x2b / 255.0),  # #2d3e2b
 	"graviton": Color(0x61 / 255.0, 0x61 / 255.0, 0x61 / 255.0),  # #616161
+	"chain_lightning": Color(0xa7 / 255.0, 0x8f / 255.0, 0x24 / 255.0),  # #a78f24
 }
 # Path absoluto pra arte do card por slot_id. Usado quando o asset não segue
 # o padrão `<category>/<id>.png` (ex: Leno tem subfolder e nome com espaço).
