@@ -15,7 +15,15 @@ const MOVE_TO_CENTER_DURATION: float = 0.4
 @onready var restart_button: Button = $DeathTopLayer/RestartButton
 @onready var menu_button: Button = $DeathTopLayer/MenuButton
 @onready var survival_label: Label = $DeathTopLayer/SurvivalLabel
+@onready var score_label: Label = $DeathTopLayer/ScoreLabel
 @onready var tower_alert: Control = $TowerAlertIndicator
+
+# Leaderboard: auto-submit silencioso em build de release. Cliente HTTP é
+# instanciado lazy quando player morre (em release). Em debug, nada é enviado.
+const _LEADERBOARD_CLIENT := preload("res://scripts/systems/leaderboard_client.gd")
+const _SCORE_CALC := preload("res://scripts/systems/score_calc.gd")
+const _SETTINGS_PATH: String = "user://settings.cfg"
+var _leaderboard_client: Node = null
 
 # Tracking pra exibir indicador quando torre sofre ataque off-screen
 const TOWER_ALERT_HOLD: float = 1.5
@@ -332,6 +340,12 @@ func _show_restart_button() -> void:
 	var wm := get_tree().get_first_node_in_group("wave_manager")
 	if wm != null and "wave_number" in wm:
 		wave_num = int(wm.wave_number)
+	# Score em destaque (calculado a partir das mesmas stats que vão pro leaderboard).
+	var score: int = _SCORE_CALC.calc(_collect_run_stats(wave_num))
+	score_label.text = "SCORE %d" % score
+	score_label.modulate.a = 0.0
+	score_label.visible = true
+
 	survival_label.text = "Sobreviveu %d waves\n%s" % [wave_num, _build_death_stats_block()]
 	survival_label.modulate.a = 0.0
 	survival_label.visible = true
@@ -342,9 +356,15 @@ func _show_restart_button() -> void:
 	menu_button.visible = true
 
 	var t := create_tween().set_parallel(true)
+	t.tween_property(score_label, "modulate:a", 1.0, 0.4)
 	t.tween_property(survival_label, "modulate:a", 1.0, 0.4)
 	t.tween_property(restart_button, "modulate:a", 1.0, 0.4)
 	t.tween_property(menu_button, "modulate:a", 1.0, 0.4)
+
+	# Envio silencioso pro leaderboard — fire-and-forget. Em debug nem instancia
+	# o cliente (evita poluir leaderboard com runs de dev).
+	if not OS.is_debug_build():
+		_auto_submit_score()
 
 
 func _on_menu_pressed() -> void:
@@ -374,6 +394,67 @@ func _format_run_time(msec: int) -> String:
 	var minutes: int = total_sec / 60
 	var seconds: int = total_sec % 60
 	return "%d:%02d" % [minutes, seconds]
+
+
+# ---------- Leaderboard auto-submit ----------
+
+func _auto_submit_score() -> void:
+	var nick: String = _load_nickname()
+	if nick.is_empty():
+		# Sem nick salvo (cara abriu jogo, não preencheu prompt e foi direto pra death?
+		# Não deveria acontecer em fluxo normal). Skip silencioso.
+		return
+	if _leaderboard_client == null:
+		_leaderboard_client = _LEADERBOARD_CLIENT.new()
+		add_child(_leaderboard_client)
+		# Sem listeners de upload_succeeded/failed — fire-and-forget.
+	_leaderboard_client.submit_run(_build_run_payload(nick))
+
+
+func _collect_run_stats(wave_num: int) -> Dictionary:
+	var p := get_tree().get_first_node_in_group("player")
+	var kills: int = 0
+	var allies: int = 0
+	var dmg_dealt: int = 0
+	var dmg_taken: int = 0
+	if p != null:
+		kills = int(p.get("stats_enemies_killed")) if "stats_enemies_killed" in p else 0
+		allies = int(p.get("stats_allies_made")) if "stats_allies_made" in p else 0
+		dmg_dealt = int(round(float(p.get("stats_damage_dealt")))) if "stats_damage_dealt" in p else 0
+		dmg_taken = int(round(float(p.get("stats_damage_taken")))) if "stats_damage_taken" in p else 0
+	return {
+		"wave": wave_num,
+		"kills": kills,
+		"allies": allies,
+		"dmg_dealt": dmg_dealt,
+		"dmg_taken": dmg_taken,
+	}
+
+
+func _build_run_payload(nick: String) -> Dictionary:
+	var wave_num: int = 0
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm != null and "wave_number" in wm:
+		wave_num = int(wm.wave_number)
+	var time_ms: int = 0
+	var p := get_tree().get_first_node_in_group("player")
+	if p != null and p.has_method("get_run_time_msec"):
+		time_ms = int(p.get_run_time_msec())
+	var stats: Dictionary = _collect_run_stats(wave_num)
+	var version: String = str(ProjectSettings.get_setting("application/config/version", ""))
+	var payload: Dictionary = stats.duplicate()
+	payload["nickname"] = nick
+	payload["version"] = version
+	payload["time_ms"] = time_ms
+	payload["score"] = _SCORE_CALC.calc(stats)
+	return payload
+
+
+func _load_nickname() -> String:
+	var cfg := ConfigFile.new()
+	if cfg.load(_SETTINGS_PATH) != OK:
+		return ""
+	return str(cfg.get_value("player", "nickname", ""))
 
 
 # ---------- Pause menu (ESC) ----------

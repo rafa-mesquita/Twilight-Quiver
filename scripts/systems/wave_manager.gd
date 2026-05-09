@@ -767,5 +767,3 @@ func _show_free_upgrade_popup(name_text: String) -> void:
 	await btn.pressed
 	if is_instance_valid(layer):
 		layer.queue_free()
-
-

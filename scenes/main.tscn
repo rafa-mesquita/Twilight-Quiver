@@ -17,7 +17,7 @@
 [ext_resource type="PackedScene" path="res://scenes/world/props/grass.tscn" id="15_jkv2x"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/mage_enemy.tscn" id="16_mage"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/summoner_mage.tscn" id="17_smage"]
-[ext_resource type="PackedScene" path="res://scenes/enemies/stone_cube_enemy.tscn" id="18_stone"]
+[ext_resource type="PackedScene" uid="uid://dt78ddts01nok" path="res://scenes/enemies/stone_cube_enemy.tscn" id="18_stone"]
 
 [sub_resource type="RectangleShape2D" id="RectShape_bound_h"]
 size = Vector2(842, 10)

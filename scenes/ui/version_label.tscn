@@ -1,12 +1,12 @@
-[gd_scene load_steps=3 format=3 uid="uid://b8tw1gv0vqlbl"]
+[gd_scene format=3 uid="uid://b8tw1gv0vqlbl"]
 
-[ext_resource type="Script" path="res://scripts/ui/version_label.gd" id="1_version"]
-[ext_resource type="FontFile" path="res://font/ByteBounce.ttf" id="2_font"]
+[ext_resource type="Script" uid="uid://bobwsxxihthr2" path="res://scripts/ui/version_label.gd" id="1_version"]
+[ext_resource type="FontFile" uid="uid://bw54fcmefpqf1" path="res://font/ByteBounce.ttf" id="2_font"]
 
-[node name="VersionLabel" type="CanvasLayer"]
+[node name="VersionLabel" type="CanvasLayer" unique_id=1033259335]
 layer = 100
 
-[node name="Label" type="Label" parent="."]
+[node name="Label" type="Label" parent="." unique_id=242693716]
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
@@ -18,13 +18,12 @@ offset_right = -12.0
 offset_bottom = -8.0
 grow_horizontal = 0
 grow_vertical = 0
-mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.55)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.7)
 theme_override_constants/outline_size = 4
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 24
-text = "v?"
+text = "?"
 horizontal_alignment = 2
 vertical_alignment = 2
 script = ExtResource("1_version")

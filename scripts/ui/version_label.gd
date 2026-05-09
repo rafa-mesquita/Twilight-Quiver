@@ -6,4 +6,4 @@ extends Label
 
 func _ready() -> void:
 	var v: String = str(ProjectSettings.get_setting("application/config/version", ""))
-	text = "v%s" % v if v != "" else ""
+	text = "%s" % v if v != "" else ""
