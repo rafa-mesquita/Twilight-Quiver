@@ -1,0 +1,55 @@
+[gd_scene load_steps=7 format=3 uid="uid://dashtrail0001"]
+
+[ext_resource type="Script" path="res://scripts/player/dash_trail.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/effects/dash trilha.png" id="2_sheet"]
+
+[sub_resource type="CircleShape2D" id="CircleShape_trail"]
+radius = 14.0
+
+[sub_resource type="AtlasTexture" id="A_trail_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 24, 24)
+
+[sub_resource type="AtlasTexture" id="A_trail_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(24, 0, 24, 24)
+
+[sub_resource type="AtlasTexture" id="A_trail_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(48, 0, 24, 24)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_trail"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_trail_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_trail_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_trail_2")
+}],
+"loop": true,
+"name": &"default",
+"speed": 2.5
+}]
+
+[node name="DashTrail" type="Area2D"]
+collision_layer = 0
+collision_mask = 4
+script = ExtResource("1_script")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape_trail")
+
+[node name="Shadow" type="Polygon2D" parent="."]
+position = Vector2(0, 5)
+color = Color(0, 0, 0, 0.22)
+polygon = PackedVector2Array(11, 0, 10.16, 3, 7.78, 5.5, 4.21, 7, 0, 7.5, -4.21, 7, -7.78, 5.5, -10.16, 3, -11, 0, -10.16, -3, -7.78, -5.5, -4.21, -7, 0, -7.5, 4.21, -7, 7.78, -5.5, 10.16, -3)
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_trail")
+animation = &"default"
+autoplay = "default"

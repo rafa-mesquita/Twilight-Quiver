@@ -1,0 +1,116 @@
+[gd_scene load_steps=21 format=3]
+
+[ext_resource type="Script" path="res://scripts/enemies/monkey_enemy.gd" id="1_monkey"]
+[ext_resource type="Texture2D" path="res://assets/enemies/monkey/enemy monkey-Sheet.png" id="2_sheet"]
+[ext_resource type="PackedScene" path="res://scenes/effects/damage_effect.tscn" id="3_dmg"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hp_bar.tscn" id="4_hpbar"]
+[ext_resource type="PackedScene" path="res://scenes/effects/damage_number.tscn" id="5_dmgnum"]
+[ext_resource type="PackedScene" path="res://scenes/effects/kill_effect.tscn" id="6_kill"]
+[ext_resource type="AudioStream" path="res://audios/effects/macaco/monkey damage.mp3" id="7_dmg_sfx"]
+[ext_resource type="PackedScene" path="res://scenes/pickups/gold.tscn" id="8_gold"]
+[ext_resource type="PackedScene" path="res://scenes/pickups/heart.tscn" id="9_heart"]
+
+[sub_resource type="AtlasTexture" id="A_idle_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_idle_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_walk_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_walk_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_atk_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_atk_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_atk_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(64, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_atk_3"]
+atlas = ExtResource("2_sheet")
+region = Rect2(96, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_atk_4"]
+atlas = ExtResource("2_sheet")
+region = Rect2(128, 64, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_monkey"]
+animations = [{
+"frames": [{"duration": 1.0, "texture": SubResource("A_idle_0")},
+{"duration": 1.0, "texture": SubResource("A_idle_1")}],
+"loop": true,
+"name": &"idle",
+"speed": 4.0
+}, {
+"frames": [{"duration": 1.0, "texture": SubResource("A_walk_0")},
+{"duration": 1.0, "texture": SubResource("A_walk_1")}],
+"loop": true,
+"name": &"walk",
+"speed": 8.0
+}, {
+"frames": [{"duration": 1.0, "texture": SubResource("A_atk_0")},
+{"duration": 1.0, "texture": SubResource("A_atk_1")},
+{"duration": 1.0, "texture": SubResource("A_atk_2")},
+{"duration": 1.0, "texture": SubResource("A_atk_3")},
+{"duration": 1.0, "texture": SubResource("A_atk_4")}],
+"loop": false,
+"name": &"attack",
+"speed": 18.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_monkey"]
+height = 22.0
+radius = 7.0
+
+[node name="MonkeyEnemy" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_monkey")
+damage_effect_scene = ExtResource("3_dmg")
+damage_number_scene = ExtResource("5_dmgnum")
+kill_effect_scene = ExtResource("6_kill")
+damage_sound = ExtResource("7_dmg_sfx")
+gold_scene = ExtResource("8_gold")
+heart_scene = ExtResource("9_heart")
+
+[node name="Shadow" type="Node2D" parent="."]
+position = Vector2(0, 0)
+
+[node name="Outer" type="Polygon2D" parent="Shadow"]
+color = Color(0, 0, 0, 0.15)
+polygon = PackedVector2Array(8, 0, 7, 1, 5, 2, 3, 3, 0, 3, -3, 3, -5, 2, -7, 1, -8, 0, -7, -1, -5, -2, -3, -3, 0, -3, 3, -3, 5, -2, 7, -1)
+
+[node name="Middle" type="Polygon2D" parent="Shadow"]
+color = Color(0, 0, 0, 0.22)
+polygon = PackedVector2Array(5, 0, 4, 1, 2, 2, 0, 2, -2, 2, -4, 1, -5, 0, -4, -1, -2, -2, 0, -2, 2, -2, 4, -1)
+
+[node name="Inner" type="Polygon2D" parent="Shadow"]
+color = Color(0, 0, 0, 0.32)
+polygon = PackedVector2Array(3, 0, 2, 1, 0, 1, -2, 1, -3, 0, -2, -1, 0, -1, 2, -1)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_monkey")
+animation = &"idle"
+autoplay = "idle"
+offset = Vector2(0, -8)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -12)
+shape = SubResource("CapsuleShape2D_monkey")
+
+[node name="HpBar" parent="." instance=ExtResource("4_hpbar")]
+position = Vector2(-8, -28)
+fg_color = Color(0.431, 0.129, 0.129, 1)

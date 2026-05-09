@@ -1,0 +1,74 @@
+[gd_scene load_steps=9 format=3 uid="uid://bndi8pc81s5aa"]
+
+[ext_resource type="Script" path="res://scripts/skills/fire_trail.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/effects/fire-Sheet.png" id="2_sheet"]
+
+[sub_resource type="CircleShape2D" id="CircleShape_trail"]
+radius = 8.0
+
+[sub_resource type="Gradient" id="Grad_glow_fire"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(1, 0.95, 0.45, 0.85, 1, 0.7, 0.2, 0.4, 0.95, 0.4, 0.1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradTex_glow_fire"]
+gradient = SubResource("Grad_glow_fire")
+width = 64
+height = 64
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="AtlasTexture" id="A_fire_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="A_fire_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="A_fire_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 0, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_fire"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_fire_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_fire_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_fire_2")
+}],
+"loop": true,
+"name": &"default",
+"speed": 6.0
+}]
+
+[node name="FireTrail" type="Area2D"]
+modulate = Color(1, 1, 1, 0.45)
+collision_layer = 0
+collision_mask = 4
+script = ExtResource("1_script")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape_trail")
+
+[node name="Shadow" type="Polygon2D" parent="."]
+position = Vector2(0, 4)
+color = Color(0.32, 0.05, 0.03, 0.5)
+polygon = PackedVector2Array(8, 0, 7.4, 2.2, 5.66, 4.0, 3.06, 5.1, 0, 5.5, -3.06, 5.1, -5.66, 4.0, -7.4, 2.2, -8, 0, -7.4, -2.2, -5.66, -4.0, -3.06, -5.1, 0, -5.5, 3.06, -5.1, 5.66, -4.0, 7.4, -2.2)
+
+[node name="GlowLight" type="PointLight2D" parent="."]
+color = Color(1, 0.92, 0.4, 1)
+energy = 0.7
+texture = SubResource("GradTex_glow_fire")
+texture_scale = 0.32
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_fire")
+animation = &"default"
+autoplay = "default"

@@ -1,0 +1,131 @@
+[gd_scene format=3 uid="uid://caeo6ax2o2wxh"]
+
+[ext_resource type="Script" uid="uid://bkjl1mg2xg1ts" path="res://scripts/allies/leno.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://bk0wwwipv0oxs" path="res://assets/aliados/Leno.png" id="2_sheet"]
+[ext_resource type="PackedScene" path="res://scenes/allies/leno_projectile.tscn" id="3_proj"]
+[ext_resource type="AudioStream" uid="uid://dukjsxunw7x51" path="res://audios/effects/atack leno.mp3" id="4_atk_sfx"]
+
+[sub_resource type="AtlasTexture" id="A_atk_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_atk_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_atk_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(64, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_atk_3"]
+atlas = ExtResource("2_sheet")
+region = Rect2(96, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_idle_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_idle_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_idle_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_walk_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_walk_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_walk_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(64, 32, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_leno"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_atk_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_atk_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_atk_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_atk_3")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_idle_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_2")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_walk_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_walk_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_walk_2")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 8.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="C_leno"]
+radius = 5.0
+height = 12.0
+
+[node name="Leno" type="CharacterBody2D" unique_id=1383894459]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_script")
+projectile_scene = ExtResource("3_proj")
+attack_sound = ExtResource("4_atk_sfx")
+
+[node name="Shadow" type="Node2D" parent="." unique_id=843159303]
+position = Vector2(0, 1)
+
+[node name="Outer" type="Polygon2D" parent="Shadow" unique_id=261236589]
+color = Color(0, 0, 0, 0.18)
+polygon = PackedVector2Array(6, 0, 5, 1, 4, 2, 2, 2, 0, 2, -2, 2, -4, 2, -5, 1, -6, 0, -5, -1, -4, -2, -2, -2, 0, -2, 2, -2, 4, -2, 5, -1)
+
+[node name="Middle" type="Polygon2D" parent="Shadow" unique_id=102870897]
+color = Color(0, 0, 0, 0.24)
+polygon = PackedVector2Array(4, 0, 3, 1, 2, 1, 0, 1, -2, 1, -3, 1, -4, 0, -3, -1, -2, -1, 0, -1, 2, -1, 3, -1)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=496962622]
+texture_filter = 1
+scale = Vector2(0.5, 0.5)
+sprite_frames = SubResource("SpriteFrames_leno")
+animation = &"idle"
+autoplay = "idle"
+offset = Vector2(0, -16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=542904292]
+position = Vector2(0, -6)
+shape = SubResource("C_leno")
+
+[node name="Muzzle" type="Marker2D" parent="." unique_id=1996328794]
+position = Vector2(0, -4)

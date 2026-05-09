@@ -1,0 +1,102 @@
+[gd_scene format=3 uid="uid://b0cursebeam01"]
+
+[ext_resource type="Script" uid="uid://h7escy20q5lo" path="res://scripts/skills/curse_beam.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://862w00ncjn4n" path="res://assets/effects/cursed ray.png" id="2_sheet"]
+[ext_resource type="AudioStream" uid="uid://b1s4in6sdj4vu" path="res://audios/effects/crused beam.mp3" id="3_beam_sfx"]
+
+[sub_resource type="Gradient" id="Grad_glow"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(0.95, 0.7, 1, 0.95, 0.7, 0.3, 0.95, 0.55, 0.05, 0.5, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradTex_glow"]
+gradient = SubResource("Grad_glow")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="AtlasTexture" id="A_curse_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_curse_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_curse_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SF_curse"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_curse_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_curse_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_curse_2")
+}],
+"loop": true,
+"name": &"default",
+"speed": 9.0
+}]
+
+[node name="CurseBeam" type="Node2D" unique_id=952940583]
+script = ExtResource("1_script")
+
+[node name="BeamSound" type="AudioStreamPlayer2D" parent="." unique_id=1673644627]
+stream = ExtResource("3_beam_sfx")
+volume_db = -10.0
+
+[node name="GlowUnderlay" type="Node2D" parent="." unique_id=1325519565]
+modulate = Color(1, 1, 1, 0)
+
+[node name="Outer" type="Polygon2D" parent="GlowUnderlay" unique_id=1998225893]
+scale = Vector2(1.03125, 0.4642857)
+color = Color(0.35, 0.12, 0.62, 0.3)
+polygon = PackedVector2Array(-32, -28, 32, -28, 32, 28, -32, 28)
+
+[node name="Mid" type="Polygon2D" parent="GlowUnderlay" unique_id=1924994595]
+scale = Vector2(1, 0.6)
+color = Color(0.62, 0.3, 0.95, 0.42)
+polygon = PackedVector2Array(-32, -15, 32, -15, 32, 15, -32, 15)
+
+[node name="Inner" type="Polygon2D" parent="GlowUnderlay" unique_id=1752586775]
+color = Color(0.9, 0.65, 1, 0.6)
+polygon = PackedVector2Array(-32, -6, 32, -6, 32, 6, -32, 6)
+
+[node name="ChargeOrb" type="Node2D" parent="." unique_id=1797629781]
+modulate = Color(1, 1, 1, 0)
+scale = Vector2(0.3, 0.3)
+
+[node name="Outer" type="Polygon2D" parent="ChargeOrb" unique_id=398206437]
+color = Color(0.45, 0.18, 0.78, 0.65)
+polygon = PackedVector2Array(14, 0, 12.93, 5.36, 9.9, 9.9, 5.36, 12.93, 0, 14, -5.36, 12.93, -9.9, 9.9, -12.93, 5.36, -14, 0, -12.93, -5.36, -9.9, -9.9, -5.36, -12.93, 0, -14, 5.36, -12.93, 9.9, -9.9, 12.93, -5.36)
+
+[node name="Mid" type="Polygon2D" parent="ChargeOrb" unique_id=641334388]
+color = Color(0.78, 0.45, 1, 0.85)
+polygon = PackedVector2Array(9, 0, 8.31, 3.44, 6.36, 6.36, 3.44, 8.31, 0, 9, -3.44, 8.31, -6.36, 6.36, -8.31, 3.44, -9, 0, -8.31, -3.44, -6.36, -6.36, -3.44, -8.31, 0, -9, 3.44, -8.31, 6.36, -6.36, 8.31, -3.44)
+
+[node name="Core" type="Polygon2D" parent="ChargeOrb" unique_id=872940791]
+color = Color(1, 0.92, 1, 0.95)
+polygon = PackedVector2Array(5, 0, 4.62, 1.91, 3.54, 3.54, 1.91, 4.62, 0, 5, -1.91, 4.62, -3.54, 3.54, -4.62, 1.91, -5, 0, -4.62, -1.91, -3.54, -3.54, -1.91, -4.62, 0, -5, 1.91, -4.62, 3.54, -3.54, 4.62, -1.91)
+
+[node name="Glow" type="PointLight2D" parent="ChargeOrb" unique_id=1115264098]
+color = Color(0.85, 0.55, 1, 1)
+energy = 1.6
+texture = SubResource("GradTex_glow")
+texture_scale = 0.85
+
+[node name="TileTemplate" type="AnimatedSprite2D" parent="." unique_id=986144177]
+visible = false
+texture_filter = 1
+sprite_frames = SubResource("SF_curse")
+
+[node name="LightTemplate" type="PointLight2D" parent="." unique_id=1065578523]
+visible = false
+color = Color(0.78, 0.45, 1, 1)
+energy = 0.85
+texture = SubResource("GradTex_glow")
+texture_scale = 0.7
