@@ -1,0 +1,71 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/skills/arrow.gd" id="1_arrow"]
+[ext_resource type="Texture2D" path="res://assets/projectiles/arrow.png" id="2_arrow_tex"]
+[ext_resource type="PackedScene" path="res://scenes/skills/arrow_hit.tscn" id="3_hit"]
+[ext_resource type="AudioStream" path="res://audios/effects/player arrow/ES_Weapons, Arrow, Impact, Wood Hit, Woosh, Rattle - Epidemic Sound.mp3" id="4_shoot_sfx"]
+[ext_resource type="AudioStream" path="res://audios/effects/player arrow/enemy impact.mp3" id="5_impact_sfx"]
+[ext_resource type="AudioStream" path="res://audios/effects/player arrow/impact object.mp3" id="6_obj_impact_sfx"]
+[ext_resource type="Texture2D" path="res://assets/effects/fire arrow-Sheet.png" id="7_fire_tex"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_arrow"]
+radius = 2.0
+
+[sub_resource type="Gradient" id="Gradient_trail"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(0.72, 0.55, 0.93, 0, 0.72, 0.55, 0.93, 0.85)
+
+[sub_resource type="AtlasTexture" id="A_fire_0"]
+atlas = ExtResource("7_fire_tex")
+region = Rect2(0, 0, 16, 5)
+
+[sub_resource type="AtlasTexture" id="A_fire_1"]
+atlas = ExtResource("7_fire_tex")
+region = Rect2(16, 0, 16, 5)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_fire_arrow"]
+animations = [{
+"frames": [{"duration": 1.0, "texture": SubResource("A_fire_0")},
+{"duration": 1.0, "texture": SubResource("A_fire_1")}],
+"loop": true,
+"name": &"default",
+"speed": 12.0
+}]
+
+[node name="Arrow" type="Area2D"]
+z_index = -1
+collision_layer = 0
+collision_mask = 14
+script = ExtResource("1_arrow")
+hit_effect_scene = ExtResource("3_hit")
+impact_sound = ExtResource("5_impact_sfx")
+object_impact_sound = ExtResource("6_obj_impact_sfx")
+sound_volume_db = -18.0
+
+[node name="Trail" type="Line2D" parent="."]
+top_level = true
+z_index = -1
+width = 1.5
+default_color = Color(0.72, 0.55, 0.93, 1)
+gradient = SubResource("Gradient_trail")
+joint_mode = 2
+begin_cap_mode = 2
+end_cap_mode = 2
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+texture = ExtResource("2_arrow_tex")
+
+[node name="FireSprite" type="AnimatedSprite2D" parent="."]
+visible = false
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_fire_arrow")
+animation = &"default"
+autoplay = "default"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_arrow")
+
+[node name="ShootSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("4_shoot_sfx")
+volume_db = -18.0
