@@ -632,7 +632,8 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	{"id": "ricochet_arrow", "name": "Flecha Ricochete"},
 	{"id": "graviton", "name": "Graviton"},
 	{"id": "armor", "name": "Armadura"},
-	{"id": "leno", "name": "Meu amigo Leno"},
+	{"id": "leno", "name": "Amigo Leno"},
+	{"id": "capivara_joe", "name": "Capivara Joe"},
 ]
 
 

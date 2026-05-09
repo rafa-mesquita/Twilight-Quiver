@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" path="res://assets/effects/fire-Sheet.png" id="2_sheet"]
 
 [sub_resource type="CircleShape2D" id="CircleShape_field"]
-radius = 32.0
+radius = 44.0
 
 [sub_resource type="Gradient" id="Grad_glow_field"]
 offsets = PackedFloat32Array(0, 0.5, 1)

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cwo1wrv5qbobi"
+path="res://.godot/imported/capivara drop mush.mp3-b9569e36b09ed360f79bb962d4c35183.mp3str"
+
+[deps]
+
+source_file="res://audios/effects/capivara drop mush.mp3"
+dest_files=["res://.godot/imported/capivara drop mush.mp3-b9569e36b09ed360f79bb962d4c35183.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,57 @@
+[gd_scene load_steps=8 format=3 uid="uid://b2capivamush"]
+
+[ext_resource type="Script" path="res://scripts/capivara_mushroom.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/aliados/Capivara Joe/Sprite-capivara-joe-Sheet.png" id="2_sheet"]
+[ext_resource type="PackedScene" path="res://scenes/capivara_mushroom_aoe.tscn" id="3_aoe"]
+[ext_resource type="AudioStream" path="res://audios/effects/healing.mp3" id="4_pickup_sfx"]
+[ext_resource type="AudioStream" path="res://audios/effects/enemy hits mush.mp3" id="5_explode_sfx"]
+
+[sub_resource type="CircleShape2D" id="C_pickup"]
+radius = 10.0
+
+[sub_resource type="AtlasTexture" id="A_cog_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_cog_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_cog_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(64, 64, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_cog"]
+animations = [{
+"frames": [{"duration": 1.0, "texture": SubResource("A_cog_0")},
+{"duration": 1.0, "texture": SubResource("A_cog_1")},
+{"duration": 1.0, "texture": SubResource("A_cog_2")}],
+"loop": true,
+"name": &"idle",
+"speed": 4.0
+}]
+
+[node name="CapivaraMushroom" type="Area2D"]
+collision_layer = 0
+collision_mask = 5
+script = ExtResource("1_script")
+aoe_scene = ExtResource("3_aoe")
+pickup_sound = ExtResource("4_pickup_sfx")
+explode_sound = ExtResource("5_explode_sfx")
+
+[node name="Shadow" type="Polygon2D" parent="."]
+position = Vector2(0, 0)
+color = Color(0, 0, 0, 0.22)
+polygon = PackedVector2Array(7, 0, 6, 1, 4, 2, 0, 2, -4, 2, -6, 1, -7, 0, -6, -1, -4, -2, 0, -2, 4, -2, 6, -1)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+scale = Vector2(0.8, 0.8)
+sprite_frames = SubResource("SpriteFrames_cog")
+animation = &"idle"
+autoplay = "idle"
+offset = Vector2(0, -10)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -8)
+shape = SubResource("C_pickup")

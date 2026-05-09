@@ -68,10 +68,21 @@ var _woodwardens: Array[Dictionary] = []
 const LENO_SCENE: PackedScene = preload("res://scenes/leno.tscn")
 var leno_level: int = 0
 var _lenos: Array[Node2D] = []
+# Capivara Joe (aliado pet, 4 níveis). Sem HP, vagueia e dropa cogumelos.
+# L1: 1 capivara, drop a cada 14s (só buff). L2: 7s alterna buff/dano.
+# L3: buff dá ambos efeitos + atk speed. L4: 2 capivaras.
+const CAPIVARA_JOE_SCENE: PackedScene = preload("res://scenes/capivara_joe.tscn")
+var capivara_joe_level: int = 0
+var _capivaras: Array[Node2D] = []
+# Buffs temporários aplicados pelo cogumelo da Capivara.
+var _capivara_speed_buff_amount: float = 0.0
+var _capivara_speed_buff_remaining: float = 0.0
+var _capivara_atk_speed_buff_amount: float = 0.0
+var _capivara_atk_speed_buff_remaining: float = 0.0
 # Fire skill (botão direito a partir do lv3 do Fogo).
 const FIRE_SKILL_COOLDOWN: float = 7.0
 const FIRE_SKILL_RANGE: float = 140.0
-const FIRE_SKILL_AREA_RADIUS: float = 32.0
+const FIRE_SKILL_AREA_RADIUS: float = 44.0
 const FIRE_SKILL_DPS: float = 12.0
 const FIRE_SKILL_DURATION: float = 6.0
 const FIRE_SKILL_INDICATOR_SCENE: PackedScene = preload("res://scenes/fire_skill_indicator.tscn")
@@ -202,6 +213,7 @@ func _physics_process(delta: float) -> void:
 	_update_curse_skill(delta)
 	_update_player_fire_trail()
 	_check_woodwarden_respawns(delta)
+	_tick_capivara_buffs(delta)
 	# Dash trigger lê via polling pra garantir que o cooldown decrementa ANTES
 	# do check, e que múltiplas pressões na mesma frame só viram 1 dash.
 	if has_dash and not is_dead and Input.is_action_just_pressed("dash"):
@@ -224,7 +236,7 @@ func _physics_process(delta: float) -> void:
 		if input_vec.length() > 1.0:
 			input_vec = input_vec.normalized()
 
-	velocity = input_vec * speed * _slow_factor * move_speed_multiplier
+	velocity = input_vec * speed * _slow_factor * (move_speed_multiplier + _capivara_speed_buff_amount)
 	move_and_slide()
 
 	_update_facing(input_vec)
@@ -362,8 +374,10 @@ func _start_attack() -> void:
 	is_drawing = true
 	# Attack speed: encurta cooldown e acelera a anim de ataque (release_frame chega
 	# proporcionalmente mais cedo). speed_scale só vale enquanto a anim está rolando.
-	attack_timer.wait_time = attack_cooldown / attack_speed_multiplier
-	sprite.speed_scale = attack_speed_multiplier
+	# Capivara L3+: cogumelo de buff dá +50% atk speed temporário (some no fim).
+	var atk_mult: float = attack_speed_multiplier + _capivara_atk_speed_buff_amount
+	attack_timer.wait_time = attack_cooldown / atk_mult
+	sprite.speed_scale = atk_mult
 	attack_timer.start()
 	sprite.play("attack")
 
@@ -1083,6 +1097,9 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"leno":
 			leno_level = mini(leno_level + 1, 4)
 			_refresh_lenos()
+		"capivara_joe":
+			capivara_joe_level = mini(capivara_joe_level + 1, 4)
+			_refresh_capivaras()
 		"woodwarden":
 			# Cada compra: +1 level (max 4). Sobe stats em todos os existentes
 			# e spawna 1 novo woodwarden no player se ainda não tem todos.
@@ -1137,6 +1154,7 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"curse_arrow": return curse_arrow_level
 		"woodwarden": return woodwarden_level
 		"leno": return leno_level
+		"capivara_joe": return capivara_joe_level
 		"gold_magnet": return gold_magnet_level
 		"dash": return dash_level
 		"ricochet_arrow": return ricochet_arrow_level
@@ -1200,6 +1218,73 @@ func _leno_target_count() -> int:
 		3: return 2
 		4: return 3
 	return 0
+
+
+func _refresh_capivaras() -> void:
+	# L1-L3: 1 capivara. L4: 2. Drop interval: L1=14s, L2+=7s.
+	var target_count: int = 2 if capivara_joe_level >= 4 else (1 if capivara_joe_level >= 1 else 0)
+	var interval: float = 7.0 if capivara_joe_level >= 2 else 14.0
+	# Limpa entries inválidos.
+	var alive: Array[Node2D] = []
+	for c in _capivaras:
+		if is_instance_valid(c):
+			alive.append(c)
+	_capivaras = alive
+	while _capivaras.size() < target_count:
+		var capi: Node2D = CAPIVARA_JOE_SCENE.instantiate()
+		_capivaras.append(capi)
+		_get_world().add_child(capi)
+		# Spawn longe do player pra começar vagueando — usa um waypoint
+		# random dentro dos bounds da capivara.
+		if "wander_bounds" in capi:
+			var b: Rect2 = capi.wander_bounds
+			capi.global_position = Vector2(
+				randf_range(b.position.x, b.position.x + b.size.x),
+				randf_range(b.position.y, b.position.y + b.size.y)
+			)
+	while _capivaras.size() > target_count:
+		var extra: Node2D = _capivaras.pop_back()
+		if is_instance_valid(extra):
+			extra.queue_free()
+	# Atualiza interval em todas.
+	for c in _capivaras:
+		if "drop_interval" in c:
+			c.drop_interval = interval
+
+
+func _cleanup_capivaras() -> void:
+	for c in _capivaras:
+		if is_instance_valid(c):
+			c.queue_free()
+	_capivaras.clear()
+
+
+func apply_capivara_speed_buff(amount: float, duration: float) -> void:
+	# Soma um buff temporário ao move_speed. Refresh: pega o maior amount ativo
+	# e estende a duração.
+	if amount > _capivara_speed_buff_amount or _capivara_speed_buff_remaining <= 0.0:
+		_capivara_speed_buff_amount = amount
+	_capivara_speed_buff_remaining = maxf(_capivara_speed_buff_remaining, duration)
+
+
+func apply_capivara_atk_speed_buff(amount: float, duration: float) -> void:
+	if amount > _capivara_atk_speed_buff_amount or _capivara_atk_speed_buff_remaining <= 0.0:
+		_capivara_atk_speed_buff_amount = amount
+	_capivara_atk_speed_buff_remaining = maxf(_capivara_atk_speed_buff_remaining, duration)
+
+
+func _tick_capivara_buffs(delta: float) -> void:
+	if _capivara_speed_buff_remaining > 0.0:
+		_capivara_speed_buff_remaining -= delta
+		if _capivara_speed_buff_remaining <= 0.0:
+			_capivara_speed_buff_amount = 0.0
+	if _capivara_atk_speed_buff_remaining > 0.0:
+		_capivara_atk_speed_buff_remaining -= delta
+		if _capivara_atk_speed_buff_remaining <= 0.0:
+			_capivara_atk_speed_buff_amount = 0.0
+			# Re-aplica timer/sprite scale sem o buff.
+			attack_timer.wait_time = attack_cooldown / attack_speed_multiplier
+			sprite.speed_scale = attack_speed_multiplier
 
 
 func _refresh_woodwardens() -> void:
@@ -1336,6 +1421,7 @@ func _die() -> void:
 	# Lenos morrem com o player (spec do excalidraw).
 	_cleanup_lenos()
 	_cleanup_woodwardens()
+	_cleanup_capivaras()
 	_stop_world_audio()
 	# Som de morte tem que vir DEPOIS do _stop_world_audio pra não ser cortado.
 	# Anexa no scene root (fora do "world") pra sobreviver à animação de morte.

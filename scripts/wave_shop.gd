@@ -13,15 +13,19 @@ signal closed
 
 const PRICE_TABLE: Array[int] = [4, 8, 20, 35]
 const TOWER_PRICE: int = 7
-const WOODWARDEN_PRICE_TABLE: Array[int] = [5, 7, 10, 12]
+const WOODWARDEN_PRICE_TABLE: Array[int] = [7, 10, 15, 35]
 # Leno (aliado voador, auto-spawn): mesmo escalonamento dos aliados.
-const LENO_PRICE_TABLE: Array[int] = [5, 7, 10, 12]
+const LENO_PRICE_TABLE: Array[int] = [7, 10, 15, 35]
+const CAPIVARA_PRICE_TABLE: Array[int] = [7, 10, 15, 35]
 const STRUCTURE_SURCHARGE_PER_OWNED: int = 3
-# Aliados / estruturas só podem ser comprados a cada N waves.
-# Wave 3, 6, 9... = aliado unlocked. Wave 4, 8, 12... = estrutura unlocked.
+# Aliado: primeira loja (wave 3) o pet é DADO de graça aleatório (não vai pra
+# loja). Depois aparece pra venda nas waves 5, 7, 9, 11...
+# Estrutura: a cada 4 waves (4, 8, 12...).
 # Quando locked, a categoria mostra "Desbloqueia em X turnos" e nenhum slot é
 # selecionável.
-const ALIADO_UNLOCK_INTERVAL: int = 3
+const ALIADO_FREE_PET_WAVE: int = 3
+const ALIADO_SHOP_FIRST_WAVE: int = 5
+const ALIADO_SHOP_INTERVAL: int = 2
 const ESTRUT_UNLOCK_INTERVAL: int = 4
 
 # Pool dos cards de status (passive stats — escalonáveis ilimitadamente).
@@ -136,6 +140,12 @@ const LENO_DESCS: Array[String] = [
 	"+1 Leno (total 2)",
 	"+1 Leno (total 3)",
 ]
+const CAPIVARA_JOE_DESCS: Array[String] = [
+	"Vagueia, dropa\ncogumelo cura/speed",
+	"7s, alterna buff/dano\n40 dmg area roxa",
+	"Buff cura+speed\n+atk speed 50%",
+	"+1 Capivara\n(total 2)",
+]
 const FIRE_ARROW_DESCS: Array[String] = [
 	"Queima inimigo\n4 dmg/s por 3s",
 	"+1 dmg/s +\nrastro de fogo",
@@ -230,6 +240,9 @@ func _ready() -> void:
 		var wn: int = int(wm.wave_number)
 		if wn == 3 or (wn >= 4 and wn % 2 == 0):
 			max_upgrades_this_round = 2
+		# Wave 3: dá pet grátis aleatório (Woodwarden ou Leno) antes do roll.
+		if wn == ALIADO_FREE_PET_WAVE:
+			_grant_free_random_pet()
 	continue_btn.pressed.connect(_on_continue_pressed)
 	global_reroll_btn.pressed.connect(_on_global_reroll)
 	_setup_bonus_label()
@@ -239,6 +252,27 @@ func _ready() -> void:
 	_connect_card_buttons()
 	_refresh_button_states()
 	_setup_layout_editor()
+
+
+func _grant_free_random_pet() -> void:
+	# Sorteia entre os pets ainda não maxados e aplica via player.apply_upgrade.
+	var p := _get_player()
+	if p == null or not p.has_method("apply_upgrade"):
+		return
+	var pets: Array[String] = []
+	if p.has_method("get_upgrade_count"):
+		if p.get_upgrade_count("woodwarden") < 4:
+			pets.append("woodwarden")
+		if p.get_upgrade_count("leno") < 4:
+			pets.append("leno")
+		if p.get_upgrade_count("capivara_joe") < 4:
+			pets.append("capivara_joe")
+	else:
+		pets = ["woodwarden", "leno", "capivara_joe"]
+	if pets.is_empty():
+		return
+	var pick: String = pets[randi() % pets.size()]
+	p.apply_upgrade(pick)
 
 
 func _process(_delta: float) -> void:
@@ -388,7 +422,13 @@ func _roll_estrutura_slots() -> void:
 
 func _roll_aliado_slots() -> void:
 	aliado_slots.clear()
-	var lock_remaining: int = _waves_until_unlock(ALIADO_UNLOCK_INTERVAL)
+	var wn: int = _current_wave_number()
+	# Wave 3: pet grátis aleatório dado em _ready, sem cards de venda.
+	if wn == ALIADO_FREE_PET_WAVE:
+		for i in 3:
+			aliado_slots.append({"id": "free_pet", "name": "Pet gratis!", "desc": "Recebido nesta\nwave", "price": 0, "available": false})
+		return
+	var lock_remaining: int = _aliado_lock_remaining(wn)
 	if lock_remaining > 0:
 		var lock_desc: String = _build_lock_desc(lock_remaining)
 		for i in 3:
@@ -430,14 +470,29 @@ func _roll_aliado_slots() -> void:
 	var leno_desc: String = "Max (4/4) atingido" if leno_maxed else _get_upgrade_desc("leno", leno_lvl + 1)
 	aliado_slots.append({
 		"id": "leno",
-		"name": "Meu amigo Leno",
+		"name": "Amigo Leno",
 		"desc": leno_desc,
 		"price": leno_price,
 		"available": not leno_maxed,
 		"is_ally": true,
 		"auto_spawn": true,
 	})
-	aliado_slots.append({"id": "soon", "name": "Em breve", "desc": "—", "price": 0, "available": false})
+	# Capivara Joe: aliado vagabundo, auto-spawn (sem placement).
+	var capi_lvl: int = 0
+	if p != null and p.has_method("get_upgrade_count"):
+		capi_lvl = p.get_upgrade_count("capivara_joe")
+	var capi_maxed: bool = capi_lvl >= 4
+	var capi_price: int = CAPIVARA_PRICE_TABLE[mini(capi_lvl, CAPIVARA_PRICE_TABLE.size() - 1)]
+	var capi_desc: String = "Max (4/4) atingido" if capi_maxed else _get_upgrade_desc("capivara_joe", capi_lvl + 1)
+	aliado_slots.append({
+		"id": "capivara_joe",
+		"name": "Capivara Joe",
+		"desc": capi_desc,
+		"price": capi_price,
+		"available": not capi_maxed,
+		"is_ally": true,
+		"auto_spawn": true,
+	})
 
 
 func _roll_upg_slots() -> void:
@@ -519,6 +574,7 @@ func _get_upgrade_desc(id: String, target_level: int) -> String:
 		"ricochet_arrow": arr = RICOCHET_ARROW_DESCS
 		"graviton": arr = GRAVITON_DESCS
 		"leno": arr = LENO_DESCS
+		"capivara_joe": arr = CAPIVARA_JOE_DESCS
 		_: return ""
 	var idx: int = clampi(target_level - 1, 0, arr.size() - 1)
 	return arr[idx]
@@ -594,7 +650,7 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 				price_label.add_theme_color_override("font_color", UPGRADE_DESC_COLORS[slot_id_str])
 			elif category == "upgrade" and UPGRADE_TITLE_COLORS.has(slot_id_str):
 				price_label.add_theme_color_override("font_color", UPGRADE_TITLE_COLORS[slot_id_str])
-			elif category == "aliado" and slot_id_str != "" and slot_id_str != "soon" and slot_id_str != "none" and slot_id_str != "locked":
+			elif category == "aliado" and slot_id_str != "" and slot_id_str != "soon" and slot_id_str != "none" and slot_id_str != "locked" and slot_id_str != "free_pet":
 				price_label.add_theme_color_override("font_color", ALIADO_TEXT_COLOR)
 			else:
 				price_label.remove_theme_color_override("font_color")
@@ -1324,6 +1380,25 @@ func _waves_until_unlock(interval: int) -> int:
 	if w % interval == 0:
 		return 0
 	return interval - (w % interval)
+
+
+func _current_wave_number() -> int:
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm == null or not "wave_number" in wm:
+		return 0
+	return int(wm.wave_number)
+
+
+func _aliado_lock_remaining(w: int) -> int:
+	# Wave 5 abre pra venda; depois a cada ALIADO_SHOP_INTERVAL waves (5, 7, 9...).
+	# Wave 3 é tratada à parte (pet grátis em _ready), aqui retornamos 2 turnos
+	# (pra apontar pra wave 5) caso o caller chame com w==3.
+	if w >= ALIADO_SHOP_FIRST_WAVE:
+		var off: int = (w - ALIADO_SHOP_FIRST_WAVE) % ALIADO_SHOP_INTERVAL
+		if off == 0:
+			return 0
+		return ALIADO_SHOP_INTERVAL - off
+	return ALIADO_SHOP_FIRST_WAVE - w
 
 
 func _build_lock_title(turns_left: int) -> String:

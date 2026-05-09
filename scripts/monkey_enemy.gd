@@ -58,15 +58,10 @@ var _stun_remaining: float = 0.0
 var _chase_offset: Vector2 = Vector2.ZERO
 
 # Variedade de comportamento por macaco — rolado no _ready.
-#   NORMAL  (65%): chase direto com offset pequeno (12-24px).
+#   NORMAL  (80%): chase direto com offset pequeno (12-24px).
 #   FLANKER (20%): offset grande (60-100px) → toma caminho lateral, fecha passagens.
-#   CAMPER  (15%): senta em cima de gold/heart e ignora player até o pickup sumir.
-enum Behavior { NORMAL, FLANKER, CAMPER }
+enum Behavior { NORMAL, FLANKER }
 var _behavior: int = Behavior.NORMAL
-# Pickup que o camper está guardando. Quando vira null/inválido (foi coletado),
-# volta a se comportar como NORMAL.
-var _camp_target: Node2D = null
-const CAMPER_ARRIVED_DIST: float = 6.0
 # FLANKER: lado preferido (-1 ou +1) e distância perpendicular. O ponto-alvo é
 # calculado a CADA frame como `player + perp(player→monkey) * lado * dist`,
 # então o monkey sempre curva pra um dos LADOS do player (nunca corre pra
@@ -95,17 +90,12 @@ func _ready() -> void:
 
 
 func _roll_behavior() -> void:
-	# Distribuição depende da wave:
-	#   Wave 1-4: 80% normal / 20% flanker (sem camper — wave inicial mais limpa)
-	#   Wave 5+: 75% normal / 15% flanker / 10% camper
-	var camper_unlocked: bool = _current_wave_number() >= 5
+	# Distribuição fixa: 80% NORMAL / 20% FLANKER em todas as waves.
 	var roll: float = randf()
-	var normal_threshold: float = 0.75 if camper_unlocked else 0.80
-	var flanker_threshold: float = 0.90 if camper_unlocked else 1.00
-	if roll < normal_threshold:
+	if roll < 0.80:
 		_behavior = Behavior.NORMAL
 		_chase_offset = Vector2.RIGHT.rotated(randf() * TAU) * randf_range(12.0, 24.0)
-	elif roll < flanker_threshold:
+	else:
 		_behavior = Behavior.FLANKER
 		# Per-monkey: lado (esquerdo/direito do player) e distância perpendicular.
 		# Cálculo do chase_pos é em runtime, sempre PERPENDICULAR à linha
@@ -113,35 +103,6 @@ func _roll_behavior() -> void:
 		_flank_side = -1.0 if randf() < 0.5 else 1.0
 		_flank_distance = randf_range(60.0, 100.0)
 		_chase_offset = Vector2.ZERO
-	else:
-		_behavior = Behavior.CAMPER
-		_chase_offset = Vector2.ZERO  # camper ignora offset (vai pro pickup direto)
-		_camp_target = _find_camp_target()
-		# Sem pickup no mapa — não tem o que campear, vira NORMAL.
-		if _camp_target == null:
-			_behavior = Behavior.NORMAL
-			_chase_offset = Vector2.RIGHT.rotated(randf() * TAU) * randf_range(12.0, 24.0)
-
-
-func _current_wave_number() -> int:
-	var wm := get_tree().get_first_node_in_group("wave_manager")
-	if wm != null and "wave_number" in wm:
-		return int(wm.wave_number)
-	return 1
-
-
-func _find_camp_target() -> Node2D:
-	# Camper só guarda moedas (gold). Heart/coração fica livre pro player coletar.
-	var best: Node2D = null
-	var best_dist_sq: float = INF
-	for n in get_tree().get_nodes_in_group("gold"):
-		if not is_instance_valid(n) or not (n is Node2D):
-			continue
-		var d: float = (n as Node2D).global_position.distance_squared_to(global_position)
-		if d < best_dist_sq:
-			best_dist_sq = d
-			best = n
-	return best
 
 
 func _physics_process(delta: float) -> void:
@@ -153,33 +114,6 @@ func _physics_process(delta: float) -> void:
 		return
 	# Calcula a velocidade da AI separadamente, depois soma o knockback.
 	var ai_velocity: Vector2 = Vector2.ZERO
-
-	# Camper: anda até o pickup e senta em cima. Se o pickup for coletado,
-	# tenta achar outro; se não existe nenhum, vira NORMAL (chase player).
-	if _behavior == Behavior.CAMPER:
-		if _camp_target == null or not is_instance_valid(_camp_target) or _camp_target.is_queued_for_deletion():
-			_camp_target = _find_camp_target()
-		if _camp_target != null:
-			var to_camp: Vector2 = _camp_target.global_position - global_position
-			var dist_camp: float = to_camp.length()
-			if dist_camp > CAMPER_ARRIVED_DIST:
-				ai_velocity = (to_camp / dist_camp) * speed
-				if sprite.animation != "walk":
-					sprite.play("walk")
-				if absf(to_camp.x) > 0.001:
-					sprite.flip_h = to_camp.x < 0.0
-			else:
-				if sprite.animation != "idle":
-					sprite.play("idle")
-			# Pula a lógica de chase normal — separação/knockback ainda aplicam.
-			var sep_camp: Vector2 = EnemySeparation.compute(self, separation_radius, separation_strength)
-			velocity = ai_velocity + knockback_velocity + sep_camp
-			knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, knockback_decay * delta)
-			move_and_slide()
-			return
-		# Sem pickup pra campear — vira NORMAL pelo resto do round.
-		_behavior = Behavior.NORMAL
-		_chase_offset = Vector2.RIGHT.rotated(randf() * TAU) * randf_range(12.0, 24.0)
 
 	current_target = _pick_target()
 
