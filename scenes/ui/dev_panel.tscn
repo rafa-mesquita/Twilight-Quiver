@@ -1,0 +1,348 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/dev_panel.gd" id="1_dev"]
+[ext_resource type="FontFile" path="res://font/ByteBounce.ttf" id="2_font"]
+
+[node name="DevPanel" type="CanvasLayer"]
+layer = 100
+script = ExtResource("1_dev")
+
+[node name="Content" type="PanelContainer" parent="."]
+visible = false
+modulate = Color(1, 1, 1, 0.94)
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -320.0
+offset_top = -880.0
+offset_right = -16.0
+offset_bottom = -56.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="Scroll" type="ScrollContainer" parent="Content"]
+
+[node name="VBox" type="VBoxContainer" parent="Content/Scroll"]
+custom_minimum_size = Vector2(280, 0)
+theme_override_constants/separation = 6
+
+[node name="EnemySection" type="VBoxContainer" parent="Content/Scroll/VBox"]
+theme_override_constants/separation = 4
+
+[node name="EnemyHeader" type="Button" parent="Content/Scroll/VBox/EnemySection"]
+custom_minimum_size = Vector2(0, 30)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "[+] Spawn enemy"
+alignment = 0
+
+[node name="EnemyContent" type="VBoxContainer" parent="Content/Scroll/VBox/EnemySection"]
+visible = false
+theme_override_constants/separation = 4
+
+[node name="MonkeyBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Monkey"
+
+[node name="MageBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Mage"
+
+[node name="SummonerBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Summoner Mage"
+
+[node name="InsectBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Insect"
+
+[node name="StoneCubeBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Stone Cube"
+
+[node name="Burst10MonkeyBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_colors/font_color = Color(1, 0.7, 0.3, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Spawn 10 Monkeys (3 spawns)"
+
+[node name="UpgPadraoSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
+theme_override_constants/separation = 4
+
+[node name="UpgPadraoHeader" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection"]
+custom_minimum_size = Vector2(0, 30)
+theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "[+] Upgrades padrao"
+alignment = 0
+
+[node name="UpgPadraoContent" type="VBoxContainer" parent="Content/Scroll/VBox/UpgPadraoSection"]
+visible = false
+theme_override_constants/separation = 2
+
+[node name="ArcoSection" type="VBoxContainer" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent"]
+theme_override_constants/separation = 2
+
+[node name="ArcoHeader" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "[+] Arco / Ataque"
+alignment = 0
+
+[node name="ArcoContent" type="VBoxContainer" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection"]
+visible = false
+theme_override_constants/separation = 2
+
+[node name="UpgDamageBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Dano"
+
+[node name="UpgAtkSpeedBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Atk Speed"
+
+[node name="UpgPerfBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Perfuracao"
+
+[node name="UpgMultiArrowBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Multi Arrow"
+
+[node name="UpgChainBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Cadeia de Raios"
+
+[node name="UpgRicochetBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Flecha Ricochete"
+
+[node name="UpgGravitonBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Graviton"
+
+[node name="VidaSection" type="VBoxContainer" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent"]
+theme_override_constants/separation = 2
+
+[node name="VidaHeader" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/VidaSection"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_colors/font_color = Color(1, 0.55, 0.55, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "[+] Vida / HP"
+alignment = 0
+
+[node name="VidaContent" type="VBoxContainer" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/VidaSection"]
+visible = false
+theme_override_constants/separation = 2
+
+[node name="UpgHpBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/VidaSection/VidaContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 HP"
+
+[node name="UpgArmorBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/VidaSection/VidaContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Armadura"
+
+[node name="UpgLifeStealBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/VidaSection/VidaContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Mestre da Cura"
+
+[node name="MovSection" type="VBoxContainer" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent"]
+theme_override_constants/separation = 2
+
+[node name="MovHeader" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/MovSection"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_colors/font_color = Color(0.6, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "[+] Movimentacao"
+alignment = 0
+
+[node name="MovContent" type="VBoxContainer" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/MovSection"]
+visible = false
+theme_override_constants/separation = 2
+
+[node name="UpgMoveSpeedBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/MovSection/MovContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Move Speed"
+
+[node name="UpgGoldMagnetBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/MovSection/MovContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Chuva de Coins"
+
+[node name="UpgDashBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/MovSection/MovContent"]
+custom_minimum_size = Vector2(0, 26)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "+1 Deslizando"
+
+[node name="UpgElementaisSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
+theme_override_constants/separation = 4
+
+[node name="UpgElementaisHeader" type="Button" parent="Content/Scroll/VBox/UpgElementaisSection"]
+custom_minimum_size = Vector2(0, 30)
+theme_override_colors/font_color = Color(0.95, 0.6, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "[+] Upgrades elementais"
+alignment = 0
+
+[node name="UpgElementaisContent" type="VBoxContainer" parent="Content/Scroll/VBox/UpgElementaisSection"]
+visible = false
+theme_override_constants/separation = 2
+
+[node name="UpgFireArrowBtn" type="Button" parent="Content/Scroll/VBox/UpgElementaisSection/UpgElementaisContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "+1 Flecha de Fogo"
+
+[node name="UpgCurseArrowBtn" type="Button" parent="Content/Scroll/VBox/UpgElementaisSection/UpgElementaisContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "+1 Disparo Profano"
+
+[node name="EstruturasSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
+theme_override_constants/separation = 4
+
+[node name="EstruturasHeader" type="Button" parent="Content/Scroll/VBox/EstruturasSection"]
+custom_minimum_size = Vector2(0, 30)
+theme_override_colors/font_color = Color(0.7, 1, 0.7, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "[+] Estruturas e pets"
+alignment = 0
+
+[node name="EstruturasContent" type="VBoxContainer" parent="Content/Scroll/VBox/EstruturasSection"]
+visible = false
+theme_override_constants/separation = 4
+
+[node name="SpawnTowerBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Spawn Torre"
+
+[node name="SpawnWoodwardenBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Spawn Woodwarden"
+
+[node name="UpgLenoBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "+1 Leno"
+
+[node name="UpgCapivaraBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "+1 Capivara Joe"
+
+[node name="StatsSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
+theme_override_constants/separation = 4
+
+[node name="StatsHeader" type="Button" parent="Content/Scroll/VBox/StatsSection"]
+custom_minimum_size = Vector2(0, 30)
+theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "[+] Stats"
+alignment = 0
+
+[node name="StatsContent" type="VBoxContainer" parent="Content/Scroll/VBox/StatsSection"]
+visible = false
+theme_override_constants/separation = 4
+
+[node name="ResetHpBtn" type="Button" parent="Content/Scroll/VBox/StatsSection/StatsContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Reset HP"
+
+[node name="ClearBtn" type="Button" parent="Content/Scroll/VBox/StatsSection/StatsContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Clear Enemies"
+
+[node name="AddGoldBtn" type="Button" parent="Content/Scroll/VBox/StatsSection/StatsContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "+50 coins"
+
+[node name="OpenShopBtn" type="Button" parent="Content/Scroll/VBox/StatsSection/StatsContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Abrir Shop"
+
+[node name="Sep" type="HSeparator" parent="Content/Scroll/VBox"]
+
+[node name="MenuBtn" type="Button" parent="Content/Scroll/VBox"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Back to Menu"
+
+[node name="MainToggle" type="Button" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -320.0
+offset_top = -48.0
+offset_right = -16.0
+offset_bottom = -8.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 0.6, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "DEV MODE ▲"

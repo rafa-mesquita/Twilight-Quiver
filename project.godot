@@ -16,18 +16,19 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="Twilight Quiver"
 config/version="pre-alpha-0.0.1"
-run/main_scene="res://scenes/main_menu.tscn"
+run/main_scene="res://scenes/ui/splash.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
-config/icon="res://icon.svg"
+config/icon="uid://c7qgqbvckpcdr"
 
 [autoload]
 
-GameState="*res://scripts/game_state.gd"
+GameState="*res://scripts/systems/game_state.gd"
 
 [display]
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
+window/size/resizable=false
 window/size/window_width_override=1920
 window/size/window_height_override=1080
 window/stretch/mode="viewport"

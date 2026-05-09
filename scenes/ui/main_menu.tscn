@@ -1,0 +1,253 @@
+[gd_scene load_steps=9 format=3 uid="uid://bqupchq5uxdng"]
+
+[ext_resource type="Script" uid="uid://dve3lykvin7w8" path="res://scripts/ui/main_menu.gd" id="1_menu"]
+[ext_resource type="FontFile" uid="uid://bw54fcmefpqf1" path="res://font/ByteBounce.ttf" id="2_font"]
+[ext_resource type="PackedScene" path="res://scenes/player/cursor.tscn" id="3_cursor"]
+[ext_resource type="PackedScene" uid="uid://b8tw1gv0vqlbl" path="res://scenes/ui/version_label.tscn" id="4_version"]
+
+[sub_resource type="StyleBoxFlat" id="SBF_btn_normal"]
+bg_color = Color(0.13, 0.1, 0.18, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.45, 0.32, 0.6, 1)
+corner_detail = 1
+
+[sub_resource type="StyleBoxFlat" id="SBF_btn_pressed"]
+bg_color = Color(0.08, 0.05, 0.12, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.95, 0.75, 1, 1)
+corner_detail = 1
+
+[sub_resource type="StyleBoxFlat" id="SBF_btn_hover"]
+bg_color = Color(0.22, 0.15, 0.32, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.85, 0.6, 1, 1)
+corner_detail = 1
+
+[sub_resource type="StyleBoxFlat" id="SBF_btn_focus"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 0.85, 1, 1)
+corner_detail = 1
+
+[node name="MainMenu" type="Control" unique_id=776833320]
+texture_filter = 1
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_menu")
+
+[node name="Bg" type="ColorRect" parent="." unique_id=1484816584]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.04, 0.09, 1)
+
+[node name="Center" type="CenterContainer" parent="." unique_id=1334457696]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Center" unique_id=133645678]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="Center/VBox" unique_id=1495691703]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 72
+text = "TWILIGHT QUIVER"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Center/VBox" unique_id=1896481514]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.45, 0.7, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 24
+text = "top-down archer roguelike"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="Center/VBox" unique_id=2139884238]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+
+[node name="StartButton" type="Button" parent="Center/VBox" unique_id=1855476571]
+custom_minimum_size = Vector2(440, 72)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_styles/pressed = SubResource("SBF_btn_pressed")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/focus = SubResource("SBF_btn_focus")
+text = "Start Game"
+
+[node name="LeaderboardButton" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(440, 72)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_styles/pressed = SubResource("SBF_btn_pressed")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/focus = SubResource("SBF_btn_focus")
+text = "Leaderboard"
+
+[node name="SettingsButton" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(440, 72)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_styles/pressed = SubResource("SBF_btn_pressed")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/focus = SubResource("SBF_btn_focus")
+text = "Configuracoes"
+
+[node name="DevButton" type="Button" parent="Center/VBox" unique_id=1643496955]
+custom_minimum_size = Vector2(440, 72)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_styles/pressed = SubResource("SBF_btn_pressed")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/focus = SubResource("SBF_btn_focus")
+text = "Dev Mode"
+
+[node name="QuitButton" type="Button" parent="Center/VBox" unique_id=548264536]
+custom_minimum_size = Vector2(440, 72)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_styles/pressed = SubResource("SBF_btn_pressed")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/focus = SubResource("SBF_btn_focus")
+text = "Quit"
+
+[node name="Cursor" parent="." unique_id=384044535 instance=ExtResource("3_cursor")]
+
+[node name="NicknamePrompt" type="Control" parent="."]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 0
+
+[node name="Bg" type="ColorRect" parent="NicknamePrompt"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.85)
+
+[node name="Center" type="CenterContainer" parent="NicknamePrompt"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Panel" type="Panel" parent="NicknamePrompt/Center"]
+custom_minimum_size = Vector2(620, 320)
+layout_mode = 2
+theme_override_styles/panel = SubResource("SBF_btn_normal")
+
+[node name="Margin" type="MarginContainer" parent="NicknamePrompt/Center/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
+
+[node name="VBox" type="VBoxContainer" parent="NicknamePrompt/Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="NicknamePrompt/Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 40
+text = "BEM-VINDO"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="NicknamePrompt/Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 24
+text = "Qual o seu nick?"
+horizontal_alignment = 1
+
+[node name="NicknameInput" type="LineEdit" parent="NicknamePrompt/Center/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+placeholder_text = "Digite seu nick"
+max_length = 24
+alignment = 1
+
+[node name="OkButton" type="Button" parent="NicknamePrompt/Center/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/pressed = SubResource("SBF_btn_pressed")
+theme_override_styles/focus = SubResource("SBF_btn_focus")
+text = "Continuar"
+
+[node name="VersionLabel" parent="." instance=ExtResource("4_version")]

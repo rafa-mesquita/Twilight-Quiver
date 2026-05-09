@@ -1,0 +1,37 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/skills/arrow.gd" id="1_arrow"]
+[ext_resource type="PackedScene" path="res://scenes/skills/arrow_hit.tscn" id="2_hit"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_arrow"]
+radius = 2.0
+
+[sub_resource type="Gradient" id="Gradient_trail_enemy"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 0.4, 0.35, 0, 1, 0.4, 0.35, 0.4)
+
+[node name="EnemyArrow" type="Area2D"]
+z_index = -1
+collision_layer = 0
+collision_mask = 11
+script = ExtResource("1_arrow")
+damage = 12.0
+speed = 140.0
+hit_effect_scene = ExtResource("2_hit")
+
+[node name="Trail" type="Line2D" parent="."]
+top_level = true
+z_index = -1
+width = 1.5
+default_color = Color(0.95, 0.35, 0.3, 1)
+gradient = SubResource("Gradient_trail_enemy")
+joint_mode = 2
+begin_cap_mode = 2
+end_cap_mode = 2
+
+[node name="Polygon2D" type="Polygon2D" parent="."]
+color = Color(0.95, 0.35, 0.3, 1)
+polygon = PackedVector2Array(-5, 0, 3, -1, 6, 0, 3, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_arrow")

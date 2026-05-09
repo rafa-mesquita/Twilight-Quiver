@@ -1,0 +1,132 @@
+[gd_scene format=3 uid="uid://ymedsbr1pq5u"]
+
+[ext_resource type="Script" path="res://scripts/skills/fire_field.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/effects/fire-Sheet.png" id="2_sheet"]
+
+[sub_resource type="CircleShape2D" id="CircleShape_field"]
+radius = 44.0
+
+[sub_resource type="Gradient" id="Grad_glow_field"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(1, 0.92, 0.4, 0.9, 1, 0.6, 0.18, 0.5, 0.95, 0.3, 0.08, 0)
+
+[sub_resource type="GradientTexture2D" id="GradTex_glow_field"]
+gradient = SubResource("Grad_glow_field")
+width = 96
+height = 96
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="AtlasTexture" id="A_fire_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="A_fire_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="A_fire_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 0, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_fire"]
+animations = [{
+"frames": [{"duration": 1.0, "texture": SubResource("A_fire_0")},
+{"duration": 1.0, "texture": SubResource("A_fire_1")},
+{"duration": 1.0, "texture": SubResource("A_fire_2")}],
+"loop": true,
+"name": &"default",
+"speed": 6.0
+}]
+
+[node name="FireField" type="Area2D"]
+modulate = Color(1, 1, 1, 0.85)
+collision_layer = 0
+collision_mask = 4
+script = ExtResource("1_script")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+scale = Vector2(1, 0.55)
+shape = SubResource("CircleShape_field")
+
+[node name="RedShadow" type="Polygon2D" parent="."]
+scale = Vector2(1, 0.55)
+color = Color(0.45, 0.06, 0.04, 0.4)
+polygon = PackedVector2Array(32, 0, 29.56, 12.25, 22.63, 22.63, 12.25, 29.56, 0, 32, -12.25, 29.56, -22.63, 22.63, -29.56, 12.25, -32, 0, -29.56, -12.25, -22.63, -22.63, -12.25, -29.56, 0, -32, 12.25, -29.56, 22.63, -22.63, 29.56, -12.25)
+
+[node name="GlowLight" type="PointLight2D" parent="."]
+scale = Vector2(1, 0.55)
+color = Color(1, 0.85, 0.35, 1)
+energy = 0.85
+texture = SubResource("GradTex_glow_field")
+texture_scale = 0.55
+
+[node name="Flame1" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_fire")
+animation = &"default"
+autoplay = "default"
+
+[node name="Flame2" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+position = Vector2(-18, -4)
+sprite_frames = SubResource("SpriteFrames_fire")
+animation = &"default"
+autoplay = "default"
+
+[node name="Flame3" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+position = Vector2(18, -4)
+sprite_frames = SubResource("SpriteFrames_fire")
+animation = &"default"
+autoplay = "default"
+
+[node name="Flame4" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+position = Vector2(-12, 8)
+sprite_frames = SubResource("SpriteFrames_fire")
+animation = &"default"
+autoplay = "default"
+
+[node name="Flame5" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+position = Vector2(14, 8)
+sprite_frames = SubResource("SpriteFrames_fire")
+animation = &"default"
+autoplay = "default"
+
+[node name="Flame6" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+position = Vector2(0, -12)
+sprite_frames = SubResource("SpriteFrames_fire")
+animation = &"default"
+autoplay = "default"
+
+[node name="Flame7" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+position = Vector2(-25, 3)
+sprite_frames = SubResource("SpriteFrames_fire")
+animation = &"default"
+autoplay = "default"
+
+[node name="Flame8" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+position = Vector2(25, 3)
+sprite_frames = SubResource("SpriteFrames_fire")
+animation = &"default"
+autoplay = "default"
+
+[node name="Flame9" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+position = Vector2(-6, 13)
+sprite_frames = SubResource("SpriteFrames_fire")
+animation = &"default"
+autoplay = "default"
+
+[node name="Flame10" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+position = Vector2(8, -8)
+sprite_frames = SubResource("SpriteFrames_fire")
+animation = &"default"
+autoplay = "default"
