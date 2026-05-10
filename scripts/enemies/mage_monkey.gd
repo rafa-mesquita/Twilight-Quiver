@@ -80,6 +80,10 @@ const BOSS_PROJ_LIFETIME: float = 999.0
 const BOSS_PROJ_SPRITE_SCALE: float = 1.4
 const BOSS_PROJ_HITBOX_SCALE: float = 1.5
 const BOSS_PROJ_AUDIO_REDUCTION_DB: float = 14.0
+# Tiro extra gigante: 40% de chance no fim de cada rajada, 2× maior que os
+# outros tiros (multiplica por cima da escala já-aplicada do boss).
+const BOSS_GIANT_SHOT_CHANCE: float = 0.4
+const BOSS_GIANT_SHOT_SCALE_MULT: float = 2.0
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var hp_bar: Node2D = $HpBar
@@ -95,6 +99,8 @@ var _volley_remaining_shots: int = 0
 var _volley_shot_cd: float = 0.0
 var _volley_rest_cd: float = 0.0
 var _volley_count: int = 0  # quantas rajadas o boss já começou (incl. atual)
+var _giant_shot_queued: bool = false  # tiro extra gigante já roladoado pra essa rajada
+var _next_shot_giant: bool = false  # marca o próximo disparo como gigante
 var _initial_delay_remaining: float = 0.0
 var _beam_cd: float = 0.0
 # Conta quantas hordas o boss já invocou (incluindo a 1ª). A cada nova horda
@@ -265,11 +271,18 @@ func _tick_volley(delta: float) -> void:
 	if _volley_remaining_shots > 0:
 		_volley_shot_cd -= delta
 		if _volley_shot_cd <= 0.0:
-			_fire_one_shot()
+			_fire_one_shot(_next_shot_giant)
+			_next_shot_giant = false
 			_volley_remaining_shots -= 1
 			_volley_shot_cd = volley_interval
 			if _volley_remaining_shots == 0:
-				_volley_rest_cd = volley_rest
+				# 40% de chance de adicionar um tiro gigante extra no fim da rajada.
+				if not _giant_shot_queued and randf() < BOSS_GIANT_SHOT_CHANCE:
+					_giant_shot_queued = true
+					_next_shot_giant = true
+					_volley_remaining_shots = 1
+				else:
+					_volley_rest_cd = volley_rest
 		return
 	# Não está em rest nem em rajada — começa rajada nova.
 	_start_new_volley()
@@ -283,6 +296,8 @@ func _start_new_volley() -> void:
 	var bonus: int = ((_volley_count - 1) / period) * volley_size_growth_amount
 	_volley_remaining_shots = volley_size + bonus
 	_volley_shot_cd = 0.0
+	_giant_shot_queued = false
+	_next_shot_giant = false
 	# Som de cast no início da rajada (uma vez, não em cada tiro).
 	_play_cast_sound()
 
@@ -302,7 +317,7 @@ func _play_cast_sound() -> void:
 	)
 
 
-func _fire_one_shot() -> void:
+func _fire_one_shot(giant: bool = false) -> void:
 	if projectile_scene == null:
 		return
 	if player == null or not is_instance_valid(player):
@@ -321,20 +336,29 @@ func _fire_one_shot() -> void:
 	# do projétil decide o resto).
 	if "collision_mask" in proj:
 		proj.collision_mask = 5
+	# Boss atravessa aliados/estruturas — só player toma o tiro.
+	if "pierce_allies" in proj:
+		proj.pierce_allies = true
 	# is_ally_source NÃO é setado (default false) → projétil é "do enemy",
 	# bate em player/structure/tank_ally e ignora outros enemies (inclui os
 	# minions do boss).
 	_get_world().add_child(proj)
+	# Tiro gigante: multiplica por cima da escala-base do boss.
+	var sprite_mult: float = BOSS_PROJ_SPRITE_SCALE
+	var hitbox_mult: float = BOSS_PROJ_HITBOX_SCALE
+	if giant:
+		sprite_mult *= BOSS_GIANT_SHOT_SCALE_MULT
+		hitbox_mult *= BOSS_GIANT_SHOT_SCALE_MULT
 	# Visual e hitbox maiores pra parecer mágica forte do boss.
 	var proj_sprite: Node = proj.get_node_or_null("AnimatedSprite2D")
 	if proj_sprite is Node2D:
-		(proj_sprite as Node2D).scale *= BOSS_PROJ_SPRITE_SCALE
+		(proj_sprite as Node2D).scale *= sprite_mult
 	var proj_glow: Node = proj.get_node_or_null("GlowLight")
 	if proj_glow is Node2D:
-		(proj_glow as Node2D).scale *= BOSS_PROJ_SPRITE_SCALE
+		(proj_glow as Node2D).scale *= sprite_mult
 	var proj_coll: Node = proj.get_node_or_null("CollisionShape2D")
 	if proj_coll is CollisionShape2D:
-		(proj_coll as CollisionShape2D).scale *= BOSS_PROJ_HITBOX_SCALE
+		(proj_coll as CollisionShape2D).scale *= hitbox_mult
 	# Audio menor — boss atira muito, não pode estourar ouvido.
 	var proj_sound: Node = proj.get_node_or_null("ShootSound")
 	if proj_sound is AudioStreamPlayer2D:
@@ -551,6 +575,11 @@ func _die() -> void:
 	# usado pra desbloquear a skin Bluey (SKIN_QUESTS type=boss_killed).
 	if p != null and p.has_method("notify_boss_killed"):
 		p.notify_boss_killed("mage_monkey")
+	# Avisa o wave_manager pra segurar o fim da wave 2s extras (boss_kill_hold)
+	# pras moedas dropadas saltarem/ficarem visíveis e o player coletar.
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm != null and wm.has_method("notify_boss_died"):
+		wm.notify_boss_died()
 	_spawn_kill_effect()
 	_spawn_death_silhouette()
 	queue_free()

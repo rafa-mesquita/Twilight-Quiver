@@ -15,6 +15,9 @@ extends Node2D
 @export var spawn_delay: float = 0.5
 @export var inter_wave_delay: float = 2.0
 @export var pre_cleared_hold: float = 2.0  # tempo segurando 100% antes da tela "Wave Limpa"
+# Hold extra após morte do boss: tempo pras moedas dropadas pelo boss caírem,
+# pular e o player ver/coletar antes do magnet sugar e do shop abrir.
+@export var boss_kill_hold: float = 2.0
 @export var spawn_points_path: NodePath
 @export var farthest_count: int = 3  # quantos spawn points ativos por wave (top N mais longe do player)
 # Scaling por wave: cada wave acima da 1ª aumenta HP e dano dos inimigos linearmente.
@@ -38,6 +41,12 @@ extends Node2D
 # RNG ruim na primeira shop. Só ATIVA se naturalmente caiu menos que N — os
 # faltantes spawnam no _finish_wave (ainda pegos pelo magnet de fim de wave).
 @export var wave1_min_guaranteed_drops: int = 4
+# Wave 14 (boss redux): mesmo setup da wave 7 (boss + horda de magos no centro),
+# porém com multiplicador extra em cima do scaling natural pra ficar 2,5×–3×
+# mais forte que a wave 7. 1.75× sobre o natural da wave 14 dá ~2.85× HP e
+# ~2.53× dmg comparado ao boss da wave 7 — dentro do range pedido.
+@export var boss_redux_wave: int = 14
+@export var boss_redux_extra_mult: float = 1.75
 
 var wave_number: int = 0
 var spawn_points: Array[Marker2D] = []
@@ -52,6 +61,7 @@ var total_to_spawn_this_wave: int = 0
 var last_progress_killed: int = -1  # cache pra evitar spam de update na HUD
 var _coins_dropped_this_wave: int = 0  # tracker pro pity system de gold drops da wave 1
 var _player_gold_at_wave_start: int = 0  # snapshot pro pity computar gold real ganho na wave
+var _boss_died_this_wave: bool = false  # setado por notify_boss_died → atrasa o magnet/cleanup
 # Wave 7 (boss) overrides: spawn fixo do player numa extremidade, magos nas
 # outras 3, boss no centro. Setado em _start_next_wave quando wave_number == 7.
 var _wave7_player_spawn: Vector2 = Vector2.ZERO
@@ -212,11 +222,12 @@ func _start_next_wave() -> void:
 	spawn_cooldown = 0.0
 	# Reseta contador de moedas dropadas — pity system da wave 1 garante mínimo no _finish_wave.
 	_coins_dropped_this_wave = 0
+	_boss_died_this_wave = false
 
-	# Wave 7 (boss): pré-calcula posições — 1 spawn point pro player, os 3
-	# restantes pros magos, e centroide dos 4 pro boss. Faz isso ANTES do
-	# reset_position pra ele saber pra onde mandar o player.
-	if wave_number == 7:
+	# Wave 7 (boss) e wave 14 (boss redux): pré-calcula posições — 1 spawn point
+	# pro player, os 3 restantes pros magos, e centroide dos 4 pro boss. Faz
+	# isso ANTES do reset_position pra ele saber pra onde mandar o player.
+	if _is_boss_wave(wave_number):
 		_prepare_wave7_spawn_assignments()
 	# Reseta HP e posição do player antes da nova wave (camera segue → player no centro).
 	var player := get_tree().get_first_node_in_group("player")
@@ -225,8 +236,9 @@ func _start_next_wave() -> void:
 			player.reset_hp()
 		if player.has_method("reset_position"):
 			player.reset_position()
-		# Wave 7: override da posição padrão pra extremidade aleatória do mapa.
-		if wave_number == 7 and player is Node2D:
+		# Wave 7 e wave 14 (boss redux): override da posição padrão pra extremidade
+		# aleatória do mapa.
+		if _is_boss_wave(wave_number) and player is Node2D:
 			(player as Node2D).global_position = _wave7_player_spawn
 		if player.has_method("reset_perf_counter"):
 			player.reset_perf_counter()
@@ -293,6 +305,18 @@ func _build_wave_config(num: int) -> Dictionary:
 	# fica vulnerável 12s e invoca nova horda própria. Wave acaba quando o
 	# boss morre (que mata os minions junto).
 	if num == 7:
+		return {
+			"mage_monkey": {"alive_target": 1, "total": 1},
+			"mage": {"alive_target": 5, "total": 8},
+			"summoner_mage": {"alive_target": 2, "total": 3},
+			"fire_mage": {"alive_target": 2, "total": 3},
+		}
+	# Wave 14: BOSS REDUX — mesmo setup da wave 7 (1 boss + horda inicial de
+	# magos), porém todos escalam pelo natural da wave 14 + boss_redux_extra_mult
+	# (1.75× extra) → ~2,5×–3× mais forte que os equivalentes da wave 7.
+	# Diferença vs wave 7: minions iniciais TAMBÉM escalam (na wave 7 eles eram
+	# trash mobs sem scaling, aqui são versões mais perigosas).
+	if num == boss_redux_wave:
 		return {
 			"mage_monkey": {"alive_target": 1, "total": 1},
 			"mage": {"alive_target": 5, "total": 8},
@@ -419,6 +443,13 @@ func _spawn_one(type_key: String) -> void:
 	else:
 		# Aplica scaling de wave ANTES de add_child pra _ready do inimigo já usar max_hp escalado.
 		_apply_wave_scaling(enemy)
+	# Wave 14 boss (redux): drops escalam junto com os stats — recompensa proporcional
+	# à dificuldade extra. Aplica em cima do gold_drop_min/max base do boss.
+	if wave_number == boss_redux_wave and type_key == "mage_monkey" and boss_redux_extra_mult > 1.0:
+		if "gold_drop_min" in enemy:
+			enemy.gold_drop_min = int(round(float(enemy.gold_drop_min) * boss_redux_extra_mult))
+		if "gold_drop_max" in enemy:
+			enemy.gold_drop_max = int(round(float(enemy.gold_drop_max) * boss_redux_extra_mult))
 	world.add_child(enemy)
 	enemy.global_position = pos
 	spawned_this_wave[type_key] = spawned_this_wave.get(type_key, 0) + 1
@@ -439,6 +470,12 @@ func _apply_wave_scaling(enemy: Node) -> void:
 		* pow(1.0 + milestone_damage_bonus, milestones)
 	var speed_mult: float = (1.0 + early_steps * speed_growth_per_wave + late_steps * speed_growth_per_wave_late) \
 		* pow(1.0 + milestone_speed_bonus, milestones)
+	# Wave 14 (boss redux): multiplicador extra em cima do scaling natural pra
+	# wave inteira ficar 2,5×–3× mais forte que a wave 7 (boss + minions).
+	if wave_number == boss_redux_wave and boss_redux_extra_mult > 1.0:
+		hp_mult *= boss_redux_extra_mult
+		dmg_mult *= boss_redux_extra_mult
+		speed_mult *= boss_redux_extra_mult
 	if "max_hp" in enemy:
 		enemy.max_hp = enemy.max_hp * hp_mult
 	# Inimigos melee guardam dano em "damage" direto. Ranged (mage/insect) usam
@@ -499,9 +536,10 @@ func _pick_random_far_spawn_point() -> Vector2:
 
 
 func _pick_spawn_for(type_key: String) -> Vector2:
-	# Wave 7 (boss): boss vai sempre pro centro; magos rodam pelos 3 spawn
-	# points reservados (não o do player). Outras waves: comportamento padrão.
-	if wave_number == 7:
+	# Wave 7 (boss) e wave 14 (boss redux): boss vai sempre pro centro; magos
+	# rodam pelos 3 spawn points reservados (não o do player). Outras waves:
+	# comportamento padrão.
+	if _is_boss_wave(wave_number):
 		if type_key == "mage_monkey":
 			return _wave7_boss_center
 		if not _wave7_enemy_spawns.is_empty():
@@ -509,6 +547,10 @@ func _pick_spawn_for(type_key: String) -> Vector2:
 			_wave7_enemy_spawn_idx += 1
 			return pos
 	return _pick_random_far_spawn_point()
+
+
+func _is_boss_wave(num: int) -> bool:
+	return num == 7 or num == boss_redux_wave
 
 
 func _prepare_wave7_spawn_assignments() -> void:
@@ -551,6 +593,13 @@ func _finish_wave() -> void:
 	wave_active = false
 	# Garante que a barra mostra 100% antes da tela de "Wave Limpa".
 	_emit_progress()
+	# Pós-boss: segura tudo (cleanup, magnet, tela "Wave Limpa") por
+	# `boss_kill_hold` segundos pras moedas dropadas pelo boss ficarem visíveis,
+	# saltarem e o player ter tempo de coletar/ver a animação.
+	if _boss_died_this_wave and boss_kill_hold > 0.0:
+		await get_tree().create_timer(boss_kill_hold).timeout
+		if stopped:
+			return
 	# Maldição: aliados convertidos pela curse só duram até o fim da horda/turno.
 	_cleanup_curse_allies()
 	# Cogumelos da Capivara Joe não persistem entre raids — limpa o que ficou no
@@ -561,6 +610,12 @@ func _finish_wave() -> void:
 	_top_up_wave1_coins()
 	# Suga todas as moedas restantes do mapa pro player (auto-coleta).
 	_magnet_remaining_gold()
+
+
+func notify_boss_died() -> void:
+	# Chamado pelo boss em _die() — sinaliza pro _finish_wave segurar 2s extras
+	# antes do magnet/cleanup, dando tempo das moedas caírem e serem coletadas.
+	_boss_died_this_wave = true
 
 
 func notify_coin_dropped(amount: int = 1) -> void:

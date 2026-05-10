@@ -11,7 +11,7 @@ extends CanvasLayer
 
 signal closed
 
-const PRICE_TABLE: Array[int] = [4, 8, 20, 35]
+const PRICE_TABLE: Array[int] = [5, 12, 24, 41]
 const TOWER_PRICE: int = 7
 const WOODWARDEN_PRICE_TABLE: Array[int] = [7, 10, 15, 35]
 # Leno (aliado voador, auto-spawn): mesmo escalonamento dos aliados.
@@ -478,11 +478,30 @@ func _roll_aliado_slots() -> void:
 	var p := _get_player()
 	if p != null and p.has_method("get_upgrade_count"):
 		ww_lvl = p.get_upgrade_count("woodwarden")
+	# Limite: máx 2 aliados *diferentes* por run. Conta quantos tipos distintos
+	# já estão em nível > 0; se chegou em 2, os demais aparecem bloqueados (mas
+	# os já comprados continuam levelando até o cap).
+	var leno_lvl_pre: int = 0
+	var capi_lvl_pre: int = 0
+	if p != null and p.has_method("get_upgrade_count"):
+		leno_lvl_pre = p.get_upgrade_count("leno")
+		capi_lvl_pre = p.get_upgrade_count("capivara_joe")
+	var distinct_owned: int = 0
+	if ww_lvl > 0:
+		distinct_owned += 1
+	if leno_lvl_pre > 0:
+		distinct_owned += 1
+	if capi_lvl_pre > 0:
+		distinct_owned += 1
+	var ally_limit_reached: bool = distinct_owned >= 2
 	var ww_maxed: bool = ww_lvl >= 4
+	var ww_locked_by_limit: bool = ally_limit_reached and ww_lvl == 0
 	# Woodwarden virou aliado (sem surcharge de estruturas).
 	var ww_price: int = WOODWARDEN_PRICE_TABLE[mini(ww_lvl, WOODWARDEN_PRICE_TABLE.size() - 1)]
 	var ww_desc: String
-	if ww_maxed:
+	if ww_locked_by_limit:
+		ww_desc = "SHOP_ALLY_LIMIT"
+	elif ww_maxed:
 		ww_desc = "SHOP_MAX_REACHED"
 	else:
 		match ww_lvl:
@@ -496,40 +515,50 @@ func _roll_aliado_slots() -> void:
 		"name": "SHOP_ALLY_WOODWARDEN",
 		"desc": ww_desc,
 		"price": ww_price,
-		"available": not ww_maxed,
+		"available": not ww_maxed and not ww_locked_by_limit,
 		"is_ally": true,
 		"auto_spawn": true,
 	})
 	# Leno: auto-spawn (sem placement). apply_upgrade no commit cuida do spawn
 	# via player._refresh_lenos(). Compartilha o slot 2 dos aliados.
-	var leno_lvl: int = 0
-	if p != null and p.has_method("get_upgrade_count"):
-		leno_lvl = p.get_upgrade_count("leno")
+	var leno_lvl: int = leno_lvl_pre
 	var leno_maxed: bool = leno_lvl >= 4
+	var leno_locked_by_limit: bool = ally_limit_reached and leno_lvl == 0
 	var leno_price: int = LENO_PRICE_TABLE[mini(leno_lvl, LENO_PRICE_TABLE.size() - 1)]
-	var leno_desc: String = "SHOP_MAX_REACHED" if leno_maxed else _get_upgrade_desc("leno", leno_lvl + 1)
+	var leno_desc: String
+	if leno_locked_by_limit:
+		leno_desc = "SHOP_ALLY_LIMIT"
+	elif leno_maxed:
+		leno_desc = "SHOP_MAX_REACHED"
+	else:
+		leno_desc = _get_upgrade_desc("leno", leno_lvl + 1)
 	aliado_slots.append({
 		"id": "leno",
 		"name": "SHOP_ALLY_LENO",
 		"desc": leno_desc,
 		"price": leno_price,
-		"available": not leno_maxed,
+		"available": not leno_maxed and not leno_locked_by_limit,
 		"is_ally": true,
 		"auto_spawn": true,
 	})
 	# Capivara Joe: aliado vagabundo, auto-spawn (sem placement).
-	var capi_lvl: int = 0
-	if p != null and p.has_method("get_upgrade_count"):
-		capi_lvl = p.get_upgrade_count("capivara_joe")
+	var capi_lvl: int = capi_lvl_pre
 	var capi_maxed: bool = capi_lvl >= 4
+	var capi_locked_by_limit: bool = ally_limit_reached and capi_lvl == 0
 	var capi_price: int = CAPIVARA_PRICE_TABLE[mini(capi_lvl, CAPIVARA_PRICE_TABLE.size() - 1)]
-	var capi_desc: String = "SHOP_MAX_REACHED" if capi_maxed else _get_upgrade_desc("capivara_joe", capi_lvl + 1)
+	var capi_desc: String
+	if capi_locked_by_limit:
+		capi_desc = "SHOP_ALLY_LIMIT"
+	elif capi_maxed:
+		capi_desc = "SHOP_MAX_REACHED"
+	else:
+		capi_desc = _get_upgrade_desc("capivara_joe", capi_lvl + 1)
 	aliado_slots.append({
 		"id": "capivara_joe",
 		"name": "SHOP_ALLY_CAPIVARA",
 		"desc": capi_desc,
 		"price": capi_price,
-		"available": not capi_maxed,
+		"available": not capi_maxed and not capi_locked_by_limit,
 		"is_ally": true,
 		"auto_spawn": true,
 	})
