@@ -8,7 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://du8vqcoebjapl" path="res://assets/Hud/shop/aliado/placeholder.png" id="7_ali_ph"]
 [ext_resource type="Texture2D" uid="uid://43kh6plt35ba" path="res://assets/obecjts map/coins.png" id="8_coin"]
 [ext_resource type="PackedScene" uid="uid://b8tw1gv0vqlbl" path="res://scenes/ui/version_label.tscn" id="9_version"]
-[ext_resource type="Texture2D" uid="uid://d3mws3bmk28y1" path="res://assets/Hud/shop/persoangem shop.png" id="10_pface"]
+[ext_resource type="Texture2D" path="res://assets/source/favicon-Sheet.png" id="10_pface"]
 
 [sub_resource type="AtlasTexture" id="ATX_coin"]
 atlas = ExtResource("8_coin")

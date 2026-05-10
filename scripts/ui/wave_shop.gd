@@ -785,6 +785,8 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	"gold_magnet": "res://assets/Hud/shop/upgrade/coin master.png",
 	# id "life_steal" mas arquivo é "life steal.png" (com espaço).
 	"life_steal": "res://assets/Hud/shop/upgrade/life steal.png",
+	# fire_arrow2.png é a arte nova; fire_arrow.png antigo foi removido.
+	"fire_arrow": "res://assets/Hud/shop/upgrade/fire_arrow2.png",
 }
 # Cor única pros aliados (todos compartilham por enquanto).
 const ALIADO_TEXT_COLOR: Color = Color(0x2c / 255.0, 0x1f / 255.0, 0x1f / 255.0)  # #2c1f1f

@@ -82,7 +82,7 @@ const _UPG_STATUS_COMBINED_ROWS: Dictionary = {"hp": 0, "attack_speed": 1, "move
 # de upgrade ou aliado (categoria detectada pela posição na ordem).
 const _UPG_PATHS: Dictionary = {
 	"armor": "res://assets/Hud/shop/status/Armadura.png",
-	"fire_arrow": "res://assets/Hud/shop/upgrade/fire_arrow.png",
+	"fire_arrow": "res://assets/Hud/shop/upgrade/fire_arrow2.png",
 	"curse_arrow": "res://assets/Hud/shop/upgrade/curse_arrow.png",
 	"multi_arrow": "res://assets/Hud/shop/upgrade/multi_arrow.png",
 	"chain_lightning": "res://assets/Hud/shop/upgrade/chain_lightning.png",
