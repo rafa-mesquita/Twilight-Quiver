@@ -6,6 +6,8 @@
 
 **NUNCA criar arquivos `.md` de release notes** (`RELEASE_*.md`, `CHANGELOG.md`, etc). Release notes vão na descrição da tag/release no GitHub, não como arquivo no repo.
 
+**Release notes são pra comunidade de jogadores, não pra dev.** Tom leve, focado no que mudou pra quem está jogando: novas skins, idiomas, mudanças de balance percebíveis, novas features de UI, fixes visíveis. NÃO mencionar paths, nomes de classes/funções, refactors internos, ajustes de gitignore, instruções de build ou qualquer detalhe técnico.
+
 ## Internacionalização (i18n)
 
 O projeto é bilingual: **pt_BR** (default) e **en**. Todo texto visível ao jogador passa pelo TranslationServer.
