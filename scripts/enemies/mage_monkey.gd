@@ -502,10 +502,10 @@ func _summon_horde() -> void:
 	sprite.play("defense")
 
 
-# A summon_effect.tscn foi recolorida pra azul (paleta do summoner mage).
+# A summon_effect.tscn foi recolorida pra verde (paleta do summoner mage).
 # Pro boss queremos roxo (paleta original) — usa modulate >1 nos canais R/B
-# pra deslocar a base azul (~0.4, 0.65, 1.0) pra roxo (~0.78, 0.55, 0.95).
-const SUMMON_FX_PURPLE_TINT: Color = Color(2.0, 0.85, 1.0, 1.0)
+# pra deslocar a base verde (~0.55, 0.95, 0.45) pra roxo (~0.78, 0.55, 0.95).
+const SUMMON_FX_PURPLE_TINT: Color = Color(1.42, 0.56, 2.1, 1.0)
 
 
 func _play_summon_sound() -> void:

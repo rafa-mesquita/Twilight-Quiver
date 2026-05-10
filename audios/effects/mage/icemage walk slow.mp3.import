@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bertxv6glvdnu"
+path="res://.godot/imported/icemage walk slow.mp3-678e46d89732718218eba48c84164326.mp3str"
+
+[deps]
+
+source_file="res://audios/effects/mage/icemage walk slow.mp3"
+dest_files=["res://.godot/imported/icemage walk slow.mp3-678e46d89732718218eba48c84164326.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

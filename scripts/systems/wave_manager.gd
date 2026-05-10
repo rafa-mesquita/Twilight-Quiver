@@ -11,6 +11,7 @@ extends Node2D
 @export var summoner_mage_scene: PackedScene
 @export var stone_cube_scene: PackedScene
 @export var fire_mage_scene: PackedScene
+@export var ice_mage_scene: PackedScene
 @export var mage_monkey_scene: PackedScene
 @export var spawn_delay: float = 0.5
 @export var inter_wave_delay: float = 2.0
@@ -90,6 +91,7 @@ func _ready() -> void:
 		"summoner_mage": {"scene": summoner_mage_scene, "group": "summoner_mage"},
 		"stone_cube": {"scene": stone_cube_scene, "group": "stone_cube"},
 		"fire_mage": {"scene": fire_mage_scene, "group": "fire_mage"},
+		"ice_mage": {"scene": ice_mage_scene, "group": "ice_mage"},
 		"mage_monkey": {"scene": mage_monkey_scene, "group": "mage_monkey"},
 	}
 	var player := get_tree().get_first_node_in_group("player")
@@ -135,6 +137,7 @@ func spawn_enemy_at(type_key: String, pos: Vector2) -> Node:
 	# Usado pelo DevPanel pra spawnar inimigos de qualquer tipo registrado.
 	var info: Dictionary = type_registry.get(type_key, {})
 	if info.is_empty() or info["scene"] == null:
+		push_warning("spawn_enemy_at: tipo '%s' sem PackedScene atribuída no main.tscn (recarregue a cena se acabou de adicionar o tipo)." % type_key)
 		return null
 	var world := get_tree().get_first_node_in_group("world")
 	if world == null:
@@ -310,6 +313,7 @@ func _build_wave_config(num: int) -> Dictionary:
 			"mage": {"alive_target": 5, "total": 8},
 			"summoner_mage": {"alive_target": 2, "total": 3},
 			"fire_mage": {"alive_target": 2, "total": 3},
+			"ice_mage": {"alive_target": 1, "total": 2},
 		}
 	# Wave 14: BOSS REDUX — mesmo setup da wave 7 (1 boss + horda inicial de
 	# magos), porém todos escalam pelo natural da wave 14 + boss_redux_extra_mult
@@ -322,6 +326,7 @@ func _build_wave_config(num: int) -> Dictionary:
 			"mage": {"alive_target": 5, "total": 8},
 			"summoner_mage": {"alive_target": 2, "total": 3},
 			"fire_mage": {"alive_target": 2, "total": 3},
+			"ice_mage": {"alive_target": 1, "total": 2},
 		}
 	# Waves 3+: escala automática + um pouco de aleatoriedade.
 	# Quanto maior o wave_number, mais inimigos vivos e mais total.
@@ -378,6 +383,20 @@ func _build_wave_config(num: int) -> Dictionary:
 		# Alive baixo (2-3) pra dispersar — cubos são tanks lentos, não spawnam
 		# todos juntos: trickle conforme os anteriores morrem.
 		stone_alive = mini(2 + step_count / 2, stone_total)
+	# Fire mage / Ice mage: estreiam na wave 8 (logo após o primeiro boss da
+	# wave 7), conta cresce devagar. Mesma curva pra ambos pra balanço fica
+	# parecido — fire = pressão de campo no chão (DoT), ice = atraso de
+	# posicionamento (slow AoE). Cada um adiciona uma camada de stress.
+	var fire_alive: int = 0
+	var fire_total: int = 0
+	var ice_alive: int = 0
+	var ice_total: int = 0
+	if num >= 8:
+		var elem_step: int = (num - 8) / 2  # +1 alive a cada 4 waves, +1 total a cada 2
+		fire_alive = mini(1 + elem_step / 2, 3)
+		fire_total = mini(1 + elem_step, 5)
+		ice_alive = mini(1 + elem_step / 2, 3)
+		ice_total = mini(1 + elem_step, 5)
 	var cfg: Dictionary = {
 		"monkey": {"alive_target": maxi(monkey_alive, 1), "total": maxi(monkey_total, monkey_alive)},
 		"mage": {"alive_target": maxi(mage_alive, 1), "total": maxi(mage_total, mage_alive)},
@@ -385,6 +404,10 @@ func _build_wave_config(num: int) -> Dictionary:
 	}
 	if stone_total > 0:
 		cfg["stone_cube"] = {"alive_target": maxi(stone_alive, 1), "total": maxi(stone_total, stone_alive)}
+	if fire_total > 0:
+		cfg["fire_mage"] = {"alive_target": maxi(fire_alive, 1), "total": maxi(fire_total, fire_alive)}
+	if ice_total > 0:
+		cfg["ice_mage"] = {"alive_target": maxi(ice_alive, 1), "total": maxi(ice_total, ice_alive)}
 	return cfg
 
 

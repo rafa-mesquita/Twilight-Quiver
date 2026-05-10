@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/skills/ice_slow_area.gd" id="1_script"]
+[ext_resource type="AudioStream" path="res://audios/effects/mage/icemage walk slow.mp3" id="2_walk"]
+
+[node name="IceSlowArea" type="Area2D"]
+collision_layer = 0
+collision_mask = 5
+script = ExtResource("1_script")
+
+[node name="WalkSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("2_walk")
+volume_db = -8.0
+bus = &"SFX"

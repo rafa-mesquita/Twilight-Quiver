@@ -37,7 +37,7 @@ extends CharacterBody2D
 const SILHOUETTE_SHADER: Shader = preload("res://shaders/silhouette.gdshader")
 # Sprite do mago invocador: swap do atlas em runtime (mesmas regiões do sheet
 # base, layout idêntico). Substitui o filtro lilás antigo por arte dedicada.
-const SUMMONER_TEXTURE: Texture2D = preload("res://assets/enemies/mage/mage-summ-Sheet-export.png")
+const SUMMONER_TEXTURE: Texture2D = preload("res://assets/enemies/mage/mage-summ2-Sheet-export.png")
 const MUZZLE_OFFSET_X: float = 8.0
 const BODY_CENTER_OFFSET: Vector2 = Vector2(0, -16)
 
@@ -270,15 +270,15 @@ func _fire_projectile() -> void:
 	proj.global_position = Vector2(muzzle.global_position.x, global_position.y + 2)
 	if proj.has_method("set_direction"):
 		proj.set_direction(locked_attack_dir)
-	# Mago invocador: tinta o projétil de azul (sprite + trail + glow) pra
+	# Mago invocador: tinta o projétil de verde (sprite + trail + glow) pra
 	# combinar com a paleta dele.
 	if insect_scene != null:
 		_apply_summoner_projectile_skin(proj)
 
 
-const SUMMONER_PROJ_TINT: Color = Color(0.55, 0.75, 1.0, 1.0)
-const SUMMONER_PROJ_TRAIL_TIP: Color = Color(0.4, 0.65, 1.0, 0.7)
-const SUMMONER_PROJ_TRAIL_HEAD: Color = Color(0.4, 0.65, 1.0, 0.0)
+const SUMMONER_PROJ_TINT: Color = Color(0.55, 1.0, 0.75, 1.0)
+const SUMMONER_PROJ_TRAIL_TIP: Color = Color(0.4, 1.0, 0.65, 0.7)
+const SUMMONER_PROJ_TRAIL_HEAD: Color = Color(0.4, 1.0, 0.65, 0.0)
 
 
 func _apply_summoner_projectile_skin(proj: Node) -> void:

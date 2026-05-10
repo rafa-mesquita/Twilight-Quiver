@@ -2001,5 +2001,3 @@ func _max_level_for(id: String) -> int:
 	if id == "hp" or id == "armor" or id == "damage" or id == "attack_speed" or id == "move_speed":
 		return 0  # sem cap
 	return 4
-
-

@@ -29,10 +29,22 @@ func _ready() -> void:
 			if fc > 1:
 				sp.frame = randi() % fc
 				sp.frame_progress = randf()
+	# Captura bodies já sobrepostos no spawn (overlap inicial). Deferred pro
+	# physics step ter populado get_overlapping_bodies — sem isso só pega quem
+	# entra DEPOIS via body_entered, atrasando o primeiro hit.
+	_capture_initial_overlaps.call_deferred()
+	# Tick imediato no spawn (tick_accum = TICK_INTERVAL faz o primeiro
+	# _apply_tick acontecer no próximo _process em vez de esperar 0.5s).
+	_tick_accum = TICK_INTERVAL
 	# Fade out nos últimos `fade_duration` segundos.
 	var tw := create_tween()
 	tw.tween_interval(duration - fade_duration)
 	tw.tween_property(self, "modulate:a", 0.0, fade_duration)
+
+
+func _capture_initial_overlaps() -> void:
+	for body in get_overlapping_bodies():
+		_on_body_entered(body)
 
 
 func _process(delta: float) -> void:

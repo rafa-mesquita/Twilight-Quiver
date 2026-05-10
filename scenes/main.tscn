@@ -20,6 +20,7 @@
 [ext_resource type="PackedScene" uid="uid://dt78ddts01nok" path="res://scenes/enemies/stone_cube_enemy.tscn" id="18_stone"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/fire_mage.tscn" id="19_firemage"]
 [ext_resource type="PackedScene" uid="uid://c6qapsybij0t2" path="res://scenes/enemies/mage_monkey.tscn" id="20_boss"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/ice_mage.tscn" id="21_icemage"]
 
 [sub_resource type="RectangleShape2D" id="RectShape_bound_h"]
 size = Vector2(842, 10)
@@ -34,6 +35,7 @@ mage_scene = ExtResource("16_mage")
 summoner_mage_scene = ExtResource("17_smage")
 stone_cube_scene = ExtResource("18_stone")
 fire_mage_scene = ExtResource("19_firemage")
+ice_mage_scene = ExtResource("21_icemage")
 mage_monkey_scene = ExtResource("20_boss")
 spawn_points_path = NodePath("Entities/SpawnPoints")
 

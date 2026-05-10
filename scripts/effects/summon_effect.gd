@@ -1,10 +1,10 @@
 extends Node2D
 
-# Efeito de invocação azul: anel expansivo + flash de luz + estilhaços girando.
+# Efeito de invocação verde: anel expansivo + flash de luz + estilhaços girando.
 # Tudo construído via tweens em runtime; não precisa de spritesheet.
 
 @export var duration: float = 0.7
-@export var color: Color = Color(0.4, 0.65, 1.0, 1.0)
+@export var color: Color = Color(0.4, 1.0, 0.65, 1.0)
 # Origem do node fica no chão; visual fica acima (mesmo padrão do projétil pra Y-sort).
 const VISUAL_OFFSET_Y: float = -16.0
 
