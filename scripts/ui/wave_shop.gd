@@ -26,6 +26,9 @@ const STRUCTURE_SURCHARGE_PER_OWNED: int = 3
 const ALIADO_FREE_PET_WAVE: int = 3
 const ALIADO_SHOP_FIRST_WAVE: int = 5
 const ALIADO_SHOP_INTERVAL: int = 2
+# Cap de tipos distintos de aliados que o player pode ter ao mesmo tempo.
+# Pra ter o 3o, precisa vender um (StatsCard.PetsBox: right-click no chip).
+const MAX_DISTINCT_PETS: int = 2
 const ESTRUT_UNLOCK_INTERVAL: int = 4
 
 # Pool dos cards de status (passive stats — escalonáveis ilimitadamente).
@@ -217,9 +220,22 @@ const _AUGMENT_MAX_SLOTS: int = 6
 const _AUGMENT_SLOT_SIZE: Vector2 = Vector2(60, 60)
 @onready var augments_box: GridContainer = $Root/StatsCard/SlotsBox
 @onready var stats_box: VBoxContainer = $Root/StatsCard/StatsBox
+@onready var pets_box: HBoxContainer = $Root/StatsCard/PetsBox
+@onready var structures_box: HBoxContainer = $Root/StatsCard/StructuresBox
+
+# Aliados (pets) que aparecem no card do player. Ordem fixa.
+const _PETS_ROW_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe"]
+# Estruturas conhecidas. Mapeia o scene_path em owned_structures pra um id
+# usado no chip. Por enquanto só arrow_tower.
+const _STRUCTURES_ROW: Array[Dictionary] = [
+	{"id": "arrow_tower", "scene_path": "res://scenes/world/structures/arrow_tower.tscn"},
+]
+const _MINI_CHIP_SIZE: Vector2 = Vector2(60, 60)
 # Tooltip lazy-created no primeiro hover.
 var _augment_tooltip: PanelContainer = null
 var _augment_tooltip_label: RichTextLabel = null
+# Modal de confirmação de venda de pet (right-click no chip do StatsCard).
+var _sell_confirm_dialog: Panel = null
 
 # Status que aparecem no StatsCard (em ordem de exibição).
 const _STATS_CARD_ROWS: Array[Dictionary] = [
@@ -270,6 +286,8 @@ func _ready() -> void:
 	_refresh_button_states()
 	_refresh_augments_column()
 	_refresh_stats_card()
+	_refresh_pets_box()
+	_refresh_structures_box()
 
 
 func _grant_free_random_pet() -> void:
@@ -481,9 +499,15 @@ func _roll_aliado_slots() -> void:
 	var ww_maxed: bool = ww_lvl >= 4
 	# Woodwarden virou aliado (sem surcharge de estruturas).
 	var ww_price: int = WOODWARDEN_PRICE_TABLE[mini(ww_lvl, WOODWARDEN_PRICE_TABLE.size() - 1)]
+	# Cap de aliados: se o player já tem MAX_DISTINCT_PETS tipos diferentes
+	# (lvl > 0) e este aliado ainda é lvl 0, bloqueia a compra.
+	var distinct_owned: int = _distinct_pets_owned(p)
+	var ww_pet_capped: bool = ww_lvl == 0 and distinct_owned >= MAX_DISTINCT_PETS
 	var ww_desc: String
 	if ww_maxed:
 		ww_desc = "SHOP_MAX_REACHED"
+	elif ww_pet_capped:
+		ww_desc = "SHOP_PET_LIMIT_REACHED"
 	else:
 		match ww_lvl:
 			0: ww_desc = "SHOP_WW_DESC_1"
@@ -496,7 +520,7 @@ func _roll_aliado_slots() -> void:
 		"name": "SHOP_ALLY_WOODWARDEN",
 		"desc": ww_desc,
 		"price": ww_price,
-		"available": not ww_maxed,
+		"available": not ww_maxed and not ww_pet_capped,
 		"is_ally": true,
 		"auto_spawn": true,
 	})
@@ -506,14 +530,21 @@ func _roll_aliado_slots() -> void:
 	if p != null and p.has_method("get_upgrade_count"):
 		leno_lvl = p.get_upgrade_count("leno")
 	var leno_maxed: bool = leno_lvl >= 4
+	var leno_pet_capped: bool = leno_lvl == 0 and distinct_owned >= MAX_DISTINCT_PETS
 	var leno_price: int = LENO_PRICE_TABLE[mini(leno_lvl, LENO_PRICE_TABLE.size() - 1)]
-	var leno_desc: String = "SHOP_MAX_REACHED" if leno_maxed else _get_upgrade_desc("leno", leno_lvl + 1)
+	var leno_desc: String
+	if leno_maxed:
+		leno_desc = "SHOP_MAX_REACHED"
+	elif leno_pet_capped:
+		leno_desc = "SHOP_PET_LIMIT_REACHED"
+	else:
+		leno_desc = _get_upgrade_desc("leno", leno_lvl + 1)
 	aliado_slots.append({
 		"id": "leno",
 		"name": "SHOP_ALLY_LENO",
 		"desc": leno_desc,
 		"price": leno_price,
-		"available": not leno_maxed,
+		"available": not leno_maxed and not leno_pet_capped,
 		"is_ally": true,
 		"auto_spawn": true,
 	})
@@ -522,17 +553,237 @@ func _roll_aliado_slots() -> void:
 	if p != null and p.has_method("get_upgrade_count"):
 		capi_lvl = p.get_upgrade_count("capivara_joe")
 	var capi_maxed: bool = capi_lvl >= 4
+	var capi_pet_capped: bool = capi_lvl == 0 and distinct_owned >= MAX_DISTINCT_PETS
 	var capi_price: int = CAPIVARA_PRICE_TABLE[mini(capi_lvl, CAPIVARA_PRICE_TABLE.size() - 1)]
-	var capi_desc: String = "SHOP_MAX_REACHED" if capi_maxed else _get_upgrade_desc("capivara_joe", capi_lvl + 1)
+	var capi_desc: String
+	if capi_maxed:
+		capi_desc = "SHOP_MAX_REACHED"
+	elif capi_pet_capped:
+		capi_desc = "SHOP_PET_LIMIT_REACHED"
+	else:
+		capi_desc = _get_upgrade_desc("capivara_joe", capi_lvl + 1)
 	aliado_slots.append({
 		"id": "capivara_joe",
 		"name": "SHOP_ALLY_CAPIVARA",
 		"desc": capi_desc,
 		"price": capi_price,
-		"available": not capi_maxed,
+		"available": not capi_maxed and not capi_pet_capped,
 		"is_ally": true,
 		"auto_spawn": true,
 	})
+
+
+# Quantos tipos distintos de pet o player tem (lvl > 0). Usado pelo cap
+# MAX_DISTINCT_PETS no roll dos aliados.
+func _distinct_pets_owned(p: Node) -> int:
+	if p == null or not p.has_method("get_upgrade_count"):
+		return 0
+	var count: int = 0
+	for id in _PETS_ROW_IDS:
+		if int(p.get_upgrade_count(id)) > 0:
+			count += 1
+	return count
+
+
+# Right-click no chip de pet → abre modal de confirmação de venda.
+func _on_pet_chip_input(event: InputEvent, id: String) -> void:
+	if not (event is InputEventMouseButton):
+		return
+	var mb: InputEventMouseButton = event
+	if not (mb.pressed and mb.button_index == MOUSE_BUTTON_RIGHT):
+		return
+	_show_sell_confirm(id)
+	get_viewport().set_input_as_handled()
+
+
+# Tabela de preço por pet (mesma usada na compra). Sum dos níveis 1..lvl
+# = total que o player pagou. Refund = metade (floor).
+func _pet_price_table_for(id: String) -> Array:
+	match id:
+		"woodwarden": return WOODWARDEN_PRICE_TABLE
+		"leno": return LENO_PRICE_TABLE
+		"capivara_joe": return CAPIVARA_PRICE_TABLE
+	return []
+
+
+func _pet_total_paid(id: String, lvl: int) -> int:
+	var price_table: Array = _pet_price_table_for(id)
+	if price_table.is_empty() or lvl <= 0:
+		return 0
+	var total: int = 0
+	for i in mini(lvl, price_table.size()):
+		total += int(price_table[i])
+	return total
+
+
+# Modal de confirmação: mostra refund + total pago, botões Vender/Cancelar.
+# Right-click no chip do pet abre. Cancelar dismissa, Vender executa.
+func _show_sell_confirm(id: String) -> void:
+	var p := _get_player()
+	if p == null or not p.has_method("get_upgrade_count"):
+		return
+	var lvl: int = int(p.get_upgrade_count(id))
+	if lvl <= 0:
+		return
+	var total_paid: int = _pet_total_paid(id, lvl)
+	if total_paid <= 0:
+		return
+	var refund: int = total_paid / 2
+	# Esconde tooltip do chip pra não sobrepor o modal.
+	if _augment_tooltip != null:
+		_augment_tooltip.visible = false
+	_ensure_sell_confirm_dialog()
+	# Atualiza textos. Path: dlg → Card (PanelContainer) → VBox → ...
+	var title_label: Label = _sell_confirm_dialog.get_node("Card/VBox/Title") as Label
+	var body_label: Label = _sell_confirm_dialog.get_node("Card/VBox/Body") as Label
+	var pet_name: String = tr(_augment_title_for(id))
+	title_label.text = tr("SHOP_SELL_PET_TITLE") % pet_name
+	body_label.text = tr("SHOP_SELL_PET_BODY") % [refund, total_paid]
+	# Reconnecta o botão de confirmar com o id atual.
+	var confirm_btn: Button = _sell_confirm_dialog.get_node("Card/VBox/Buttons/Confirm") as Button
+	for c in confirm_btn.pressed.get_connections():
+		confirm_btn.pressed.disconnect(c["callable"])
+	confirm_btn.pressed.connect(_on_sell_confirmed.bind(id))
+	_sell_confirm_dialog.visible = true
+
+
+func _on_sell_confirmed(id: String) -> void:
+	if _sell_confirm_dialog != null:
+		_sell_confirm_dialog.visible = false
+	_sell_pet(id)
+
+
+func _on_sell_cancelled() -> void:
+	if _sell_confirm_dialog != null:
+		_sell_confirm_dialog.visible = false
+
+
+func _ensure_sell_confirm_dialog() -> void:
+	if _sell_confirm_dialog != null:
+		return
+	# Backdrop semi-opaco que captura cliques fora — clicar dismissa.
+	var dlg := Panel.new()
+	dlg.name = "SellConfirmDialog"
+	dlg.visible = false
+	dlg.z_index = 200
+	dlg.anchor_right = 1.0
+	dlg.anchor_bottom = 1.0
+	dlg.mouse_filter = Control.MOUSE_FILTER_STOP
+	var backdrop_style := StyleBoxFlat.new()
+	backdrop_style.bg_color = Color(0.0, 0.0, 0.0, 0.55)
+	dlg.add_theme_stylebox_override("panel", backdrop_style)
+	dlg.gui_input.connect(_on_sell_dialog_backdrop_input)
+	root_panel.add_child(dlg)
+	# Painel central com bordering (mesmo estilo do StatsCard).
+	var card := PanelContainer.new()
+	card.name = "Card"
+	card.set_anchors_preset(Control.PRESET_CENTER)
+	card.custom_minimum_size = Vector2(640, 280)
+	card.position = Vector2(-320, -140)  # offset relative to center
+	var card_style := StyleBoxFlat.new()
+	card_style.bg_color = Color(0.10, 0.07, 0.14, 1.0)
+	card_style.border_color = Color(0.55, 0.40, 0.70, 1.0)
+	card_style.border_width_left = 3
+	card_style.border_width_top = 3
+	card_style.border_width_right = 3
+	card_style.border_width_bottom = 3
+	card_style.corner_radius_top_left = 6
+	card_style.corner_radius_top_right = 6
+	card_style.corner_radius_bottom_left = 6
+	card_style.corner_radius_bottom_right = 6
+	card_style.content_margin_left = 28
+	card_style.content_margin_right = 28
+	card_style.content_margin_top = 24
+	card_style.content_margin_bottom = 20
+	card.add_theme_stylebox_override("panel", card_style)
+	dlg.add_child(card)
+	var vbox := VBoxContainer.new()
+	vbox.name = "VBox"
+	vbox.add_theme_constant_override("separation", 16)
+	card.add_child(vbox)
+	# Title.
+	var title := Label.new()
+	title.name = "Title"
+	title.add_theme_font_override("font", load("res://font/ByteBounce.ttf"))
+	title.add_theme_font_size_override("font_size", 38)
+	title.add_theme_color_override("font_color", Color(0.95, 0.85, 1.0, 1.0))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+	# Body.
+	var body := Label.new()
+	body.name = "Body"
+	body.add_theme_font_override("font", load("res://font/ByteBounce.ttf"))
+	body.add_theme_font_size_override("font_size", 26)
+	body.add_theme_color_override("font_color", Color(0.85, 0.82, 0.95, 1.0))
+	body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.custom_minimum_size = Vector2(0, 90)
+	vbox.add_child(body)
+	# Buttons row.
+	var buttons := HBoxContainer.new()
+	buttons.name = "Buttons"
+	buttons.add_theme_constant_override("separation", 24)
+	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(buttons)
+	var cancel_btn := Button.new()
+	cancel_btn.name = "Cancel"
+	cancel_btn.text = "SHOP_SELL_PET_CANCEL"
+	cancel_btn.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_INHERIT
+	cancel_btn.custom_minimum_size = Vector2(180, 60)
+	cancel_btn.add_theme_font_override("font", load("res://font/ByteBounce.ttf"))
+	cancel_btn.add_theme_font_size_override("font_size", 28)
+	cancel_btn.pressed.connect(_on_sell_cancelled)
+	buttons.add_child(cancel_btn)
+	var confirm_btn := Button.new()
+	confirm_btn.name = "Confirm"
+	confirm_btn.text = "SHOP_SELL_PET_CONFIRM"
+	confirm_btn.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_INHERIT
+	confirm_btn.custom_minimum_size = Vector2(180, 60)
+	confirm_btn.add_theme_font_override("font", load("res://font/ByteBounce.ttf"))
+	confirm_btn.add_theme_font_size_override("font_size", 28)
+	confirm_btn.add_theme_color_override("font_color", Color(1.0, 0.84, 0.34, 1.0))
+	buttons.add_child(confirm_btn)
+	_sell_confirm_dialog = dlg
+
+
+# Click no backdrop (fora do card) dismissa.
+func _on_sell_dialog_backdrop_input(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton):
+		return
+	var mb: InputEventMouseButton = event
+	if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+		# Confirma só se clicou DENTRO do card filho — fora dismissa.
+		# Como o card consome o evento via PanelContainer, esse handler
+		# só dispara em clicks no backdrop (transparente).
+		_on_sell_cancelled()
+
+
+func _sell_pet(id: String) -> void:
+	var p := _get_player()
+	if p == null or not p.has_method("get_upgrade_count"):
+		return
+	var lvl: int = int(p.get_upgrade_count(id))
+	if lvl <= 0:
+		return
+	var refund: int = _pet_total_paid(id, lvl) / 2
+	if p.has_method("add_gold"):
+		p.add_gold(refund)
+	if p.has_method("reset_pet"):
+		p.reset_pet(id)
+	if _augment_tooltip != null:
+		_augment_tooltip.visible = false
+	_play_buy_sound()
+	# Re-roll do aliado (pra liberar o slot do 3o pet se tinha cap) + rebuild
+	# de cards + UI do StatsCard.
+	_roll_aliado_slots()
+	_build_all_cards()
+	_connect_card_buttons()
+	_refresh_button_states()
+	_refresh_gold_label()
+	_refresh_pets_box()
+	_refresh_augments_column()
+	_refresh_stats_card()
 
 
 func _roll_upg_slots() -> void:
@@ -1637,15 +1888,15 @@ func _refresh_augments_column() -> void:
 	if hud == null:
 		return
 	# Itera na ordem de display do HUD; pega só os comprados, cap em MAX_SLOTS.
-	# Status (hp/damage/move_speed/etc) NÃO entram aqui — eles aparecem no
-	# StatsCard separado abaixo.
+	# Status vão pro StatsCard. Allies (pets) vão pro PetsBox abaixo. Aqui só
+	# entram upgrades de gameplay (perfuração, fire arrow, dash, etc).
 	var ids: Array = hud.UPGRADE_DISPLAY_ORDER
 	var added: int = 0
 	for id_v in ids:
 		if added >= _AUGMENT_MAX_SLOTS:
 			break
 		var id: String = String(id_v)
-		if _is_status_id(id):
+		if _is_status_id(id) or id in _PETS_ROW_IDS:
 			continue
 		var lvl: int = int(p.get_upgrade_count(id))
 		if lvl <= 0:
@@ -1707,6 +1958,127 @@ func _get_stat_gain_text(id: String, lvl: int, p: Node) -> String:
 			var dr: float = float(p.get("damage_reduction_pct")) if "damage_reduction_pct" in p else 0.0
 			return "%d%%" % int(round(dr * 100.0))
 	return ""
+
+
+# Pets (aliados): MAX_DISTINCT_PETS slots fixos (= 2). Mostra os pets
+# COMPRADOS (lvl > 0) na ordem canônica de _PETS_ROW_IDS, completando com
+# slots vazios até preencher MAX_DISTINCT_PETS. Adicionar novos tipos de
+# pet em _PETS_ROW_IDS não aumenta a quantidade de slots — o cap continua.
+func _refresh_pets_box() -> void:
+	if pets_box == null:
+		return
+	for c in pets_box.get_children():
+		c.queue_free()
+	var p := _get_player()
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud == null:
+		return
+	# Coleta os tipos comprados na ordem canônica.
+	var owned: Array[Dictionary] = []
+	if p != null and p.has_method("get_upgrade_count"):
+		for id in _PETS_ROW_IDS:
+			var lvl: int = int(p.get_upgrade_count(id))
+			if lvl > 0:
+				owned.append({"id": id, "lvl": lvl})
+	# Renderiza até MAX_DISTINCT_PETS slots: comprados primeiro, depois padding
+	# vazio.
+	for i in MAX_DISTINCT_PETS:
+		if i < owned.size():
+			var entry: Dictionary = owned[i]
+			pets_box.add_child(_build_mini_owned_chip(String(entry["id"]), int(entry["lvl"]), hud, true))
+		else:
+			pets_box.add_child(_build_mini_owned_chip("", 0, hud, false))
+
+
+# Estruturas: por enquanto só arrow_tower. Conta instâncias em
+# wave_manager.owned_structures filtrando pelo scene_path.
+func _refresh_structures_box() -> void:
+	if structures_box == null:
+		return
+	for c in structures_box.get_children():
+		c.queue_free()
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud == null:
+		return
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	for entry in _STRUCTURES_ROW:
+		var id: String = String(entry["id"])
+		var scene_path: String = String(entry["scene_path"])
+		var count: int = 0
+		if wm != null and "owned_structures" in wm:
+			for s in (wm.owned_structures as Array):
+				if String(s.get("scene_path", "")) == scene_path:
+					count += 1
+		structures_box.add_child(_build_mini_owned_chip(id, count, hud))
+
+
+# Mini chip versão menor do augment chip (60x60). Usado pra Pets/Structures.
+# Slot vazio (lvl=0): bg cinza com "—". Slot cheio: icon + ★N badge + hover
+# tooltip (reusa o augment tooltip). Se `sellable=true` (pets), right-click
+# refunda metade do total pago e zera o pet.
+func _build_mini_owned_chip(id: String, lvl: int, hud: Node, sellable: bool = false) -> Control:
+	var chip := Control.new()
+	chip.custom_minimum_size = _MINI_CHIP_SIZE
+	chip.mouse_filter = Control.MOUSE_FILTER_STOP
+	var bg := ColorRect.new()
+	bg.color = Color(0.10, 0.07, 0.13, 0.85) if lvl > 0 else Color(0.06, 0.05, 0.08, 0.6)
+	bg.anchor_right = 1.0
+	bg.anchor_bottom = 1.0
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chip.add_child(bg)
+	if lvl > 0:
+		var icon := TextureRect.new()
+		icon.texture = hud._get_upgrade_icon_atlas(id, lvl)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon.anchor_right = 1.0
+		icon.anchor_bottom = 1.0
+		icon.offset_left = 2.0
+		icon.offset_top = 2.0
+		icon.offset_right = -2.0
+		icon.offset_bottom = -2.0
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		chip.add_child(icon)
+		var badge := Label.new()
+		var max_lvl: int = _max_level_for(id)
+		var is_max: bool = max_lvl > 0 and lvl >= max_lvl
+		badge.text = "MAX" if is_max else "%d" % lvl
+		badge.add_theme_font_size_override("font_size", 12)
+		badge.add_theme_color_override("font_color", Color(1.0, 0.84, 0.34, 1.0))
+		badge.add_theme_color_override("font_outline_color", Color.BLACK)
+		badge.add_theme_constant_override("outline_size", 3)
+		badge.anchor_left = 1.0
+		badge.anchor_top = 1.0
+		badge.anchor_right = 1.0
+		badge.anchor_bottom = 1.0
+		badge.offset_left = -32.0
+		badge.offset_top = -16.0
+		badge.offset_right = -2.0
+		badge.offset_bottom = -1.0
+		badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		badge.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		chip.add_child(badge)
+		# Hover: tooltip do augment (mesma fonte).
+		chip.mouse_entered.connect(_on_augment_hovered.bind(id, lvl, chip))
+		chip.mouse_exited.connect(_on_augment_unhovered)
+		# Right-click pra vender (só pets). Refunda metade do total pago.
+		if sellable:
+			chip.gui_input.connect(_on_pet_chip_input.bind(id))
+	else:
+		# Slot vazio: traço cinza no centro.
+		var dash := Label.new()
+		dash.text = "—"
+		dash.add_theme_font_size_override("font_size", 24)
+		dash.add_theme_color_override("font_color", Color(0.35, 0.30, 0.42, 1.0))
+		dash.anchor_right = 1.0
+		dash.anchor_bottom = 1.0
+		dash.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		dash.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		dash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		chip.add_child(dash)
+	return chip
 
 
 func _build_stat_line(label_key: String, lvl: int, gain_text: String) -> Control:
@@ -1970,5 +2342,3 @@ func _max_level_for(id: String) -> int:
 	if id == "hp" or id == "armor" or id == "damage" or id == "attack_speed" or id == "move_speed":
 		return 0  # sem cap
 	return 4
-
-

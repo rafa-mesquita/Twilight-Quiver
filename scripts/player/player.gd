@@ -1317,10 +1317,12 @@ func _refresh_woodwardens() -> void:
 	# em que ainda não foi spawnado).
 	while _woodwardens.size() < target_count:
 		var ww: Node2D = WOODWARDEN_SCENE.instantiate()
-		_apply_woodwarden_stats(ww)
 		var spawn_pos: Vector2 = global_position + Vector2(randf_range(-32.0, 32.0), randf_range(-16.0, 16.0))
 		_get_world().add_child(ww)
 		ww.global_position = spawn_pos
+		# Stats DEPOIS do add_child — HpBar (filha do ww) precisa do _ready
+		# pra inicializar @onready var fg/trail antes de set_ratio.
+		_apply_woodwarden_stats(ww)
 		_woodwardens.append({"instance": ww, "last_pos": spawn_pos, "dead_for": 0.0})
 	# Atualiza stats em todos os vivos.
 	for entry in _woodwardens:
@@ -1365,9 +1367,10 @@ func _check_woodwarden_respawns(delta: float) -> void:
 		var spawn_pos: Vector2 = entry.get("last_pos", global_position)
 		_spawn_woodwarden_portal_fx(spawn_pos)
 		var ww: Node2D = WOODWARDEN_SCENE.instantiate()
-		_apply_woodwarden_stats(ww)
 		_get_world().add_child(ww)
 		ww.global_position = spawn_pos
+		# Stats DEPOIS do add_child — HpBar precisa do _ready pra resolver @onready.
+		_apply_woodwarden_stats(ww)
 		entry["instance"] = ww
 		entry["dead_for"] = 0.0
 
@@ -1409,6 +1412,21 @@ func _cleanup_lenos() -> void:
 		if is_instance_valid(l):
 			l.queue_free()
 	_lenos.clear()
+
+
+# Reset completo de um pet (vendido na shop). Zera o level + remove todas as
+# instâncias spawnadas. Refund de gold é responsabilidade do shop.
+func reset_pet(id: String) -> void:
+	match id:
+		"woodwarden":
+			woodwarden_level = 0
+			_cleanup_woodwardens()
+		"leno":
+			leno_level = 0
+			_cleanup_lenos()
+		"capivara_joe":
+			capivara_joe_level = 0
+			_cleanup_capivaras()
 
 
 func _compute_damage_reduction(level: int) -> float:
