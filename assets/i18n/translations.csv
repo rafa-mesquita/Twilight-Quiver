@@ -125,6 +125,11 @@ raid","Recibido en este
 raid","Reçu dans ce
 raid"
 SHOP_MAX_REACHED,Max (4/4) atingido,Max (4/4) reached,Máx (4/4) alcanzado,Max (4/4) atteint
+SHOP_PET_LIMIT_REACHED,Limite de 2 pets atingido — venda um pra trocar,Pet limit (2) reached — sell one to swap,Límite de 2 pets — vende uno para cambiar,Limite de 2 pets — vendez-en un pour changer
+SHOP_SELL_PET_TITLE,Vender %s?,Sell %s?,¿Vender %s?,Vendre %s ?
+SHOP_SELL_PET_BODY,Você vai receber %d moedas (metade do total pago: %d).,You'll receive %d coins (half of total paid: %d).,Recibirás %d monedas (mitad del total pagado: %d).,Vous recevrez %d pièces (moitié du total payé : %d).
+SHOP_SELL_PET_CONFIRM,Vender,Sell,Vender,Vendre
+SHOP_SELL_PET_CANCEL,Cancelar,Cancel,Cancelar,Annuler
 SHOP_LOCK_TITLE_SINGULAR,"Desbloqueia em
 %d turno","Unlocks in
 %d round","Se desbloquea en
@@ -169,7 +174,6 @@ SHOP_UPG_CURSE_ARROW,Disparo Profano,Profane Shot,Disparo Profano,Tir Profane
 SHOP_ALLY_WOODWARDEN,Woodwarden,Woodwarden,Woodwarden,Woodwarden
 SHOP_ALLY_LENO,Amigo Leno,Friend Leno,Amigo Leno,Ami Leno
 SHOP_ALLY_CAPIVARA,Capivara Joe,Capybara Joe,Capibara Joe,Capybara Joe
-SHOP_ALLY_LIMIT,Limite de aliados atingido (2),Ally limit reached (2),Límite de aliados alcanzado (2),Limite d'alliés atteinte (2)
 SHOP_HP_DESC_1,+18 HP maximo,+18 max HP,+18 HP máximo,+18 PV max
 SHOP_HP_DESC_2,+20 HP maximo,+20 max HP,+20 HP máximo,+20 PV max
 SHOP_HP_DESC_3,+22 HP maximo,+22 max HP,+22 HP máximo,+22 PV max
