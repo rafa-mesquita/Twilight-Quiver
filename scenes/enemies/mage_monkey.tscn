@@ -1,0 +1,142 @@
+[gd_scene format=3 uid="uid://c6qapsybij0t2"]
+
+[ext_resource type="Script" uid="uid://b13hyywitf72i" path="res://scripts/enemies/mage_monkey.gd" id="1_boss"]
+[ext_resource type="Texture2D" uid="uid://blsgseqaxq1rr" path="res://assets/enemies/mage-monkey/monkey mage-Sheet.png" id="2_sheet"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/mage_projectile.tscn" id="3_proj"]
+[ext_resource type="PackedScene" uid="uid://b0cursebeam01" path="res://scenes/skills/curse_beam.tscn" id="4_beam"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/mage_enemy.tscn" id="5_mage"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/summoner_mage.tscn" id="6_summ"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/fire_mage.tscn" id="7_firemage"]
+[ext_resource type="PackedScene" path="res://scenes/effects/summon_effect.tscn" id="8_summon_fx"]
+[ext_resource type="PackedScene" path="res://scenes/effects/damage_effect.tscn" id="9_dmg"]
+[ext_resource type="PackedScene" uid="uid://c0fhcseis1qub" path="res://scenes/ui/hp_bar.tscn" id="10_hpbar"]
+[ext_resource type="PackedScene" path="res://scenes/effects/damage_number.tscn" id="11_dmgnum"]
+[ext_resource type="PackedScene" path="res://scenes/effects/kill_effect.tscn" id="12_kill"]
+[ext_resource type="PackedScene" path="res://scenes/pickups/gold.tscn" id="13_gold"]
+[ext_resource type="PackedScene" uid="uid://diuv8x3rgs5aa" path="res://scenes/pickups/heart.tscn" id="14_heart"]
+[ext_resource type="AudioStream" uid="uid://c44svb5gpgh48" path="res://assets/enemies/mage-monkey/audio gorilla cast mages.mp3" id="15_summon_sfx"]
+[ext_resource type="AudioStream" uid="uid://dkxo7x86abqa2" path="res://assets/enemies/mage-monkey/audio gorila cast spell.mp3" id="16_cast_sfx"]
+
+[sub_resource type="AtlasTexture" id="A_def_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 64, 64, 64)
+
+[sub_resource type="AtlasTexture" id="A_def_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(64, 64, 64, 64)
+
+[sub_resource type="AtlasTexture" id="A_idle_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="A_idle_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="A_idle_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="A_idle_3"]
+atlas = ExtResource("2_sheet")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="A_idle_4"]
+atlas = ExtResource("2_sheet")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_boss"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_def_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_def_1")
+}],
+"loop": true,
+"name": &"defense",
+"speed": 4.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_idle_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_4")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_boss"]
+radius = 14.0
+height = 44.0
+
+[node name="MageMonkey" type="CharacterBody2D" unique_id=61256314]
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_boss")
+projectile_scene = ExtResource("3_proj")
+cast_sound = ExtResource("16_cast_sfx")
+curse_beam_scene = ExtResource("4_beam")
+minion_mage_scene = ExtResource("5_mage")
+minion_summoner_scene = ExtResource("6_summ")
+minion_fire_mage_scene = ExtResource("7_firemage")
+summon_effect_scene = ExtResource("8_summon_fx")
+summon_sound = ExtResource("15_summon_sfx")
+damage_effect_scene = ExtResource("9_dmg")
+damage_number_scene = ExtResource("11_dmgnum")
+kill_effect_scene = ExtResource("12_kill")
+gold_scene = ExtResource("13_gold")
+heart_scene = ExtResource("14_heart")
+
+[node name="Shadow" type="Node2D" parent="." unique_id=2036656718]
+position = Vector2(0, -2)
+
+[node name="Outer" type="Polygon2D" parent="Shadow" unique_id=468133989]
+position = Vector2(0, -2.000002)
+scale = Vector2(1.6, 1.9166666)
+color = Color(0, 0, 0, 0.18)
+polygon = PackedVector2Array(20, 0, 18, 2, 14, 4, 8, 5, 0, 6, -8, 5, -14, 4, -18, 2, -20, 0, -18, -2, -14, -4, -8, -5, 0, -6, 8, -5, 14, -4, 18, -2)
+
+[node name="Middle" type="Polygon2D" parent="Shadow" unique_id=1086305272]
+position = Vector2(2.3841858e-07, -4)
+scale = Vector2(1.7884616, 2.5625)
+color = Color(0, 0, 0, 0.26)
+polygon = PackedVector2Array(13, 0, 11, 2, 7, 3, 0, 4, -7, 3, -11, 2, -13, 0, -11, -2, -7, -3, 0, -4, 7, -3, 11, -2)
+
+[node name="Inner" type="Polygon2D" parent="Shadow" unique_id=300954665]
+position = Vector2(0, -3)
+scale = Vector2(2, 2.3333333)
+color = Color(0, 0, 0, 0.36)
+polygon = PackedVector2Array(7, 0, 5, 2, 0, 3, -5, 2, -7, 0, -5, -2, 0, -3, 5, -2)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=753972010]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_boss")
+animation = &"defense"
+autoplay = "defense"
+offset = Vector2(0, -32)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=135473835]
+position = Vector2(0, -22)
+shape = SubResource("CapsuleShape2D_boss")
+
+[node name="Muzzle" type="Marker2D" parent="." unique_id=584373278]
+position = Vector2(16, -49)
+
+[node name="HpBar" parent="." unique_id=1850135340 instance=ExtResource("10_hpbar")]
+position = Vector2(-16, -68)
+scale = Vector2(2, 2)
+fg_color = Color(0.65, 0.18, 0.78, 1)

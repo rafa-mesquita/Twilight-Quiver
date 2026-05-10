@@ -172,6 +172,10 @@ func _pick_enemy_target() -> Node2D:
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e) or not (e is Node2D):
 			continue
+		# Pula bosses com shield ativo — woodwarden não consegue dar dano
+		# e o ataque desperdiça o cooldown.
+		if (e as Node).is_in_group("boss_shielded"):
+			continue
 		var enemy_pos: Vector2 = (e as Node2D).global_position
 		# Filtro principal: inimigo precisa estar perto do PLAYER.
 		if anchor.distance_to(enemy_pos) > defense_radius:

@@ -12,6 +12,9 @@ const ARC_HEIGHT: float = 80.0  # peak height da parábola — maior agora pra a
 @export var field_dps: float = 12.0
 @export var field_duration: float = 6.0
 @export var field_scale: float = 1.0  # lv4 do Fogo aumenta área pra 1.25
+# Quando true, propaga `is_enemy_source = true` pro FireField que spawnar
+# (vem de um inimigo, machuca player/ally/structure em vez de enemies).
+@export var is_enemy_source: bool = false
 
 var _start: Vector2 = Vector2.ZERO
 var _target: Vector2 = Vector2.ZERO
@@ -52,6 +55,8 @@ func _land() -> void:
 			field.damage_per_second = field_dps
 		if "duration" in field:
 			field.duration = field_duration
+		if "is_enemy_source" in field:
+			field.is_enemy_source = is_enemy_source
 		var world := get_tree().get_first_node_in_group("world")
 		if world != null:
 			world.add_child(field)

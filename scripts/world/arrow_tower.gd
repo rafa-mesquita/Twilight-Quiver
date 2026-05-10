@@ -72,6 +72,9 @@ func _find_nearest_enemy() -> Node2D:
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e):
 			continue
+		# Pula bosses com shield ativo — flecha não dá dano e desperdiça munição.
+		if (e as Node).is_in_group("boss_shielded"):
+			continue
 		var enemy: Node2D = e as Node2D
 		var dist: float = global_position.distance_to(enemy.global_position)
 		if dist >= fallback_dist:

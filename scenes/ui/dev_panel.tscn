@@ -72,6 +72,12 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 16
 text = "Stone Cube"
 
+[node name="FireMageBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Fire Mage"
+
 [node name="Burst10MonkeyBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
 custom_minimum_size = Vector2(0, 28)
 theme_override_colors/font_color = Color(1, 0.7, 0.3, 1)
@@ -321,6 +327,28 @@ custom_minimum_size = Vector2(0, 28)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 16
 text = "Abrir Shop"
+
+[node name="WavesSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
+theme_override_constants/separation = 4
+
+[node name="WavesHeader" type="Button" parent="Content/Scroll/VBox/WavesSection"]
+custom_minimum_size = Vector2(0, 30)
+theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "[+] Simular Wave"
+alignment = 0
+
+[node name="WavesContent" type="VBoxContainer" parent="Content/Scroll/VBox/WavesSection"]
+visible = false
+theme_override_constants/separation = 4
+
+[node name="Wave7Btn" type="Button" parent="Content/Scroll/VBox/WavesSection/WavesContent"]
+custom_minimum_size = Vector2(0, 28)
+theme_override_colors/font_color = Color(1, 0.55, 0.45, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "Wave 7 - Boss Mage Monkey"
 
 [node name="Sep" type="HSeparator" parent="Content/Scroll/VBox"]
 

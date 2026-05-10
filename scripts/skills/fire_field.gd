@@ -6,6 +6,10 @@ extends Area2D
 @export var damage_per_second: float = 12.0
 @export var duration: float = 6.0
 @export var fade_duration: float = 0.6
+# Quando true, o campo veio de um inimigo (ex: fire mage do boss). Em vez de
+# bater em "enemy", machuca player + tank_ally + structure (e ignora outros
+# enemies, evitando friendly fire).
+@export var is_enemy_source: bool = false
 const TICK_INTERVAL: float = 0.5
 
 var _enemies_inside: Array[Node] = []
@@ -53,7 +57,14 @@ func _apply_tick() -> void:
 
 
 func _on_body_entered(body: Node) -> void:
-	if body.is_in_group("enemy") and not body in _enemies_inside:
+	# Filter por origem: skill do player → bate em "enemy"; skill do boss/inimigo
+	# → bate em player/ally/structure.
+	var hits: bool
+	if is_enemy_source:
+		hits = body.is_in_group("player") or body.is_in_group("tank_ally") or body.is_in_group("structure")
+	else:
+		hits = body.is_in_group("enemy")
+	if hits and not body in _enemies_inside:
 		_enemies_inside.append(body)
 
 

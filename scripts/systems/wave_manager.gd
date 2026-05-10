@@ -10,6 +10,8 @@ extends Node2D
 @export var mage_scene: PackedScene
 @export var summoner_mage_scene: PackedScene
 @export var stone_cube_scene: PackedScene
+@export var fire_mage_scene: PackedScene
+@export var mage_monkey_scene: PackedScene
 @export var spawn_delay: float = 0.5
 @export var inter_wave_delay: float = 2.0
 @export var pre_cleared_hold: float = 2.0  # tempo segurando 100% antes da tela "Wave Limpa"
@@ -50,6 +52,12 @@ var total_to_spawn_this_wave: int = 0
 var last_progress_killed: int = -1  # cache pra evitar spam de update na HUD
 var _coins_dropped_this_wave: int = 0  # tracker pro pity system de gold drops da wave 1
 var _player_gold_at_wave_start: int = 0  # snapshot pro pity computar gold real ganho na wave
+# Wave 7 (boss) overrides: spawn fixo do player numa extremidade, magos nas
+# outras 3, boss no centro. Setado em _start_next_wave quando wave_number == 7.
+var _wave7_player_spawn: Vector2 = Vector2.ZERO
+var _wave7_enemy_spawns: Array[Vector2] = []
+var _wave7_boss_center: Vector2 = Vector2.ZERO
+var _wave7_enemy_spawn_idx: int = 0
 
 # Registro de tipos: associa uma chave de string a (PackedScene, group_name).
 # Pra adicionar um novo tipo de inimigo: registra aqui + adiciona group no script dele.
@@ -71,6 +79,8 @@ func _ready() -> void:
 		"mage": {"scene": mage_scene, "group": "mage"},
 		"summoner_mage": {"scene": summoner_mage_scene, "group": "summoner_mage"},
 		"stone_cube": {"scene": stone_cube_scene, "group": "stone_cube"},
+		"fire_mage": {"scene": fire_mage_scene, "group": "fire_mage"},
+		"mage_monkey": {"scene": mage_monkey_scene, "group": "mage_monkey"},
 	}
 	var player := get_tree().get_first_node_in_group("player")
 	if player != null and player.has_signal("died"):
@@ -123,6 +133,22 @@ func spawn_enemy_at(type_key: String, pos: Vector2) -> Node:
 	world.add_child(enemy)
 	enemy.global_position = pos
 	return enemy
+
+
+# Dev helper: salta direto pra wave N — limpa enemies vivos, reseta tracking
+# e dispara _start_next_wave com wave_number = N - 1 (o increment interno
+# leva pra N). Funciona mesmo no dev mode (que normalmente fica `stopped`).
+func dev_start_wave(target_wave: int) -> void:
+	if target_wave < 1:
+		return
+	# Limpa horda atual sem trigger de drops/morte real (usa free direto).
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if is_instance_valid(e):
+			e.queue_free()
+	wave_number = target_wave - 1
+	wave_active = false
+	stopped = false
+	_start_next_wave.call_deferred()
 
 
 # Dev helper: spawna `count` inimigos distribuídos entre `num_points` spawn
@@ -187,6 +213,11 @@ func _start_next_wave() -> void:
 	# Reseta contador de moedas dropadas — pity system da wave 1 garante mínimo no _finish_wave.
 	_coins_dropped_this_wave = 0
 
+	# Wave 7 (boss): pré-calcula posições — 1 spawn point pro player, os 3
+	# restantes pros magos, e centroide dos 4 pro boss. Faz isso ANTES do
+	# reset_position pra ele saber pra onde mandar o player.
+	if wave_number == 7:
+		_prepare_wave7_spawn_assignments()
 	# Reseta HP e posição do player antes da nova wave (camera segue → player no centro).
 	var player := get_tree().get_first_node_in_group("player")
 	if player != null:
@@ -194,6 +225,9 @@ func _start_next_wave() -> void:
 			player.reset_hp()
 		if player.has_method("reset_position"):
 			player.reset_position()
+		# Wave 7: override da posição padrão pra extremidade aleatória do mapa.
+		if wave_number == 7 and player is Node2D:
+			(player as Node2D).global_position = _wave7_player_spawn
 		if player.has_method("reset_perf_counter"):
 			player.reset_perf_counter()
 		if player.has_method("reset_woodwardens_hp"):
@@ -253,6 +287,17 @@ func _build_wave_config(num: int) -> Dictionary:
 		return {
 			"monkey": {"alive_target": 4, "total": 11},
 			"mage": {"alive_target": 3, "total": 6},
+		}
+	# Wave 7: BOSS — Mage Monkey. Spawna 1 boss + horda inicial densa de magos
+	# pra dar shield robusto ao boss desde o começo. Quando todos morrem, boss
+	# fica vulnerável 12s e invoca nova horda própria. Wave acaba quando o
+	# boss morre (que mata os minions junto).
+	if num == 7:
+		return {
+			"mage_monkey": {"alive_target": 1, "total": 1},
+			"mage": {"alive_target": 5, "total": 8},
+			"summoner_mage": {"alive_target": 2, "total": 3},
+			"fire_mage": {"alive_target": 2, "total": 3},
 		}
 	# Waves 3+: escala automática + um pouco de aleatoriedade.
 	# Quanto maior o wave_number, mais inimigos vivos e mais total.
@@ -358,10 +403,22 @@ func _spawn_one(type_key: String) -> void:
 	var world := get_tree().get_first_node_in_group("world")
 	if world == null:
 		return
-	var pos: Vector2 = _pick_random_far_spawn_point()
+	var pos: Vector2 = _pick_spawn_for(type_key)
 	var enemy: Node2D = info["scene"].instantiate()
-	# Aplica scaling de wave ANTES de add_child pra _ready do inimigo já usar max_hp escalado.
-	_apply_wave_scaling(enemy)
+	# Wave 7 (boss): minions iniciais (todas variações de mago) NÃO recebem o
+	# scaling de wave — ficam com stats base do .tscn (HP equivalente ao
+	# mago da wave 1). Servem de shield "trash mob" pro boss; só os minions
+	# invocados PELO BOSS depois é que escalam (em mage_monkey._summon_horde).
+	# Drops também zerados — único drop da wave vem do próprio boss.
+	if wave_number == 7 and type_key != "mage_monkey":
+		if "gold_drop_chance" in enemy:
+			enemy.gold_drop_chance = 0.0
+		if "heart_scene" in enemy:
+			enemy.heart_scene = null
+		# Pula _apply_wave_scaling pra manter stats base (max_hp/damage_mult).
+	else:
+		# Aplica scaling de wave ANTES de add_child pra _ready do inimigo já usar max_hp escalado.
+		_apply_wave_scaling(enemy)
 	world.add_child(enemy)
 	enemy.global_position = pos
 	spawned_this_wave[type_key] = spawned_this_wave.get(type_key, 0) + 1
@@ -399,6 +456,30 @@ func _apply_wave_scaling(enemy: Node) -> void:
 		enemy.attack_cooldown = enemy.attack_cooldown / speed_mult
 
 
+func get_farthest_spawn_points_from_player(count: int) -> Array[Vector2]:
+	# Helper público: retorna os N spawn points mais longes do player no
+	# momento atual. Usado pelo boss pra escolher onde invocar minions.
+	var result: Array[Vector2] = []
+	if spawn_points.is_empty():
+		return result
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player == null or not is_instance_valid(player):
+		# Sem player vivo — pega os primeiros N pontos disponíveis.
+		for i in mini(count, spawn_points.size()):
+			result.append(spawn_points[i].global_position)
+		return result
+	var sorted: Array[Marker2D] = spawn_points.duplicate()
+	sorted.sort_custom(func(a: Marker2D, b: Marker2D) -> bool:
+		var da: float = a.global_position.distance_squared_to(player.global_position)
+		var db: float = b.global_position.distance_squared_to(player.global_position)
+		return da > db
+	)
+	var take: int = mini(count, sorted.size())
+	for i in take:
+		result.append(sorted[i].global_position)
+	return result
+
+
 func _pick_random_far_spawn_point() -> Vector2:
 	# Pega os N spawn points mais longe do player, escolhe um deles aleatoriamente.
 	if spawn_points.is_empty():
@@ -415,6 +496,55 @@ func _pick_random_far_spawn_point() -> Vector2:
 	)
 	var top_n: int = mini(farthest_count, sorted.size())
 	return sorted[randi() % top_n].global_position
+
+
+func _pick_spawn_for(type_key: String) -> Vector2:
+	# Wave 7 (boss): boss vai sempre pro centro; magos rodam pelos 3 spawn
+	# points reservados (não o do player). Outras waves: comportamento padrão.
+	if wave_number == 7:
+		if type_key == "mage_monkey":
+			return _wave7_boss_center
+		if not _wave7_enemy_spawns.is_empty():
+			var pos: Vector2 = _wave7_enemy_spawns[_wave7_enemy_spawn_idx % _wave7_enemy_spawns.size()]
+			_wave7_enemy_spawn_idx += 1
+			return pos
+	return _pick_random_far_spawn_point()
+
+
+func _prepare_wave7_spawn_assignments() -> void:
+	# Sorteia 1 spawn point pro player. Magos vão SÓ pros 2 mais longes do
+	# ponto do player (não os 3 restantes — o spawn intermediário ficaria
+	# perto demais do player). Centroide dos 4 = posição do boss no centro.
+	if spawn_points.is_empty():
+		_wave7_player_spawn = Vector2.ZERO
+		_wave7_enemy_spawns = []
+		_wave7_boss_center = Vector2.ZERO
+		_wave7_enemy_spawn_idx = 0
+		return
+	var pool: Array[Marker2D] = spawn_points.duplicate()
+	pool.shuffle()
+	_wave7_player_spawn = pool[0].global_position
+	# Ordena os spawn points restantes pela distância (do mais longe pro mais perto)
+	# e pega os 2 mais longes pra spawn dos magos.
+	var rest: Array[Marker2D] = []
+	for i in range(1, pool.size()):
+		rest.append(pool[i])
+	rest.sort_custom(func(a: Marker2D, b: Marker2D) -> bool:
+		var da: float = a.global_position.distance_squared_to(_wave7_player_spawn)
+		var db: float = b.global_position.distance_squared_to(_wave7_player_spawn)
+		return da > db
+	)
+	_wave7_enemy_spawns = []
+	var keep: int = mini(2, rest.size())
+	for i in keep:
+		_wave7_enemy_spawns.append(rest[i].global_position)
+	_wave7_enemy_spawn_idx = 0
+	# Centroide considera TODOS os spawn points (inclui o do player) pra ficar
+	# bem no meio geométrico do mapa.
+	var sum: Vector2 = Vector2.ZERO
+	for p in spawn_points:
+		sum += p.global_position
+	_wave7_boss_center = sum / float(spawn_points.size())
 
 
 func _finish_wave() -> void:

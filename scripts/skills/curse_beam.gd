@@ -22,7 +22,7 @@ extends Node2D
 @export var curse_dps: float = 8.0
 @export var curse_duration: float = 4.0
 @export var curse_slow_factor: float = 0.45
-@export var hit_radius: float = 40.0
+@export var hit_radius: float = 33.0
 # Offset Y aproximado do "centro do corpo" dos enemies em relação aos pés
 # (que é onde global_position está). Usado pro hit check ser feito do corpo,
 # não dos pés — assim o player pode mirar no sprite e o beam acerta.
@@ -33,6 +33,14 @@ extends Node2D
 @export var fade_duration: float = 1.0  # fade visual + audio nos últimos N segundos
 # Tween final pra glow underlay (em fração do warmup_duration × silhouette).
 @export var orb_final_scale: Vector2 = Vector2(2.0, 2.0)
+# Quando true, o beam vem de um inimigo (ex: boss). Em vez de bater em
+# enemies, fere o player + tank_ally + structure. Não aplica curse (curse é
+# mecânica do player, não faria sentido enemy converter o player em ally).
+@export var is_enemy_source: bool = false
+# Offset do "centro do corpo" do player — usado pra hit check fazer mira no
+# torso e não nos pés. Diferente de enemy_body_offset porque o player tem
+# tamanho próprio.
+@export var player_body_offset: Vector2 = Vector2(0, -12)
 
 const FRAME_SIZE: int = 32
 const TILE_FADE_IN: float = 0.18
@@ -111,15 +119,31 @@ func _process(delta: float) -> void:
 func _apply_tick() -> void:
 	var dir: Vector2 = _direction
 	var beam_len: float = _start.distance_to(_end)
-	for e in get_tree().get_nodes_in_group("enemy"):
+	# Lista de alvos: player + ally + structure quando vem de inimigo, senão
+	# todos os enemies (skill do player).
+	var targets: Array = []
+	var apply_curse_on_hit: bool = true
+	if is_enemy_source:
+		apply_curse_on_hit = false  # boss não aplica curse no player
+		var p := get_tree().get_first_node_in_group("player")
+		if p != null and is_instance_valid(p):
+			targets.append(p)
+		for t in get_tree().get_nodes_in_group("tank_ally"):
+			targets.append(t)
+		for s in get_tree().get_nodes_in_group("structure"):
+			targets.append(s)
+	else:
+		targets = get_tree().get_nodes_in_group("enemy")
+	for e in targets:
 		if not is_instance_valid(e) or not (e is Node2D):
 			continue
 		if not e.has_method("take_damage"):
 			continue
-		# Hit check no centro do corpo (não nos pés) — player aponta o mouse
-		# no sprite, então o beam tem que considerar o corpo também.
-		var enemy_pos: Vector2 = (e as Node2D).global_position + enemy_body_offset
-		var rel: Vector2 = enemy_pos - _start
+		# Hit check no centro do corpo (não nos pés). Player tem offset diferente
+		# de enemies por ter tamanho/altura próprios.
+		var body_offset: Vector2 = player_body_offset if (e as Node).is_in_group("player") else enemy_body_offset
+		var target_pos: Vector2 = (e as Node2D).global_position + body_offset
+		var rel: Vector2 = target_pos - _start
 		var along: float = rel.dot(dir)
 		if along < 0.0 or along > beam_len:
 			continue
@@ -127,8 +151,9 @@ func _apply_tick() -> void:
 		if perp > hit_radius:
 			continue
 		# Curse ANTES do take_damage — pra try_convert_on_death enxergar o debuff
-		# se o tick matar o enemy.
-		_apply_curse_to(e)
+		# se o tick matar o enemy. Pulado quando boss é o source.
+		if apply_curse_on_hit:
+			_apply_curse_to(e)
 		e.take_damage(damage_per_tick)
 
 
