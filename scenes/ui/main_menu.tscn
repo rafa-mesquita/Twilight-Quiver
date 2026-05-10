@@ -78,7 +78,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 72
-text = "TWILIGHT QUIVER"
+text = "MENU_TITLE"
 horizontal_alignment = 1
 
 [node name="Subtitle" type="Label" parent="Center/VBox" unique_id=1896481514]
@@ -86,7 +86,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 0.45, 0.7, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 24
-text = "top-down archer roguelike"
+text = "MENU_SUBTITLE"
 horizontal_alignment = 1
 
 [node name="Spacer" type="Control" parent="Center/VBox" unique_id=2139884238]
@@ -106,7 +106,7 @@ theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/pressed = SubResource("SBF_btn_pressed")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/focus = SubResource("SBF_btn_focus")
-text = "Start Game"
+text = "MENU_START"
 
 [node name="SkinsButton" type="Button" parent="Center/VBox"]
 custom_minimum_size = Vector2(440, 72)
@@ -121,7 +121,7 @@ theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/pressed = SubResource("SBF_btn_pressed")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/focus = SubResource("SBF_btn_focus")
-text = "Player"
+text = "MENU_PLAYER"
 
 [node name="LeaderboardButton" type="Button" parent="Center/VBox"]
 custom_minimum_size = Vector2(440, 72)
@@ -136,7 +136,7 @@ theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/pressed = SubResource("SBF_btn_pressed")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/focus = SubResource("SBF_btn_focus")
-text = "Leaderboard"
+text = "MENU_LEADERBOARD"
 
 [node name="SettingsButton" type="Button" parent="Center/VBox"]
 custom_minimum_size = Vector2(440, 72)
@@ -151,7 +151,7 @@ theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/pressed = SubResource("SBF_btn_pressed")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/focus = SubResource("SBF_btn_focus")
-text = "Configuracoes"
+text = "MENU_SETTINGS"
 
 [node name="DevButton" type="Button" parent="Center/VBox" unique_id=1643496955]
 custom_minimum_size = Vector2(440, 72)
@@ -166,7 +166,7 @@ theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/pressed = SubResource("SBF_btn_pressed")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/focus = SubResource("SBF_btn_focus")
-text = "Dev Mode"
+text = "MENU_DEV_MODE"
 
 [node name="QuitButton" type="Button" parent="Center/VBox" unique_id=548264536]
 custom_minimum_size = Vector2(440, 72)
@@ -181,7 +181,7 @@ theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/pressed = SubResource("SBF_btn_pressed")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/focus = SubResource("SBF_btn_focus")
-text = "Quit"
+text = "MENU_QUIT"
 
 [node name="Cursor" parent="." unique_id=384044535 instance=ExtResource("3_cursor")]
 
@@ -230,7 +230,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 40
-text = "BEM-VINDO"
+text = "NICKNAME_TITLE"
 horizontal_alignment = 1
 
 [node name="Subtitle" type="Label" parent="NicknamePrompt/Center/Panel/Margin/VBox"]
@@ -238,7 +238,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 24
-text = "Qual o seu nick?"
+text = "NICKNAME_SUBTITLE"
 horizontal_alignment = 1
 
 [node name="NicknameInput" type="LineEdit" parent="NicknamePrompt/Center/Panel/Margin/VBox"]
@@ -246,7 +246,7 @@ custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
-placeholder_text = "Digite seu nick"
+placeholder_text = "NICKNAME_PLACEHOLDER"
 max_length = 24
 alignment = 1
 
@@ -263,6 +263,6 @@ theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/pressed = SubResource("SBF_btn_pressed")
 theme_override_styles/focus = SubResource("SBF_btn_focus")
-text = "Continuar"
+text = "NICKNAME_OK"
 
 [node name="VersionLabel" parent="." instance=ExtResource("4_version")]

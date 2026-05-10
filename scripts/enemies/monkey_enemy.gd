@@ -275,6 +275,7 @@ func _play_damage_sound(duration: float = 0.7) -> void:
 	if damage_sound == null:
 		return
 	var player := AudioStreamPlayer2D.new()
+	player.bus = &"SFX"
 	player.stream = damage_sound
 	player.volume_db = damage_sound_volume_db
 	player.pitch_scale = 0.8

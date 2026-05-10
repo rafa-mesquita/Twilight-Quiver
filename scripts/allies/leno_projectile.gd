@@ -88,6 +88,7 @@ func _play_hit_sound() -> void:
 	if hit_sound == null:
 		return
 	var p := AudioStreamPlayer2D.new()
+	p.bus = &"SFX"
 	# MP3 importado pode vir com loop=true por default — força stop manual via
 	# Timer pra garantir que não fica em loop infinito.
 	p.stream = hit_sound

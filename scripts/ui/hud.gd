@@ -349,7 +349,7 @@ func _on_dash_cooldown_changed(remaining: float, total: float) -> void:
 	var ratio: float = 0.0 if total <= 0.0 else clampf(1.0 - remaining / total, 0.0, 1.0)
 	dash_cd_fill.size.x = BAR_FILL_WIDTH * ratio
 	if remaining <= 0.001:
-		dash_cd_label.text = "Pronto"
+		dash_cd_label.text = "HUD_DASH_READY"
 	else:
 		dash_cd_label.text = "%.1fs" % remaining
 
@@ -409,7 +409,7 @@ func _process(delta: float) -> void:
 
 
 func play_raid_intro(wave_number: int) -> void:
-	intro_label.text = "Raid %d" % wave_number
+	intro_label.text = tr("HUD_RAID_INTRO") % wave_number
 	intro_overlay.modulate.a = 1.0
 	intro_overlay.visible = true
 	# Hold + fade out (revela o mundo).
@@ -421,7 +421,7 @@ func play_raid_intro(wave_number: int) -> void:
 
 
 func play_wave_cleared(wave_number: int) -> void:
-	cleared_label.text = "Wave %d Limpa" % wave_number
+	cleared_label.text = tr("HUD_WAVE_CLEARED") % wave_number
 	cleared_overlay.modulate.a = 0.0
 	cleared_overlay.visible = true
 	hud_frame.visible = false
@@ -530,11 +530,11 @@ func _show_restart_button() -> void:
 
 	# Pre-arma os elementos invisíveis — todos com modulate.a=0, vão fadear depois.
 	var score: int = _SCORE_CALC.calc(_collect_run_stats(wave_num))
-	score_label.text = "SCORE %d" % score
+	score_label.text = tr("HUD_DEATH_SCORE") % score
 	score_label.modulate.a = 0.0
 	score_label.visible = true
 
-	survival_label.text = "Sobreviveu %d waves\n%s" % [wave_num, _build_death_stats_block()]
+	survival_label.text = "%s\n%s" % [tr("HUD_DEATH_SURVIVAL") % wave_num, _build_death_stats_block()]
 	survival_label.modulate.a = 0.0
 	survival_label.visible = true
 
@@ -598,7 +598,7 @@ func _show_unlock_notification(skin_name: String) -> void:
 			preview_skin.set_part(slot, part)
 	unlock_name_label.text = skin_name
 	# Label da quest (ex: "Alcance a raid 10") — extraída do SKIN_QUESTS pra
-	# o jogador entender o que fez pra liberar.
+	# o jogador entender o que fez pra liberar. quest.label é translation key.
 	var quest: Dictionary = SkinLoadout.get_quest_for(skin_name)
 	unlock_quest_label.text = String(quest.get("label", ""))
 	unlock_panel.modulate.a = 0.0
@@ -624,7 +624,7 @@ func _build_death_stats_block() -> String:
 	var allies: int = int(p.get("stats_allies_made")) if "stats_allies_made" in p else 0
 	var dmg_dealt: int = int(round(float(p.get("stats_damage_dealt")))) if "stats_damage_dealt" in p else 0
 	var dmg_taken: int = int(round(float(p.get("stats_damage_taken")))) if "stats_damage_taken" in p else 0
-	return "Tempo: %s\nInimigos mortos: %d\nAliados feitos: %d\nDano causado: %d\nDano sofrido: %d" % [time_str, kills, allies, dmg_dealt, dmg_taken]
+	return tr("HUD_DEATH_STATS") % [time_str, kills, allies, dmg_dealt, dmg_taken]
 
 
 func _format_run_time(msec: int) -> String:
@@ -776,7 +776,7 @@ func _create_pause_menu() -> void:
 	title.set_anchors_preset(Control.PRESET_CENTER)
 	title.position = Vector2(-600, -260)
 	title.size = Vector2(1200, 140)
-	title.text = "PAUSADO"
+	title.text = "HUD_PAUSE_TITLE"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	if at01 != null:
 		title.add_theme_font_override("font", at01)
@@ -787,7 +787,7 @@ func _create_pause_menu() -> void:
 	continue_btn.set_anchors_preset(Control.PRESET_CENTER)
 	continue_btn.position = Vector2(-220, -80)
 	continue_btn.size = Vector2(440, 72)
-	continue_btn.text = "Continuar"
+	continue_btn.text = "HUD_PAUSE_CONTINUE"
 	if at01 != null:
 		continue_btn.add_theme_font_override("font", at01)
 	continue_btn.add_theme_font_size_override("font_size", 48)
@@ -797,7 +797,7 @@ func _create_pause_menu() -> void:
 	settings_btn.set_anchors_preset(Control.PRESET_CENTER)
 	settings_btn.position = Vector2(-220, 10)
 	settings_btn.size = Vector2(440, 64)
-	settings_btn.text = "Configuracoes"
+	settings_btn.text = "HUD_PAUSE_SETTINGS"
 	if at01 != null:
 		settings_btn.add_theme_font_override("font", at01)
 	settings_btn.add_theme_font_size_override("font_size", 36)
@@ -807,7 +807,7 @@ func _create_pause_menu() -> void:
 	menu_btn.set_anchors_preset(Control.PRESET_CENTER)
 	menu_btn.position = Vector2(-220, 100)
 	menu_btn.size = Vector2(440, 64)
-	menu_btn.text = "Voltar ao Menu"
+	menu_btn.text = "HUD_PAUSE_MENU"
 	if at01 != null:
 		menu_btn.add_theme_font_override("font", at01)
 	menu_btn.add_theme_font_size_override("font_size", 36)

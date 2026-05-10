@@ -8,7 +8,7 @@ const _LEADERBOARD_CLIENT := preload("res://scripts/systems/leaderboard_client.g
 const _MAIN_MENU_PATH: String = "res://scenes/ui/main_menu.tscn"
 const _MAX_ROWS: int = 20
 const _COLUMN_COUNT: int = 8
-const _ALL_VERSIONS_LABEL: String = "Todas"
+const _ALL_VERSIONS_LABEL: String = "LEADERBOARD_FILTER_ALL"
 
 @onready var grid: GridContainer = $Center/Panel/Margin/VBox/Scroll/Grid
 @onready var status_label: Label = $Center/Panel/Margin/VBox/StatusLabel
@@ -25,11 +25,11 @@ func _ready() -> void:
 	back_button.pressed.connect(_on_back_pressed)
 	version_filter.item_selected.connect(_on_version_filter_changed)
 	# Estado inicial do dropdown — "Todas" enquanto a lista de versões carrega.
-	version_filter.add_item(_ALL_VERSIONS_LABEL)
+	version_filter.add_item(tr(_ALL_VERSIONS_LABEL))
 	version_filter.select(0)
 
 	_render_header()
-	status_label.text = "Carregando..."
+	status_label.text = tr("COMMON_LOADING")
 	_client = _LEADERBOARD_CLIENT.new()
 	add_child(_client)
 	_client.fetch_succeeded.connect(_on_fetch_succeeded)
@@ -43,20 +43,20 @@ func _ready() -> void:
 func _render_header() -> void:
 	for child in grid.get_children():
 		child.queue_free()
-	_add_cell("#", true)
-	_add_cell("Nick", true)
-	_add_cell("Score", true)
-	_add_cell("Wave", true)
-	_add_cell("Tempo", true)
-	_add_cell("Kills", true)
-	_add_cell("Dano", true)
-	_add_cell("Versao", true)
+	_add_cell(tr("LEADERBOARD_COL_RANK"), true)
+	_add_cell(tr("LEADERBOARD_COL_NICK"), true)
+	_add_cell(tr("LEADERBOARD_COL_SCORE"), true)
+	_add_cell(tr("LEADERBOARD_COL_WAVE"), true)
+	_add_cell(tr("LEADERBOARD_COL_TIME"), true)
+	_add_cell(tr("LEADERBOARD_COL_KILLS"), true)
+	_add_cell(tr("LEADERBOARD_COL_DAMAGE"), true)
+	_add_cell(tr("LEADERBOARD_COL_VERSION"), true)
 
 
 func _on_fetch_succeeded(rows: Array) -> void:
 	_render_header()
 	if rows.is_empty():
-		status_label.text = "Nenhum score nessa versao."
+		status_label.text = tr("LEADERBOARD_NO_SCORES")
 		return
 	status_label.text = ""
 	for i in range(rows.size()):
@@ -74,7 +74,7 @@ func _on_fetch_succeeded(rows: Array) -> void:
 
 
 func _on_fetch_failed(message: String) -> void:
-	status_label.text = "Erro: %s" % message
+	status_label.text = tr("LEADERBOARD_ERROR") % message
 
 
 func _on_versions_fetched(versions: Array) -> void:
@@ -83,7 +83,7 @@ func _on_versions_fetched(versions: Array) -> void:
 	var current: String = _filter_versions[max(0, version_filter.get_selected())]
 	version_filter.clear_items()
 	_filter_versions = [""]
-	version_filter.add_item(_ALL_VERSIONS_LABEL)
+	version_filter.add_item(tr(_ALL_VERSIONS_LABEL))
 	for v in versions:
 		var s: String = str(v)
 		if s.is_empty():
@@ -102,7 +102,7 @@ func _on_versions_fetch_failed(_message: String) -> void:
 
 func _on_version_filter_changed(idx: int) -> void:
 	var filter: String = _filter_versions[idx] if idx < _filter_versions.size() else ""
-	status_label.text = "Carregando..."
+	status_label.text = tr("COMMON_LOADING")
 	_client.fetch_top(_MAX_ROWS, filter)
 
 

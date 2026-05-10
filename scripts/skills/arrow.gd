@@ -761,6 +761,7 @@ func _play_chain_sound(pos: Vector2) -> void:
 		return
 	_last_chain_sound_msec = now
 	var p := AudioStreamPlayer2D.new()
+	p.bus = &"SFX"
 	p.stream = CHAIN_SOUND
 	p.volume_db = CHAIN_SOUND_VOLUME_DB
 	_get_world().add_child(p)
@@ -777,6 +778,7 @@ func _play_oneshot(stream: AudioStream, pos: Vector2, vol_db: float, max_duratio
 	if stream == null:
 		return
 	var player := AudioStreamPlayer2D.new()
+	player.bus = &"SFX"
 	player.stream = stream
 	player.volume_db = vol_db
 	_get_world().add_child(player)

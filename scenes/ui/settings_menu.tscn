@@ -64,7 +64,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="Panel" type="Panel" parent="Center"]
-custom_minimum_size = Vector2(720, 560)
+custom_minimum_size = Vector2(760, 980)
 layout_mode = 2
 
 [node name="Margin" type="MarginContainer" parent="Center/Panel"]
@@ -73,63 +73,269 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 theme_override_constants/margin_left = 32
-theme_override_constants/margin_top = 32
+theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 32
-theme_override_constants/margin_bottom = 32
+theme_override_constants/margin_bottom = 24
 
-[node name="VBox" type="VBoxContainer" parent="Center/Panel/Margin"]
+[node name="Scroll" type="ScrollContainer" parent="Center/Panel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 24
+horizontal_scroll_mode = 0
 
-[node name="Title" type="Label" parent="Center/Panel/Margin/VBox"]
+[node name="VBox" type="VBoxContainer" parent="Center/Panel/Margin/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="Center/Panel/Margin/Scroll/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 56
-text = "CONFIGURACOES"
+text = "SETTINGS_TITLE"
 horizontal_alignment = 1
 
-[node name="DisplayModeRow" type="HBoxContainer" parent="Center/Panel/Margin/VBox"]
+[node name="DisplayHeader" type="Label" parent="Center/Panel/Margin/Scroll/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+text = "SETTINGS_HEADER_DISPLAY"
+
+[node name="DisplayModeRow" type="HBoxContainer" parent="Center/Panel/Margin/Scroll/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 24
 
-[node name="Label" type="Label" parent="Center/Panel/Margin/VBox/DisplayModeRow"]
+[node name="Label" type="Label" parent="Center/Panel/Margin/Scroll/VBox/DisplayModeRow"]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
-text = "Modo de janela"
+text = "SETTINGS_DISPLAY_MODE"
 vertical_alignment = 1
 
-[node name="DisplayModeDropdown" parent="Center/Panel/Margin/VBox/DisplayModeRow" instance=ExtResource("5_select")]
+[node name="DisplayModeDropdown" parent="Center/Panel/Margin/Scroll/VBox/DisplayModeRow" instance=ExtResource("5_select")]
 custom_minimum_size = Vector2(340, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ResolutionRow" type="HBoxContainer" parent="Center/Panel/Margin/VBox"]
+[node name="ResolutionRow" type="HBoxContainer" parent="Center/Panel/Margin/Scroll/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 24
 
-[node name="Label" type="Label" parent="Center/Panel/Margin/VBox/ResolutionRow"]
+[node name="Label" type="Label" parent="Center/Panel/Margin/Scroll/VBox/ResolutionRow"]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
-text = "Resolucao"
+text = "SETTINGS_RESOLUTION"
 vertical_alignment = 1
 
-[node name="ResolutionDropdown" parent="Center/Panel/Margin/VBox/ResolutionRow" instance=ExtResource("5_select")]
+[node name="ResolutionDropdown" parent="Center/Panel/Margin/Scroll/VBox/ResolutionRow" instance=ExtResource("5_select")]
 custom_minimum_size = Vector2(340, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Spacer" type="Control" parent="Center/Panel/Margin/VBox"]
-custom_minimum_size = Vector2(0, 24)
+[node name="AudioHeader" type="Label" parent="Center/Panel/Margin/Scroll/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+text = "SETTINGS_HEADER_AUDIO"
+
+[node name="MasterRow" type="HBoxContainer" parent="Center/Panel/Margin/Scroll/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Label" type="Label" parent="Center/Panel/Margin/Scroll/VBox/MasterRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "SETTINGS_AUDIO_MASTER"
+vertical_alignment = 1
+
+[node name="MasterSlider" type="HSlider" parent="Center/Panel/Margin/Scroll/VBox/MasterRow"]
+custom_minimum_size = Vector2(280, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 5
+max_value = 100.0
+step = 1.0
+value = 80.0
+
+[node name="MasterValue" type="Label" parent="Center/Panel/Margin/Scroll/VBox/MasterRow"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+text = "80"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="MusicRow" type="HBoxContainer" parent="Center/Panel/Margin/Scroll/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Label" type="Label" parent="Center/Panel/Margin/Scroll/VBox/MusicRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "SETTINGS_AUDIO_MUSIC"
+vertical_alignment = 1
+
+[node name="MusicSlider" type="HSlider" parent="Center/Panel/Margin/Scroll/VBox/MusicRow"]
+custom_minimum_size = Vector2(280, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 5
+max_value = 100.0
+step = 1.0
+value = 60.0
+
+[node name="MusicValue" type="Label" parent="Center/Panel/Margin/Scroll/VBox/MusicRow"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+text = "60"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="SfxRow" type="HBoxContainer" parent="Center/Panel/Margin/Scroll/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Label" type="Label" parent="Center/Panel/Margin/Scroll/VBox/SfxRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "SETTINGS_AUDIO_SFX"
+vertical_alignment = 1
+
+[node name="SfxSlider" type="HSlider" parent="Center/Panel/Margin/Scroll/VBox/SfxRow"]
+custom_minimum_size = Vector2(280, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 5
+max_value = 100.0
+step = 1.0
+value = 80.0
+
+[node name="SfxValue" type="Label" parent="Center/Panel/Margin/Scroll/VBox/SfxRow"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+text = "80"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="VideoHeader" type="Label" parent="Center/Panel/Margin/Scroll/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+text = "SETTINGS_HEADER_VIDEO"
+
+[node name="VsyncRow" type="HBoxContainer" parent="Center/Panel/Margin/Scroll/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Label" type="Label" parent="Center/Panel/Margin/Scroll/VBox/VsyncRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "SETTINGS_VSYNC"
+vertical_alignment = 1
+
+[node name="VsyncCheck" type="CheckBox" parent="Center/Panel/Margin/Scroll/VBox/VsyncRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+
+[node name="FpsCapRow" type="HBoxContainer" parent="Center/Panel/Margin/Scroll/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Label" type="Label" parent="Center/Panel/Margin/Scroll/VBox/FpsCapRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "SETTINGS_FPS_CAP"
+vertical_alignment = 1
+
+[node name="FpsCapDropdown" parent="Center/Panel/Margin/Scroll/VBox/FpsCapRow" instance=ExtResource("5_select")]
+custom_minimum_size = Vector2(340, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ShowFpsRow" type="HBoxContainer" parent="Center/Panel/Margin/Scroll/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Label" type="Label" parent="Center/Panel/Margin/Scroll/VBox/ShowFpsRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "SETTINGS_SHOW_FPS"
+vertical_alignment = 1
+
+[node name="ShowFpsCheck" type="CheckBox" parent="Center/Panel/Margin/Scroll/VBox/ShowFpsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+
+[node name="LocaleHeader" type="Label" parent="Center/Panel/Margin/Scroll/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+text = "SETTINGS_HEADER_LOCALE"
+
+[node name="LocaleRow" type="HBoxContainer" parent="Center/Panel/Margin/Scroll/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Label" type="Label" parent="Center/Panel/Margin/Scroll/VBox/LocaleRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "SETTINGS_LOCALE"
+vertical_alignment = 1
+
+[node name="LocaleDropdown" parent="Center/Panel/Margin/Scroll/VBox/LocaleRow" instance=ExtResource("5_select")]
+custom_minimum_size = Vector2(340, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Spacer" type="Control" parent="Center/Panel/Margin/Scroll/VBox"]
+custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 
-[node name="ApplyButton" type="Button" parent="Center/Panel/Margin/VBox"]
+[node name="ApplyButton" type="Button" parent="Center/Panel/Margin/Scroll/VBox"]
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
@@ -142,9 +348,9 @@ theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/pressed = SubResource("SBF_btn_pressed")
 theme_override_styles/focus = SubResource("SBF_btn_focus")
-text = "Aplicar"
+text = "COMMON_APPLY"
 
-[node name="BackButton" type="Button" parent="Center/Panel/Margin/VBox"]
+[node name="BackButton" type="Button" parent="Center/Panel/Margin/Scroll/VBox"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
@@ -157,7 +363,7 @@ theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/pressed = SubResource("SBF_btn_pressed")
 theme_override_styles/focus = SubResource("SBF_btn_focus")
-text = "Voltar"
+text = "COMMON_BACK"
 
 [node name="VersionLabel" parent="." instance=ExtResource("3_version")]
 

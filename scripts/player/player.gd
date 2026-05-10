@@ -318,9 +318,6 @@ func _spawn_poison_number(amount: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		get_tree().quit()
-		return
 	if is_dead:
 		return
 	if event.is_action_pressed("attack") and can_attack:
@@ -927,6 +924,7 @@ func _play_dash_sound() -> void:
 	if DASH_SOUND == null:
 		return
 	var p := AudioStreamPlayer2D.new()
+	p.bus = &"SFX"
 	p.stream = DASH_SOUND
 	p.volume_db = -22.0
 	_get_world().add_child(p)
@@ -1482,6 +1480,7 @@ func _play_death_sound() -> void:
 		fade_down.tween_property(music, "volume_db", -80.0, 0.25)
 		fade_down.tween_callback(music.stop)
 	var p := AudioStreamPlayer.new()
+	p.bus = &"SFX"
 	p.stream = DEATH_SOUND
 	p.volume_db = -14.0
 	get_tree().current_scene.add_child(p)

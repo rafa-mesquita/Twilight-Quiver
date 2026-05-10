@@ -10,27 +10,28 @@ extends Control
 #   runs_completed (não mostra runs_no_damage por design).
 
 const _MAIN_MENU_PATH: String = "res://scenes/ui/main_menu.tscn"
-const _NONE_LABEL: String = "Nenhum"
+const _NONE_LABEL: String = "COMMON_NONE"
 const _IDLE_FRAME_REGION: Rect2 = Rect2(0, 0, 32, 32)
 
+# Translation keys por slot — tr() onde o label é exibido (tabs).
 const _SLOT_LABELS: Dictionary = {
-	&"body":   "Corpo",
-	&"legs":   "Pernas",
-	&"shirt":  "Camisa",
-	&"alfaja": "Alfaja",
-	&"cape":   "Capa",
-	&"quiver": "Aljava",
-	&"hair":   "Cabelo",
-	&"bow":    "Arco",
+	&"body":   "PLAYER_SLOT_BODY",
+	&"legs":   "PLAYER_SLOT_LEGS",
+	&"shirt":  "PLAYER_SLOT_SHIRT",
+	&"alfaja": "PLAYER_SLOT_ALFAJA",
+	&"cape":   "PLAYER_SLOT_CAPE",
+	&"quiver": "PLAYER_SLOT_QUIVER",
+	&"hair":   "PLAYER_SLOT_HAIR",
+	&"bow":    "PLAYER_SLOT_BOW",
 }
 
 # Stats exibidos no painel de progresso (ordem importa). Cada entry = chave do
-# stat + label visível. runs_no_damage NÃO entra aqui (decisão de design).
+# stat + translation key do label. runs_no_damage NÃO entra aqui (decisão de design).
 const _STAT_DISPLAY: Array = [
-	{"key": &"max_wave_reached",     "label": "Wave maxima"},
-	{"key": &"enemies_killed_total", "label": "Inimigos mortos"},
-	{"key": &"dmg_dealt_total",      "label": "Dano causado"},
-	{"key": &"runs_completed",       "label": "Runs"},
+	{"key": &"max_wave_reached",     "label": "PLAYER_STAT_MAX_WAVE"},
+	{"key": &"enemies_killed_total", "label": "PLAYER_STAT_KILLS"},
+	{"key": &"dmg_dealt_total",      "label": "PLAYER_STAT_DAMAGE"},
+	{"key": &"runs_completed",       "label": "PLAYER_STAT_RUNS"},
 ]
 
 const _CARD_SIZE: Vector2 = Vector2(160, 200)
@@ -99,7 +100,7 @@ func _build_stats_panel() -> void:
 		child.queue_free()
 	# Header
 	var header := Label.new()
-	header.text = "PROGRESSO"
+	header.text = "PLAYER_PROGRESS_HEADER"
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	if _font != null:
 		header.add_theme_font_override("font", _font)
@@ -108,7 +109,7 @@ func _build_stats_panel() -> void:
 	stats_vbox.add_child(header)
 	# Linhas
 	for entry in _STAT_DISPLAY:
-		var row: HBoxContainer = _make_stat_row(String(entry.label), int(SkinLoadout.get_stat(entry.key)))
+		var row: HBoxContainer = _make_stat_row(tr(String(entry.label)), int(SkinLoadout.get_stat(entry.key)))
 		stats_vbox.add_child(row)
 
 
@@ -171,7 +172,7 @@ func _build_tabs() -> void:
 	for slot in SkinLoadout.SLOTS:
 		if (_available.get(slot, []) as Array).is_empty():
 			continue
-		var label: String = String(_SLOT_LABELS.get(slot, String(slot)))
+		var label: String = tr(String(_SLOT_LABELS.get(slot, String(slot))))
 		var btn: Button = _make_tab_button(slot, label)
 		tabs_container.add_child(btn)
 		_tab_buttons[slot] = btn
@@ -268,7 +269,8 @@ func _make_card(slot: StringName, part: SkinPart) -> Control:
 		label.text = _NONE_LABEL
 	elif not is_unlocked:
 		var quest: Dictionary = SkinLoadout.get_quest_for(part.display_name)
-		label.text = String(quest.get("label", "Bloqueada"))
+		# quest.label é translation key — Label auto-traduz no assignment.
+		label.text = String(quest.get("label", "COMMON_LOCKED"))
 	else:
 		label.text = part.display_name
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -327,7 +329,7 @@ func _on_card_picked(slot: StringName, part: SkinPart) -> void:
 func _on_save() -> void:
 	SkinLoadout.save_loadout(_current)
 	status_label.add_theme_color_override("font_color", Color(0.55, 0.95, 0.55, 1))
-	status_label.text = "Salvo!"
+	status_label.text = "COMMON_SAVED"
 
 
 func _on_back() -> void:

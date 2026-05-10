@@ -333,3 +333,4 @@ autoplay = "default"
 [node name="DamageAudio" type="AudioStreamPlayer2D" parent="." unique_id=1826990995]
 stream = ExtResource("8_dmg_sfx")
 volume_db = -20.0
+bus = &"SFX"
