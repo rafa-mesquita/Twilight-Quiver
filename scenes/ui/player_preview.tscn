@@ -1,0 +1,54 @@
+[gd_scene format=3 uid="uid://drv5fwua2gxqc"]
+
+[ext_resource type="Script" path="res://scripts/systems/skin_manager.gd" id="1_skin"]
+
+[node name="PlayerPreview" type="Node2D"]
+
+[node name="BowBackSprite" type="AnimatedSprite2D" parent="."]
+visible = false
+offset = Vector2(0, -16)
+
+[node name="Body" type="AnimatedSprite2D" parent="."]
+offset = Vector2(0, -16)
+animation = &"idle"
+autoplay = "idle"
+
+[node name="DashEffectSprite" type="AnimatedSprite2D" parent="."]
+visible = false
+z_index = 11
+offset = Vector2(0, -16)
+
+[node name="Skin" type="Node2D" parent="."]
+script = ExtResource("1_skin")
+body_path = NodePath("../Body")
+bow_back_path = NodePath("../BowBackSprite")
+dash_effect_path = NodePath("../DashEffectSprite")
+
+[node name="LegsSprite" type="AnimatedSprite2D" parent="Skin"]
+visible = false
+offset = Vector2(0, -16)
+
+[node name="QuiverSprite" type="AnimatedSprite2D" parent="Skin"]
+visible = false
+offset = Vector2(0, -16)
+
+[node name="ShirtSprite" type="AnimatedSprite2D" parent="Skin"]
+visible = false
+offset = Vector2(0, -16)
+
+[node name="AlfajaSprite" type="AnimatedSprite2D" parent="Skin"]
+visible = false
+offset = Vector2(0, -16)
+
+[node name="CapeSprite" type="AnimatedSprite2D" parent="Skin"]
+visible = false
+offset = Vector2(0, -16)
+
+[node name="HairSprite" type="AnimatedSprite2D" parent="Skin"]
+visible = false
+offset = Vector2(0, -16)
+
+[node name="BowSprite" type="AnimatedSprite2D" parent="Skin"]
+visible = false
+z_index = 10
+offset = Vector2(0, -16)

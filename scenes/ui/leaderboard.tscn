@@ -1,9 +1,10 @@
-[gd_scene format=3 uid="uid://cv1kxs2wc1lbx"]
+[gd_scene load_steps=6 format=3 uid="uid://cv1kxs2wc1lbx"]
 
 [ext_resource type="Script" path="res://scripts/ui/leaderboard.gd" id="1_lb"]
 [ext_resource type="FontFile" path="res://font/ByteBounce.ttf" id="2_font"]
 [ext_resource type="PackedScene" uid="uid://b8tw1gv0vqlbl" path="res://scenes/ui/version_label.tscn" id="3_version"]
 [ext_resource type="PackedScene" path="res://scenes/player/cursor.tscn" id="4_cursor"]
+[ext_resource type="PackedScene" uid="uid://b3xwf12pa9hd5" path="res://scenes/ui/custom_select.tscn" id="5_select"]
 
 [node name="Leaderboard" type="Control"]
 texture_filter = 1
@@ -27,7 +28,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="Panel" type="Panel" parent="Center"]
-custom_minimum_size = Vector2(1100, 820)
+custom_minimum_size = Vector2(1240, 880)
 layout_mode = 2
 
 [node name="Margin" type="MarginContainer" parent="Center/Panel"]
@@ -52,8 +53,25 @@ theme_override_font_sizes/font_size = 64
 text = "LEADERBOARD"
 horizontal_alignment = 1
 
+[node name="FilterRow" type="HBoxContainer" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Label" type="Label" parent="Center/Panel/Margin/VBox/FilterRow"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "Versao"
+vertical_alignment = 1
+
+[node name="VersionFilter" parent="Center/Panel/Margin/VBox/FilterRow" instance=ExtResource("5_select")]
+custom_minimum_size = Vector2(360, 56)
+layout_mode = 2
+
 [node name="Scroll" type="ScrollContainer" parent="Center/Panel/Margin/VBox"]
-custom_minimum_size = Vector2(0, 600)
+custom_minimum_size = Vector2(0, 580)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -61,8 +79,8 @@ size_flags_vertical = 3
 [node name="Grid" type="GridContainer" parent="Center/Panel/Margin/VBox/Scroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-columns = 7
-theme_override_constants/h_separation = 16
+columns = 8
+theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 6
 
 [node name="StatusLabel" type="Label" parent="Center/Panel/Margin/VBox"]
