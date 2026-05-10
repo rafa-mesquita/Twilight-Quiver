@@ -23,6 +23,14 @@ border_width_right = 3
 border_width_bottom = 3
 border_color = Color(0.45, 0.08, 0.10, 1)
 
+[sub_resource type="StyleBoxFlat" id="BossBarBorder"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.65, 0.18, 0.78, 1)
+
 [sub_resource type="StyleBoxFlat" id="DashBarBorder"]
 bg_color = Color(0, 0, 0, 0)
 border_width_left = 3
@@ -322,6 +330,65 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 theme_override_constants/separation = 4
+
+[node name="BossHpBar" type="Control" parent="." unique_id=4600]
+visible = false
+layout_mode = 3
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -250.0
+offset_top = -50.0
+offset_right = 250.0
+offset_bottom = -30.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="NameLabel" type="Label" parent="BossHpBar" unique_id=4601]
+layout_mode = 0
+offset_left = 0.0
+offset_top = -22.0
+offset_right = 500.0
+offset_bottom = -2.0
+theme_override_colors/font_color = Color(1, 0.85, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 18
+text = "MAGE MONKEY"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Fill" type="ColorRect" parent="BossHpBar" unique_id=4602]
+layout_mode = 0
+offset_right = 500.0
+offset_bottom = 20.0
+color = Color(0.65, 0.18, 0.78, 1)
+
+[node name="Border" type="Panel" parent="BossHpBar" unique_id=4603]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("BossBarBorder")
+
+[node name="Label" type="Label" parent="BossHpBar" unique_id=4604]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 14
+text = "800/800"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="IntroOverlay" type="Control" parent="." unique_id=1019720001]
 visible = false

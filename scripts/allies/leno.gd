@@ -139,6 +139,10 @@ func _pick_enemy_target() -> Node2D:
 			continue
 		if e.is_queued_for_deletion():
 			continue
+		# Pula bosses com shield ativo — atacar não dá dano e desperdiça
+		# cooldown do pet.
+		if (e as Node).is_in_group("boss_shielded"):
+			continue
 		var d: float = (e as Node2D).global_position.distance_to(global_position)
 		if d <= aggro_range and d < best:
 			nearest = e

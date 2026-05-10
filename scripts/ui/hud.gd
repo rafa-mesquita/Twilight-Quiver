@@ -63,6 +63,17 @@ const HUD_RUNTIME_SCALE: Vector2 = Vector2(3, 3)
 @onready var curse_skill_icon: Control = $CurseSkillIcon
 @onready var curse_skill_cd_label: Label = $CurseSkillIcon/CdLabel
 @onready var upgrade_column_vbox: VBoxContainer = $UpgradeColumn/VBox
+@onready var boss_hp_bar: Control = $BossHpBar
+@onready var boss_hp_fill: ColorRect = $BossHpBar/Fill
+@onready var boss_hp_label: Label = $BossHpBar/Label
+@onready var boss_name_label: Label = $BossHpBar/NameLabel
+const BOSS_BAR_FILL_WIDTH: float = 500.0
+# Mapeamento de grupos de boss → nome a exibir. Mais bosses futuros: adicionar
+# entrada nesse dict.
+const BOSS_NAMES: Dictionary = {
+	"mage_monkey": "MAGE MONKEY",
+}
+var _current_boss: Node2D = null
 
 # Coluna de upgrades adquiridos (right edge da HUD).
 const UPGRADE_DISPLAY_ORDER: Array[String] = [
@@ -238,6 +249,32 @@ func _on_upgrade_applied(_id: String, _level: int) -> void:
 	_refresh_upgrade_column()
 
 
+func _update_boss_hp_bar() -> void:
+	# Polling: procura primeiro node em grupo "boss" e mostra a barra com seus
+	# dados. Sem boss vivo → esconde. Roda em _process pq spawna mid-wave.
+	if _current_boss == null or not is_instance_valid(_current_boss):
+		_current_boss = get_tree().get_first_node_in_group("boss") as Node2D
+		if _current_boss == null:
+			if boss_hp_bar.visible:
+				boss_hp_bar.visible = false
+			return
+		# Boss recém-encontrado: ajusta nome (primeiro grupo conhecido em BOSS_NAMES).
+		var name_text: String = "BOSS"
+		for grp: String in BOSS_NAMES.keys():
+			if (_current_boss as Node).is_in_group(grp):
+				name_text = BOSS_NAMES[grp]
+				break
+		boss_name_label.text = name_text
+		boss_hp_bar.visible = true
+	if not ("hp" in _current_boss) or not ("max_hp" in _current_boss):
+		return
+	var hp: float = float(_current_boss.hp)
+	var maxhp: float = float(_current_boss.max_hp)
+	var ratio: float = 0.0 if maxhp <= 0.0 else clampf(hp / maxhp, 0.0, 1.0)
+	boss_hp_fill.size.x = BOSS_BAR_FILL_WIDTH * ratio
+	boss_hp_label.text = "%d/%d" % [int(round(hp)), int(round(maxhp))]
+
+
 func _refresh_upgrade_column() -> void:
 	if upgrade_column_vbox == null:
 		return
@@ -386,6 +423,7 @@ func _on_curse_skill_cooldown_changed(remaining: float, _total: float) -> void:
 
 func _process(delta: float) -> void:
 	_update_tower_alert(delta)
+	_update_boss_hp_bar()
 	# Se o player passar atrás da HUD (canto do mapa), translúcido pra ver através.
 	if not hud_frame.visible:
 		return

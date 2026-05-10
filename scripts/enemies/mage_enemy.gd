@@ -1,3 +1,4 @@
+class_name MageEnemy
 extends CharacterBody2D
 
 @export var speed: float = 22.0
@@ -158,8 +159,9 @@ func _try_shoot() -> void:
 		sprite.play("attack")
 		return
 
-	if projectile_scene == null:
-		return
+	# Não gateia o ataque em projectile_scene — subclasses (ex: fire_mage) podem
+	# usar uma cena diferente via override do _fire_projectile. Animation rolla
+	# sempre; o disparo em si é checado lá no _fire_projectile.
 	var target := current_target.global_position + Vector2(0, -12)
 	locked_attack_dir = (target - muzzle.global_position).normalized()
 	is_attacking = true

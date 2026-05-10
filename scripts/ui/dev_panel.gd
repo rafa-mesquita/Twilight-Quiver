@@ -44,6 +44,7 @@ func _ready() -> void:
 	$Content/Scroll/VBox/EnemySection/EnemyContent/MageBtn.pressed.connect(_spawn.bind("mage"))
 	$Content/Scroll/VBox/EnemySection/EnemyContent/SummonerBtn.pressed.connect(_spawn.bind("summoner_mage"))
 	$Content/Scroll/VBox/EnemySection/EnemyContent/StoneCubeBtn.pressed.connect(_spawn.bind("stone_cube"))
+	$Content/Scroll/VBox/EnemySection/EnemyContent/FireMageBtn.pressed.connect(_spawn.bind("fire_mage"))
 	$Content/Scroll/VBox/EnemySection/EnemyContent/InsectBtn.pressed.connect(_spawn.bind("insect"))
 	$Content/Scroll/VBox/EnemySection/EnemyContent/Burst10MonkeyBtn.pressed.connect(_spawn_burst_monkeys)
 	# Stats (manipulação de player/world).
@@ -59,6 +60,8 @@ func _ready() -> void:
 		var btn := _upgrade_btn(entry["node"]) as Button
 		if btn != null:
 			btn.pressed.connect(_apply_upgrade.bind(entry["id"]))
+	# Simulação de waves específicas (dev). Por enquanto só wave 7 (boss).
+	$Content/Scroll/VBox/WavesSection/WavesContent/Wave7Btn.pressed.connect(_simulate_wave.bind(7))
 	$Content/Scroll/VBox/MenuBtn.pressed.connect(_back_to_menu)
 	# Refresh inicial após o player estar pronto pra ler níveis atuais.
 	_refresh_upgrade_buttons.call_deferred()
@@ -73,6 +76,8 @@ func _ready() -> void:
 		$Content/Scroll/VBox/EstruturasSection/EstruturasContent, "Estruturas e pets")
 	_setup_section($Content/Scroll/VBox/StatsSection/StatsHeader,
 		$Content/Scroll/VBox/StatsSection/StatsContent, "Stats")
+	_setup_section($Content/Scroll/VBox/WavesSection/WavesHeader,
+		$Content/Scroll/VBox/WavesSection/WavesContent, "Simular Wave")
 	# Sub-seções dos Upgrades padrão por ramo (ARCO/VIDA/MOV).
 	_setup_section($Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoHeader,
 		$Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent, "Arco / Ataque")
@@ -157,6 +162,15 @@ func _clear_enemies() -> void:
 
 func _back_to_menu() -> void:
 	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+
+
+func _simulate_wave(target_wave: int) -> void:
+	# Limpa horda atual e força wave_manager a iniciar a wave alvo. Bypass
+	# completo das waves anteriores. Útil pra testar bosses ou waves específicas.
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm == null or not wm.has_method("dev_start_wave"):
+		return
+	wm.dev_start_wave(target_wave)
 
 
 func _open_shop_directly() -> void:

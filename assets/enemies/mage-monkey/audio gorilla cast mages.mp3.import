@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://c44svb5gpgh48"
+path="res://.godot/imported/audio gorilla cast mages.mp3-b7a1d62ed41c9f2ddd915e22c6294002.mp3str"
+
+[deps]
+
+source_file="res://assets/enemies/mage-monkey/audio gorilla cast mages.mp3"
+dest_files=["res://.godot/imported/audio gorilla cast mages.mp3-b7a1d62ed41c9f2ddd915e22c6294002.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
