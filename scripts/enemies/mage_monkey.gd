@@ -547,6 +547,10 @@ func _die() -> void:
 	var p := get_tree().get_first_node_in_group("player")
 	if p != null and p.has_method("notify_enemy_killed"):
 		p.notify_enemy_killed()
+	# Notifica boss kill — adiciona "mage_monkey" ao set persistente no death,
+	# usado pra desbloquear a skin Bluey (SKIN_QUESTS type=boss_killed).
+	if p != null and p.has_method("notify_boss_killed"):
+		p.notify_boss_killed("mage_monkey")
 	_spawn_kill_effect()
 	_spawn_death_silhouette()
 	queue_free()

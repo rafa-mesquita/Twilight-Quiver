@@ -55,6 +55,7 @@ const DEFAULT_PREFERENCES: Dictionary = {
 #   dmg_dealt       — causar X dano no total (dmg_dealt_total >= value)
 #   runs_completed  — completar X runs (morrer X vezes; runs_completed >= value)
 #   no_damage_run   — completar X runs sem tomar dano (runs_no_damage >= value)
+#   boss_killed     — matar boss específico (value=boss_id, ex: "mage_monkey")
 #
 # Pra adicionar novo type: adicione um case em _is_quest_satisfied(),
 # adicione tracking em record_run() se for stat novo.
@@ -75,6 +76,12 @@ const SKIN_QUESTS: Dictionary = {
 		"label": "PLAYER_QUEST_GINGERALE",
 		"hidden": false,
 	},
+	"Bluey": {
+		"type": "boss_killed",
+		"value": "mage_monkey",
+		"label": "PLAYER_QUEST_BLUEY",
+		"hidden": false,
+	},
 }
 
 # Stats persistentes em [progress]. Chaves usadas pelo sistema.
@@ -83,6 +90,10 @@ const STAT_KILLS: StringName = &"enemies_killed_total"
 const STAT_DMG_DEALT: StringName = &"dmg_dealt_total"
 const STAT_RUNS_COMPLETED: StringName = &"runs_completed"
 const STAT_RUNS_NO_DAMAGE: StringName = &"runs_no_damage"
+const STAT_BOSSES_KILLED_TOTAL: StringName = &"bosses_killed_total"
+# Set de boss IDs já abatidos (persistente entre runs). Armazenado como string
+# CSV no settings.cfg porque ConfigFile só aceita primitivos.
+const _KEY_BOSSES_KILLED_SET: String = "bosses_killed_set"
 
 
 # ---------- Loadout (load/save) ----------
@@ -234,19 +245,45 @@ static func set_stat(key: StringName, value: int) -> void:
 
 static func _is_quest_satisfied(quest: Dictionary) -> bool:
 	var qtype: String = String(quest.get("type", ""))
-	var value: int = int(quest.get("value", 0))
+	var raw_value: Variant = quest.get("value", 0)
 	match qtype:
 		"wave_reached":
-			return get_stat(STAT_MAX_WAVE) >= value
+			return get_stat(STAT_MAX_WAVE) >= int(raw_value)
 		"enemies_killed":
-			return get_stat(STAT_KILLS) >= value
+			return get_stat(STAT_KILLS) >= int(raw_value)
 		"dmg_dealt":
-			return get_stat(STAT_DMG_DEALT) >= value
+			return get_stat(STAT_DMG_DEALT) >= int(raw_value)
 		"runs_completed":
-			return get_stat(STAT_RUNS_COMPLETED) >= value
+			return get_stat(STAT_RUNS_COMPLETED) >= int(raw_value)
 		"no_damage_run":
-			return get_stat(STAT_RUNS_NO_DAMAGE) >= value
+			return get_stat(STAT_RUNS_NO_DAMAGE) >= int(raw_value)
+		"boss_killed":
+			return has_killed_boss(String(raw_value))
 	return true  # type desconhecido: assume desbloqueada (não bloqueia o jogo).
+
+
+# Set persistente de IDs de bosses já abatidos (qualquer run).
+static func get_bosses_killed_set() -> PackedStringArray:
+	var cfg := ConfigFile.new()
+	if cfg.load(_SETTINGS_PATH) != OK:
+		return PackedStringArray()
+	var raw: String = str(cfg.get_value(_PROGRESS_SECTION, _KEY_BOSSES_KILLED_SET, ""))
+	if raw.is_empty():
+		return PackedStringArray()
+	return PackedStringArray(raw.split(",", false))
+
+
+static func _save_bosses_killed_set(arr: PackedStringArray) -> void:
+	var cfg := ConfigFile.new()
+	cfg.load(_SETTINGS_PATH)
+	cfg.set_value(_PROGRESS_SECTION, _KEY_BOSSES_KILLED_SET, ",".join(arr))
+	cfg.save(_SETTINGS_PATH)
+
+
+static func has_killed_boss(boss_id: String) -> bool:
+	if boss_id.is_empty():
+		return false
+	return boss_id in get_bosses_killed_set()
 
 
 static func is_unlocked(part: SkinPart) -> bool:
@@ -303,6 +340,22 @@ static func record_run(run_stats: Dictionary) -> Array:
 	set_stat(STAT_RUNS_COMPLETED, get_stat(STAT_RUNS_COMPLETED) + 1)
 	if run_dmg_taken == 0 and run_wave >= 1:
 		set_stat(STAT_RUNS_NO_DAMAGE, get_stat(STAT_RUNS_NO_DAMAGE) + 1)
+	# Bosses mortos nesta run: incrementa total e adiciona IDs novos ao set.
+	# Total conta cada kill (mesmo boss em runs diferentes); set é único.
+	var run_bosses: Array = run_stats.get("bosses_killed", [])
+	if not run_bosses.is_empty():
+		var existing: PackedStringArray = get_bosses_killed_set()
+		var changed: bool = false
+		for boss_id_v in run_bosses:
+			var boss_id: String = String(boss_id_v)
+			if boss_id.is_empty():
+				continue
+			set_stat(STAT_BOSSES_KILLED_TOTAL, get_stat(STAT_BOSSES_KILLED_TOTAL) + 1)
+			if not boss_id in existing:
+				existing.append(boss_id)
+				changed = true
+		if changed:
+			_save_bosses_killed_set(existing)
 
 	# 3. Detecta quem mudou de locked → unlocked.
 	var newly_unlocked: Array = []

@@ -694,17 +694,21 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 	var allies: int = 0
 	var dmg_dealt: int = 0
 	var dmg_taken: int = 0
+	var bosses: Array = []
 	if p != null:
 		kills = int(p.get("stats_enemies_killed")) if "stats_enemies_killed" in p else 0
 		allies = int(p.get("stats_allies_made")) if "stats_allies_made" in p else 0
 		dmg_dealt = int(round(float(p.get("stats_damage_dealt")))) if "stats_damage_dealt" in p else 0
 		dmg_taken = int(round(float(p.get("stats_damage_taken")))) if "stats_damage_taken" in p else 0
+		if "stats_bosses_killed" in p:
+			bosses = p.get("stats_bosses_killed")
 	return {
 		"wave": wave_num,
 		"kills": kills,
 		"allies": allies,
 		"dmg_dealt": dmg_dealt,
 		"dmg_taken": dmg_taken,
+		"bosses_killed": bosses,
 	}
 
 

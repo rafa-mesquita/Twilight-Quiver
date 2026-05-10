@@ -303,13 +303,16 @@ func _build_wave_config(num: int) -> Dictionary:
 	# Quanto maior o wave_number, mais inimigos vivos e mais total.
 	# Ratio macaco/mago varia entre ~70/30 e ~50/50 conforme a wave avança.
 	# Wave 3 leva um corte extra (curva de aprendizado pós-wave 2).
-	# Wave 5 também leva um corte (introdução do macaco camper + escala ficava
-	# pesada com 47-56 mobs totais).
+	# Wave 5 também leva um corte (introdução do stone cube).
+	# Wave 6 também leva um corte (respiro antes do boss da wave 7) — estava
+	# sendo a wave mais punitiva da curva inicial.
 	var reduction: float = 0.87
 	if num == 3:
 		reduction = 0.72
 	elif num == 5:
 		reduction = 0.76
+	elif num == 6:
+		reduction = 0.72
 	var scale: float = (1.0 + (num - 1) * 0.35) * reduction
 	var monkey_alive: int = int(round(5 * scale + randf_range(-1.0, 2.0)))
 	var monkey_total: int = int(round(15 * scale + randf_range(0.0, 4.0)))
@@ -332,8 +335,8 @@ func _build_wave_config(num: int) -> Dictionary:
 		monkey_total = maxi(monkey_total - 1, monkey_alive)
 	# Stone cube spawn pattern:
 	#   Wave 5: estreia, 1 cubo.
-	#   Wave 6: 1 cubo.
-	#   Wave 7: pula.
+	#   Wave 6: pula (respiro antes do boss).
+	#   Wave 7: pula (boss).
 	#   Wave 8, 10, 12...: a cada 2 waves pares. Count escala progressivamente
 	#   (+1 por wave) e alive_target fica baixo (2-3) pra dispersar os spawns
 	#   ao longo do tempo da wave.
@@ -341,9 +344,6 @@ func _build_wave_config(num: int) -> Dictionary:
 	var stone_alive: int = 0
 	var stone_total: int = 0
 	if num == 5:
-		stone_total = 1
-		stone_alive = 1
-	elif num == 6:
 		stone_total = 1
 		stone_alive = 1
 	elif num >= 8 and num % 2 == 0:

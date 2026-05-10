@@ -194,6 +194,9 @@ var stats_enemies_killed: int = 0
 var stats_allies_made: int = 0
 var stats_damage_dealt: float = 0.0
 var stats_damage_taken: float = 0.0
+# Lista de IDs de bosses mortos nesta run. Usada pelo skin_loadout.record_run
+# pra detectar unlocks de skins do tipo `boss_killed`.
+var stats_bosses_killed: Array[String] = []
 
 
 func _ready() -> void:
@@ -1605,6 +1608,15 @@ func _on_frame_changed() -> void:
 
 func notify_enemy_killed() -> void:
 	stats_enemies_killed += 1
+
+
+func notify_boss_killed(boss_id: String) -> void:
+	# Bosses mortos nesta run — usado pelo SkinLoadout.record_run no death pra
+	# detectar unlocks (e gravar persistente). Permite repetições (matar 2x o
+	# mesmo boss numa run conta 2 no total, mas no set único só uma vez).
+	if boss_id.is_empty():
+		return
+	stats_bosses_killed.append(boss_id)
 
 
 func notify_ally_made() -> void:
