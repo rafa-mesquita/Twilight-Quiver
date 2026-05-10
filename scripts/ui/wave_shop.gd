@@ -30,27 +30,28 @@ const ESTRUT_UNLOCK_INTERVAL: int = 4
 
 # Pool dos cards de status (passive stats — escalonáveis ilimitadamente).
 # `name` é o título do card (descrição breve, já que a card paisagem não tem
-# DescLabel). Ex: "+15 HP" em vez de "Mais HP".
+# DescLabel). Ex: "+15 HP" em vez de "Mais HP". Valores são translation keys —
+# resolvidos via tr() onde o name é exibido (Label.text).
 const STATUS_POOL: Array = [
-	{"id": "hp", "name": "+18 HP"},
-	{"id": "damage", "name": "+20% dano"},
-	{"id": "attack_speed", "name": "+27% atk speed"},
-	{"id": "move_speed", "name": "+10% move speed"},
-	{"id": "armor", "name": "+8% dano reduzido"},
+	{"id": "hp", "name": "SHOP_HP_PLUS_18"},
+	{"id": "damage", "name": "SHOP_DAMAGE"},
+	{"id": "attack_speed", "name": "SHOP_ATTACK_SPEED"},
+	{"id": "move_speed", "name": "SHOP_MOVE_SPEED"},
+	{"id": "armor", "name": "SHOP_ARMOR_8"},
 ]
 
 # Pool dos cards de upgrade (gameplay-changing items, com requirements).
 const UPGRADE_POOL: Array = [
-	{"id": "perfuracao", "name": "Perfuracao", "max_level": 4},
-	{"id": "multi_arrow", "name": "Multiplas Flechas", "max_level": 4},
-	{"id": "chain_lightning", "name": "Cadeia de Raios", "max_level": 4},
-	{"id": "life_steal", "name": "Mestre da Cura", "max_level": 4},
-	{"id": "gold_magnet", "name": "Chuva de Coins", "max_level": 4},
-	{"id": "dash", "name": "Deslizando", "max_level": 4},
-	{"id": "ricochet_arrow", "name": "Flecha Ricochete", "max_level": 4},
-	{"id": "graviton", "name": "Graviton", "max_level": 4},
-	{"id": "fire_arrow", "name": "Flecha de Fogo", "max_level": 4},
-	{"id": "curse_arrow", "name": "Disparo Profano", "max_level": 4},
+	{"id": "perfuracao", "name": "SHOP_UPG_PERFURACAO", "max_level": 4},
+	{"id": "multi_arrow", "name": "SHOP_UPG_MULTI_ARROW", "max_level": 4},
+	{"id": "chain_lightning", "name": "SHOP_UPG_CHAIN_LIGHTNING", "max_level": 4},
+	{"id": "life_steal", "name": "SHOP_UPG_LIFE_STEAL", "max_level": 4},
+	{"id": "gold_magnet", "name": "SHOP_UPG_GOLD_MAGNET", "max_level": 4},
+	{"id": "dash", "name": "SHOP_UPG_DASH", "max_level": 4},
+	{"id": "ricochet_arrow", "name": "SHOP_UPG_RICOCHET", "max_level": 4},
+	{"id": "graviton", "name": "SHOP_UPG_GRAVITON", "max_level": 4},
+	{"id": "fire_arrow", "name": "SHOP_UPG_FIRE_ARROW", "max_level": 4},
+	{"id": "curse_arrow", "name": "SHOP_UPG_CURSE_ARROW", "max_level": 4},
 ]
 
 const UPGRADE_PRICE_OVERRIDES: Dictionary = {}
@@ -65,98 +66,101 @@ const EXCLUSIVE_PAIRS: Array = [
 	["perfuracao", "ricochet_arrow"],
 ]
 
-const HP_DESCS: Array[String] = ["+18 HP maximo", "+20 HP maximo", "+22 HP maximo", "+25 HP maximo"]
+# Descrições por upgrade. Cada entry é uma translation key — resolvida via
+# tr() no momento de exibição. Mantém o array por nível pra compat com o resto
+# do código (clamp por target_level).
+const HP_DESCS: Array[String] = ["SHOP_HP_DESC_1", "SHOP_HP_DESC_2", "SHOP_HP_DESC_3", "SHOP_HP_DESC_4"]
 const ARMOR_DESCS: Array[String] = [
-	"8% de dano\nreduzido",
-	"12% de dano\nreduzido",
-	"16% de dano\nreduzido",
-	"20% de dano\nreduzido",
-	"+3% dano reduzido\npor compra",
+	"SHOP_ARMOR_DESC_1",
+	"SHOP_ARMOR_DESC_2",
+	"SHOP_ARMOR_DESC_3",
+	"SHOP_ARMOR_DESC_4",
+	"SHOP_ARMOR_DESC_5",
 ]
-const DAMAGE_DESCS: Array[String] = ["+20% dano da flecha", "+20% dano da flecha", "+20% dano da flecha", "+20% dano da flecha"]
+const DAMAGE_DESCS: Array[String] = ["SHOP_DAMAGE_DESC", "SHOP_DAMAGE_DESC", "SHOP_DAMAGE_DESC", "SHOP_DAMAGE_DESC"]
 const PERFURACAO_DESCS: Array[String] = [
-	"A cada 3 ataques flecha\natravessa, +30% dano",
-	"+60% dano + hitbox maior",
-	"+90% dano",
-	"Todo ataque atravessa",
+	"SHOP_PERFURACAO_DESC_1",
+	"SHOP_PERFURACAO_DESC_2",
+	"SHOP_PERFURACAO_DESC_3",
+	"SHOP_PERFURACAO_DESC_4",
 ]
 const ATTACK_SPEED_DESCS: Array[String] = [
-	"+27% velocidade de\nataque",
-	"+27% velocidade de\nataque",
-	"+27% velocidade de\nataque",
-	"+27% velocidade de\nataque",
+	"SHOP_ATTACK_SPEED_DESC",
+	"SHOP_ATTACK_SPEED_DESC",
+	"SHOP_ATTACK_SPEED_DESC",
+	"SHOP_ATTACK_SPEED_DESC",
 ]
 const MULTI_ARROW_DESCS: Array[String] = [
-	"+2 flechas a 30°\n(50% dano)",
-	"Flechas extras agora\n80% do dano",
-	"+2 flechas (5 total)\nem leque",
-	"10 flechas em todas\nas direcoes",
+	"SHOP_MULTI_ARROW_DESC_1",
+	"SHOP_MULTI_ARROW_DESC_2",
+	"SHOP_MULTI_ARROW_DESC_3",
+	"SHOP_MULTI_ARROW_DESC_4",
 ]
 const CHAIN_LIGHTNING_DESCS: Array[String] = [
-	"30% dano no inimigo\nmais proximo",
-	"50% dano em 2 inimigos\n+30% chance no 3º",
-	"60% dano em 4\ninimigos",
-	"100% dano em todos\nda area",
+	"SHOP_CHAIN_LIGHTNING_DESC_1",
+	"SHOP_CHAIN_LIGHTNING_DESC_2",
+	"SHOP_CHAIN_LIGHTNING_DESC_3",
+	"SHOP_CHAIN_LIGHTNING_DESC_4",
 ]
 const MOVE_SPEED_DESCS: Array[String] = [
-	"+10% velocidade de\nmovimento",
-	"+10% velocidade de\nmovimento",
-	"+10% velocidade de\nmovimento",
-	"+10% velocidade de\nmovimento",
+	"SHOP_MOVE_SPEED_DESC",
+	"SHOP_MOVE_SPEED_DESC",
+	"SHOP_MOVE_SPEED_DESC",
+	"SHOP_MOVE_SPEED_DESC",
 ]
 const GOLD_MAGNET_DESCS: Array[String] = [
-	"+5% drop +25%\nduracao das coins",
-	"Coins duram 2x\n+2% drop",
-	"+2% drop\npulso da slow",
-	"Puxa coins\nda area",
+	"SHOP_GOLD_MAGNET_DESC_1",
+	"SHOP_GOLD_MAGNET_DESC_2",
+	"SHOP_GOLD_MAGNET_DESC_3",
+	"SHOP_GOLD_MAGNET_DESC_4",
 ]
 const DASH_DESCS: Array[String] = [
-	"Espaco = dash\ncd 5.5s",
-	"Rastro de fogo\ncd 4.5s",
-	"Auto-attack\ncd 4s",
-	"+1 flecha\ncd 3.5s",
+	"SHOP_DASH_DESC_1",
+	"SHOP_DASH_DESC_2",
+	"SHOP_DASH_DESC_3",
+	"SHOP_DASH_DESC_4",
 ]
 const LIFE_STEAL_DESCS: Array[String] = [
-	"10% drop coracao\ncura 20% HP",
-	"+5% drop\n+10% cura",
-	"+5% drop, +5% cura\npuxa em area",
-	"Puxa do mapa todo",
+	"SHOP_LIFE_STEAL_DESC_1",
+	"SHOP_LIFE_STEAL_DESC_2",
+	"SHOP_LIFE_STEAL_DESC_3",
+	"SHOP_LIFE_STEAL_DESC_4",
 ]
 const RICOCHET_ARROW_DESCS: Array[String] = [
-	"A cada 3 ataques\nflecha ricocheteia",
-	"A cada 2 ataques\ndivide em 2",
-	"+1 ricochete\n(sem dividir)",
-	"2º ricochete\ndivide tambem",
+	"SHOP_RICOCHET_DESC_1",
+	"SHOP_RICOCHET_DESC_2",
+	"SHOP_RICOCHET_DESC_3",
+	"SHOP_RICOCHET_DESC_4",
 ]
 const GRAVITON_DESCS: Array[String] = [
-	"Cada 3 ataques cria\ncampo gravitacional",
-	"Cada 2 ataques\n+ range maior",
-	"Pulso explode no fim\n30 dano area",
-	"+area + 50 dano\nna explosao",
+	"SHOP_GRAVITON_DESC_1",
+	"SHOP_GRAVITON_DESC_2",
+	"SHOP_GRAVITON_DESC_3",
+	"SHOP_GRAVITON_DESC_4",
 ]
 const LENO_DESCS: Array[String] = [
-	"Aliado voador, atira\n8 dano + slow area",
-	"+atk speed,\n18 dano por ataque",
-	"+1 Leno (total 2)",
-	"+1 Leno (total 3)",
+	"SHOP_LENO_DESC_1",
+	"SHOP_LENO_DESC_2",
+	"SHOP_LENO_DESC_3",
+	"SHOP_LENO_DESC_4",
 ]
 const CAPIVARA_JOE_DESCS: Array[String] = [
-	"Cogumelo a cada 17,5s\ncura 35 HP / speed",
-	"8,75s alterna buff/dano\n40 dmg area roxa",
-	"Buff cura+speed\n+atk speed 50%",
-	"+1 Capivara\n(total 2)",
+	"SHOP_CAPIVARA_DESC_1",
+	"SHOP_CAPIVARA_DESC_2",
+	"SHOP_CAPIVARA_DESC_3",
+	"SHOP_CAPIVARA_DESC_4",
 ]
 const FIRE_ARROW_DESCS: Array[String] = [
-	"Queima inimigo\n4 dmg/s por 3s",
-	"+1 dmg/s +\nrastro de fogo",
-	"Skill Q: chama\narea 12 dps 6s",
-	"Rastro do player\n+30% queima area",
+	"SHOP_FIRE_ARROW_DESC_1",
+	"SHOP_FIRE_ARROW_DESC_2",
+	"SHOP_FIRE_ARROW_DESC_3",
+	"SHOP_FIRE_ARROW_DESC_4",
 ]
 const CURSE_ARROW_DESCS: Array[String] = [
-	"Slow 35%\n+ 3 dps toxic",
-	"18% chance kill\nvira aliado",
-	"33% chance + aliados\naplicam DoT",
-	"50% chance\nQ: raio roxo cd 20s",
+	"SHOP_CURSE_ARROW_DESC_1",
+	"SHOP_CURSE_ARROW_DESC_2",
+	"SHOP_CURSE_ARROW_DESC_3",
+	"SHOP_CURSE_ARROW_DESC_4",
 ]
 
 @onready var gold_label: Label = $Root/GoldLabel
@@ -225,12 +229,6 @@ var _placement_current: Dictionary = {}
 const SELECTED_TINT: Color = Color(1.4, 1.25, 0.5, 1.0)
 # Box roxa translúcida sobreposta a um card selecionado pra deixar claro.
 const SELECTION_OVERLAY_COLOR: Color = Color(0.55, 0.25, 0.85, 0.4)
-# Layout editor (modo dev pra arrastar elementos da loja).
-var _layout_edit_active: bool = false
-var _layout_edit_panel: Control = null
-var _layout_drag_target: Control = null
-var _layout_drag_offset: Vector2 = Vector2.ZERO
-const LAYOUT_EDIT_HIGHLIGHT: Color = Color(1.5, 0.6, 0.6, 1.0)
 
 
 func _ready() -> void:
@@ -251,7 +249,6 @@ func _ready() -> void:
 	_build_all_cards()
 	_connect_card_buttons()
 	_refresh_button_states()
-	_setup_layout_editor()
 
 
 func _grant_free_random_pet() -> void:
@@ -395,20 +392,21 @@ func _roll_status_slots() -> void:
 # tem que acompanhar o nível. Outros stats (dano/atk speed/move speed) ganham
 # a mesma quantia por nível, então o nome estático do STATUS_POOL serve.
 func _status_title_for(id: String, target_level: int, fallback_name: String) -> String:
+	# Retorna translation key — resolvida via tr() onde o título é exibido.
 	match id:
 		"hp":
 			match target_level:
-				1: return "+18 HP"
-				2: return "+20 HP"
-				3: return "+22 HP"
-				_: return "+25 HP"
+				1: return "SHOP_HP_PLUS_18"
+				2: return "SHOP_HP_PLUS_20"
+				3: return "SHOP_HP_PLUS_22"
+				_: return "SHOP_HP_PLUS_25"
 		"armor":
 			match target_level:
-				1: return "+8% dano reduzido"
-				2: return "+12% dano reduzido"
-				3: return "+16% dano reduzido"
-				4: return "+20% dano reduzido"
-				_: return "+3% dano reduzido"
+				1: return "SHOP_ARMOR_8"
+				2: return "SHOP_ARMOR_12"
+				3: return "SHOP_ARMOR_16"
+				4: return "SHOP_ARMOR_20"
+				_: return "SHOP_ARMOR_3"
 	return fallback_name
 
 
@@ -432,13 +430,13 @@ func _roll_estrutura_slots() -> void:
 	var surcharge: int = STRUCTURE_SURCHARGE_PER_OWNED * _total_structures_bought()
 	estrutura_slots.append({
 		"id": "arrow_tower",
-		"name": "Torre 80% dano",
-		"desc": "Atira em inimigos\nproximos. 80% dano.",
+		"name": "SHOP_TOWER_NAME",
+		"desc": "SHOP_TOWER_DESC",
 		"price": TOWER_PRICE + surcharge,
 		"available": true,
 		"scene": "res://scenes/world/structures/arrow_tower.tscn",
 	})
-	estrutura_slots.append({"id": "soon", "name": "Em breve", "desc": "—", "price": 0, "available": false})
+	estrutura_slots.append({"id": "soon", "name": "SHOP_COMING_SOON", "desc": "—", "price": 0, "available": false})
 
 
 func _roll_aliado_slots() -> void:
@@ -447,13 +445,13 @@ func _roll_aliado_slots() -> void:
 	# Wave 3: pet grátis aleatório dado em _ready, sem cards de venda.
 	if wn == ALIADO_FREE_PET_WAVE:
 		for i in 3:
-			aliado_slots.append({"id": "free_pet", "name": "Pet gratis!", "desc": "Recebido nesta\nwave", "price": 0, "available": false})
+			aliado_slots.append({"id": "free_pet", "name": "SHOP_FREE_PET", "desc": "SHOP_FREE_PET_DESC", "price": 0, "available": false})
 		return
 	var lock_remaining: int = _aliado_lock_remaining(wn)
 	if lock_remaining > 0:
 		var lock_desc: String = _build_lock_desc(lock_remaining)
 		for i in 3:
-			aliado_slots.append({"id": "locked", "name": "Bloqueado", "desc": lock_desc, "price": 0, "available": false})
+			aliado_slots.append({"id": "locked", "name": "SHOP_BLOCKED", "desc": lock_desc, "price": 0, "available": false})
 		return
 	var ww_lvl: int = 0
 	var p := _get_player()
@@ -464,17 +462,17 @@ func _roll_aliado_slots() -> void:
 	var ww_price: int = WOODWARDEN_PRICE_TABLE[mini(ww_lvl, WOODWARDEN_PRICE_TABLE.size() - 1)]
 	var ww_desc: String
 	if ww_maxed:
-		ww_desc = "Max (4/4) atingido"
+		ww_desc = "SHOP_MAX_REACHED"
 	else:
 		match ww_lvl:
-			0: ww_desc = "Aliado tank: 200hp\n50dmg+stun"
-			1: ww_desc = "Lv2: +1 aliado, ataques\ncuram aliados 25%"
-			2: ww_desc = "Lv3: +1 aliado, +25hp\n+5 dano em todos"
-			3: ww_desc = "Lv4 max: +1 aliado\n+25hp +5 dano"
+			0: ww_desc = "SHOP_WW_DESC_1"
+			1: ww_desc = "SHOP_WW_DESC_2"
+			2: ww_desc = "SHOP_WW_DESC_3"
+			3: ww_desc = "SHOP_WW_DESC_4"
 			_: ww_desc = ""
 	aliado_slots.append({
 		"id": "woodwarden",
-		"name": "Woodwarden",
+		"name": "SHOP_ALLY_WOODWARDEN",
 		"desc": ww_desc,
 		"price": ww_price,
 		"available": not ww_maxed,
@@ -488,10 +486,10 @@ func _roll_aliado_slots() -> void:
 		leno_lvl = p.get_upgrade_count("leno")
 	var leno_maxed: bool = leno_lvl >= 4
 	var leno_price: int = LENO_PRICE_TABLE[mini(leno_lvl, LENO_PRICE_TABLE.size() - 1)]
-	var leno_desc: String = "Max (4/4) atingido" if leno_maxed else _get_upgrade_desc("leno", leno_lvl + 1)
+	var leno_desc: String = "SHOP_MAX_REACHED" if leno_maxed else _get_upgrade_desc("leno", leno_lvl + 1)
 	aliado_slots.append({
 		"id": "leno",
-		"name": "Amigo Leno",
+		"name": "SHOP_ALLY_LENO",
 		"desc": leno_desc,
 		"price": leno_price,
 		"available": not leno_maxed,
@@ -504,10 +502,10 @@ func _roll_aliado_slots() -> void:
 		capi_lvl = p.get_upgrade_count("capivara_joe")
 	var capi_maxed: bool = capi_lvl >= 4
 	var capi_price: int = CAPIVARA_PRICE_TABLE[mini(capi_lvl, CAPIVARA_PRICE_TABLE.size() - 1)]
-	var capi_desc: String = "Max (4/4) atingido" if capi_maxed else _get_upgrade_desc("capivara_joe", capi_lvl + 1)
+	var capi_desc: String = "SHOP_MAX_REACHED" if capi_maxed else _get_upgrade_desc("capivara_joe", capi_lvl + 1)
 	aliado_slots.append({
 		"id": "capivara_joe",
-		"name": "Capivara Joe",
+		"name": "SHOP_ALLY_CAPIVARA",
 		"desc": capi_desc,
 		"price": capi_price,
 		"available": not capi_maxed,
@@ -987,7 +985,7 @@ func _setup_card_hover(card: Control) -> void:
 
 
 func _on_card_mouse_entered(card: Control) -> void:
-	if _layout_edit_active or _placement_active:
+	if _placement_active:
 		return
 	var btn := card.get_node_or_null("BuyBtn") as Button
 	if btn != null and btn.disabled:
@@ -1417,7 +1415,7 @@ func _refresh_gold_label() -> void:
 	var player := _get_player()
 	var g: int = player.gold if player != null else 0
 	var available: int = g - _selected_total_cost()
-	gold_label.text = "%d coins" % available
+	gold_label.text = tr("SHOP_GOLD_LABEL") % available
 
 
 func _get_player() -> Node:
@@ -1459,14 +1457,14 @@ func _aliado_lock_remaining(w: int) -> int:
 
 func _build_lock_title(turns_left: int) -> String:
 	# Versão curta pra paisagem cards (status/estrutura — sem DescLabel).
-	var s: String = "turno" if turns_left == 1 else "turnos"
-	return "Desbloqueia em\n%d %s" % [turns_left, s]
+	var key: String = "SHOP_LOCK_TITLE_SINGULAR" if turns_left == 1 else "SHOP_LOCK_TITLE_PLURAL"
+	return tr(key) % turns_left
 
 
 func _build_lock_desc(turns_left: int) -> String:
 	# Versão pro DescLabel dos retrato cards (aliado).
-	var s: String = "turno" if turns_left == 1 else "turnos"
-	return "Desbloqueia em\n%d %s" % [turns_left, s]
+	var key: String = "SHOP_LOCK_TITLE_SINGULAR" if turns_left == 1 else "SHOP_LOCK_TITLE_PLURAL"
+	return tr(key) % turns_left
 
 
 func _total_structures_bought() -> int:
@@ -1480,6 +1478,7 @@ func _play_buy_sound() -> void:
 	if BUY_SOUND == null:
 		return
 	var p := AudioStreamPlayer.new()
+	p.bus = &"SFX"
 	p.stream = BUY_SOUND
 	p.volume_db = -16.0
 	add_child(p)
@@ -1495,6 +1494,7 @@ func _play_next_wave_sound() -> void:
 	if NEXT_WAVE_SOUND == null:
 		return
 	var p := AudioStreamPlayer.new()
+	p.bus = &"SFX"
 	p.stream = NEXT_WAVE_SOUND
 	p.volume_db = -10.0
 	get_tree().current_scene.add_child(p)
@@ -1512,7 +1512,7 @@ func _setup_bonus_label() -> void:
 		return
 	var bonus := Label.new()
 	bonus.name = "BonusUpgradeLabel"
-	bonus.text = "BONUS +1!"
+	bonus.text = "SHOP_BONUS_PLUS_ONE"
 	var at01_font: Font = load("res://font/ByteBounce.ttf")
 	if at01_font != null:
 		bonus.add_theme_font_override("font", at01_font)
@@ -1570,139 +1570,3 @@ func _refresh_global_reroll() -> void:
 		global_reroll_cost.modulate = Color(0.55, 0.55, 0.55, 0.65) if disabled else Color.WHITE
 
 
-# ---------- Layout Editor (dev) ----------
-# Modo dev pra arrastar elementos da loja com mouse e exportar offsets.
-# Toggle no botão "EDIT LAYOUT" (canto inferior direito). Ao ativar:
-# - Cada elemento editável ganha highlight vermelho.
-# - Clique e arraste move o offset_left/top.
-# - "PRINT VALUES" loga todas as posições no console pra commitar na .tscn.
-
-func _setup_layout_editor() -> void:
-	_layout_edit_panel = Control.new()
-	_layout_edit_panel.name = "LayoutEditorPanel"
-	_layout_edit_panel.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	_layout_edit_panel.position = Vector2(-360, -180)
-	_layout_edit_panel.size = Vector2(340, 160)
-	_layout_edit_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	$Root.add_child(_layout_edit_panel)
-	var bg := ColorRect.new()
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.color = Color(0.08, 0.08, 0.12, 0.85)
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_layout_edit_panel.add_child(bg)
-	var at01: Font = load("res://font/ByteBounce.ttf")
-	var toggle := Button.new()
-	toggle.position = Vector2(10, 10)
-	toggle.size = Vector2(320, 60)
-	toggle.text = "EDIT LAYOUT: OFF"
-	if at01 != null:
-		toggle.add_theme_font_override("font", at01)
-	toggle.add_theme_font_size_override("font_size", 24)
-	toggle.pressed.connect(_toggle_layout_edit.bind(toggle))
-	_layout_edit_panel.add_child(toggle)
-	var print_btn := Button.new()
-	print_btn.position = Vector2(10, 80)
-	print_btn.size = Vector2(320, 60)
-	print_btn.text = "PRINT VALUES"
-	if at01 != null:
-		print_btn.add_theme_font_override("font", at01)
-	print_btn.add_theme_font_size_override("font_size", 24)
-	print_btn.pressed.connect(_print_layout_values)
-	_layout_edit_panel.add_child(print_btn)
-
-
-func _toggle_layout_edit(toggle_btn: Button) -> void:
-	_layout_edit_active = not _layout_edit_active
-	toggle_btn.text = "EDIT LAYOUT: ON" if _layout_edit_active else "EDIT LAYOUT: OFF"
-	for n in _editable_layout_nodes():
-		if _layout_edit_active:
-			(n as CanvasItem).self_modulate = LAYOUT_EDIT_HIGHLIGHT
-		else:
-			(n as CanvasItem).self_modulate = Color.WHITE
-	# Quando edit mode tá ON, desabilita os BuyBtn-overlay dos cards pra cliques
-	# de drag não acionarem compra.
-	for card in _all_card_controls():
-		var btn := card.get_node_or_null("BuyBtn") as Button
-		if btn != null:
-			btn.visible = not _layout_edit_active
-
-
-func _editable_layout_nodes() -> Array:
-	# Tudo que faz sentido reposicionar: headers, cards, rerolls, gold, continue.
-	var nodes: Array = []
-	for n_path in [
-		"Root/GoldLabel",
-		"Root/EstrutHeader", "Root/EstrutReroll", "Root/EstrutCard1", "Root/EstrutCard2",
-		"Root/StatusHeader", "Root/StatusReroll", "Root/StatusCard1", "Root/StatusCard2",
-		"Root/AliadoHeader", "Root/AliadoReroll", "Root/AliadoRow",
-		"Root/UpgHeader", "Root/UpgReroll", "Root/UpgRow",
-		"Root/ContinueBtn",
-	]:
-		var n := get_node_or_null(n_path)
-		if n != null and n is Control:
-			nodes.append(n)
-	return nodes
-
-
-func _all_card_controls() -> Array:
-	var arr: Array = []
-	arr.append_array(estrut_cards)
-	arr.append_array(status_cards)
-	arr.append_array(upg_cards)
-	arr.append_array(aliado_cards)
-	return arr
-
-
-func _gui_input_drag(event: InputEvent) -> void:
-	pass  # placeholder, drag é via _input global abaixo
-
-
-func _unhandled_input(event: InputEvent) -> void:
-	if not _layout_edit_active:
-		return
-	if event is InputEventMouseButton:
-		var mb: InputEventMouseButton = event
-		if mb.button_index != MOUSE_BUTTON_LEFT:
-			return
-		if mb.pressed:
-			# Pega o nó editável mais ao topo sob o mouse.
-			var picked: Control = _pick_editable_under_mouse(mb.position)
-			if picked != null:
-				_layout_drag_target = picked
-				_layout_drag_offset = mb.position - Vector2(picked.offset_left, picked.offset_top)
-				get_viewport().set_input_as_handled()
-		else:
-			if _layout_drag_target != null:
-				_layout_drag_target = null
-				get_viewport().set_input_as_handled()
-	elif event is InputEventMouseMotion and _layout_drag_target != null:
-		var mm: InputEventMouseMotion = event
-		var new_pos: Vector2 = mm.position - _layout_drag_offset
-		var w: float = _layout_drag_target.offset_right - _layout_drag_target.offset_left
-		var h: float = _layout_drag_target.offset_bottom - _layout_drag_target.offset_top
-		_layout_drag_target.offset_left = new_pos.x
-		_layout_drag_target.offset_top = new_pos.y
-		_layout_drag_target.offset_right = new_pos.x + w
-		_layout_drag_target.offset_bottom = new_pos.y + h
-
-
-func _pick_editable_under_mouse(mouse_pos: Vector2) -> Control:
-	# Itera ao contrário (o último adicionado é o mais "no topo" visualmente).
-	var candidates: Array = _editable_layout_nodes()
-	candidates.reverse()
-	for n in candidates:
-		var c: Control = n
-		var rect := Rect2(Vector2(c.offset_left, c.offset_top), Vector2(c.offset_right - c.offset_left, c.offset_bottom - c.offset_top))
-		if rect.has_point(mouse_pos):
-			return c
-	return null
-
-
-func _print_layout_values() -> void:
-	print("===== SHOP LAYOUT VALUES =====")
-	for n in _editable_layout_nodes():
-		var c: Control = n
-		print("%s: offset_left=%d offset_top=%d offset_right=%d offset_bottom=%d" % [
-			c.get_path(), int(c.offset_left), int(c.offset_top), int(c.offset_right), int(c.offset_bottom)
-		])
-	print("=============================")

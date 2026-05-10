@@ -157,7 +157,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
 theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 18
-text = "Pronto"
+text = "HUD_DASH_READY"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -419,7 +419,7 @@ offset_right = 800.0
 offset_bottom = 160.0
 theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 128
-text = "Raid 1"
+text = ""
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -450,7 +450,7 @@ offset_top = -240.0
 offset_right = 800.0
 theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 96
-text = "Wave 1 Limpa"
+text = ""
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -466,7 +466,7 @@ offset_right = 200.0
 offset_bottom = 144.0
 theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 48
-text = "Continuar"
+text = "COMMON_CONTINUE"
 
 [node name="DeathOverlay" type="ColorRect" parent="." unique_id=1586489956]
 modulate = Color(1, 1, 1, 0)
@@ -497,7 +497,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
 theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 72
-text = "SCORE 0"
+text = ""
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -515,7 +515,7 @@ offset_bottom = 120.0
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 32
-text = "Você sobreviveu a 1 wave"
+text = ""
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -532,7 +532,7 @@ offset_right = 200.0
 offset_bottom = 224.0
 theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 48
-text = "Jogar Novamente"
+text = "HUD_DEATH_RESTART"
 
 [node name="MenuButton" type="Button" parent="DeathTopLayer" unique_id=1050982719]
 visible = false
@@ -547,7 +547,7 @@ offset_right = 200.0
 offset_bottom = 300.0
 theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 32
-text = "Voltar ao Menu"
+text = "HUD_DEATH_MENU"
 
 [node name="UnlockPanel" type="Panel" parent="DeathTopLayer"]
 visible = false
@@ -583,7 +583,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
 theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 32
-text = "SKIN DESBLOQUEADA!"
+text = "HUD_UNLOCK_TITLE"
 horizontal_alignment = 1
 
 [node name="PreviewBox" type="Panel" parent="DeathTopLayer/UnlockPanel/Margin/VBox"]
@@ -638,6 +638,6 @@ offset_bottom = 24.0
 theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
 theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 22
-text = "Torre sob ataque"
+text = "HUD_TOWER_ATTACKED"
 
 [node name="VersionLabel" parent="." instance=ExtResource("5_version")]

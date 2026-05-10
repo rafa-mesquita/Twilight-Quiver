@@ -50,7 +50,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 64
-text = "LEADERBOARD"
+text = "LEADERBOARD_TITLE"
 horizontal_alignment = 1
 
 [node name="FilterRow" type="HBoxContainer" parent="Center/Panel/Margin/VBox"]
@@ -63,7 +63,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
-text = "Versao"
+text = "LEADERBOARD_FILTER_VERSION"
 vertical_alignment = 1
 
 [node name="VersionFilter" parent="Center/Panel/Margin/VBox/FilterRow" instance=ExtResource("5_select")]
@@ -96,7 +96,7 @@ custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
-text = "Voltar"
+text = "COMMON_BACK"
 
 [node name="VersionLabel" parent="." instance=ExtResource("3_version")]
 

@@ -208,6 +208,7 @@ func _play_attack_sound() -> void:
 	if attack_sound == null:
 		return
 	var p := AudioStreamPlayer2D.new()
+	p.bus = &"SFX"
 	p.stream = attack_sound
 	p.volume_db = attack_sound_volume_db
 	_get_world().add_child(p)

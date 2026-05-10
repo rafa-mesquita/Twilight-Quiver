@@ -85,7 +85,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 56
-text = "PLAYER"
+text = "PLAYER_TITLE"
 horizontal_alignment = 1
 
 [node name="Body" type="HBoxContainer" parent="Center/Panel/Margin/VBox"]
@@ -146,8 +146,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.7, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 22
-text = "Nenhuma skin disponivel.
-Drop PNGs em assets/player/<slot>/ pra criar variantes."
+text = "PLAYER_EMPTY"
 horizontal_alignment = 1
 autowrap_mode = 3
 
@@ -185,7 +184,7 @@ theme_override_font_sizes/font_size = 28
 theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/pressed = SubResource("SBF_btn_pressed")
-text = "Voltar"
+text = "COMMON_BACK"
 
 [node name="SaveButton" type="Button" parent="Center/Panel/Margin/VBox/Buttons"]
 custom_minimum_size = Vector2(280, 56)
@@ -196,7 +195,7 @@ theme_override_font_sizes/font_size = 28
 theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/pressed = SubResource("SBF_btn_pressed")
-text = "Salvar"
+text = "COMMON_SAVE"
 
 [node name="VersionLabel" parent="." instance=ExtResource("3_version")]
 

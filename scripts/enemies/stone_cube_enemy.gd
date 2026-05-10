@@ -208,6 +208,7 @@ func _play_run_sound() -> void:
 	if run_sound == null or _run_sfx_player != null:
 		return
 	var p := AudioStreamPlayer2D.new()
+	p.bus = &"SFX"
 	p.stream = run_sound
 	p.volume_db = run_sound_volume_db
 	add_child(p)
@@ -226,6 +227,7 @@ func _play_impact_sound() -> void:
 	if impact_sound == null:
 		return
 	var p := AudioStreamPlayer2D.new()
+	p.bus = &"SFX"
 	p.stream = impact_sound
 	p.volume_db = impact_sound_volume_db
 	p.pitch_scale = randf_range(0.95, 1.05)
@@ -319,6 +321,7 @@ func _play_damage_sound(_duration: float = 0.7) -> void:
 	if damage_sound == null:
 		return
 	var p := AudioStreamPlayer2D.new()
+	p.bus = &"SFX"
 	p.stream = damage_sound
 	p.volume_db = damage_sound_volume_db
 	p.pitch_scale = randf_range(0.95, 1.05)

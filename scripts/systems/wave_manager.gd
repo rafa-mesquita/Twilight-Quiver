@@ -808,21 +808,22 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	# HP saiu do pool aleatório — agora é compra dedicada na loja com preço
 	# escalonado (1G, 2G, 3G, ...). Free upgrade não pode "queimar" o slot
 	# barato do primeiro HP.
-	{"id": "damage", "name": "Dano"},
-	{"id": "perfuracao", "name": "Perfuracao"},
-	{"id": "attack_speed", "name": "Atack Speed"},
-	{"id": "multi_arrow", "name": "Multiplas Flechas"},
-	{"id": "chain_lightning", "name": "Cadeia de Raios"},
-	{"id": "move_speed", "name": "Move Speed"},
-	{"id": "life_steal", "name": "Mestre da Cura"},
-	{"id": "gold_magnet", "name": "Chuva de Coins"},
-	{"id": "dash", "name": "Deslizando"},
-	{"id": "ricochet_arrow", "name": "Flecha Ricochete"},
-	{"id": "graviton", "name": "Graviton"},
-	{"id": "armor", "name": "Armadura"},
-	{"id": "woodwarden", "name": "Woodwarden"},
-	{"id": "leno", "name": "Amigo Leno"},
-	{"id": "capivara_joe", "name": "Capivara Joe"},
+	# `name` aqui é uma translation key — _show_free_upgrade_popup chama tr() nela.
+	{"id": "damage", "name": "SHOP_UPG_DAMAGE"},
+	{"id": "perfuracao", "name": "SHOP_UPG_PERFURACAO"},
+	{"id": "attack_speed", "name": "SHOP_UPG_ATTACK_SPEED"},
+	{"id": "multi_arrow", "name": "SHOP_UPG_MULTI_ARROW"},
+	{"id": "chain_lightning", "name": "SHOP_UPG_CHAIN_LIGHTNING"},
+	{"id": "move_speed", "name": "SHOP_UPG_MOVE_SPEED"},
+	{"id": "life_steal", "name": "SHOP_UPG_LIFE_STEAL"},
+	{"id": "gold_magnet", "name": "SHOP_UPG_GOLD_MAGNET"},
+	{"id": "dash", "name": "SHOP_UPG_DASH"},
+	{"id": "ricochet_arrow", "name": "SHOP_UPG_RICOCHET"},
+	{"id": "graviton", "name": "SHOP_UPG_GRAVITON"},
+	{"id": "armor", "name": "SHOP_UPG_ARMOR"},
+	{"id": "woodwarden", "name": "SHOP_ALLY_WOODWARDEN"},
+	{"id": "leno", "name": "SHOP_ALLY_LENO"},
+	{"id": "capivara_joe", "name": "SHOP_ALLY_CAPIVARA"},
 ]
 
 
@@ -851,8 +852,9 @@ func _grant_free_random_upgrade() -> void:
 	await _show_free_upgrade_popup(pick["name"])
 
 
-func _show_free_upgrade_popup(name_text: String) -> void:
+func _show_free_upgrade_popup(name_key: String) -> void:
 	# Popup procedural mostrando o upgrade ganho. Click ou ENTER fecha.
+	# name_key é uma translation key — vem do FREE_UPGRADE_POOL.
 	var layer := CanvasLayer.new()
 	layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	layer.layer = 50
@@ -866,7 +868,7 @@ func _show_free_upgrade_popup(name_text: String) -> void:
 	title.set_anchors_preset(Control.PRESET_CENTER)
 	title.position = Vector2(-800, -220)
 	title.size = Vector2(1600, 100)
-	title.text = "BONUS DE BOAS-VINDAS"
+	title.text = tr("HUD_FREE_UPGRADE_TITLE")
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3, 1.0))
 	if at01_font != null:
@@ -877,7 +879,7 @@ func _show_free_upgrade_popup(name_text: String) -> void:
 	name_label.set_anchors_preset(Control.PRESET_CENTER)
 	name_label.position = Vector2(-800, -90)
 	name_label.size = Vector2(1600, 140)
-	name_label.text = "+ %s" % name_text
+	name_label.text = "+ %s" % tr(name_key)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 	if at01_font != null:
@@ -888,7 +890,7 @@ func _show_free_upgrade_popup(name_text: String) -> void:
 	btn.set_anchors_preset(Control.PRESET_CENTER)
 	btn.position = Vector2(-200, 100)
 	btn.size = Vector2(400, 64)
-	btn.text = "Continuar"
+	btn.text = tr("COMMON_CONTINUE")
 	if at01_font != null:
 		btn.add_theme_font_override("font", at01_font)
 	btn.add_theme_font_size_override("font_size", 48)

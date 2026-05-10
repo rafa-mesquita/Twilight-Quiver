@@ -21,6 +21,7 @@ desktop.ini
 /builds/
 /build/
 /web_build/
+/exports/
 *.exe
 *.pck
 
@@ -38,4 +39,6 @@ miro_response.json
 # Screenshots/files acidentais soltos na raiz
 /capra jogo.png
 /capra jogo.png.import
+/capra_jogo.png
+/capra_jogo.png.import
 /hud.tscn

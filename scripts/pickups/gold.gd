@@ -297,6 +297,7 @@ func _play_pickup_sound() -> void:
 	if pickup_sound == null:
 		return
 	var p := AudioStreamPlayer2D.new()
+	p.bus = &"SFX"
 	p.stream = pickup_sound
 	p.volume_db = -16.0
 	p.pitch_scale = randf_range(0.95, 1.1)

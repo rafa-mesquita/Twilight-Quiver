@@ -49,6 +49,7 @@ script = ExtResource("1_script")
 [node name="BeamSound" type="AudioStreamPlayer2D" parent="." unique_id=1673644627]
 stream = ExtResource("3_beam_sfx")
 volume_db = -10.0
+bus = &"SFX"
 
 [node name="GlowUnderlay" type="Node2D" parent="." unique_id=1325519565]
 modulate = Color(1, 1, 1, 0)

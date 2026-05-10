@@ -8,7 +8,8 @@
 [ext_resource type="Texture2D" uid="uid://du8vqcoebjapl" path="res://assets/Hud/shop/aliado/placeholder.png" id="7_ali_ph"]
 [ext_resource type="Texture2D" uid="uid://43kh6plt35ba" path="res://assets/obecjts map/coins.png" id="8_coin"]
 [ext_resource type="PackedScene" uid="uid://b8tw1gv0vqlbl" path="res://scenes/ui/version_label.tscn" id="9_version"]
-[ext_resource type="Texture2D" path="res://assets/source/favicon-Sheet.png" id="10_pface"]
+[ext_resource type="Script" path="res://scripts/ui/shop_player_face.gd" id="10_pface_script"]
+[ext_resource type="Texture2D" path="res://assets/Hud/playerHud/border.png" id="11_pface_border"]
 
 [sub_resource type="AtlasTexture" id="ATX_coin"]
 atlas = ExtResource("8_coin")
@@ -54,104 +55,13 @@ region = Rect2(0, 0, 17, 16)
 atlas = ExtResource("5_reroll")
 region = Rect2(17, 0, 17, 16)
 
-[sub_resource type="AtlasTexture" id="ATX_pface_0"]
-atlas = ExtResource("10_pface")
+[sub_resource type="AtlasTexture" id="ATX_border_back"]
+atlas = ExtResource("11_pface_border")
 region = Rect2(0, 0, 66, 66)
 
-[sub_resource type="AtlasTexture" id="ATX_pface_1"]
-atlas = ExtResource("10_pface")
-region = Rect2(66, 0, 66, 66)
-
-[sub_resource type="AtlasTexture" id="ATX_pface_2"]
-atlas = ExtResource("10_pface")
-region = Rect2(132, 0, 66, 66)
-
-[sub_resource type="AtlasTexture" id="ATX_pface_3"]
-atlas = ExtResource("10_pface")
-region = Rect2(198, 0, 66, 66)
-
-[sub_resource type="AtlasTexture" id="ATX_pface_4"]
-atlas = ExtResource("10_pface")
-region = Rect2(264, 0, 66, 66)
-
-[sub_resource type="AtlasTexture" id="ATX_pface_5"]
-atlas = ExtResource("10_pface")
-region = Rect2(330, 0, 66, 66)
-
-[sub_resource type="AtlasTexture" id="ATX_pface_6"]
-atlas = ExtResource("10_pface")
-region = Rect2(396, 0, 66, 66)
-
-[sub_resource type="AtlasTexture" id="ATX_pface_7"]
-atlas = ExtResource("10_pface")
-region = Rect2(462, 0, 66, 66)
-
-[sub_resource type="AtlasTexture" id="ATX_pface_8"]
-atlas = ExtResource("10_pface")
-region = Rect2(528, 0, 66, 66)
-
-[sub_resource type="AtlasTexture" id="ATX_pface_9"]
-atlas = ExtResource("10_pface")
-region = Rect2(594, 0, 66, 66)
-
-[sub_resource type="AtlasTexture" id="ATX_pface_10"]
-atlas = ExtResource("10_pface")
-region = Rect2(660, 0, 66, 66)
-
-[sub_resource type="AtlasTexture" id="ATX_pface_11"]
-atlas = ExtResource("10_pface")
-region = Rect2(726, 0, 66, 66)
-
-[sub_resource type="AtlasTexture" id="ATX_pface_12"]
-atlas = ExtResource("10_pface")
-region = Rect2(792, 0, 66, 66)
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_pface"]
-animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("ATX_pface_0")
-}, {
-"duration": 1.0,
-"texture": SubResource("ATX_pface_1")
-}, {
-"duration": 1.0,
-"texture": SubResource("ATX_pface_2")
-}, {
-"duration": 1.0,
-"texture": SubResource("ATX_pface_3")
-}, {
-"duration": 1.0,
-"texture": SubResource("ATX_pface_4")
-}, {
-"duration": 1.0,
-"texture": SubResource("ATX_pface_5")
-}, {
-"duration": 1.0,
-"texture": SubResource("ATX_pface_6")
-}, {
-"duration": 1.0,
-"texture": SubResource("ATX_pface_7")
-}, {
-"duration": 1.0,
-"texture": SubResource("ATX_pface_8")
-}, {
-"duration": 1.0,
-"texture": SubResource("ATX_pface_9")
-}, {
-"duration": 1.0,
-"texture": SubResource("ATX_pface_10")
-}, {
-"duration": 1.0,
-"texture": SubResource("ATX_pface_11")
-}, {
-"duration": 1.0,
-"texture": SubResource("ATX_pface_12")
-}],
-"loop": true,
-"name": &"idle",
-"speed": 6.0
-}]
+[sub_resource type="AtlasTexture" id="ATX_border_front"]
+atlas = ExtResource("11_pface_border")
+region = Rect2(0, 66, 66, 66)
 
 [node name="WaveShop" type="CanvasLayer" unique_id=240698062]
 layer = 50
@@ -181,7 +91,7 @@ offset_bottom = 80.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
-text = "0 coins"
+text = "0"
 horizontal_alignment = 2
 vertical_alignment = 1
 
@@ -194,7 +104,7 @@ offset_bottom = 500.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 48
-text = "ESTRUTURAS"
+text = "SHOP_HEADER_STRUCTURES"
 vertical_alignment = 1
 
 [node name="EstrutCard1" type="Control" parent="Root" unique_id=1735365319]
@@ -222,7 +132,7 @@ offset_bottom = 109.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
-text = "+ HP MAXIMO"
+text = "SHOP_HP_TITLE"
 vertical_alignment = 1
 
 [node name="PriceLabel" type="Label" parent="Root/EstrutCard1" unique_id=176611714]
@@ -332,7 +242,7 @@ offset_bottom = 130.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 48
-text = "STATUS"
+text = "SHOP_HEADER_STATUS"
 vertical_alignment = 1
 
 [node name="StatusCard1" type="Control" parent="Root" unique_id=765996937]
@@ -470,7 +380,7 @@ offset_bottom = 580.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 48
-text = "ALIADOS"
+text = "SHOP_HEADER_ALLIES"
 vertical_alignment = 1
 
 [node name="AliadoRow" type="Control" parent="Root" unique_id=38431779]
@@ -503,7 +413,7 @@ offset_bottom = 101.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 25
-text = "FLECHA DE FOGO"
+text = "SHOP_FIRE_ARROW_NAME"
 vertical_alignment = 1
 autowrap_mode = 2
 
@@ -515,8 +425,8 @@ offset_right = 323.0
 offset_bottom = 257.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 18
-text = "SUA FLECHA GANHA PODER DE FOGO BLABLABLABLA"
+theme_override_font_sizes/font_size = 28
+text = "SHOP_FIRE_ARROW_DESC"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -595,7 +505,7 @@ offset_right = 294.0
 offset_bottom = 256.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 28
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -672,7 +582,7 @@ offset_right = 294.0
 offset_bottom = 256.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 28
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -722,7 +632,7 @@ offset_bottom = 130.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 48
-text = "UPGRADES"
+text = "SHOP_HEADER_UPGRADES"
 vertical_alignment = 1
 
 [node name="UpgRow" type="Control" parent="Root" unique_id=2130246383]
@@ -755,7 +665,7 @@ offset_bottom = 108.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 25
-text = "Disparo Profano"
+text = "SHOP_UPG_CURSE_ARROW"
 vertical_alignment = 1
 autowrap_mode = 2
 
@@ -767,7 +677,7 @@ offset_right = 294.0
 offset_bottom = 280.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 28
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -844,7 +754,7 @@ offset_right = 294.0
 offset_bottom = 280.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 28
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -924,7 +834,7 @@ offset_right = 294.0
 offset_bottom = 280.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 28
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -976,7 +886,7 @@ theme_override_font_sizes/font_size = 32
 theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/disabled = SubResource("SBF_btn_disabled")
-text = "Proxima Wave"
+text = "SHOP_NEXT_WAVE"
 
 [node name="GlobalReroll" type="Control" parent="Root" unique_id=707134856]
 anchors_preset = 0
@@ -1020,13 +930,31 @@ texture = SubResource("ATX_coin")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="PlayerFace" type="AnimatedSprite2D" parent="Root" unique_id=305011001]
+[node name="PlayerFace" type="Node2D" parent="Root" unique_id=305011001]
 texture_filter = 1
 position = Vector2(1743.9999, 799)
 scale = Vector2(4.651514, 4.651514)
-sprite_frames = SubResource("SpriteFrames_pface")
-animation = &"idle"
-autoplay = "idle"
+script = ExtResource("10_pface_script")
+
+[node name="BorderBack" type="Sprite2D" parent="Root/PlayerFace"]
+texture_filter = 1
+texture = SubResource("ATX_border_back")
+
+[node name="Cape" type="AnimatedSprite2D" parent="Root/PlayerFace"]
+texture_filter = 1
+
+[node name="Head" type="AnimatedSprite2D" parent="Root/PlayerFace"]
+texture_filter = 1
+
+[node name="Shirt" type="AnimatedSprite2D" parent="Root/PlayerFace"]
+texture_filter = 1
+
+[node name="Hair" type="AnimatedSprite2D" parent="Root/PlayerFace"]
+texture_filter = 1
+
+[node name="BorderFront" type="Sprite2D" parent="Root/PlayerFace"]
+texture_filter = 1
+texture = SubResource("ATX_border_front")
 
 [node name="PlacementHint" type="Label" parent="." unique_id=1961918498]
 visible = false
@@ -1042,7 +970,7 @@ offset_bottom = -40.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
-text = "Escolha um dos 5 pontos para posicionar  -  Aperte Z para voltar"
+text = "SHOP_PLACEMENT_HINT"
 horizontal_alignment = 1
 vertical_alignment = 1
 

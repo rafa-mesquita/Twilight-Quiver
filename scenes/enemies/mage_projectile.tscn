@@ -88,3 +88,4 @@ shape = SubResource("CircleShape2D_proj")
 [node name="ShootSound" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("3_sfx")
 volume_db = -24.0
+bus = &"SFX"

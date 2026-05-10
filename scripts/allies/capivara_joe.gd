@@ -90,6 +90,7 @@ func _play_drop_sound() -> void:
 	if drop_sound == null:
 		return
 	var p := AudioStreamPlayer2D.new()
+	p.bus = &"SFX"
 	p.stream = drop_sound
 	p.volume_db = drop_sound_volume_db
 	p.pitch_scale = randf_range(0.95, 1.05)

@@ -1,0 +1,447 @@
+keys,pt_BR,en,es,fr
+COMMON_BACK,Voltar,Back,Volver,Retour
+COMMON_SAVE,Salvar,Save,Guardar,Sauvegarder
+COMMON_CANCEL,Cancelar,Cancel,Cancelar,Annuler
+COMMON_LOADING,Carregando...,Loading...,Cargando...,Chargement...
+COMMON_SAVED,Salvo!,Saved!,¡Guardado!,Sauvegardé !
+COMMON_NONE,Nenhum,None,Ninguno,Aucun
+COMMON_APPLY,Aplicar,Apply,Aplicar,Appliquer
+COMMON_CONTINUE,Continuar,Continue,Continuar,Continuer
+COMMON_LOCKED,Bloqueada,Locked,Bloqueada,Verrouillée
+MENU_TITLE,TWILIGHT QUIVER,TWILIGHT QUIVER,TWILIGHT QUIVER,TWILIGHT QUIVER
+MENU_SUBTITLE,top-down archer roguelike,top-down archer roguelike,roguelike de arquero top-down,roguelike d'archer en vue de dessus
+MENU_START,Start Game,Start Game,Empezar,Commencer
+MENU_PLAYER,Player,Player,Personaje,Personnage
+MENU_LEADERBOARD,Leaderboard,Leaderboard,Clasificación,Classement
+MENU_SETTINGS,Configuracoes,Settings,Ajustes,Paramètres
+MENU_DEV_MODE,Dev Mode,Dev Mode,Modo Dev,Mode Dev
+MENU_QUIT,Quit,Quit,Salir,Quitter
+NICKNAME_TITLE,BEM-VINDO,WELCOME,BIENVENIDO,BIENVENUE
+NICKNAME_SUBTITLE,Qual o seu nick?,What's your nickname?,¿Cuál es tu nick?,Quel est votre pseudo ?
+NICKNAME_PLACEHOLDER,Digite seu nick,Enter your nickname,Escribe tu nick,Entrez votre pseudo
+NICKNAME_OK,Continuar,Continue,Continuar,Continuer
+SETTINGS_TITLE,CONFIGURACOES,SETTINGS,AJUSTES,PARAMÈTRES
+SETTINGS_HEADER_DISPLAY,DISPLAY,DISPLAY,PANTALLA,AFFICHAGE
+SETTINGS_HEADER_AUDIO,AUDIO,AUDIO,AUDIO,AUDIO
+SETTINGS_HEADER_VIDEO,VIDEO,VIDEO,VIDEO,VIDÉO
+SETTINGS_HEADER_LOCALE,IDIOMA,LANGUAGE,IDIOMA,LANGUE
+SETTINGS_DISPLAY_MODE,Modo de janela,Window mode,Modo de ventana,Mode fenêtre
+SETTINGS_RESOLUTION,Resolucao,Resolution,Resolución,Résolution
+SETTINGS_AUDIO_MASTER,Mestre,Master,Principal,Principal
+SETTINGS_AUDIO_MUSIC,Musica,Music,Música,Musique
+SETTINGS_AUDIO_SFX,Efeitos,SFX,Efectos,Effets
+SETTINGS_VSYNC,VSync,VSync,VSync,VSync
+SETTINGS_FPS_CAP,FPS maximo,Max FPS,FPS máximo,FPS max
+SETTINGS_SHOW_FPS,Mostrar FPS,Show FPS,Mostrar FPS,Afficher FPS
+SETTINGS_LOCALE,Idioma,Language,Idioma,Langue
+SETTINGS_DISPLAY_MODE_WINDOWED,Janela,Windowed,Ventana,Fenêtré
+SETTINGS_DISPLAY_MODE_BORDERLESS,Tela cheia em janela,Borderless,Pantalla completa sin bordes,Plein écran fenêtré
+SETTINGS_DISPLAY_MODE_FULLSCREEN,Tela cheia,Fullscreen,Pantalla completa,Plein écran
+SETTINGS_FPS_UNLIMITED,Sem limite,Unlimited,Sin límite,Illimité
+LEADERBOARD_TITLE,LEADERBOARD,LEADERBOARD,CLASIFICACIÓN,CLASSEMENT
+LEADERBOARD_FILTER_VERSION,Versao,Version,Versión,Version
+LEADERBOARD_FILTER_ALL,Todas,All,Todas,Tous
+LEADERBOARD_COL_RANK,#,#,#,#
+LEADERBOARD_COL_NICK,Nick,Nick,Nick,Pseudo
+LEADERBOARD_COL_SCORE,Score,Score,Score,Score
+LEADERBOARD_COL_WAVE,Wave,Raid,Raid,Raid
+LEADERBOARD_COL_TIME,Tempo,Time,Tiempo,Temps
+LEADERBOARD_COL_KILLS,Kills,Kills,Bajas,Éliminations
+LEADERBOARD_COL_DAMAGE,Dano,Damage,Daño,Dégâts
+LEADERBOARD_COL_VERSION,Versao,Version,Versión,Version
+LEADERBOARD_NO_SCORES,Nenhum score nessa versao.,No scores for this version.,Sin puntuaciones para esta versión.,Aucun score pour cette version.
+LEADERBOARD_ERROR,Erro: %s,Error: %s,Error: %s,Erreur : %s
+PLAYER_TITLE,PLAYER,PLAYER,PERSONAJE,PERSONNAGE
+PLAYER_PROGRESS_HEADER,PROGRESSO,PROGRESS,PROGRESO,PROGRÈS
+PLAYER_EMPTY,"Nenhuma skin disponivel.
+Drop PNGs em assets/player/<slot>/ pra criar variantes.","No skins available.
+Drop PNGs in assets/player/<slot>/ to create variants.","Sin skins disponibles.
+Suelta PNGs en assets/player/<slot>/ para crear variantes.","Aucune apparence disponible.
+Déposez des PNG dans assets/player/<slot>/ pour créer des variantes."
+PLAYER_SLOT_BODY,Corpo,Body,Cuerpo,Corps
+PLAYER_SLOT_LEGS,Pernas,Legs,Piernas,Jambes
+PLAYER_SLOT_SHIRT,Camisa,Shirt,Camisa,Chemise
+PLAYER_SLOT_ALFAJA,Alfaja,Sash,Faja,Ceinture
+PLAYER_SLOT_CAPE,Capa,Cape,Capa,Cape
+PLAYER_SLOT_QUIVER,Aljava,Quiver,Aljaba,Carquois
+PLAYER_SLOT_HAIR,Cabelo,Hair,Cabello,Cheveux
+PLAYER_SLOT_BOW,Arco,Bow,Arco,Arc
+PLAYER_STAT_MAX_WAVE,Wave maxima,Max raid,Raid máximo,Raid max
+PLAYER_STAT_KILLS,Inimigos mortos,Enemies killed,Enemigos eliminados,Ennemis tués
+PLAYER_STAT_DAMAGE,Dano causado,Damage dealt,Daño causado,Dégâts infligés
+PLAYER_STAT_RUNS,Runs,Runs,Partidas,Parties
+PLAYER_QUEST_RED_VELVET,Alcance a raid 10,Reach raid 10,Alcanza el raid 10,Atteignez le raid 10
+HUD_DASH_READY,Pronto,Ready,Listo,Prêt
+HUD_RAID_INTRO,Raid %d,Raid %d,Raid %d,Raid %d
+HUD_WAVE_CLEARED,Wave %d Limpa,Raid %d Cleared,Raid %d Limpio,Raid %d Nettoyé
+HUD_DEATH_SCORE,SCORE %d,SCORE %d,SCORE %d,SCORE %d
+HUD_DEATH_SURVIVAL,Sobreviveu %d waves,Survived %d raids,Sobreviviste %d raids,Survécu à %d raids
+HUD_DEATH_RESTART,Jogar Novamente,Play Again,Jugar de nuevo,Rejouer
+HUD_DEATH_MENU,Voltar ao Menu,Back to Menu,Volver al menú,Retour au menu
+HUD_DEATH_STATS,"Tempo: %s
+Inimigos mortos: %d
+Aliados feitos: %d
+Dano causado: %d
+Dano sofrido: %d","Time: %s
+Enemies killed: %d
+Allies made: %d
+Damage dealt: %d
+Damage taken: %d","Tiempo: %s
+Enemigos eliminados: %d
+Aliados creados: %d
+Daño causado: %d
+Daño recibido: %d","Temps : %s
+Ennemis tués : %d
+Alliés créés : %d
+Dégâts infligés : %d
+Dégâts subis : %d"
+HUD_UNLOCK_TITLE,SKIN DESBLOQUEADA!,SKIN UNLOCKED!,¡SKIN DESBLOQUEADA!,APPARENCE DÉBLOQUÉE !
+HUD_TOWER_ATTACKED,Torre sob ataque,Tower under attack,Torre bajo ataque,Tour attaquée
+HUD_PAUSE_TITLE,PAUSADO,PAUSED,PAUSADO,EN PAUSE
+HUD_PAUSE_CONTINUE,Continuar,Continue,Continuar,Continuer
+HUD_PAUSE_SETTINGS,Configuracoes,Settings,Ajustes,Paramètres
+HUD_PAUSE_MENU,Voltar ao Menu,Back to Menu,Volver al menú,Retour au menu
+SHOP_NEXT_WAVE,Proxima Wave,Next Raid,Siguiente Raid,Raid suivant
+SHOP_GOLD_LABEL,%d coins,%d coins,%d monedas,%d pièces
+SHOP_HEADER_STRUCTURES,ESTRUTURAS,STRUCTURES,ESTRUCTURAS,STRUCTURES
+SHOP_HEADER_STATUS,STATUS,STATUS,ESTADO,STATS
+SHOP_HEADER_ALLIES,ALIADOS,ALLIES,ALIADOS,ALLIÉS
+SHOP_HEADER_UPGRADES,UPGRADES,UPGRADES,MEJORAS,AMÉLIORATIONS
+SHOP_BONUS_PLUS_ONE,BONUS +1!,BONUS +1!,¡BONUS +1!,BONUS +1 !
+SHOP_PLACEMENT_HINT,Escolha um dos 5 pontos para posicionar  -  Aperte Z para voltar,Pick one of the 5 spots to place  -  Press Z to go back,Elige uno de los 5 puntos para colocar  -  Pulsa Z para volver,Choisissez un des 5 emplacements  -  Appuyez sur Z pour revenir
+SHOP_COMING_SOON,Em breve,Coming soon,Próximamente,Bientôt
+SHOP_BLOCKED,Bloqueado,Blocked,Bloqueado,Bloqué
+SHOP_FREE_PET,Pet gratis!,Free pet!,¡Mascota gratis!,Animal gratuit !
+SHOP_FREE_PET_DESC,"Recebido nesta
+wave","Received this
+raid","Recibido en este
+raid","Reçu dans ce
+raid"
+SHOP_MAX_REACHED,Max (4/4) atingido,Max (4/4) reached,Máx (4/4) alcanzado,Max (4/4) atteint
+SHOP_LOCK_TITLE_SINGULAR,"Desbloqueia em
+%d turno","Unlocks in
+%d round","Se desbloquea en
+%d turno","Se débloque dans
+%d tour"
+SHOP_LOCK_TITLE_PLURAL,"Desbloqueia em
+%d turnos","Unlocks in
+%d rounds","Se desbloquea en
+%d turnos","Se débloque dans
+%d tours"
+SHOP_TOWER_NAME,Torre 80% dano,Tower 80% dmg,Torre 80% daño,Tour 80% dégâts
+SHOP_TOWER_DESC,"Atira em inimigos
+proximos. 80% dano.","Shoots nearby
+enemies. 80% dmg.","Dispara a enemigos
+cercanos. 80% daño.","Tire sur les ennemis
+proches. 80% dégâts."
+SHOP_FIRE_ARROW_NAME,FLECHA DE FOGO,FIRE ARROW,FLECHA DE FUEGO,FLÈCHE DE FEU
+SHOP_FIRE_ARROW_DESC,SUA FLECHA GANHA PODER DE FOGO BLABLABLABLA,YOUR ARROW GAINS FIRE POWER BLABLABLABLA,TU FLECHA GANA PODER DE FUEGO BLABLABLABLA,VOTRE FLÈCHE GAGNE LE POUVOIR DU FEU BLABLABLABLA
+SHOP_HP_TITLE,+ HP MAXIMO,+ MAX HP,+ HP MÁXIMO,+ PV MAX
+SHOP_HP_PLUS_18,+18 HP,+18 HP,+18 HP,+18 PV
+SHOP_HP_PLUS_20,+20 HP,+20 HP,+20 HP,+20 PV
+SHOP_HP_PLUS_22,+22 HP,+22 HP,+22 HP,+22 PV
+SHOP_HP_PLUS_25,+25 HP,+25 HP,+25 HP,+25 PV
+SHOP_DAMAGE,+20% dano,+20% dmg,+20% daño,+20% dégâts
+SHOP_ATTACK_SPEED,+27% atk speed,+27% atk speed,+27% vel. ataque,+27% vit. attaque
+SHOP_MOVE_SPEED,+10% move speed,+10% move speed,+10% vel. movimiento,+10% vit. déplacement
+SHOP_ARMOR_8,+8% dano reduzido,+8% dmg reduced,+8% daño reducido,+8% dégâts réduits
+SHOP_ARMOR_12,+12% dano reduzido,+12% dmg reduced,+12% daño reducido,+12% dégâts réduits
+SHOP_ARMOR_16,+16% dano reduzido,+16% dmg reduced,+16% daño reducido,+16% dégâts réduits
+SHOP_ARMOR_20,+20% dano reduzido,+20% dmg reduced,+20% daño reducido,+20% dégâts réduits
+SHOP_ARMOR_3,+3% dano reduzido,+3% dmg reduced,+3% daño reducido,+3% dégâts réduits
+SHOP_UPG_PERFURACAO,Perfuracao,Piercing,Perforación,Perforation
+SHOP_UPG_MULTI_ARROW,Multiplas Flechas,Multiple Arrows,Flechas Múltiples,Flèches Multiples
+SHOP_UPG_CHAIN_LIGHTNING,Cadeia de Raios,Chain Lightning,Cadena de Rayos,Chaîne d'Éclairs
+SHOP_UPG_LIFE_STEAL,Mestre da Cura,Heal Master,Maestro de Cura,Maître Soigneur
+SHOP_UPG_GOLD_MAGNET,Chuva de Coins,Coin Rain,Lluvia de Monedas,Pluie de Pièces
+SHOP_UPG_DASH,Deslizando,Sliding,Deslizar,Esquive
+SHOP_UPG_RICOCHET,Flecha Ricochete,Ricochet Arrow,Flecha Rebotadora,Flèche Ricochet
+SHOP_UPG_GRAVITON,Graviton,Graviton,Gravitón,Graviton
+SHOP_UPG_FIRE_ARROW,Flecha de Fogo,Fire Arrow,Flecha de Fuego,Flèche de Feu
+SHOP_UPG_CURSE_ARROW,Disparo Profano,Profane Shot,Disparo Profano,Tir Profane
+SHOP_ALLY_WOODWARDEN,Woodwarden,Woodwarden,Woodwarden,Woodwarden
+SHOP_ALLY_LENO,Amigo Leno,Friend Leno,Amigo Leno,Ami Leno
+SHOP_ALLY_CAPIVARA,Capivara Joe,Capybara Joe,Capibara Joe,Capybara Joe
+SHOP_HP_DESC_1,+18 HP maximo,+18 max HP,+18 HP máximo,+18 PV max
+SHOP_HP_DESC_2,+20 HP maximo,+20 max HP,+20 HP máximo,+20 PV max
+SHOP_HP_DESC_3,+22 HP maximo,+22 max HP,+22 HP máximo,+22 PV max
+SHOP_HP_DESC_4,+25 HP maximo,+25 max HP,+25 HP máximo,+25 PV max
+SHOP_ARMOR_DESC_1,"8% de dano
+reduzido","8% damage
+reduced","8% de daño
+reducido","8% de dégâts
+réduits"
+SHOP_ARMOR_DESC_2,"12% de dano
+reduzido","12% damage
+reduced","12% de daño
+reducido","12% de dégâts
+réduits"
+SHOP_ARMOR_DESC_3,"16% de dano
+reduzido","16% damage
+reduced","16% de daño
+reducido","16% de dégâts
+réduits"
+SHOP_ARMOR_DESC_4,"20% de dano
+reduzido","20% damage
+reduced","20% de daño
+reducido","20% de dégâts
+réduits"
+SHOP_ARMOR_DESC_5,"+3% dano reduzido
+por compra","+3% damage reduced
+per purchase","+3% daño reducido
+por compra","+3% dégâts réduits
+par achat"
+SHOP_DAMAGE_DESC,+20% dano da flecha,+20% arrow damage,+20% daño de flecha,+20% dégâts de flèche
+SHOP_PERFURACAO_DESC_1,"A cada 3 ataques flecha
+atravessa, +30% dano","Every 3 attacks arrow
+pierces, +30% damage","Cada 3 ataques flecha
+perfora, +30% daño","Toutes les 3 attaques
+perfore, +30% dégâts"
+SHOP_PERFURACAO_DESC_2,+60% dano + hitbox maior,+60% damage + bigger hitbox,+60% daño + hitbox mayor,+60% dégâts + hitbox plus grande
+SHOP_PERFURACAO_DESC_3,+90% dano,+90% damage,+90% daño,+90% dégâts
+SHOP_PERFURACAO_DESC_4,Todo ataque atravessa,Every attack pierces,Cada ataque perfora,Chaque attaque perfore
+SHOP_ATTACK_SPEED_DESC,"+27% velocidade de
+ataque","+27% attack
+speed","+27% velocidad de
+ataque","+27% vitesse
+d'attaque"
+SHOP_MULTI_ARROW_DESC_1,"+2 flechas a 30°
+(50% dano)","+2 arrows at 30°
+(50% damage)","+2 flechas a 30°
+(50% daño)","+2 flèches à 30°
+(50% dégâts)"
+SHOP_MULTI_ARROW_DESC_2,"Flechas extras agora
+80% do dano","Extra arrows now
+80% damage","Flechas extra ahora
+80% del daño","Flèches sup. font
+80% des dégâts"
+SHOP_MULTI_ARROW_DESC_3,"+2 flechas (5 total)
+em leque","+2 arrows (5 total)
+in fan","+2 flechas (5 total)
+en abanico","+2 flèches (5 total)
+en éventail"
+SHOP_MULTI_ARROW_DESC_4,"10 flechas em todas
+as direcoes","10 arrows in every
+direction","10 flechas en todas
+las direcciones","10 flèches dans
+toutes les directions"
+SHOP_CHAIN_LIGHTNING_DESC_1,"30% dano no inimigo
+mais proximo","30% damage to nearest
+enemy","30% daño al enemigo
+más cercano","30% dégâts à l'ennemi
+le plus proche"
+SHOP_CHAIN_LIGHTNING_DESC_2,"50% dano em 2 inimigos
++30% chance no 3º","50% damage on 2 enemies
++30% chance on 3rd","50% daño en 2 enemigos
++30% chance en el 3º","50% dégâts sur 2 ennemis
++30% chance sur le 3e"
+SHOP_CHAIN_LIGHTNING_DESC_3,"60% dano em 4
+inimigos","60% damage on 4
+enemies","60% daño en 4
+enemigos","60% dégâts sur 4
+ennemis"
+SHOP_CHAIN_LIGHTNING_DESC_4,"100% dano em todos
+da area","100% damage on all
+in area","100% daño en todos
+del área","100% dégâts sur tous
+dans la zone"
+SHOP_MOVE_SPEED_DESC,"+10% velocidade de
+movimento","+10% movement
+speed","+10% velocidad de
+movimiento","+10% vitesse de
+déplacement"
+SHOP_GOLD_MAGNET_DESC_1,"+5% drop +25%
+duracao das coins","+5% drop +25%
+coin duration","+5% drop +25%
+duración monedas","+5% drop +25%
+durée des pièces"
+SHOP_GOLD_MAGNET_DESC_2,"Coins duram 2x
++2% drop","Coins last 2x
++2% drop","Monedas duran 2x
++2% drop","Pièces durent 2x
++2% drop"
+SHOP_GOLD_MAGNET_DESC_3,"+2% drop
+pulso da slow","+2% drop
+slow pulse","+2% drop
+pulso ralentizador","+2% drop
+impulsion ralentit"
+SHOP_GOLD_MAGNET_DESC_4,"Puxa coins
+da area","Pulls coins
+from area","Atrae monedas
+del área","Attire les pièces
+de la zone"
+SHOP_DASH_DESC_1,"Espaco = dash
+cd 5.5s","Space = dash
+cd 5.5s","Espacio = dash
+cd 5.5s","Espace = esquive
+cd 5.5s"
+SHOP_DASH_DESC_2,"Rastro de fogo
+cd 4.5s","Fire trail
+cd 4.5s","Estela de fuego
+cd 4.5s","Traînée de feu
+cd 4.5s"
+SHOP_DASH_DESC_3,"Auto-attack
+cd 4s","Auto-attack
+cd 4s","Auto-ataque
+cd 4s","Auto-attaque
+cd 4s"
+SHOP_DASH_DESC_4,"+1 flecha
+cd 3.5s","+1 arrow
+cd 3.5s","+1 flecha
+cd 3.5s","+1 flèche
+cd 3.5s"
+SHOP_LIFE_STEAL_DESC_1,"10% drop coracao
+cura 20% HP","10% heart drop
+heals 20% HP","10% drop corazón
+cura 20% HP","10% drop cœur
+soigne 20% PV"
+SHOP_LIFE_STEAL_DESC_2,"+5% drop
++10% cura","+5% drop
++10% heal","+5% drop
++10% cura","+5% drop
++10% soin"
+SHOP_LIFE_STEAL_DESC_3,"+5% drop, +5% cura
+puxa em area","+5% drop, +5% heal
+pulls in area","+5% drop, +5% cura
+atrae en área","+5% drop, +5% soin
+attire en zone"
+SHOP_LIFE_STEAL_DESC_4,Puxa do mapa todo,Pulls from whole map,Atrae de todo el mapa,Attire de toute la carte
+SHOP_RICOCHET_DESC_1,"A cada 3 ataques
+flecha ricocheteia","Every 3 attacks
+arrow ricochets","Cada 3 ataques
+flecha rebota","Toutes les 3 attaques
+flèche ricoche"
+SHOP_RICOCHET_DESC_2,"A cada 2 ataques
+divide em 2","Every 2 attacks
+splits in 2","Cada 2 ataques
+se divide en 2","Toutes les 2 attaques
+se divise en 2"
+SHOP_RICOCHET_DESC_3,"+1 ricochete
+(sem dividir)","+1 ricochet
+(no split)","+1 rebote
+(sin dividir)","+1 ricochet
+(sans diviser)"
+SHOP_RICOCHET_DESC_4,"2º ricochete
+divide tambem","2nd ricochet
+also splits","2º rebote
+también divide","2e ricochet
+divise aussi"
+SHOP_GRAVITON_DESC_1,"Cada 3 ataques cria
+campo gravitacional","Every 3 attacks creates
+gravity field","Cada 3 ataques crea
+campo gravitacional","Toutes les 3 attaques
+champ gravitationnel"
+SHOP_GRAVITON_DESC_2,"Cada 2 ataques
++ range maior","Every 2 attacks
++ bigger range","Cada 2 ataques
++ mayor alcance","Toutes les 2 attaques
++ portée plus grande"
+SHOP_GRAVITON_DESC_3,"Pulso explode no fim
+30 dano area","Pulse explodes at end
+30 area damage","Pulso explota al final
+30 daño en área","Impulsion explose à la fin
+30 dégâts de zone"
+SHOP_GRAVITON_DESC_4,"+area + 50 dano
+na explosao","+area + 50 damage
+on explosion","+área + 50 daño
+en explosión","+zone + 50 dégâts
+à l'explosion"
+SHOP_LENO_DESC_1,"Aliado voador, atira
+8 dano + slow area","Flying ally, shoots
+8 dmg + slow area","Aliado volador, dispara
+8 daño + área lenta","Allié volant, tire
+8 dégâts + zone lente"
+SHOP_LENO_DESC_2,"+atk speed,
+18 dano por ataque","+atk speed,
+18 damage per attack","+vel. ataque,
+18 daño por ataque","+vit. attaque,
+18 dégâts par attaque"
+SHOP_LENO_DESC_3,+1 Leno (total 2),+1 Leno (total 2),+1 Leno (total 2),+1 Leno (total 2)
+SHOP_LENO_DESC_4,+1 Leno (total 3),+1 Leno (total 3),+1 Leno (total 3),+1 Leno (total 3)
+SHOP_CAPIVARA_DESC_1,"Cogumelo a cada 17,5s
+cura 35 HP / speed","Mushroom every 17.5s
+heals 35 HP / speed","Hongo cada 17.5s
+cura 35 HP / vel.","Champignon toutes les 17.5s
+soigne 35 PV / vit."
+SHOP_CAPIVARA_DESC_2,"8,75s alterna buff/dano
+40 dmg area roxa","8.75s buff/damage
+40 dmg purple area","8.75s buff/daño
+40 dmg área púrpura","8.75s buff/dégâts
+40 dmg zone violette"
+SHOP_CAPIVARA_DESC_3,"Buff cura+speed
++atk speed 50%","Buff heal+speed
++atk speed 50%","Buff cura+vel.
++vel. ataque 50%","Buff soin+vit.
++vit. attaque 50%"
+SHOP_CAPIVARA_DESC_4,"+1 Capivara
+(total 2)","+1 Capybara
+(total 2)","+1 Capibara
+(total 2)","+1 Capybara
+(total 2)"
+SHOP_FIRE_ARROW_DESC_1,"Queima inimigo
+4 dmg/s por 3s","Burns enemy
+4 dmg/s for 3s","Quema enemigo
+4 dmg/s por 3s","Brûle l'ennemi
+4 dmg/s pendant 3s"
+SHOP_FIRE_ARROW_DESC_2,"+1 dmg/s +
+rastro de fogo","+1 dmg/s +
+fire trail","+1 dmg/s +
+estela de fuego","+1 dmg/s +
+traînée de feu"
+SHOP_FIRE_ARROW_DESC_3,"Skill Q: chama
+area 12 dps 6s","Skill Q: flame
+area 12 dps 6s","Hab. Q: llama
+área 12 dps 6s","Comp. Q : flamme
+zone 12 dps 6s"
+SHOP_FIRE_ARROW_DESC_4,"Rastro do player
++30% queima area","Player trail
++30% area burn","Estela del jugador
++30% quema área","Traînée du joueur
++30% brûle zone"
+SHOP_CURSE_ARROW_DESC_1,"Slow 35%
++ 3 dps toxic","Slow 35%
++ 3 dps toxic","Lentitud 35%
++ 3 dps tóxico","Lenteur 35%
++ 3 dps toxique"
+SHOP_CURSE_ARROW_DESC_2,"18% chance kill
+vira aliado","18% chance kill
+turns into ally","18% chance al matar
+se vuelve aliado","18% chance de tuer
+devient allié"
+SHOP_CURSE_ARROW_DESC_3,"33% chance + aliados
+aplicam DoT","33% chance + allies
+apply DoT","33% chance + aliados
+aplican DoT","33% chance + alliés
+appliquent DoT"
+SHOP_CURSE_ARROW_DESC_4,"50% chance
+Q: raio purpura cd 20s","50% chance
+Q: purple beam cd 20s","50% chance
+Q: rayo púrpura cd 20s","50% chance
+Q : rayon violet cd 20s"
+SHOP_WW_MAX,Max (4/4) atingido,Max (4/4) reached,Máx (4/4) alcanzado,Max (4/4) atteint
+SHOP_WW_DESC_1,"Aliado tank: 200hp
+50dmg+stun","Tank ally: 200hp
+50dmg+stun","Aliado tanque: 200hp
+50dmg+aturde","Allié tank : 200pv
+50dmg+étourd."
+SHOP_WW_DESC_2,"Lv2: +1 aliado, ataques
+curam aliados 25%","Lv2: +1 ally, attacks
+heal allies 25%","Lv2: +1 aliado, ataques
+curan aliados 25%","Lv2 : +1 allié, attaques
+soignent alliés 25%"
+SHOP_WW_DESC_3,"Lv3: +1 aliado, +25hp
++5 dano em todos","Lv3: +1 ally, +25hp
++5 damage on all","Lv3: +1 aliado, +25hp
++5 daño en todos","Lv3 : +1 allié, +25pv
++5 dégâts à tous"
+SHOP_WW_DESC_4,"Lv4 max: +1 aliado
++25hp +5 dano","Lv4 max: +1 ally
++25hp +5 damage","Lv4 máx: +1 aliado
++25hp +5 daño","Lv4 max : +1 allié
++25pv +5 dégâts"
+HUD_FREE_UPGRADE_TITLE,BONUS DE BOAS-VINDAS,WELCOME BONUS,BONUS DE BIENVENIDA,BONUS DE BIENVENUE
+SHOP_UPG_DAMAGE,Dano,Damage,Daño,Dégâts
+SHOP_UPG_ATTACK_SPEED,Velocidade de Ataque,Attack Speed,Velocidad de Ataque,Vitesse d'Attaque
+SHOP_UPG_MOVE_SPEED,Velocidade de Movimento,Move Speed,Velocidad de Movimiento,Vitesse de Déplacement
+SHOP_UPG_ARMOR,Armadura,Armor,Armadura,Armure
+PLAYER_QUEST_GINGERALE,Mate 3000 inimigos no total,Kill 3000 enemies total,Mata 3000 enemigos en total,Tuez 3000 ennemis au total

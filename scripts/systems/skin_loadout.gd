@@ -65,7 +65,14 @@ const SKIN_QUESTS: Dictionary = {
 	"Red_Velvet": {
 		"type": "wave_reached",
 		"value": 10,
-		"label": "Alcance a raid 10",
+		# `label` é uma translation key — exibida via tr() em skin_select.gd e hud.gd.
+		"label": "PLAYER_QUEST_RED_VELVET",
+		"hidden": false,
+	},
+	"Gingerale": {
+		"type": "enemies_killed",
+		"value": 3000,
+		"label": "PLAYER_QUEST_GINGERALE",
 		"hidden": false,
 	},
 }
@@ -244,6 +251,10 @@ static func _is_quest_satisfied(quest: Dictionary) -> bool:
 
 static func is_unlocked(part: SkinPart) -> bool:
 	if part == null:
+		return true
+	# Debug build (editor + debug export) libera tudo — facilita testar skins
+	# sem precisar grindar quests. Release build mantém unlock real.
+	if OS.is_debug_build():
 		return true
 	var quest: Dictionary = SKIN_QUESTS.get(part.display_name, {})
 	if quest.is_empty():
