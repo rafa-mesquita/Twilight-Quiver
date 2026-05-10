@@ -1,17 +1,31 @@
 extends MageEnemy
 
-# Mago elétrico — variante do MageEnemy. Esqueleto básico: dispara o tiro
-# normal (mage_projectile) tintado de amarelo elétrico. Poderes especiais
-# serão adicionados depois.
+# Mago elétrico — variante do MageEnemy. Único ataque: castar DOIS raios
+# simultâneos (um na posição atual do alvo, outro na posição prevista pela
+# velocidade × bolt_lead_time). Range bem alto, atk speed lento (5s entre
+# ataques — é forte). Sem tiro normal e sem invocação.
+
+# Cena do raio que pousa numa área e dá dano.
+@export var lightning_bolt_scene: PackedScene
+# Dano de cada raio (cada ataque solta 2 raios — total max 2× se ambos
+# atingirem). Multiplicado pelo damage_mult do scaling de wave.
+@export var bolt_damage: float = 15.0
+# Tempo entre spawn do raio e impacto = FADE_IN_DURATION + frames-até-impacto.
+# Usado como lead time pra previsão de movimento do alvo.
+# Cálculo: 0.5s (fade) + 4/14 fps (frames até impacto) ≈ 0.79s.
+@export var bolt_lead_time: float = 0.8
 
 # Skin: textura própria do electric mage (mesmas regiões do sheet base do
 # mage, layout 32×32 com walk[3] + attack[3]).
 const ELECTRIC_MAGE_TEXTURE: Texture2D = preload("res://assets/enemies/mage/eletric mage.png")
 
-# Tinta dos tiros — amarelo brilhante "elétrico".
-const ELECTRIC_PROJ_TINT: Color = Color(1.0, 0.95, 0.4, 1.0)
-const ELECTRIC_PROJ_TRAIL_TIP: Color = Color(1.0, 0.85, 0.3, 0.7)
-const ELECTRIC_PROJ_TRAIL_HEAD: Color = Color(1.0, 0.85, 0.3, 0.0)
+# Clamp da distância de lead — se o player tá em dash super-rápido, a
+# previsão não dispara um raio absurdamente longe.
+const BOLT_MAX_LEAD_DISTANCE: float = 180.0
+# Se a previsão fica colada no alvo atual (player parado), aplica um pequeno
+# offset aleatório no segundo raio pra dois círculos de dano distintos.
+const BOLT_MIN_SEPARATION: float = 12.0
+const BOLT_OFFSET_RADIUS: float = 24.0
 
 
 func _ready() -> void:
@@ -43,40 +57,40 @@ func _apply_electric_mage_skin() -> void:
 		sprite.play("walk")
 
 
-# Override: dispara o tiro normal pintado de amarelo elétrico. Mesma estrutura
-# do fire_mage._fire_projectile pra curse-ally support.
+# Override completo: dispara DOIS raios simultâneos — um na posição atual do
+# alvo, outro na posição prevista. Sem tiro normal nem fallback.
 func _fire_projectile() -> void:
-	if projectile_scene == null:
+	if lightning_bolt_scene == null:
 		return
-	var proj := projectile_scene.instantiate()
-	if "damage" in proj and damage_mult != 1.0:
-		proj.damage = proj.damage * damage_mult
-	# Curse-ally: marca projétil como ally_source (mira em enemy).
-	if is_curse_ally and "is_ally_source" in proj:
-		proj.is_ally_source = true
-	if "apply_curse" in proj and is_curse_ally:
-		proj.apply_curse = true
-	_get_world().add_child(proj)
-	proj.global_position = Vector2(muzzle.global_position.x, global_position.y + 2)
-	if proj.has_method("set_direction"):
-		proj.set_direction(locked_attack_dir)
-	_apply_electric_projectile_skin(proj)
+	# Curse-ally: mira no current_target (enemy mais próximo). Mago normal:
+	# mira no player.
+	var target: Node2D = current_target if is_curse_ally else (player as Node2D)
+	if target == null or not is_instance_valid(target):
+		return
+	# Bolt 1: posição atual do alvo.
+	_spawn_bolt(target.global_position)
+	# Bolt 2: posição prevista (target.velocity × bolt_lead_time, clampado).
+	var predicted: Vector2 = target.global_position
+	if "velocity" in target:
+		var lead: Vector2 = (target.velocity as Vector2) * bolt_lead_time
+		if lead.length() > BOLT_MAX_LEAD_DISTANCE:
+			lead = lead.normalized() * BOLT_MAX_LEAD_DISTANCE
+		predicted += lead
+	# Se o alvo tava parado, a previsão é a mesma posição — força um offset
+	# aleatório pequeno pra os dois raios não caírem no mesmo pixel.
+	if (predicted - target.global_position).length() < BOLT_MIN_SEPARATION:
+		var rand_angle: float = randf() * TAU
+		predicted += Vector2(cos(rand_angle), sin(rand_angle)) * BOLT_OFFSET_RADIUS
+	_spawn_bolt(predicted)
 
 
-func _apply_electric_projectile_skin(proj: Node) -> void:
-	# Mesmo padrão do _apply_summoner_projectile_skin / _apply_ice_projectile_skin:
-	# tinge sprite + glow + trail (com gradient duplicado pra não vazar).
-	var s: Node = proj.get_node_or_null("AnimatedSprite2D")
-	if s is CanvasItem:
-		(s as CanvasItem).modulate = ELECTRIC_PROJ_TINT
-	var glow: Node = proj.get_node_or_null("GlowLight")
-	if glow is PointLight2D:
-		(glow as PointLight2D).color = ELECTRIC_PROJ_TINT
-	var trail: Node = proj.get_node_or_null("Trail")
-	if trail is Line2D:
-		var l: Line2D = trail as Line2D
-		l.default_color = ELECTRIC_PROJ_TINT
-		if l.gradient != null:
-			var g: Gradient = l.gradient.duplicate() as Gradient
-			g.colors = PackedColorArray([ELECTRIC_PROJ_TRAIL_HEAD, ELECTRIC_PROJ_TRAIL_TIP])
-			l.gradient = g
+func _spawn_bolt(pos: Vector2) -> void:
+	var bolt: Node2D = lightning_bolt_scene.instantiate()
+	if "damage" in bolt:
+		bolt.damage = bolt_damage * damage_mult
+	# Mago normal: raio é "enemy source" (bate em player+ally+structure).
+	# Curse-ally: raio é "player source" — bate em enemies.
+	if "is_enemy_source" in bolt:
+		bolt.is_enemy_source = not is_curse_ally
+	_get_world().add_child(bolt)
+	bolt.global_position = pos

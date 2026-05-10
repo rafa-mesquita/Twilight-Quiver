@@ -49,6 +49,10 @@ extends Node2D
 # ~2.53× dmg comparado ao boss da wave 7 — dentro do range pedido.
 @export var boss_redux_wave: int = 14
 @export var boss_redux_extra_mult: float = 1.75
+# Boss redux dropa MAIS gold pra compensar a perda dos drops dos minions
+# (que ficam zerados nas waves de boss). 3.5× sobre o base 9-12 → 32-42 coins.
+# Equivale (com folga) ao gold que viria dos ~16 minions na wave 14.
+const BOSS_REDUX_GOLD_MULT: float = 3.5
 
 var wave_number: int = 0
 var spawn_points: Array[Marker2D] = []
@@ -465,27 +469,29 @@ func _spawn_one(type_key: String) -> void:
 		return
 	var pos: Vector2 = _pick_spawn_for(type_key)
 	var enemy: Node2D = info["scene"].instantiate()
-	# Wave 7 (boss): minions iniciais (todas variações de mago) NÃO recebem o
-	# scaling de wave — ficam com stats base do .tscn (HP equivalente ao
-	# mago da wave 1). Servem de shield "trash mob" pro boss; só os minions
-	# invocados PELO BOSS depois é que escalam (em mage_monkey._summon_horde).
-	# Drops também zerados — único drop da wave vem do próprio boss.
-	if wave_number == 7 and type_key != "mage_monkey":
+	# Waves de boss (7 e 14): minions iniciais (todas variações de mago) NÃO
+	# dropam gold nem heart — único drop da wave vem do próprio boss.
+	# Diferença entre 7 e 14:
+	#   Wave 7: minions PULAM scaling (trash mobs com stats base, shield).
+	#   Wave 14: minions ESCALAM normalmente (natural + boss_redux_extra_mult)
+	#            — versões fortes, mas sem drops pra a recompensa ficar no boss.
+	if _is_boss_wave(wave_number) and type_key != "mage_monkey":
 		if "gold_drop_chance" in enemy:
 			enemy.gold_drop_chance = 0.0
 		if "heart_scene" in enemy:
 			enemy.heart_scene = null
-		# Pula _apply_wave_scaling pra manter stats base (max_hp/damage_mult).
-	else:
-		# Aplica scaling de wave ANTES de add_child pra _ready do inimigo já usar max_hp escalado.
+	# Scaling: pula só pra minions da wave 7. Resto (incluindo minions da
+	# wave 14 e boss em qualquer wave) leva scaling normal.
+	if wave_number != 7 or type_key == "mage_monkey":
 		_apply_wave_scaling(enemy)
-	# Wave 14 boss (redux): drops escalam junto com os stats — recompensa proporcional
-	# à dificuldade extra. Aplica em cima do gold_drop_min/max base do boss.
-	if wave_number == boss_redux_wave and type_key == "mage_monkey" and boss_redux_extra_mult > 1.0:
+	# Wave 14 boss (redux): drops escalam pra compensar a perda de drops dos
+	# minions + a dificuldade extra. Multiplicador maior que o normal de
+	# scaling porque tem ~16-18 minions a menos contribuindo gold.
+	if wave_number == boss_redux_wave and type_key == "mage_monkey" and BOSS_REDUX_GOLD_MULT > 1.0:
 		if "gold_drop_min" in enemy:
-			enemy.gold_drop_min = int(round(float(enemy.gold_drop_min) * boss_redux_extra_mult))
+			enemy.gold_drop_min = int(round(float(enemy.gold_drop_min) * BOSS_REDUX_GOLD_MULT))
 		if "gold_drop_max" in enemy:
-			enemy.gold_drop_max = int(round(float(enemy.gold_drop_max) * boss_redux_extra_mult))
+			enemy.gold_drop_max = int(round(float(enemy.gold_drop_max) * BOSS_REDUX_GOLD_MULT))
 	world.add_child(enemy)
 	enemy.global_position = pos
 	spawned_this_wave[type_key] = spawned_this_wave.get(type_key, 0) + 1

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://3stk235evcv8"
+path="res://.godot/imported/mage eletric bolt.mp3-eb650a020a3ac35fc7a66a2623dd6e19.mp3str"
+
+[deps]
+
+source_file="res://audios/effects/mage/mage eletric bolt.mp3"
+dest_files=["res://.godot/imported/mage eletric bolt.mp3-eb650a020a3ac35fc7a66a2623dd6e19.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

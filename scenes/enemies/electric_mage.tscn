@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/enemies/electric_mage.gd" id="1_elecmage"]
 [ext_resource type="Texture2D" uid="uid://b5j32bxp8kphc" path="res://assets/enemies/mage/mage-Sheet.png" id="2_sheet"]
-[ext_resource type="PackedScene" path="res://scenes/enemies/mage_projectile.tscn" id="3_mage_proj"]
+[ext_resource type="PackedScene" path="res://scenes/skills/lightning_bolt.tscn" id="3_bolt"]
 [ext_resource type="PackedScene" path="res://scenes/effects/damage_effect.tscn" id="4_dmg"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hp_bar.tscn" id="5_hpbar"]
 [ext_resource type="PackedScene" path="res://scenes/effects/damage_number.tscn" id="6_dmgnum"]
@@ -59,18 +59,18 @@ radius = 6.0
 collision_layer = 4
 collision_mask = 2
 script = ExtResource("1_elecmage")
-speed = 22.0
-max_hp = 20.0
-preferred_distance = 170.0
-distance_tolerance = 14.0
-detection_range = 280.0
-shoot_interval = 2.0
-projectile_scene = ExtResource("3_mage_proj")
+speed = 18.0
+max_hp = 22.0
+preferred_distance = 230.0
+distance_tolerance = 18.0
+detection_range = 360.0
+shoot_interval = 5.0
 damage_effect_scene = ExtResource("4_dmg")
 damage_number_scene = ExtResource("6_dmgnum")
 kill_effect_scene = ExtResource("7_kill")
 gold_scene = ExtResource("8_gold")
 heart_scene = ExtResource("9_heart")
+lightning_bolt_scene = ExtResource("3_bolt")
 
 [node name="Shadow" type="Node2D" parent="."]
 position = Vector2(0, -2)
@@ -103,7 +103,7 @@ shape = SubResource("CapsuleShape2D_elecmage")
 position = Vector2(-8, -22)
 
 [node name="ShootTimer" type="Timer" parent="."]
-wait_time = 2.0
+wait_time = 5.0
 
 [node name="HpBar" parent="." instance=ExtResource("5_hpbar")]
 position = Vector2(-8, -34)
