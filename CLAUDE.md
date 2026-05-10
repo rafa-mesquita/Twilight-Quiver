@@ -4,6 +4,8 @@
 
 **Sempre suba a versão** em `application/config/version` no [project.godot](project.godot) ao fazer deploy ou build de release. Formato atual: `pre-alpha-X.Y.Z`. A versão é exibida no canto inferior direito de todas as telas e enviada junto dos scores pro leaderboard, então jogadores precisam rodar versão consistente entre cliente e backend.
 
+**NUNCA criar arquivos `.md` de release notes** (`RELEASE_*.md`, `CHANGELOG.md`, etc). Release notes vão na descrição da tag/release no GitHub, não como arquivo no repo.
+
 ## Internacionalização (i18n)
 
 O projeto é bilingual: **pt_BR** (default) e **en**. Todo texto visível ao jogador passa pelo TranslationServer.
