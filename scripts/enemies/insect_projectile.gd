@@ -5,10 +5,11 @@ extends Area2D
 @export var damage: float = 8.0
 @export var poison_damage_total: float = 18.0
 @export var poison_duration: float = 3.0
-# Slow probabilístico: 40% de chance de aplicar no contato. slow_multiplier
-# multiplica a speed do player; slow_duration controla quanto tempo dura.
+# Slow probabilístico: 40% de chance de aplicar no contato, com os valores
+# antigos (pré-remoção): 50% de slow durante 2s. slow_multiplier multiplica a
+# speed do player; slow_duration controla quanto tempo dura.
 @export var slow_multiplier: float = 0.5
-@export var slow_duration: float = 1.5
+@export var slow_duration: float = 2.0
 @export_range(0.0, 1.0) var slow_chance: float = 0.4
 @export var trail_max_points: int = 12
 @export var hit_effect_scene: PackedScene
