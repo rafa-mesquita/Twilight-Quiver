@@ -12,7 +12,7 @@ extends MageEnemy
 # Cena da área de slow que o projétil instancia ao pousar.
 @export var ice_slow_area_scene: PackedScene
 # Stats da área no chão.
-@export var slow_multiplier: float = 0.75  # 0.75 = 25% slow (player.speed × 0.75)
+@export var slow_multiplier: float = 0.63  # 0.63 = 37% slow (player.speed × 0.63)
 @export var area_lifetime: float = 6.0
 @export var area_scale: float = 1.0
 

@@ -9,7 +9,7 @@ const ARC_DURATION: float = 0.65
 const ARC_HEIGHT: float = 70.0
 
 @export var ice_slow_area_scene: PackedScene
-@export var slow_multiplier: float = 0.75  # 25% slow (player.speed × 0.75)
+@export var slow_multiplier: float = 0.63  # 37% slow (player.speed × 0.63)
 @export var area_lifetime: float = 6.0
 @export var area_scale: float = 1.0
 # True quando spawnado por enemy (slow atinge player+ally). False quando

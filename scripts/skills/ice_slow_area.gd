@@ -5,7 +5,7 @@ extends Area2D
 # sobreposto e expira em ~0.15s ao sair ou ao despawn da área. Mira em player
 # + aliados quando o mago é hostil, ou em inimigos quando curse-ally.
 
-@export var slow_multiplier: float = 0.75  # 0.75 = 25% slow (target.speed × 0.75)
+@export var slow_multiplier: float = 0.63  # 0.63 = 37% slow (target.speed × 0.63)
 @export var lifetime: float = 6.0
 @export var fade_duration: float = 0.5
 # True: spawnado por enemy (atrasa player + allies). False: spawnado por
