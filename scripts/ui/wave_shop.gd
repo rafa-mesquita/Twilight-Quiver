@@ -211,6 +211,25 @@ var _global_rerolls_used: int = 0
 @onready var global_reroll_btn: TextureButton = $Root/GlobalReroll/Btn
 @onready var global_reroll_cost: Label = $Root/GlobalReroll/CostLabel
 
+# Augments column (right side): mostra os upgrades já comprados como slots.
+# Hover de cada slot abre tooltip com efeito atual + próximo nível.
+const _AUGMENT_MAX_SLOTS: int = 6
+const _AUGMENT_SLOT_SIZE: Vector2 = Vector2(60, 60)
+@onready var augments_box: GridContainer = $Root/StatsCard/SlotsBox
+@onready var stats_box: VBoxContainer = $Root/StatsCard/StatsBox
+# Tooltip lazy-created no primeiro hover.
+var _augment_tooltip: PanelContainer = null
+var _augment_tooltip_label: RichTextLabel = null
+
+# Status que aparecem no StatsCard (em ordem de exibição).
+const _STATS_CARD_ROWS: Array[Dictionary] = [
+	{"id": "hp", "label": "SHOP_STAT_HP"},
+	{"id": "damage", "label": "SHOP_STAT_DAMAGE"},
+	{"id": "move_speed", "label": "SHOP_STAT_MOVE_SPEED"},
+	{"id": "attack_speed", "label": "SHOP_STAT_ATTACK_SPEED"},
+	{"id": "armor", "label": "SHOP_STAT_ARMOR"},
+]
+
 const BUY_SOUND: AudioStream = preload("res://audios/effects/buy_1.mp3")
 const NEXT_WAVE_SOUND: AudioStream = preload("res://audios/effects/Next wave.mp3")
 
@@ -249,6 +268,8 @@ func _ready() -> void:
 	_build_all_cards()
 	_connect_card_buttons()
 	_refresh_button_states()
+	_refresh_augments_column()
+	_refresh_stats_card()
 
 
 func _grant_free_random_pet() -> void:
@@ -574,29 +595,45 @@ func _get_upgrade_price(id: String, player_current_level: int) -> int:
 	return PRICE_TABLE[player_current_level]
 
 
-func _get_upgrade_desc(id: String, target_level: int) -> String:
-	var arr: Array
+func _get_upgrade_descs_array(id: String) -> Array:
 	match id:
-		"hp": arr = HP_DESCS
-		"armor": arr = ARMOR_DESCS
-		"damage": arr = DAMAGE_DESCS
-		"perfuracao": arr = PERFURACAO_DESCS
-		"attack_speed": arr = ATTACK_SPEED_DESCS
-		"multi_arrow": arr = MULTI_ARROW_DESCS
-		"chain_lightning": arr = CHAIN_LIGHTNING_DESCS
-		"move_speed": arr = MOVE_SPEED_DESCS
-		"gold_magnet": arr = GOLD_MAGNET_DESCS
-		"dash": arr = DASH_DESCS
-		"life_steal": arr = LIFE_STEAL_DESCS
-		"fire_arrow": arr = FIRE_ARROW_DESCS
-		"curse_arrow": arr = CURSE_ARROW_DESCS
-		"ricochet_arrow": arr = RICOCHET_ARROW_DESCS
-		"graviton": arr = GRAVITON_DESCS
-		"leno": arr = LENO_DESCS
-		"capivara_joe": arr = CAPIVARA_JOE_DESCS
-		_: return ""
+		"hp": return HP_DESCS
+		"armor": return ARMOR_DESCS
+		"damage": return DAMAGE_DESCS
+		"perfuracao": return PERFURACAO_DESCS
+		"attack_speed": return ATTACK_SPEED_DESCS
+		"multi_arrow": return MULTI_ARROW_DESCS
+		"chain_lightning": return CHAIN_LIGHTNING_DESCS
+		"move_speed": return MOVE_SPEED_DESCS
+		"gold_magnet": return GOLD_MAGNET_DESCS
+		"dash": return DASH_DESCS
+		"life_steal": return LIFE_STEAL_DESCS
+		"fire_arrow": return FIRE_ARROW_DESCS
+		"curse_arrow": return CURSE_ARROW_DESCS
+		"ricochet_arrow": return RICOCHET_ARROW_DESCS
+		"graviton": return GRAVITON_DESCS
+		"leno": return LENO_DESCS
+		"capivara_joe": return CAPIVARA_JOE_DESCS
+	return []
+
+
+func _get_upgrade_desc(id: String, target_level: int) -> String:
+	var arr: Array = _get_upgrade_descs_array(id)
+	if arr.is_empty():
+		return ""
 	var idx: int = clampi(target_level - 1, 0, arr.size() - 1)
 	return arr[idx]
+
+
+# Categorias de upgrade que afetam grupos exclusivos (EXCLUSIVE_PAIRS).
+# Mostra no card de compra e no tooltip do equipado pra explicar pro jogador
+# que aquela escolha bloqueia a outra do par.
+const UPGRADE_CATEGORIES: Dictionary = {
+	"fire_arrow": "SHOP_UPG_CAT_ELEMENTAL",
+	"curse_arrow": "SHOP_UPG_CAT_ELEMENTAL",
+	"perfuracao": "SHOP_UPG_CAT_ARROW_MOD",
+	"ricochet_arrow": "SHOP_UPG_CAT_ARROW_MOD",
+}
 
 
 # ---------- Build cards ----------
@@ -630,6 +667,10 @@ func _aliado_target_level(slot: Dictionary) -> int:
 
 func _build_card(card: Control, slot: Dictionary, target_level: int, category: String) -> void:
 	var available: bool = slot.get("available", false)
+	# Metadata pra tooltip on hover (mostra todos os níveis do upgrade).
+	card.set_meta("aug_id", String(slot.get("id", "")))
+	card.set_meta("aug_target_level", target_level)
+	card.set_meta("aug_category", category)
 	# Arte por id: aplica primeiro pra saber se está em modo placeholder (sem arte
 	# própria) — placeholders tingem texto em cinza pra diferenciar visualmente.
 	_apply_card_art(card, category, slot.get("id", ""), target_level, available)
@@ -650,7 +691,12 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 		desc_color = UPGRADE_DESC_COLORS[slot_id_str]
 	var desc_label: Label = card.get_node_or_null("DescLabel") as Label
 	if desc_label != null:
-		desc_label.text = slot.get("desc", "—")
+		var desc_text: String = tr(slot.get("desc", "—"))
+		# Prefixa com categoria (Elemental / Tipo de flecha) pros upgrades de
+		# par exclusivo, pra explicar pro jogador que escolher um bloqueia o outro.
+		if not is_placeholder and category == "upgrade" and UPGRADE_CATEGORIES.has(slot_id_str):
+			desc_text = "[%s]\n%s" % [tr(UPGRADE_CATEGORIES[slot_id_str]), desc_text]
+		desc_label.text = desc_text
 		desc_label.add_theme_color_override("font_color", desc_color)
 		desc_label.modulate = Color.WHITE
 	var price_label: Label = card.get_node_or_null("PriceLabel") as Label
@@ -988,15 +1034,19 @@ func _on_card_mouse_entered(card: Control) -> void:
 	if _placement_active:
 		return
 	var btn := card.get_node_or_null("BuyBtn") as Button
-	if btn != null and btn.disabled:
-		return
-	var tw := create_tween()
-	tw.tween_property(card, "scale", HOVER_SCALE, HOVER_TWEEN_DURATION).set_trans(Tween.TRANS_SINE)
+	var disabled: bool = btn != null and btn.disabled
+	if not disabled:
+		var tw := create_tween()
+		tw.tween_property(card, "scale", HOVER_SCALE, HOVER_TWEEN_DURATION).set_trans(Tween.TRANS_SINE)
+	# Tooltip mostra mesmo em cards desabilitados (max/locked) — útil pra ver todos os níveis.
+	_show_card_tooltip(card)
 
 
 func _on_card_mouse_exited(card: Control) -> void:
 	var tw := create_tween()
 	tw.tween_property(card, "scale", Vector2.ONE, HOVER_TWEEN_DURATION).set_trans(Tween.TRANS_SINE)
+	if _augment_tooltip != null:
+		_augment_tooltip.visible = false
 
 
 # ---------- Compra (toggle) ----------
@@ -1568,5 +1618,357 @@ func _refresh_global_reroll() -> void:
 	if global_reroll_cost != null:
 		global_reroll_cost.text = "—" if maxed else "%d" % cost
 		global_reroll_cost.modulate = Color(0.55, 0.55, 0.55, 0.65) if disabled else Color.WHITE
+
+
+# ---------- Augments column (right side) ----------
+# Mostra os upgrades já comprados como slots. Hover de cada slot abre tooltip
+# com efeito do nível atual + efeito do próximo nível (ou MAX se já capped).
+# Reusa o icon atlas do HUD pra não duplicar arte/path mapping.
+
+func _refresh_augments_column() -> void:
+	if augments_box == null:
+		return
+	for c in augments_box.get_children():
+		c.queue_free()
+	var p := _get_player()
+	if p == null or not p.has_method("get_upgrade_count"):
+		return
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud == null:
+		return
+	# Itera na ordem de display do HUD; pega só os comprados, cap em MAX_SLOTS.
+	# Status (hp/damage/move_speed/etc) NÃO entram aqui — eles aparecem no
+	# StatsCard separado abaixo.
+	var ids: Array = hud.UPGRADE_DISPLAY_ORDER
+	var added: int = 0
+	for id_v in ids:
+		if added >= _AUGMENT_MAX_SLOTS:
+			break
+		var id: String = String(id_v)
+		if _is_status_id(id):
+			continue
+		var lvl: int = int(p.get_upgrade_count(id))
+		if lvl <= 0:
+			continue
+		augments_box.add_child(_build_augment_chip(id, lvl, hud))
+		added += 1
+
+
+# IDs de "status" (HP/armor/damage/attack_speed/move_speed) — escala infinita,
+# vão pro StatsCard, não pro grid de upgrades.
+func _is_status_id(id: String) -> bool:
+	return id == "hp" or id == "armor" or id == "damage" or id == "attack_speed" or id == "move_speed"
+
+
+# Renderiza o StatsCard (canto inferior direito): 5 stat lines com label +
+# ganho do stat sobre o base + level. Stats não comprados em cinza, comprados
+# em amarelo.
+func _refresh_stats_card() -> void:
+	if stats_box == null:
+		return
+	for c in stats_box.get_children():
+		c.queue_free()
+	var p := _get_player()
+	for row in _STATS_CARD_ROWS:
+		var id: String = String(row["id"])
+		var lbl_key: String = String(row["label"])
+		var lvl: int = 0
+		if p != null and p.has_method("get_upgrade_count"):
+			lvl = int(p.get_upgrade_count(id))
+		var gain_text: String = _get_stat_gain_text(id, lvl, p)
+		stats_box.add_child(_build_stat_line(lbl_key, lvl, gain_text))
+
+
+# Calcula o ganho do stat sobre o base atual do player. HP/dmg/move/atk-speed
+# mostram "+X%" relativo ao base 1.0 (ou 100 pra HP). Armor mostra absoluto
+# (% de damage reduction direto). Sem upgrades: string vazia.
+func _get_stat_gain_text(id: String, lvl: int, p: Node) -> String:
+	if lvl <= 0 or p == null:
+		return ""
+	match id:
+		"hp":
+			# Base = 100 max_hp. Ganho = (max_hp - 100) / 100.
+			var max_hp: float = float(p.get("max_hp")) if "max_hp" in p else 100.0
+			return "+%d%%" % int(round(max(0.0, max_hp - 100.0)))
+		"damage":
+			# arrow_damage_multiplier base 1.0, +0.20 por stack.
+			var m: float = float(p.get("arrow_damage_multiplier")) if "arrow_damage_multiplier" in p else 1.0
+			return "+%d%%" % int(round((m - 1.0) * 100.0))
+		"move_speed":
+			# move_speed_multiplier base 1.0, +0.10 por stack.
+			var m2: float = float(p.get("move_speed_multiplier")) if "move_speed_multiplier" in p else 1.0
+			return "+%d%%" % int(round((m2 - 1.0) * 100.0))
+		"attack_speed":
+			# attack_speed_multiplier base 1.0, +0.27 por stack.
+			var m3: float = float(p.get("attack_speed_multiplier")) if "attack_speed_multiplier" in p else 1.0
+			return "+%d%%" % int(round((m3 - 1.0) * 100.0))
+		"armor":
+			# damage_reduction_pct é fração 0.0-0.75 (já é uma porcentagem).
+			var dr: float = float(p.get("damage_reduction_pct")) if "damage_reduction_pct" in p else 0.0
+			return "%d%%" % int(round(dr * 100.0))
+	return ""
+
+
+func _build_stat_line(label_key: String, lvl: int, gain_text: String) -> Control:
+	var row := HBoxContainer.new()
+	row.custom_minimum_size = Vector2(0, 24)
+	var has_lvl: bool = lvl > 0
+	var label_color: Color = Color(0.85, 0.82, 0.95, 1.0) if has_lvl else Color(0.5, 0.45, 0.6, 1.0)
+	var accent_color: Color = Color(1.0, 0.84, 0.34, 1.0) if has_lvl else Color(0.45, 0.4, 0.55, 1.0)
+	var label := Label.new()
+	label.text = label_key
+	label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_INHERIT
+	label.add_theme_font_override("font", load("res://font/ByteBounce.ttf"))
+	label.add_theme_font_size_override("font_size", 22)
+	label.add_theme_color_override("font_color", label_color)
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(label)
+	# Coluna do meio: ganho percentual sobre o base. Vazia se sem upgrades.
+	var gain := Label.new()
+	gain.text = gain_text
+	gain.custom_minimum_size = Vector2(110, 0)
+	gain.add_theme_font_override("font", load("res://font/ByteBounce.ttf"))
+	gain.add_theme_font_size_override("font_size", 22)
+	gain.add_theme_color_override("font_color", Color(0.62, 0.95, 0.62, 1.0) if has_lvl else label_color)
+	gain.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	row.add_child(gain)
+	# Coluna direita: nível ★ N (ou —).
+	var value := Label.new()
+	value.text = ("★ %d" % lvl) if has_lvl else "—"
+	value.custom_minimum_size = Vector2(70, 0)
+	value.add_theme_font_override("font", load("res://font/ByteBounce.ttf"))
+	value.add_theme_font_size_override("font_size", 22)
+	value.add_theme_color_override("font_color", accent_color)
+	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	row.add_child(value)
+	return row
+
+
+func _build_augment_chip(id: String, lvl: int, hud: Node) -> Control:
+	var chip := Control.new()
+	chip.custom_minimum_size = _AUGMENT_SLOT_SIZE
+	chip.mouse_filter = Control.MOUSE_FILTER_STOP
+	# Bg sutil pro slot — frame escuro com border roxo.
+	var bg := ColorRect.new()
+	bg.color = Color(0.10, 0.07, 0.13, 0.85)
+	bg.anchor_right = 1.0
+	bg.anchor_bottom = 1.0
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chip.add_child(bg)
+	var icon := TextureRect.new()
+	icon.texture = hud._get_upgrade_icon_atlas(id, lvl)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.anchor_right = 1.0
+	icon.anchor_bottom = 1.0
+	icon.offset_left = 2.0
+	icon.offset_top = 2.0
+	icon.offset_right = -2.0
+	icon.offset_bottom = -2.0
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chip.add_child(icon)
+	# Badge ★ N (ou MAX) no canto inferior direito — chip pequeno, badge compacto.
+	var badge := Label.new()
+	var max_lvl: int = _max_level_for(id)
+	var is_max: bool = max_lvl > 0 and lvl >= max_lvl
+	badge.text = "MAX" if is_max else "%d" % lvl
+	badge.add_theme_font_size_override("font_size", 12)
+	badge.add_theme_color_override("font_color", Color(1.0, 0.84, 0.34, 1.0))
+	badge.add_theme_color_override("font_outline_color", Color.BLACK)
+	badge.add_theme_constant_override("outline_size", 3)
+	badge.anchor_left = 1.0
+	badge.anchor_top = 1.0
+	badge.anchor_right = 1.0
+	badge.anchor_bottom = 1.0
+	badge.offset_left = -32.0
+	badge.offset_top = -16.0
+	badge.offset_right = -2.0
+	badge.offset_bottom = -1.0
+	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	badge.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chip.add_child(badge)
+	# Hover: tooltip com efeito atual + próximo nível.
+	chip.mouse_entered.connect(_on_augment_hovered.bind(id, lvl, chip))
+	chip.mouse_exited.connect(_on_augment_unhovered)
+	return chip
+
+
+func _on_augment_hovered(id: String, lvl: int, chip: Control) -> void:
+	_ensure_augment_tooltip()
+	var title: String = tr(_augment_title_for(id))
+	var max_lvl: int = _max_level_for(id)
+	var is_max: bool = max_lvl > 0 and lvl >= max_lvl
+	# Header: título + nível atual (★ N ou ★ MAX).
+	var header: String = "[b]%s[/b]  [color=#ffd757]★ %s[/color]" % [
+		title, "MAX" if is_max else str(lvl)
+	]
+	# Linha de categoria pros upgrades de par exclusivo.
+	var cat_line: String = ""
+	if UPGRADE_CATEGORIES.has(id):
+		cat_line = "[color=#a890c8][i]%s[/i][/color]\n" % tr(UPGRADE_CATEGORIES[id])
+	# Lista TODOS os níveis. Marca o atual em amarelo, futuros em verde claro,
+	# já passados em cinza apagado.
+	var descs: Array = _get_upgrade_descs_array(id)
+	var lines: Array[String] = []
+	for i in descs.size():
+		var n: int = i + 1
+		var desc_text: String = tr(descs[i])
+		if n == lvl:
+			lines.append("[color=#ffd757]LV %d ▸ %s[/color]" % [n, desc_text])
+		elif n < lvl:
+			lines.append("[color=#6a5870]LV %d · %s[/color]" % [n, desc_text])
+		else:
+			lines.append("[color=#bfd4e8]LV %d · %s[/color]" % [n, desc_text])
+	var body: String = header + "\n" + cat_line + "\n" + "\n".join(lines)
+	_augment_tooltip_label.text = body
+	_augment_tooltip.visible = true
+	# Posiciona à esquerda do chip (a coluna fica colada na borda direita).
+	var chip_global: Vector2 = chip.get_global_rect().position
+	var tip_size: Vector2 = _augment_tooltip.size
+	# Aguarda 1 frame pra size atualizar com novo conteúdo.
+	await get_tree().process_frame
+	tip_size = _augment_tooltip.size
+	var pos: Vector2 = Vector2(chip_global.x - tip_size.x - 16, chip_global.y)
+	# Clamp pra não sair da tela em cima.
+	pos.y = clampf(pos.y, 16.0, 1080.0 - tip_size.y - 16.0)
+	pos.x = maxf(pos.x, 16.0)
+	_augment_tooltip.position = pos
+
+
+func _on_augment_unhovered() -> void:
+	if _augment_tooltip != null:
+		_augment_tooltip.visible = false
+
+
+# Tooltip pros cards de COMPRA. Reusa o mesmo painel do tooltip de augment.
+# Highlight no nível-alvo (verde, ▸); níveis já comprados em cinza (passados);
+# níveis acima do alvo em azul claro (futuros).
+func _show_card_tooltip(card: Control) -> void:
+	var card_id: String = String(card.get_meta("aug_id", ""))
+	# Cards placeholder/locked/free não têm desc multi-nível — tooltip pulado.
+	if card_id == "" or card_id == "none" or card_id == "soon" or card_id == "locked" or card_id == "free_pet":
+		return
+	var descs: Array = _get_upgrade_descs_array(card_id)
+	if descs.is_empty():
+		return  # Estrutura/Tower sem array de descs — tooltip não aplicável.
+	var target_level: int = int(card.get_meta("aug_target_level", 1))
+	var p := _get_player()
+	var current_lvl: int = 0
+	if p != null and p.has_method("get_upgrade_count"):
+		current_lvl = int(p.get_upgrade_count(card_id))
+	_ensure_augment_tooltip()
+	# Header: título + indicador de nível-alvo.
+	var title: String = tr(_augment_title_for(card_id))
+	var max_lvl: int = descs.size()
+	var is_max: bool = target_level > max_lvl
+	var header: String = ""
+	if is_max:
+		header = "[b]%s[/b]  [color=#ffd757]★ MAX[/color]" % title
+	else:
+		header = "[b]%s[/b]  [color=#9fffa9]→ ★ %d[/color]" % [title, target_level]
+	# Categoria (Elemental / Tipo de flecha) quando aplica.
+	var cat_line: String = ""
+	if UPGRADE_CATEGORIES.has(card_id):
+		cat_line = "[color=#a890c8][i]%s[/i][/color]\n" % tr(UPGRADE_CATEGORIES[card_id])
+	# Lista todos os níveis: passado (já comprado) cinza, alvo verde, futuros azul.
+	var lines: Array[String] = []
+	for i in descs.size():
+		var n: int = i + 1
+		var dt: String = tr(descs[i])
+		if n == target_level:
+			lines.append("[color=#9fffa9]LV %d ▸ %s[/color]" % [n, dt])
+		elif n <= current_lvl:
+			lines.append("[color=#6a5870]LV %d · %s[/color]" % [n, dt])
+		else:
+			lines.append("[color=#bfd4e8]LV %d · %s[/color]" % [n, dt])
+	var body: String = header + "\n" + cat_line + "\n" + "\n".join(lines)
+	_augment_tooltip_label.text = body
+	_augment_tooltip.visible = true
+	# Posiciona à direita ou esquerda do card baseado em onde tá na tela.
+	await get_tree().process_frame
+	var card_rect: Rect2 = card.get_global_rect()
+	var tip_size: Vector2 = _augment_tooltip.size
+	var pos: Vector2
+	var card_center_x: float = card_rect.position.x + card_rect.size.x / 2.0
+	if card_center_x < 960.0:
+		# Card no lado esquerdo — tooltip à direita do card.
+		pos = Vector2(card_rect.position.x + card_rect.size.x + 16.0, card_rect.position.y)
+	else:
+		# Card no lado direito — tooltip à esquerda.
+		pos = Vector2(card_rect.position.x - tip_size.x - 16.0, card_rect.position.y)
+	# Clamp pra não sair da tela.
+	pos.x = clampf(pos.x, 16.0, 1920.0 - tip_size.x - 16.0)
+	pos.y = clampf(pos.y, 16.0, 1080.0 - tip_size.y - 16.0)
+	_augment_tooltip.position = pos
+
+
+func _ensure_augment_tooltip() -> void:
+	if _augment_tooltip != null:
+		return
+	_augment_tooltip = PanelContainer.new()
+	_augment_tooltip.visible = false
+	_augment_tooltip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_augment_tooltip.z_index = 100
+	_augment_tooltip.custom_minimum_size = Vector2(380, 0)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.10, 0.07, 0.14, 0.96)
+	sb.border_color = Color(0.55, 0.40, 0.70, 1.0)
+	sb.border_width_left = 2
+	sb.border_width_top = 2
+	sb.border_width_right = 2
+	sb.border_width_bottom = 2
+	sb.content_margin_left = 16
+	sb.content_margin_right = 16
+	sb.content_margin_top = 12
+	sb.content_margin_bottom = 12
+	_augment_tooltip.add_theme_stylebox_override("panel", sb)
+	_augment_tooltip_label = RichTextLabel.new()
+	_augment_tooltip_label.bbcode_enabled = true
+	_augment_tooltip_label.fit_content = true
+	_augment_tooltip_label.scroll_active = false
+	_augment_tooltip_label.add_theme_font_override("normal_font", load("res://font/ByteBounce.ttf"))
+	_augment_tooltip_label.add_theme_font_override("bold_font", load("res://font/ByteBounce.ttf"))
+	_augment_tooltip_label.add_theme_font_size_override("normal_font_size", 22)
+	_augment_tooltip_label.add_theme_font_size_override("bold_font_size", 24)
+	_augment_tooltip_label.add_theme_color_override("default_color", Color(0.92, 0.86, 1.0, 1.0))
+	_augment_tooltip_label.custom_minimum_size = Vector2(348, 0)
+	_augment_tooltip.add_child(_augment_tooltip_label)
+	root_panel.add_child(_augment_tooltip)
+
+
+# Título (translation key) por upgrade id. Reusa as mesmas keys que os cards
+# da loja usam pra TitleLabel.
+func _augment_title_for(id: String) -> String:
+	match id:
+		"hp": return "SHOP_HP_TITLE"
+		"armor": return "SHOP_UPG_ARMOR"
+		"damage": return "SHOP_UPG_DAMAGE"
+		"attack_speed": return "SHOP_UPG_ATTACK_SPEED"
+		"move_speed": return "SHOP_UPG_MOVE_SPEED"
+		"perfuracao": return "SHOP_UPG_PERFURACAO"
+		"ricochet_arrow": return "SHOP_UPG_RICOCHET"
+		"multi_arrow": return "SHOP_UPG_MULTI_ARROW"
+		"chain_lightning": return "SHOP_UPG_CHAIN_LIGHTNING"
+		"fire_arrow": return "SHOP_UPG_FIRE_ARROW"
+		"curse_arrow": return "SHOP_UPG_CURSE_ARROW"
+		"graviton": return "SHOP_UPG_GRAVITON"
+		"life_steal": return "SHOP_UPG_LIFE_STEAL"
+		"dash": return "SHOP_UPG_DASH"
+		"gold_magnet": return "SHOP_UPG_GOLD_MAGNET"
+		"woodwarden": return "SHOP_ALLY_WOODWARDEN"
+		"leno": return "SHOP_ALLY_LENO"
+		"capivara_joe": return "SHOP_ALLY_CAPIVARA"
+	return id
+
+
+# Cap de nível por upgrade. Status (hp/armor/damage/atk_speed/move_speed) escala
+# infinito — retorna 0 (sem cap). Demais usam o cap de _UPG_CAPS do HUD se
+# disponível, fallback 4.
+func _max_level_for(id: String) -> int:
+	if id == "hp" or id == "armor" or id == "damage" or id == "attack_speed" or id == "move_speed":
+		return 0  # sem cap
+	return 4
 
 

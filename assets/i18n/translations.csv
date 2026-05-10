@@ -107,6 +107,13 @@ SHOP_HEADER_STRUCTURES,ESTRUTURAS,STRUCTURES,ESTRUCTURAS,STRUCTURES
 SHOP_HEADER_STATUS,STATUS,STATUS,ESTADO,STATS
 SHOP_HEADER_ALLIES,ALIADOS,ALLIES,ALIADOS,ALLIÉS
 SHOP_HEADER_UPGRADES,UPGRADES,UPGRADES,MEJORAS,AMÉLIORATIONS
+SHOP_UPG_CAT_ELEMENTAL,Elemental · escolha 1,Elemental · pick 1,Elemental · elige 1,Élémentaire · choisissez 1
+SHOP_UPG_CAT_ARROW_MOD,Tipo de flecha · escolha 1,Arrow type · pick 1,Tipo de flecha · elige 1,Type de flèche · choisissez 1
+SHOP_STAT_HP,Vida,HP,Vida,PV
+SHOP_STAT_DAMAGE,Dano,Damage,Daño,Dégâts
+SHOP_STAT_MOVE_SPEED,Vel. Mov.,Move,Vel. Mov.,Mvt.
+SHOP_STAT_ATTACK_SPEED,Vel. Atk.,Atk Speed,Vel. Atk.,Vit. Atq.
+SHOP_STAT_ARMOR,Armadura,Armor,Armadura,Armure
 SHOP_BONUS_PLUS_ONE,BONUS +1!,BONUS +1!,¡BONUS +1!,BONUS +1 !
 SHOP_PLACEMENT_HINT,Escolha um dos 5 pontos para posicionar  -  Aperte Z para voltar,Pick one of the 5 spots to place  -  Press Z to go back,Elige uno de los 5 puntos para colocar  -  Pulsa Z para volver,Choisissez un des 5 emplacements  -  Appuyez sur Z pour revenir
 SHOP_COMING_SOON,Em breve,Coming soon,Próximamente,Bientôt

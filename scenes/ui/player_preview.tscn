@@ -2,7 +2,8 @@
 
 [ext_resource type="Script" path="res://scripts/systems/skin_manager.gd" id="1_skin"]
 
-[node name="PlayerPreview" type="Node2D"]
+[node name="PlayerPreview" type="CanvasGroup"]
+texture_filter = 1
 
 [node name="BowBackSprite" type="AnimatedSprite2D" parent="."]
 visible = false

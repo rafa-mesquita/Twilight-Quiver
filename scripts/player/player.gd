@@ -18,7 +18,7 @@ signal curse_skill_cooldown_changed(remaining: float, total: float)
 # coluna de upgrades adquiridos.
 signal upgrade_applied(id: String, level: int)
 
-@export var speed: float = 58.058  # base 55 + 1.5% + 4% = 58.058
+@export var speed: float = 60.961  # base 55 + 1.5% + 4% + 5% = 60.961
 @export var attack_cooldown: float = 0.90  # ~+11% atk speed sobre o base 1.0
 @export var arrow_scene: PackedScene
 @export var damage_effect_scene: PackedScene

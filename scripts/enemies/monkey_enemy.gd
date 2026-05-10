@@ -93,9 +93,15 @@ func _ready() -> void:
 
 
 func _roll_behavior() -> void:
-	# Distribuição fixa: 80% NORMAL / 20% FLANKER em todas as waves.
+	# FLANKER só entra a partir da raid 4 — nas primeiras waves todos NORMAL
+	# pra curva de aprendizado mais suave. Wave 4+: 80% NORMAL / 20% FLANKER.
+	var wave_num: int = 0
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm != null and "wave_number" in wm:
+		wave_num = int(wm.wave_number)
+	var flanker_chance: float = 0.0 if wave_num < 4 else 0.20
 	var roll: float = randf()
-	if roll < 0.80:
+	if roll >= flanker_chance:
 		_behavior = Behavior.NORMAL
 		_chase_offset = Vector2.RIGHT.rotated(randf() * TAU) * randf_range(12.0, 24.0)
 	else:

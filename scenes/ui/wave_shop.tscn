@@ -55,6 +55,18 @@ region = Rect2(0, 0, 17, 16)
 atlas = ExtResource("5_reroll")
 region = Rect2(17, 0, 17, 16)
 
+[sub_resource type="StyleBoxFlat" id="SBF_stats_box"]
+bg_color = Color(0.10, 0.07, 0.14, 0.85)
+border_color = Color(0.55, 0.40, 0.70, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_left = 4
+corner_radius_bottom_right = 4
+
 [sub_resource type="AtlasTexture" id="ATX_border_back"]
 atlas = ExtResource("11_pface_border")
 region = Rect2(0, 0, 66, 66)
@@ -373,20 +385,21 @@ flat = true
 
 [node name="AliadoHeader" type="Label" parent="Root" unique_id=745838450]
 layout_mode = 0
-offset_left = 630.0
-offset_top = 540.0
-offset_right = 1490.0
-offset_bottom = 580.0
+offset_left = 600.0
+offset_top = 460.0
+offset_right = 1330.0
+offset_bottom = 500.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 42
 text = "SHOP_HEADER_ALLIES"
 vertical_alignment = 1
 
 [node name="AliadoRow" type="Control" parent="Root" unique_id=38431779]
 anchors_preset = 0
-offset_left = 620.0
-offset_top = 590.0
+scale = Vector2(0.85, 0.85)
+offset_left = 600.0
+offset_top = 510.0
 offset_right = 1572.0
 offset_bottom = 966.0
 
@@ -625,19 +638,20 @@ flat = true
 
 [node name="UpgHeader" type="Label" parent="Root" unique_id=2074581781]
 layout_mode = 0
-offset_left = 630.0
+offset_left = 600.0
 offset_top = 90.0
-offset_right = 1490.0
+offset_right = 1330.0
 offset_bottom = 130.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 42
 text = "SHOP_HEADER_UPGRADES"
 vertical_alignment = 1
 
 [node name="UpgRow" type="Control" parent="Root" unique_id=2130246383]
 anchors_preset = 0
-offset_left = 620.0
+scale = Vector2(0.85, 0.85)
+offset_left = 600.0
 offset_top = 140.0
 offset_right = 1572.0
 offset_bottom = 516.0
@@ -890,10 +904,11 @@ text = "SHOP_NEXT_WAVE"
 
 [node name="GlobalReroll" type="Control" parent="Root" unique_id=707134856]
 anchors_preset = 0
-offset_left = 1584.0
-offset_top = 153.0
-offset_right = 1804.0
-offset_bottom = 333.0
+scale = Vector2(0.7, 0.7)
+offset_left = 240.0
+offset_top = 830.0
+offset_right = 460.0
+offset_bottom = 1010.0
 
 [node name="Btn" type="TextureButton" parent="Root/GlobalReroll" unique_id=2071134746]
 texture_filter = 1
@@ -910,13 +925,14 @@ stretch_mode = 5
 [node name="CostLabel" type="Label" parent="Root/GlobalReroll" unique_id=1797799376]
 layout_mode = 0
 offset_left = 213.0
-offset_top = 54.0
-offset_right = 277.0
-offset_bottom = 84.0
+offset_top = 38.0
+offset_right = 320.0
+offset_bottom = 100.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 52
 text = "3"
+vertical_alignment = 1
 
 [node name="CoinIcon" type="TextureRect" parent="Root/GlobalReroll" unique_id=1794206202]
 texture_filter = 1
@@ -930,31 +946,75 @@ texture = SubResource("ATX_coin")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="PlayerFace" type="Node2D" parent="Root" unique_id=305011001]
+[node name="StatsCard" type="Control" parent="Root" unique_id=305011001]
+layout_mode = 0
+offset_left = 1440.0
+offset_top = 80.0
+offset_right = 1900.0
+offset_bottom = 970.0
+
+[node name="Bg" type="Panel" parent="Root/StatsCard"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("SBF_stats_box")
+
+[node name="PlayerFace" type="Node2D" parent="Root/StatsCard"]
 texture_filter = 1
-position = Vector2(1743.9999, 799)
-scale = Vector2(4.651514, 4.651514)
+position = Vector2(230, 200)
+scale = Vector2(4.6, 4.6)
 script = ExtResource("10_pface_script")
 
-[node name="BorderBack" type="Sprite2D" parent="Root/PlayerFace"]
+[node name="BorderBack" type="Sprite2D" parent="Root/StatsCard/PlayerFace"]
 texture_filter = 1
 texture = SubResource("ATX_border_back")
 
-[node name="Cape" type="AnimatedSprite2D" parent="Root/PlayerFace"]
+[node name="Cape" type="AnimatedSprite2D" parent="Root/StatsCard/PlayerFace"]
 texture_filter = 1
 
-[node name="Head" type="AnimatedSprite2D" parent="Root/PlayerFace"]
+[node name="Head" type="AnimatedSprite2D" parent="Root/StatsCard/PlayerFace"]
 texture_filter = 1
 
-[node name="Shirt" type="AnimatedSprite2D" parent="Root/PlayerFace"]
+[node name="Shirt" type="AnimatedSprite2D" parent="Root/StatsCard/PlayerFace"]
 texture_filter = 1
 
-[node name="Hair" type="AnimatedSprite2D" parent="Root/PlayerFace"]
+[node name="Hair" type="AnimatedSprite2D" parent="Root/StatsCard/PlayerFace"]
 texture_filter = 1
 
-[node name="BorderFront" type="Sprite2D" parent="Root/PlayerFace"]
+[node name="BorderFront" type="Sprite2D" parent="Root/StatsCard/PlayerFace"]
 texture_filter = 1
 texture = SubResource("ATX_border_front")
+
+[node name="StatsBox" type="VBoxContainer" parent="Root/StatsCard"]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 410.0
+offset_right = 432.0
+offset_bottom = 640.0
+theme_override_constants/separation = 6
+
+[node name="UpgradesHeader" type="Label" parent="Root/StatsCard"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 660.0
+offset_right = 460.0
+offset_bottom = 700.0
+theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 26
+text = "SHOP_HEADER_UPGRADES"
+horizontal_alignment = 1
+
+[node name="SlotsBox" type="GridContainer" parent="Root/StatsCard"]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 720.0
+offset_right = 432.0
+offset_bottom = 800.0
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 6
 
 [node name="PlacementHint" type="Label" parent="." unique_id=1961918498]
 visible = false

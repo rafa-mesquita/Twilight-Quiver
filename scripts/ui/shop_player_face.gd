@@ -5,8 +5,9 @@ extends Node2D
 # Cada layer escolhe sua textura a partir do SkinLoadout. Slot vazio ou asset
 # faltando cai pro default.png da pasta correspondente.
 #
-# Sheet esperado: 858x66 (13 frames de 66x66), idle loop. Igual ao
-# `assets/Hud/shop/persoangem shop.png` original.
+# Sheet esperado: 858x66 (13 frames de 66x66), idle loop. Border é 858x132
+# (2 rows × 13 cols) — frame 0 da row 0 = back, frame 0 da row 1 = front,
+# ambos estáticos.
 
 const _HUD_DIR: String = "res://assets/Hud/playerHud"
 const _FRAME_W: int = 66
