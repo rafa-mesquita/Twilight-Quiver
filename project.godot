@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="Twilight Quiver"
-config/version="pre-alpha-0.2.1"
+config/version="pre-alpha-0.2.2"
 run/main_scene="res://scenes/ui/splash.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="uid://c7qgqbvckpcdr"
