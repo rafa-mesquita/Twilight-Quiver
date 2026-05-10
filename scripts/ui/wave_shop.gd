@@ -13,10 +13,12 @@ signal closed
 
 const PRICE_TABLE: Array[int] = [4, 8, 20, 35]
 const TOWER_PRICE: int = 7
-const WOODWARDEN_PRICE_TABLE: Array[int] = [7, 10, 15, 35]
-# Leno (aliado voador, auto-spawn): mesmo escalonamento dos aliados.
-const LENO_PRICE_TABLE: Array[int] = [7, 10, 15, 35]
-const CAPIVARA_PRICE_TABLE: Array[int] = [7, 10, 15, 35]
+# Aliados/pets têm tabela própria (mais cara que upgrades comuns) — boost de
+# +1/+4/+4/+6 por estrela em cima dos valores antigos pra controlar pace de
+# compra de pet vs upgrade.
+const WOODWARDEN_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
+const LENO_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
+const CAPIVARA_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 const STRUCTURE_SURCHARGE_PER_OWNED: int = 3
 # Aliado: primeira loja (wave 3) o pet é DADO de graça aleatório (não vai pra
 # loja). Depois aparece pra venda nas waves 5, 7, 9, 11...
@@ -500,7 +502,8 @@ func _roll_aliado_slots() -> void:
 	# Woodwarden virou aliado (sem surcharge de estruturas).
 	var ww_price: int = WOODWARDEN_PRICE_TABLE[mini(ww_lvl, WOODWARDEN_PRICE_TABLE.size() - 1)]
 	# Cap de aliados: se o player já tem MAX_DISTINCT_PETS tipos diferentes
-	# (lvl > 0) e este aliado ainda é lvl 0, bloqueia a compra.
+	# (lvl > 0) e este aliado ainda é lvl 0, bloqueia a compra. Pra desbloquear,
+	# right-click num pet equipado no StatsCard pra vender (refund de 50%).
 	var distinct_owned: int = _distinct_pets_owned(p)
 	var ww_pet_capped: bool = ww_lvl == 0 and distinct_owned >= MAX_DISTINCT_PETS
 	var ww_desc: String

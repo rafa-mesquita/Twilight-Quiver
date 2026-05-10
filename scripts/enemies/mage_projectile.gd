@@ -29,6 +29,8 @@ var has_redirected_final: bool = false
 var is_ally_source: bool = false
 # Lv3+ da Maldição: aplica CurseDebuff no alvo (setado pelo source ao spawnar).
 var apply_curse: bool = false
+# Boss gorila: projétil ignora aliados/estruturas e só bate no player.
+var pierce_allies: bool = false
 
 
 func _ready() -> void:
@@ -99,6 +101,13 @@ func _on_body_entered(body: Node) -> void:
 	else:
 		# Mago original: friendly fire bloqueado entre enemies.
 		if body.is_in_group("enemy"):
+			return
+		# Boss gorila: atravessa aliados/estruturas mas ainda aplica dano de
+		# passagem (o projétil segue rumo ao player).
+		if pierce_allies and (body.is_in_group("ally") or body.is_in_group("structure")):
+			var pierce_target: Node = _find_damageable(body)
+			if pierce_target != null:
+				pierce_target.take_damage(damage)
 			return
 	var target: Node = _find_damageable(body)
 	if target != null:

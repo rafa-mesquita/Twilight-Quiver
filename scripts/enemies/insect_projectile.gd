@@ -3,13 +3,14 @@ extends Area2D
 @export var speed: float = 140.0
 @export var lifetime: float = 3.0
 @export var damage: float = 8.0
-@export var poison_damage_total: float = 12.0
+@export var poison_damage_total: float = 18.0
 @export var poison_duration: float = 3.0
-# Slow desativado no early game (duration=0): mosquito compensa com mais hit
-# damage e mais veneno. @export mantido pra curse-ally usar pontualmente
-# se quiser, e pra editor ajustar sem mexer no script.
+# Slow probabilístico: 40% de chance de aplicar no contato, com os valores
+# antigos (pré-remoção): 50% de slow durante 2s. slow_multiplier multiplica a
+# speed do player; slow_duration controla quanto tempo dura.
 @export var slow_multiplier: float = 0.5
-@export var slow_duration: float = 0.0
+@export var slow_duration: float = 2.0
+@export_range(0.0, 1.0) var slow_chance: float = 0.4
 @export var trail_max_points: int = 12
 @export var hit_effect_scene: PackedScene
 
@@ -70,7 +71,7 @@ func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("player"):
 		if body.has_method("take_damage"):
 			body.take_damage(damage)
-		if body.has_method("apply_slow") and slow_duration > 0.0:
+		if body.has_method("apply_slow") and slow_duration > 0.0 and randf() < slow_chance:
 			body.apply_slow(slow_multiplier, slow_duration)
 		if body.has_method("apply_poison"):
 			body.apply_poison(poison_damage_total, poison_duration)
