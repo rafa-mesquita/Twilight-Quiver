@@ -97,6 +97,7 @@ const _UPG_PATHS: Dictionary = {
 	"ricochet_arrow": "res://assets/Hud/shop/upgrade/ricochete.png",
 	"gold_magnet": "res://assets/Hud/shop/upgrade/coin master.png",
 	"life_steal": "res://assets/Hud/shop/upgrade/life steal.png",
+	"dash": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"leno": "res://assets/Hud/shop/aliado/Leno/Leno Card.png",
 	"woodwarden": "res://assets/Hud/shop/aliado/woodwarden/woodwarden card.png",
 }
