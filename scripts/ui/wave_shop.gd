@@ -760,6 +760,7 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 	"ricochet_arrow": Color.WHITE,
 	"gold_magnet": Color(0x6a / 255.0, 0x53 / 255.0, 0x0b / 255.0),  # #6a530b
 	"life_steal": Color(0x58 / 255.0, 0x14 / 255.0, 0x1f / 255.0),  # #58141f
+	"dash": Color(0x3d / 255.0, 0x28 / 255.0, 0x18 / 255.0),  # #3d2818 (marrom escuro contrasta com cream)
 }
 # Cor secundária (DescLabel + PriceLabel) por upgrade. Quando definido,
 # sobrescreve a cor do título nesses dois labels — útil pra cards onde título
@@ -783,6 +784,10 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	"gold_magnet": "res://assets/Hud/shop/upgrade/coin master.png",
 	# id "life_steal" mas arquivo é "life steal.png" (com espaço).
 	"life_steal": "res://assets/Hud/shop/upgrade/life steal.png",
+	# fire_arrow2.png é a arte nova; fire_arrow.png antigo foi removido.
+	"fire_arrow": "res://assets/Hud/shop/upgrade/fire_arrow2.png",
+	# id "dash" mas arquivo é "deslizando.png" (nome PT do upgrade).
+	"dash": "res://assets/Hud/shop/upgrade/deslizando.png",
 }
 # Cor única pros aliados (todos compartilham por enquanto).
 const ALIADO_TEXT_COLOR: Color = Color(0x2c / 255.0, 0x1f / 255.0, 0x1f / 255.0)  # #2c1f1f
