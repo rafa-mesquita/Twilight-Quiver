@@ -267,14 +267,15 @@ func take_damage(amount: float) -> void:
 			# Maldição: chance de virar aliado em vez de morrer (lv2-4 da curse).
 			if CurseAllyHelper.try_convert_on_death(self):
 				return
-			# Morte normal: drops + count na stat de kills.
-			GoldDrop.try_drop(_get_world(), gold_scene, global_position,
-				gold_drop_chance, gold_drop_min, gold_drop_max)
+			# Morte normal: heart + count na stat de kills (gold abaixo cobre os dois).
 			HeartDrop.try_drop(_get_world(), heart_scene, global_position, self)
 			var p2 := get_tree().get_first_node_in_group("player")
 			if p2 != null and p2.has_method("notify_enemy_killed"):
 				p2.notify_enemy_killed()
-		# Curse_ally morrendo: sem drop e sem kill count (já foi seu aliado).
+		# Gold dropa em ambos: morte de inimigo normal E morte de aliado convertido
+		# pela Maldição. Sem kill count nem heart pro curse_ally (já cumpriu o papel).
+		GoldDrop.try_drop(_get_world(), gold_scene, global_position,
+			gold_drop_chance, gold_drop_min, gold_drop_max)
 		_spawn_kill_effect()
 		_spawn_death_silhouette()
 		queue_free()

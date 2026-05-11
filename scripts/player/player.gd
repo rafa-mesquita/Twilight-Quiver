@@ -7,6 +7,16 @@ signal died
 # durante o cooldown (HUD atualiza progress).
 signal dash_unlocked
 signal dash_cooldown_changed(remaining: float, total: float)
+# Esquivando (compartilha slot/arte do dash — mutuamente exclusivos). Lv3+ ganha
+# uma skill no espaço (+30% move speed). HUD reusa a mesma barra do dash.
+signal esquivando_unlocked
+signal esquivando_cooldown_changed(remaining: float, total: float)
+# Stack count + cap atual (cap varia por nível: 3 nos lv1-3, 4 no lv4). HUD
+# escuta pra atualizar o ícone perto dos outros skill icons.
+signal esquivando_stacks_changed(stacks: int, cap: int)
+# Ability ativa/inativa (skill do espaço lv3+, +50% move por 3s). HUD muda o
+# modulate do ícone enquanto tá ativo pra dar feedback visual claro.
+signal esquivando_ability_active_changed(active: bool)
 # Fire Skill (lv3 do elemental Fogo): emitido ao chegar no lv3 (HUD mostra ícone)
 # e a cada frame durante o cooldown.
 signal fire_skill_unlocked
@@ -158,6 +168,42 @@ var _iframes_remaining: float = 0.0
 # - has_dash_double_arrow: dash_level >= 4
 var has_dash_auto_attack: bool = false
 var has_dash_double_arrow: bool = false
+
+# === Esquivando (mutuamente exclusivo com dash — compartilham slot de mov.) ===
+# Lv1: primeira flecha do volley que acerta inimigo dá +5% atk speed e +5% move
+#   speed por 2s. Cap 3 stacks. 2% dodge.
+# Lv2: buff vira 8%. Coin pickup também conta como hit (sem volley restriction).
+# Lv3: dodge vira 5% (substitui 2%). Skill no espaço: +30% move speed por 3s,
+#   cd 15s.
+# Lv4: cd da skill vira 10s. Buff vira 10%. Cap 4. CADA hit de CADA flecha
+#   stacka (pierce/ricochet/multi-arrow individual).
+const ESQUIVANDO_LEVEL_MAX: int = 4
+const ESQUIVANDO_STACK_DURATION: float = 2.0
+const ESQUIVANDO_STACK_PCT_BY_LEVEL: Array[float] = [0.05, 0.08, 0.08, 0.10]
+const ESQUIVANDO_MAX_STACKS_BY_LEVEL: Array[int] = [3, 3, 3, 4]
+const ESQUIVANDO_DODGE_BY_LEVEL: Array[float] = [0.02, 0.02, 0.05, 0.05]
+const ESQUIVANDO_ABILITY_MIN_LEVEL: int = 3
+const ESQUIVANDO_ABILITY_BUFF: float = 0.50
+const ESQUIVANDO_ABILITY_DURATION: float = 3.0
+const ESQUIVANDO_ABILITY_CD_BY_LEVEL: Array[float] = [15.0, 15.0, 15.0, 10.0]
+var esquivando_level: int = 0
+var has_esquivando: bool = false
+var _esquivando_stacks: int = 0
+var _esquivando_stack_remaining: float = 0.0
+# ID monotônico da volley atual — incrementa em cada _release_arrow. Arrows
+# da MESMA volley compartilham o id, então no lv1-3 só a 1ª flecha que acerta
+# gera o stack (as outras viram no-op pela checagem de volley_id).
+var _esquivando_volley_id: int = 0
+var _esquivando_last_stack_volley: int = -1
+# Buff da skill do espaço (lv3+): +50% move speed temporário.
+var _esquivando_ability_cd: float = 0.0
+var _esquivando_ability_buff_remaining: float = 0.0
+# Rastro branco durante a ability — spawna um blob a cada N pixels percorridos
+# pelo player, cada um fade-out em ESQUIVANDO_TRAIL_FADE segundos.
+const ESQUIVANDO_TRAIL_SPACING: float = 9.0
+const ESQUIVANDO_TRAIL_FADE: float = 0.35
+const ESQUIVANDO_TRAIL_OFFSET_Y: float = -6.0
+var _esquivando_trail_last_pos: Vector2 = Vector2.ZERO
 # Flecha de Ricochete (novo upgrade, 4 níveis). Mecânica em arrow.gd.
 # Counter incrementa por ATAQUE (não por flecha) — toda volley do Multi Arrow
 # compartilha o flag de ricochete, igual à perfuração.
@@ -252,6 +298,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	_update_status_effects(delta)
 	_update_dash(delta)
+	_update_esquivando(delta)
 	_update_fire_skill(delta)
 	_update_chain_lightning_skill(delta)
 	_update_curse_skill(delta)
@@ -260,8 +307,14 @@ func _physics_process(delta: float) -> void:
 	_tick_capivara_buffs(delta)
 	# Dash trigger lê via polling pra garantir que o cooldown decrementa ANTES
 	# do check, e que múltiplas pressões na mesma frame só viram 1 dash.
-	if has_dash and not is_dead and Input.is_action_just_pressed("dash"):
-		_try_start_dash()
+	# Espaço serve dash OU esquivando (mutuamente exclusivos). Esquivando só
+	# responde a partir do lv3, antes disso o espaço é no-op se o player não
+	# tem dash.
+	if not is_dead and Input.is_action_just_pressed("dash"):
+		if has_dash:
+			_try_start_dash()
+		elif esquivando_level >= ESQUIVANDO_ABILITY_MIN_LEVEL:
+			_try_start_esquivando_ability()
 	if is_dead:
 		velocity = Vector2.ZERO
 		return
@@ -280,7 +333,7 @@ func _physics_process(delta: float) -> void:
 		if input_vec.length() > 1.0:
 			input_vec = input_vec.normalized()
 
-	velocity = input_vec * speed * _slow_factor * (move_speed_multiplier + _capivara_speed_buff_amount)
+	velocity = input_vec * speed * _slow_factor * (move_speed_multiplier + _capivara_speed_buff_amount + _esquivando_move_buff())
 	move_and_slide()
 
 	_update_facing(input_vec)
@@ -429,7 +482,7 @@ func _start_attack() -> void:
 	# Attack speed: encurta cooldown e acelera a anim de ataque (release_frame chega
 	# proporcionalmente mais cedo). speed_scale só vale enquanto a anim está rolando.
 	# Capivara L3+: cogumelo de buff dá +50% atk speed temporário (some no fim).
-	var atk_mult: float = attack_speed_multiplier + _capivara_atk_speed_buff_amount
+	var atk_mult: float = attack_speed_multiplier + _capivara_atk_speed_buff_amount + _esquivando_atk_buff()
 	attack_timer.wait_time = attack_cooldown / atk_mult
 	sprite.speed_scale = atk_mult
 	attack_timer.start()
@@ -440,6 +493,10 @@ func _release_arrow() -> void:
 	is_drawing = false
 	if arrow_scene == null:
 		return
+	# Esquivando: cada release_arrow = 1 volley nova. Todas as flechas spawnadas
+	# nesse ataque (incluindo as delayed do double_arrows) compartilham o id —
+	# lv1-3 do Esquivando bloqueia stacks adicionais do mesmo volley_id.
+	_esquivando_volley_id += 1
 	# Decisão de pierce é feita UMA VEZ por ataque — a volley inteira de
 	# Multiple Arrows compartilha o mesmo flag (ex: lv perfuração 1 + multi lv1
 	# = a cada 3º ataque, as 3 flechas perfuram juntas).
@@ -640,8 +697,15 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 			arrow.graviton_slow_factor = _graviton_slow_factor()
 		if "graviton_explosion_damage" in arrow:
 			arrow.graviton_explosion_damage = _graviton_explosion_damage()
-		if "source" in arrow:
-			arrow.source = self
+	# Fora do `if is_graviton:` — source e volley_id valem pra TODA flecha do
+	# player (não só as graviton). Bug pré-existente: estavam aninhados na
+	# graviton, impedindo notify_esquivando_hit em flechas normais.
+	if "source" in arrow:
+		arrow.source = self
+	# Esquivando: tagga a flecha com o volley_id atual pra o helper saber
+	# qual volley já gerou stack (lv1-3) — lv4 ignora isso.
+	if "volley_id" in arrow:
+		arrow.volley_id = _esquivando_volley_id
 	_get_world().add_child(arrow)
 	if arrow.has_method("set_direction"):
 		arrow.set_direction(dir)
@@ -1098,6 +1162,155 @@ func _update_dash(delta: float) -> void:
 		_iframes_remaining = maxf(_iframes_remaining - delta, 0.0)
 
 
+# === Esquivando: helpers, stack tick, ability ===
+
+func _esquivando_stack_pct() -> float:
+	if esquivando_level <= 0:
+		return 0.0
+	return ESQUIVANDO_STACK_PCT_BY_LEVEL[mini(esquivando_level - 1, ESQUIVANDO_LEVEL_MAX - 1)]
+
+
+func _esquivando_max_stacks() -> int:
+	if esquivando_level <= 0:
+		return 0
+	return ESQUIVANDO_MAX_STACKS_BY_LEVEL[mini(esquivando_level - 1, ESQUIVANDO_LEVEL_MAX - 1)]
+
+
+func _esquivando_dodge_chance() -> float:
+	if esquivando_level <= 0:
+		return 0.0
+	return ESQUIVANDO_DODGE_BY_LEVEL[mini(esquivando_level - 1, ESQUIVANDO_LEVEL_MAX - 1)]
+
+
+func _esquivando_ability_cd_total() -> float:
+	if esquivando_level < ESQUIVANDO_ABILITY_MIN_LEVEL:
+		return 0.0
+	return ESQUIVANDO_ABILITY_CD_BY_LEVEL[mini(esquivando_level - 1, ESQUIVANDO_LEVEL_MAX - 1)]
+
+
+# Buff combinado de move speed do Esquivando (stacks + skill do espaço).
+func _esquivando_move_buff() -> float:
+	if esquivando_level <= 0:
+		return 0.0
+	var stack_buff: float = float(_esquivando_stacks) * _esquivando_stack_pct()
+	var ability_buff: float = ESQUIVANDO_ABILITY_BUFF if _esquivando_ability_buff_remaining > 0.0 else 0.0
+	return stack_buff + ability_buff
+
+
+# Buff de atk speed do Esquivando (só stacks — a skill do espaço é só move).
+func _esquivando_atk_buff() -> float:
+	if esquivando_level <= 0:
+		return 0.0
+	return float(_esquivando_stacks) * _esquivando_stack_pct()
+
+
+# Chamado pelo arrow ao bater num inimigo. Lv1-3: só 1 stack por volley
+# (primeiro arrow.volley_id novo). Lv4: cada hit stacka. Cap variável por nível.
+func notify_esquivando_hit(arrow: Node) -> void:
+	if esquivando_level <= 0 or is_dead:
+		return
+	if esquivando_level >= ESQUIVANDO_LEVEL_MAX:
+		_apply_esquivando_stack()
+		return
+	if arrow == null or not is_instance_valid(arrow):
+		return
+	# Lv1-3: bloqueia se a flecha já stackou (perfurante: 1 stack para a flecha
+	# inteira) OU se a volley já stackou (multi-arrow: 1 stack pra volley toda).
+	if "gave_esquivando_stack" in arrow and bool(arrow.gave_esquivando_stack):
+		return
+	var vid: int = int(arrow.get("volley_id")) if "volley_id" in arrow else -1
+	if vid >= 0 and vid == _esquivando_last_stack_volley:
+		return
+	_apply_esquivando_stack()
+	if "gave_esquivando_stack" in arrow:
+		arrow.gave_esquivando_stack = true
+	if vid >= 0:
+		_esquivando_last_stack_volley = vid
+
+
+# Coin pickup também conta como hit no lv2+ (sem volley restriction).
+func notify_esquivando_coin_pickup() -> void:
+	if esquivando_level < 2 or is_dead:
+		return
+	_apply_esquivando_stack()
+
+
+func _apply_esquivando_stack() -> void:
+	var cap: int = _esquivando_max_stacks()
+	_esquivando_stacks = mini(_esquivando_stacks + 1, cap)
+	_esquivando_stack_remaining = ESQUIVANDO_STACK_DURATION
+	esquivando_stacks_changed.emit(_esquivando_stacks, cap)
+
+
+func _try_start_esquivando_ability() -> void:
+	if esquivando_level < ESQUIVANDO_ABILITY_MIN_LEVEL or is_dead:
+		return
+	if _esquivando_ability_cd > 0.0:
+		return
+	_esquivando_ability_buff_remaining = ESQUIVANDO_ABILITY_DURATION
+	_esquivando_ability_cd = _esquivando_ability_cd_total()
+	_esquivando_trail_last_pos = global_position
+	# Spawna o primeiro blob na hora pra dar feedback imediato (sem esperar
+	# percorrer ESQUIVANDO_TRAIL_SPACING).
+	_spawn_esquivando_trail_segment()
+	esquivando_cooldown_changed.emit(_esquivando_ability_cd, _esquivando_ability_cd_total())
+	esquivando_ability_active_changed.emit(true)
+
+
+func _update_esquivando(delta: float) -> void:
+	if esquivando_level <= 0:
+		return
+	# Duração dos stacks: se acabar, zera tudo (perde os stacks acumulados).
+	if _esquivando_stacks > 0:
+		_esquivando_stack_remaining -= delta
+		if _esquivando_stack_remaining <= 0.0:
+			_esquivando_stacks = 0
+			_esquivando_stack_remaining = 0.0
+			_esquivando_last_stack_volley = -1
+			esquivando_stacks_changed.emit(0, _esquivando_max_stacks())
+	# Skill do espaço: tick do buff temporário + cooldown. Quando o buff
+	# terminar, sinaliza HUD pra apagar o "glow" do ícone.
+	if _esquivando_ability_buff_remaining > 0.0:
+		var was_active: bool = true
+		_esquivando_ability_buff_remaining = maxf(_esquivando_ability_buff_remaining - delta, 0.0)
+		# Rastro: spawna blob branco a cada N pixels percorridos enquanto ativa.
+		var moved: float = global_position.distance_to(_esquivando_trail_last_pos)
+		if moved >= ESQUIVANDO_TRAIL_SPACING:
+			_spawn_esquivando_trail_segment()
+			_esquivando_trail_last_pos = global_position
+		if was_active and _esquivando_ability_buff_remaining <= 0.0:
+			esquivando_ability_active_changed.emit(false)
+	if _esquivando_ability_cd > 0.0:
+		_esquivando_ability_cd = maxf(_esquivando_ability_cd - delta, 0.0)
+		esquivando_cooldown_changed.emit(_esquivando_ability_cd, _esquivando_ability_cd_total())
+
+
+# Blob branco que fica no chão por ESQUIVANDO_TRAIL_FADE segundos. Visual only,
+# sem colisão. Spawnado periodicamente no _update_esquivando enquanto a ability
+# do espaço (+50% move) está ativa.
+func _spawn_esquivando_trail_segment() -> void:
+	var blob := Polygon2D.new()
+	var radius: float = 4.5
+	var pts := PackedVector2Array()
+	var segments: int = 14
+	for i in segments:
+		var ang: float = TAU * float(i) / float(segments)
+		# Achatado verticalmente pra dar sensação isométrica de "pegada no chão".
+		pts.append(Vector2(cos(ang) * radius, sin(ang) * radius * 0.5))
+	blob.polygon = pts
+	blob.color = Color(1.0, 1.0, 1.0, 0.55)
+	blob.z_index = -1  # atrás de entidades, em cima do chão
+	blob.z_as_relative = false
+	var world := _get_world()
+	if world == null:
+		return
+	world.add_child(blob)
+	blob.global_position = global_position + Vector2(0, ESQUIVANDO_TRAIL_OFFSET_Y)
+	var tw := blob.create_tween()
+	tw.tween_property(blob, "modulate:a", 0.0, ESQUIVANDO_TRAIL_FADE)
+	tw.tween_callback(blob.queue_free)
+
+
 func _spawn_dash_trail_segment() -> void:
 	if DASH_TRAIL_SCENE == null:
 		return
@@ -1129,6 +1342,10 @@ func _dash_auto_attack_volley() -> void:
 	# ataque para o terceiro do perfurante").
 	if arrow_scene == null:
 		return
+	# Cada auto-attack do dash = uma volley separada pro Esquivando. (Mesmo
+	# acontecendo durante dash, é mecanicamente um disparo "novo" — não compartilha
+	# id com a volley manual anterior.)
+	_esquivando_volley_id += 1
 	var target: Node2D = _find_nearest_enemy()
 	if target == null:
 		return
@@ -1297,6 +1514,9 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# Lv2: rastro de fogo, cd 4.5s
 			# Lv3: auto-attack após dash, cd 4s
 			# Lv4: 2 flechas após dash, cd 3.5s
+			# Mutex defensivo com esquivando — shop/welcome pool já filtram.
+			if esquivando_level > 0:
+				return
 			if dash_level >= DASH_LEVEL_MAX:
 				return
 			dash_level = mini(dash_level + 1, DASH_LEVEL_MAX)
@@ -1317,6 +1537,29 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# L1: cada 3 ataques cria pulso ao bater. L2: cada 2 + range maior.
 			# L3: pulso explode no fim (30 dano). L4: área e dano aumentados.
 			graviton_level = mini(graviton_level + 1, 4)
+		"esquivando":
+			# Lv1-4. Mutuamente exclusivo com dash (mesma categoria movimentação)
+			# — shop e welcome pool já filtram, defensivo aqui contra dev panel.
+			if dash_level > 0:
+				return
+			if esquivando_level >= ESQUIVANDO_LEVEL_MAX:
+				return
+			esquivando_level = mini(esquivando_level + 1, ESQUIVANDO_LEVEL_MAX)
+			if esquivando_level == 1:
+				has_esquivando = true
+				esquivando_unlocked.emit()
+			# Lv3 destrava a skill do espaço — reseta cd, sinaliza pra HUD mostrar
+			# a barra (que ficou escondida nos lv1-2 sem ability).
+			if esquivando_level == ESQUIVANDO_ABILITY_MIN_LEVEL:
+				_esquivando_ability_cd = 0.0
+				esquivando_unlocked.emit()
+				esquivando_cooldown_changed.emit(0.0, _esquivando_ability_cd_total())
+			# Lv4 muda o cd total — re-emit pra HUD recalcular o ratio.
+			if esquivando_level >= ESQUIVANDO_ABILITY_MIN_LEVEL:
+				esquivando_cooldown_changed.emit(_esquivando_ability_cd, _esquivando_ability_cd_total())
+			# Refresca label de stacks (cap muda 3→4 no lv4) — sem isso o "0/3"
+			# antigo persiste até o próximo stack/expire.
+			esquivando_stacks_changed.emit(_esquivando_stacks, _esquivando_max_stacks())
 	# Notifica HUD/listeners. Emitido SEMPRE no fim, independente do match.
 	upgrade_applied.emit(upgrade_id, get_upgrade_count(upgrade_id))
 
@@ -1340,6 +1583,7 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"capivara_joe": return capivara_joe_level
 		"gold_magnet": return gold_magnet_level
 		"dash": return dash_level
+		"esquivando": return esquivando_level
 		"ricochet_arrow": return ricochet_arrow_level
 		"graviton": return graviton_level
 	return 0
@@ -1613,6 +1857,11 @@ func take_damage(amount: float, source_id: String = "") -> void:
 		return
 	# I-frames do dash: ignora dano (inclui DoT/curse/burn que chamem take_damage).
 	if _iframes_remaining > 0.0:
+		return
+	# Esquivando: % de chance de esquivar o ataque inteiro (2% lv1-2, 5% lv3-4).
+	# Nota: DoT/poison/burn também passam por aqui — esquivar um tick de DoT é
+	# ok como design (cada tick é um "ataque" independente).
+	if esquivando_level > 0 and randf() < _esquivando_dodge_chance():
 		return
 	# Armor: reduz dano antes de aplicar — número/notify usam o valor reduzido,
 	# pra a UI mostrar o que de fato saiu do HP do player.

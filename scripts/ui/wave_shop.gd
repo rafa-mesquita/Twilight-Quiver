@@ -54,6 +54,7 @@ const UPGRADE_POOL: Array = [
 	{"id": "life_steal", "name": "SHOP_UPG_LIFE_STEAL", "max_level": 4},
 	{"id": "gold_magnet", "name": "SHOP_UPG_GOLD_MAGNET", "max_level": 4},
 	{"id": "dash", "name": "SHOP_UPG_DASH", "max_level": 4},
+	{"id": "esquivando", "name": "SHOP_UPG_ESQUIVANDO", "max_level": 4},
 	{"id": "ricochet_arrow", "name": "SHOP_UPG_RICOCHET", "max_level": 4},
 	{"id": "graviton", "name": "SHOP_UPG_GRAVITON", "max_level": 4},
 	{"id": "fire_arrow", "name": "SHOP_UPG_FIRE_ARROW", "max_level": 4},
@@ -74,6 +75,9 @@ const EXCLUSIVE_PAIRS: Array = [
 	["perfuracao", "ricochet_arrow"],
 	# Salva de flechas: multi (leque 30°) ou duplas (chance + apertado).
 	["multi_arrow", "double_arrows"],
+	# Categoria movimentação: dash (espaço) ou esquivando (espaço + stacks +
+	# dodge). Ambos ocupam o slot da barra de espaço, então o player escolhe um.
+	["dash", "esquivando"],
 ]
 
 # Descrições por upgrade. Cada entry é uma translation key — resolvida via
@@ -135,6 +139,12 @@ const DASH_DESCS: Array[String] = [
 	"SHOP_DASH_DESC_2",
 	"SHOP_DASH_DESC_3",
 	"SHOP_DASH_DESC_4",
+]
+const ESQUIVANDO_DESCS: Array[String] = [
+	"SHOP_ESQUIVANDO_DESC_1",
+	"SHOP_ESQUIVANDO_DESC_2",
+	"SHOP_ESQUIVANDO_DESC_3",
+	"SHOP_ESQUIVANDO_DESC_4",
 ]
 const LIFE_STEAL_DESCS: Array[String] = [
 	"SHOP_LIFE_STEAL_DESC_1",
@@ -920,6 +930,7 @@ func _get_upgrade_descs_array(id: String) -> Array:
 		"move_speed": return MOVE_SPEED_DESCS
 		"gold_magnet": return GOLD_MAGNET_DESCS
 		"dash": return DASH_DESCS
+		"esquivando": return ESQUIVANDO_DESCS
 		"life_steal": return LIFE_STEAL_DESCS
 		"fire_arrow": return FIRE_ARROW_DESCS
 		"curse_arrow": return CURSE_ARROW_DESCS
@@ -1124,6 +1135,7 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 	"gold_magnet": Color(0x6a / 255.0, 0x53 / 255.0, 0x0b / 255.0),  # #6a530b
 	"life_steal": Color(0x58 / 255.0, 0x14 / 255.0, 0x1f / 255.0),  # #58141f
 	"dash": Color(0x3d / 255.0, 0x28 / 255.0, 0x18 / 255.0),  # #3d2818 (marrom escuro contrasta com cream)
+	"esquivando": Color(0x3d / 255.0, 0x28 / 255.0, 0x18 / 255.0),  # mesmo do dash — compartilham arte
 }
 # Cor secundária (DescLabel + PriceLabel) por upgrade. Quando definido,
 # sobrescreve a cor do título nesses dois labels — útil pra cards onde título
@@ -1151,6 +1163,9 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	"fire_arrow": "res://assets/Hud/shop/upgrade/fire_arrow2.png",
 	# id "dash" mas arquivo é "deslizando.png" (nome PT do upgrade).
 	"dash": "res://assets/Hud/shop/upgrade/deslizando.png",
+	# Esquivando compartilha a arte do dash (mesma categoria movimentação,
+	# mutuamente exclusivos — o player só compra um dos dois por run).
+	"esquivando": "res://assets/Hud/shop/upgrade/deslizando.png",
 	# double_arrows compartilha a arte do multi_arrow (mesma família — marrom).
 	# Quando tiver arte própria, trocar pra "res://assets/Hud/shop/upgrade/double_arrows.png".
 	"double_arrows": "res://assets/Hud/shop/upgrade/multi_arrow.png",
@@ -2430,6 +2445,7 @@ func _augment_title_for(id: String) -> String:
 		"graviton": return "SHOP_UPG_GRAVITON"
 		"life_steal": return "SHOP_UPG_LIFE_STEAL"
 		"dash": return "SHOP_UPG_DASH"
+		"esquivando": return "SHOP_UPG_ESQUIVANDO"
 		"gold_magnet": return "SHOP_UPG_GOLD_MAGNET"
 		"woodwarden": return "SHOP_ALLY_WOODWARDEN"
 		"leno": return "SHOP_ALLY_LENO"

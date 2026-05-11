@@ -129,6 +129,9 @@ func _magnet_finalize() -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	if player != null and player.has_method("add_gold"):
 		player.add_gold(value)
+		# Esquivando lv2+: cada moeda coletada também conta como hit pra stack.
+		if player.has_method("notify_esquivando_coin_pickup"):
+			player.notify_esquivando_coin_pickup()
 	_play_pickup_sound()
 	queue_free()
 
@@ -219,6 +222,9 @@ func _on_body_entered(body: Node) -> void:
 		return
 	_picked = true
 	body.add_gold(value)
+	# Esquivando lv2+: cada moeda coletada também conta como hit pra stack.
+	if body.has_method("notify_esquivando_coin_pickup"):
+		body.notify_esquivando_coin_pickup()
 	_play_pickup_sound()
 	# Chuva de Coins L3: emite pulso amarelo de slow.
 	if int(body.get("gold_magnet_level")) >= 3:

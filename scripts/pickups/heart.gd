@@ -21,16 +21,21 @@ const SILHOUETTE_SHADER: Shader = preload("res://shaders/silhouette.gdshader")
 # Indicador vermelho acima do coração — espelha o dourado do gold.
 const INDICATOR_COLOR: Color = Color(0.95, 0.25, 0.3, 1.0)
 # Life Steal L3+: coração persegue o player. Mesmo padrão do Imã de Gold.
-# L3 limita o pull ao raio MAGNET_RADIUS (decisão tática preservada).
-# L4 ignora o raio (puxa do mapa inteiro).
+# L3 limita o pull ao raio MAGNET_RADIUS_L3 (decisão tática preservada).
+# L4 expande o raio (MAGNET_RADIUS_L4) mas NÃO puxa do mapa inteiro — sem isso
+# o coração vem voando do canto da arena e parece bug.
 # Speed mais lenta que o player (~120 walking) — jogador consegue interceptar
 # andando se quiser acelerar a coleta.
 const MAGNET_PULL_SPEED: float = 75.0
-const MAGNET_RADIUS: float = 110.0
+const MAGNET_RADIUS_L3: float = 110.0
+const MAGNET_RADIUS_L4: float = 220.0
 # End-of-wave sweep usa um magnet ainda mais lento, e wave_manager chama um por
 # vez (próximo só inicia quando o anterior é coletado). Player pode interceptar
 # qualquer um andando — pickup normal via body_entered cura na hora.
+# MAGNET_END_WAVE_RADIUS limita quais corações vêm pro player no sweep — os
+# que estão muito longe somem silenciosamente (não acumulam pra próxima wave).
 const MAGNET_END_WAVE_SPEED: float = 55.0
+const MAGNET_END_WAVE_RADIUS: float = 260.0
 
 @onready var visual: Node2D = $Visual
 @onready var sprite: AnimatedSprite2D = $Visual/Sprite
@@ -135,10 +140,10 @@ func _is_player_magnet_active() -> bool:
 	var lvl: int = int(_player_ref.get("life_steal_level"))
 	if lvl < 3:
 		return false
-	if lvl >= 4:
-		return true  # mapa todo
-	# L3: só puxa dentro do raio.
-	return global_position.distance_squared_to(_player_ref.global_position) <= MAGNET_RADIUS * MAGNET_RADIUS
+	# L4: raio expandido (mas não mapa inteiro — corações distantes não vinham
+	# voando do nada). L3: raio menor, decisão tática preservada.
+	var radius: float = MAGNET_RADIUS_L4 if lvl >= 4 else MAGNET_RADIUS_L3
+	return global_position.distance_squared_to(_player_ref.global_position) <= radius * radius
 
 
 func _magnet_chase_player(delta: float, speed: float = MAGNET_PULL_SPEED) -> void:

@@ -64,6 +64,17 @@ const HUD_RUNTIME_SCALE: Vector2 = Vector2(3, 3)
 @onready var chain_lightning_skill_cd_label: Label = $ChainLightningSkillIcon/CdLabel
 @onready var curse_skill_icon: Control = $CurseSkillIcon
 @onready var curse_skill_cd_label: Label = $CurseSkillIcon/CdLabel
+@onready var esquivando_skill_icon: Control = $EsquivandoSkillIcon
+@onready var esquivando_stack_label: Label = $EsquivandoSkillIcon/StackLabel
+# Glow ativo (skill do espaço): durante esse período, modulate do ícone é
+# sobrescrito pelo "active color" e ignora o estado de stacks.
+var _esquivando_ability_glow_active: bool = false
+# Posições do ícone do Esquivando: ocupa o slot do elemental (150) quando o
+# player ainda não tem nenhum elemental no nível que ativa o icone (Fire/Chain
+# lv3+, Curse lv4+). Quando ganha, desloca pro slot 330 (à direita do Chain).
+const ESQUIVANDO_ICON_LEFT_X: float = 150.0
+const ESQUIVANDO_ICON_RIGHT_X: float = 330.0
+const ESQUIVANDO_ICON_WIDTH: float = 76.0
 @onready var upgrade_column_vbox: VBoxContainer = $UpgradeColumn/VBox
 @onready var boss_hp_bar: Control = $BossHpBar
 @onready var boss_hp_fill: ColorRect = $BossHpBar/ArtScale/Fill
@@ -225,6 +236,23 @@ func _connect_player_signals() -> void:
 		player.dash_cooldown_changed.connect(_on_dash_cooldown_changed)
 	if "has_dash" in player and player.has_dash:
 		_on_dash_unlocked()
+	# Esquivando reusa a mesma barra do dash (mutuamente exclusivos). Só mostra
+	# a partir do lv3, quando a skill do espaço destrava — antes disso o
+	# Esquivando dá só passive stacks/dodge, sem cooldown a exibir.
+	if player.has_signal("esquivando_unlocked") and not player.esquivando_unlocked.is_connected(_on_esquivando_unlocked):
+		player.esquivando_unlocked.connect(_on_esquivando_unlocked)
+	if player.has_signal("esquivando_cooldown_changed") and not player.esquivando_cooldown_changed.is_connected(_on_dash_cooldown_changed):
+		player.esquivando_cooldown_changed.connect(_on_dash_cooldown_changed)
+	# Ícone de stacks — visível a partir do lv1 (passive já tá ativa).
+	if player.has_signal("esquivando_stacks_changed") and not player.esquivando_stacks_changed.is_connected(_on_esquivando_stacks_changed):
+		player.esquivando_stacks_changed.connect(_on_esquivando_stacks_changed)
+	# Glow do ícone enquanto a skill do espaço está ativa (lv3+).
+	if player.has_signal("esquivando_ability_active_changed") and not player.esquivando_ability_active_changed.is_connected(_on_esquivando_ability_active_changed):
+		player.esquivando_ability_active_changed.connect(_on_esquivando_ability_active_changed)
+	if "esquivando_level" in player and int(player.esquivando_level) >= 1:
+		_on_esquivando_unlocked()
+	if "esquivando_level" in player and int(player.esquivando_level) >= 3:
+		dash_cd_bar.visible = true
 	# Fire skill icon — só aparece quando player chega no Fogo lv3.
 	if player.has_signal("fire_skill_unlocked") and not player.fire_skill_unlocked.is_connected(_on_fire_skill_unlocked):
 		player.fire_skill_unlocked.connect(_on_fire_skill_unlocked)
@@ -394,6 +422,76 @@ func _on_dash_unlocked() -> void:
 	dash_cd_bar.visible = true
 
 
+# Esquivando: lv1+ mostra o ícone de stacks. Lv3+ também mostra a barra do
+# espaço (reusada do dash, mutuamente exclusivos).
+func _on_esquivando_unlocked() -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null:
+		return
+	if "esquivando_level" in player and int(player.esquivando_level) >= 1:
+		esquivando_skill_icon.visible = true
+		_update_esquivando_icon_position(player)
+		# Inicializa o label com stacks atuais (em cold load pode ser 0/3).
+		var stacks: int = int(player.get("_esquivando_stacks")) if "_esquivando_stacks" in player else 0
+		var cap: int = 3
+		if player.has_method("_esquivando_max_stacks"):
+			cap = int(player._esquivando_max_stacks())
+		_on_esquivando_stacks_changed(stacks, cap)
+	if "esquivando_level" in player and int(player.esquivando_level) >= 3:
+		dash_cd_bar.visible = true
+
+
+# Esquivando ocupa o slot do elemental (x=150) quando o player ainda não tem
+# nenhum elemental no nível que ativa o ícone (Fire/Chain lv3+, Curse lv4+).
+# Quando ganha um elemental, o ícone do Esquivando desloca pra x=330.
+func _update_esquivando_icon_position(player: Node = null) -> void:
+	if player == null:
+		player = get_tree().get_first_node_in_group("player")
+	if player == null:
+		return
+	var has_any_elemental: bool = false
+	if "fire_arrow_level" in player and int(player.fire_arrow_level) >= 3:
+		has_any_elemental = true
+	elif "chain_lightning_level" in player and int(player.chain_lightning_level) >= 3:
+		has_any_elemental = true
+	elif "curse_arrow_level" in player and int(player.curse_arrow_level) >= 4:
+		has_any_elemental = true
+	var new_x: float = ESQUIVANDO_ICON_RIGHT_X if has_any_elemental else ESQUIVANDO_ICON_LEFT_X
+	esquivando_skill_icon.offset_left = new_x
+	esquivando_skill_icon.offset_right = new_x + ESQUIVANDO_ICON_WIDTH
+
+
+# Stack count do Esquivando: 0/3 ou 0/4 dependendo do level. Apaga (modulate
+# escurece) quando não tem stacks ativos, fica em destaque quando tem.
+# Cuidado: NÃO sobrescreve modulate quando a ability tá ativa (glow vence).
+func _on_esquivando_stacks_changed(stacks: int, cap: int) -> void:
+	esquivando_stack_label.text = "%d/%d" % [stacks, cap]
+	if _esquivando_ability_glow_active:
+		return  # mantém glow da ability
+	if stacks <= 0:
+		esquivando_skill_icon.modulate = Color(0.55, 0.6, 0.55, 1.0)
+	else:
+		esquivando_skill_icon.modulate = Color.WHITE
+
+
+# Skill do espaço ativa: ícone brilha em ciano (+50% move ativo). Quando termina,
+# volta ao modulate baseado em stacks.
+func _on_esquivando_ability_active_changed(active: bool) -> void:
+	_esquivando_ability_glow_active = active
+	if active:
+		esquivando_skill_icon.modulate = Color(0.65, 1.4, 1.1, 1.0)
+	else:
+		# Re-apply modulate baseado em stacks atuais.
+		var player := get_tree().get_first_node_in_group("player")
+		var stacks: int = 0
+		var cap: int = 3
+		if player != null:
+			stacks = int(player.get("_esquivando_stacks")) if "_esquivando_stacks" in player else 0
+			if player.has_method("_esquivando_max_stacks"):
+				cap = int(player._esquivando_max_stacks())
+		_on_esquivando_stacks_changed(stacks, cap)
+
+
 func _on_dash_cooldown_changed(remaining: float, total: float) -> void:
 	# Fill cresce do vazio (cooldown rolando) pro cheio (pronto).
 	# 0 remaining = pronto = barra cheia.
@@ -407,6 +505,8 @@ func _on_dash_cooldown_changed(remaining: float, total: float) -> void:
 
 func _on_fire_skill_unlocked() -> void:
 	fire_skill_icon.visible = true
+	# Esquivando (se ativo) desloca pra direita pra não sobrepor o ícone do fogo.
+	_update_esquivando_icon_position()
 
 
 func _on_fire_skill_cooldown_changed(remaining: float, _total: float) -> void:
@@ -422,6 +522,7 @@ func _on_fire_skill_cooldown_changed(remaining: float, _total: float) -> void:
 
 func _on_chain_lightning_skill_unlocked() -> void:
 	chain_lightning_skill_icon.visible = true
+	_update_esquivando_icon_position()
 
 
 func _on_chain_lightning_skill_cooldown_changed(remaining: float, _total: float) -> void:
@@ -435,6 +536,7 @@ func _on_chain_lightning_skill_cooldown_changed(remaining: float, _total: float)
 
 func _on_curse_skill_unlocked() -> void:
 	curse_skill_icon.visible = true
+	_update_esquivando_icon_position()
 
 
 func _on_curse_skill_cooldown_changed(remaining: float, _total: float) -> void:

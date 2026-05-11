@@ -172,6 +172,7 @@ SHOP_UPG_CHAIN_LIGHTNING,Cadeia de Raios,Chain Lightning,Cadena de Rayos,Chaîne
 SHOP_UPG_LIFE_STEAL,Mestre da Cura,Heal Master,Maestro de Cura,Maître Soigneur
 SHOP_UPG_GOLD_MAGNET,Chuva de Coins,Coin Rain,Lluvia de Monedas,Pluie de Pièces
 SHOP_UPG_DASH,Deslizando,Sliding,Deslizar,Esquive
+SHOP_UPG_ESQUIVANDO,Esquivando,Dodging,Esquivando,Esquivant
 SHOP_UPG_RICOCHET,Flecha Ricochete,Ricochet Arrow,Flecha Rebotadora,Flèche Ricochet
 SHOP_UPG_GRAVITON,Graviton,Graviton,Gravitón,Graviton
 SHOP_UPG_FIRE_ARROW,Flecha de Fogo,Fire Arrow,Flecha de Fuego,Flèche de Feu
@@ -327,6 +328,54 @@ cd 3.5s","+1 arrow
 cd 3.5s","+1 flecha
 cd 3.5s","+1 flèche
 cd 3.5s"
+SHOP_ESQUIVANDO_DESC_1,"1a flecha do hit
++5% atk/move 2s
+max 3 stacks
+2% esquiva","1st arrow hit
++5% atk/move 2s
+max 3 stacks
+2% dodge","1ra flecha hit
++5% atk/mov 2s
+máx 3 stacks
+2% esquiva","1ère flèche hit
++5% atk/mov 2s
+max 3 stacks
+2% esquive"
+SHOP_ESQUIVANDO_DESC_2,"+8% por stack
+moeda = stack
+max 3 stacks
+2% esquiva","+8% per stack
+coin = stack
+max 3 stacks
+2% dodge","+8% por stack
+moneda = stack
+máx 3 stacks
+2% esquiva","+8% par stack
+pièce = stack
+max 3 stacks
+2% esquive"
+SHOP_ESQUIVANDO_DESC_3,"5% esquiva
+Espaço: +30% move
+3s, cd 15s","5% dodge
+Space: +30% move
+3s, cd 15s","5% esquiva
+Espacio: +30% mov
+3s, cd 15s","5% esquive
+Espace: +30% mov
+3s, cd 15s"
+SHOP_ESQUIVANDO_DESC_4,"+10% por stack
+max 4 stacks
+todo hit stacka
+cd habilidade 10s","+10% per stack
+max 4 stacks
+every hit stacks
+ability cd 10s","+10% por stack
+máx 4 stacks
+todo hit stack
+cd hab. 10s","+10% par stack
+max 4 stacks
+chaque hit stack
+cd capa 10s"
 SHOP_LIFE_STEAL_DESC_1,"10% drop coracao
 cura 20% HP","10% heart drop
 heals 20% HP","10% drop corazón

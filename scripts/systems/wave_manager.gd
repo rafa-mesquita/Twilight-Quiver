@@ -843,10 +843,19 @@ func _magnet_remaining_gold() -> void:
 	# o jogador pode interceptar andando ao encontro pra acelerar. Sem isso, com
 	# Life Steal L4 + várias mortes de fim de round o player curava 100% no
 	# instante da transição (fountain).
+	# Limite de raio: hearts muito longe somem em vez de virem voando do canto
+	# do mapa (parecia bug). Raio = MAGNET_END_WAVE_RADIUS no heart.gd (260px).
+	const END_WAVE_RADIUS_SQ: float = 260.0 * 260.0
 	var hearts: Array = []
 	for h in get_tree().get_nodes_in_group("heart"):
-		if is_instance_valid(h) and (h as Node).has_method("magnet_to_player"):
-			hearts.append(h)
+		if not is_instance_valid(h):
+			continue
+		if not (h as Node).has_method("magnet_to_player"):
+			continue
+		if (h as Node2D).global_position.distance_squared_to(player.global_position) > END_WAVE_RADIUS_SQ:
+			(h as Node).queue_free()
+			continue
+		hearts.append(h)
 	_magnet_next_heart_sequential(hearts, 0, get_player_pos)
 
 
@@ -1007,11 +1016,13 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	{"id": "perfuracao", "name": "SHOP_UPG_PERFURACAO"},
 	{"id": "attack_speed", "name": "SHOP_UPG_ATTACK_SPEED"},
 	{"id": "multi_arrow", "name": "SHOP_UPG_MULTI_ARROW"},
+	{"id": "double_arrows", "name": "SHOP_UPG_DOUBLE_ARROWS"},
 	{"id": "chain_lightning", "name": "SHOP_UPG_CHAIN_LIGHTNING"},
 	{"id": "move_speed", "name": "SHOP_UPG_MOVE_SPEED"},
 	{"id": "life_steal", "name": "SHOP_UPG_LIFE_STEAL"},
 	{"id": "gold_magnet", "name": "SHOP_UPG_GOLD_MAGNET"},
 	{"id": "dash", "name": "SHOP_UPG_DASH"},
+	{"id": "esquivando", "name": "SHOP_UPG_ESQUIVANDO"},
 	{"id": "ricochet_arrow", "name": "SHOP_UPG_RICOCHET"},
 	{"id": "graviton", "name": "SHOP_UPG_GRAVITON"},
 	{"id": "armor", "name": "SHOP_UPG_ARMOR"},
@@ -1025,18 +1036,32 @@ func _grant_free_random_upgrade() -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	if player == null or not player.has_method("apply_upgrade"):
 		return
-	# Filtra par exclusivo: se o player já tem perfuracao, não pode ganhar
-	# ricochet_arrow (e vice-versa). Defensivo — em runtime normal, free upgrade
-	# rola depois da wave 1 e o player não tem upgrade ainda; mas via dev mode
-	# pode chegar aqui já com algum upgrade.
+	# Filtra pares exclusivos:
+	#  - perfuracao ↔ ricochet_arrow (perfura e ricocheia não combinam)
+	#  - multi_arrow ↔ double_arrows (volley triplo vs disparo duplo, exclusivos)
+	#  - dash ↔ esquivando (mesma categoria movimentação, mesmo slot de espaço)
+	# Defensivo — em runtime normal, free upgrade rola depois da wave 1 e o player
+	# ainda não tem upgrade; via dev mode pode chegar aqui com algum upgrade.
 	var has_perf: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("perfuracao") > 0
 	var has_ric: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("ricochet_arrow") > 0
+	var has_multi: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("multi_arrow") > 0
+	var has_double: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("double_arrows") > 0
+	var has_dash: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("dash") > 0
+	var has_esq: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("esquivando") > 0
 	var pool: Array[Dictionary] = []
 	for entry in FREE_UPGRADE_POOL:
 		var id: String = entry["id"]
 		if id == "perfuracao" and has_ric:
 			continue
 		if id == "ricochet_arrow" and has_perf:
+			continue
+		if id == "multi_arrow" and has_double:
+			continue
+		if id == "double_arrows" and has_multi:
+			continue
+		if id == "dash" and has_esq:
+			continue
+		if id == "esquivando" and has_dash:
 			continue
 		pool.append(entry)
 	if pool.is_empty():

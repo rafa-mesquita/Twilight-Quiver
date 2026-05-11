@@ -320,12 +320,15 @@ func take_damage(amount: float) -> void:
 		if not is_curse_ally:
 			if CurseAllyHelper.try_convert_on_death(self):
 				return
-			GoldDrop.try_drop(_get_world(), gold_scene, global_position,
-				gold_drop_chance, gold_drop_min, gold_drop_max)
 			HeartDrop.try_drop(_get_world(), heart_scene, global_position, self)
 			var p2 := get_tree().get_first_node_in_group("player")
 			if p2 != null and p2.has_method("notify_enemy_killed"):
 				p2.notify_enemy_killed()
+		# Gold dropa em ambos: morte de inimigo normal E morte de aliado convertido
+		# pela Maldição. Coerente com a expectativa do jogador — o macaco/mago que
+		# ele "transformou" deveria valer gold quando morre lutando.
+		GoldDrop.try_drop(_get_world(), gold_scene, global_position,
+			gold_drop_chance, gold_drop_min, gold_drop_max)
 		_spawn_kill_effect()
 		_spawn_death_silhouette()
 		queue_free()

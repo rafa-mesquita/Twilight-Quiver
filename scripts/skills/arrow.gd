@@ -92,6 +92,13 @@ var source: Node = null
 var telemetry_source_id: String = "arrow_base"
 var _hit_bodies: Array[Node] = []
 var _pierce_hits: int = 0  # quantos targets a flecha perfurante já atravessou
+# Esquivando: id da volley que disparou essa flecha + flag de "essa flecha já
+# gerou stack". Setado pelo player no _spawn_arrow. Lv1-3 do Esquivando: só a
+# 1ª flecha da volley + 1º hit dela contam. Lv4: cada hit conta (player ignora
+# essas flags). Default -1 = flecha não originada de volley do player (NPC,
+# torre, etc) — notify ignora.
+var volley_id: int = -1
+var gave_esquivando_stack: bool = false
 # Multiplicador de dano aplicado SÓ no primeiro alvo (perfuracao bonus). 2º
 # alvo leva dano cheio, 3º+ leva PIERCE_LATE_DMG_MULT do dano base.
 var pierce_first_dmg_mult: float = 1.0
@@ -333,6 +340,11 @@ func _on_hit(body: Node) -> void:
 		var _was_alive_arrow: bool = (not ("hp" in target)) or float(target.hp) > 0.0
 		target.take_damage(dmg_to_apply)
 		_notify_player_dmg_kill(dmg_to_apply, telemetry_source_id, _was_alive_arrow, target)
+		# Esquivando: bater num inimigo real (target em grupo "enemy") gera stack
+		# no player. Helper trata as regras por nível (lv1-3 só 1 stack por volley,
+		# lv4 cada hit). Aliados/estruturas já retornaram acima — só inimigo cai aqui.
+		if source != null and is_instance_valid(source) and source.has_method("notify_esquivando_hit"):
+			source.notify_esquivando_hit(self)
 		if target.has_method("apply_knockback"):
 			target.apply_knockback(direction, knockback_strength)
 		_play_oneshot(impact_sound, global_position, sound_volume_db, 0.7)
