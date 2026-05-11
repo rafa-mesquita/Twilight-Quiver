@@ -61,10 +61,10 @@ collision_mask = 2
 script = ExtResource("1_elecmage")
 speed = 18.0
 max_hp = 22.0
-preferred_distance = 230.0
+preferred_distance = 210.0
 distance_tolerance = 18.0
-detection_range = 360.0
-shoot_interval = 5.0
+detection_range = 325.0
+shoot_interval = 6.25
 damage_effect_scene = ExtResource("4_dmg")
 damage_number_scene = ExtResource("6_dmgnum")
 kill_effect_scene = ExtResource("7_kill")
@@ -103,7 +103,7 @@ shape = SubResource("CapsuleShape2D_elecmage")
 position = Vector2(-8, -22)
 
 [node name="ShootTimer" type="Timer" parent="."]
-wait_time = 5.0
+wait_time = 6.25
 
 [node name="HpBar" parent="." instance=ExtResource("5_hpbar")]
 position = Vector2(-8, -34)

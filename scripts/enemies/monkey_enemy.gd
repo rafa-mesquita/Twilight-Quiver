@@ -270,7 +270,7 @@ func take_damage(amount: float) -> void:
 			# Morte normal: drops + count na stat de kills.
 			GoldDrop.try_drop(_get_world(), gold_scene, global_position,
 				gold_drop_chance, gold_drop_min, gold_drop_max)
-			HeartDrop.try_drop(_get_world(), heart_scene, global_position)
+			HeartDrop.try_drop(_get_world(), heart_scene, global_position, self)
 			var p2 := get_tree().get_first_node_in_group("player")
 			if p2 != null and p2.has_method("notify_enemy_killed"):
 				p2.notify_enemy_killed()

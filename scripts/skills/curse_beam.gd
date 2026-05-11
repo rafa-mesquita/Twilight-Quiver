@@ -107,12 +107,15 @@ func _process(delta: float) -> void:
 		queue_free()
 		return
 	# Fase FADE — visual + áudio fade out juntos nos últimos `fade_duration` seg.
+	# Dano para AQUI: beam visualmente apagando não deve machucar, senão
+	# parece "hitbox fora da animação".
 	if _active_remaining < fade_duration:
 		var fade_t: float = clampf(_active_remaining / fade_duration, 0.0, 1.0)
 		modulate.a = fade_t
 		# Som: lerp do volume original (do .tscn) → -60dB (praticamente inaudível).
 		if beam_sound != null and is_instance_valid(beam_sound):
 			beam_sound.volume_db = lerp(-60.0, _beam_sound_initial_db, fade_t)
+		return
 	_tick_accum += delta
 	while _tick_accum >= tick_interval:
 		_tick_accum -= tick_interval

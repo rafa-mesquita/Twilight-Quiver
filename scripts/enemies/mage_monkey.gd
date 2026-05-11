@@ -74,8 +74,14 @@ const SUMMON_SOUND_END: float = 4.0
 @export var damage_sound_volume_db: float = -14.0
 @export var gold_scene: PackedScene
 @export var gold_drop_chance: float = 1.0
-@export var gold_drop_min: int = 9
-@export var gold_drop_max: int = 12
+@export var gold_drop_min: int = 16
+@export var gold_drop_max: int = 30
+# Pool ponderada: 80% das vezes rola [gold_drop_min, gold_drop_pivot] (faixa
+# comum), 20% rola [gold_drop_pivot + 1, gold_drop_max] (faixa rara/alta).
+# Sem isso a distribuição uniforme 16-30 dropava 24-30 com mesma frequência
+# que 16-23, deixando o gold do boss exagerado em média.
+@export var gold_drop_pivot: int = 23
+@export var gold_drop_pivot_chance: float = 0.80
 @export var heart_scene: PackedScene
 @export var death_silhouette_duration: float = 1.4
 
@@ -432,11 +438,12 @@ func _cast_curse_beam() -> void:
 		beam.warmup_duration = curse_beam_warmup
 	if "damage_per_tick" in beam:
 		beam.damage_per_tick = curse_beam_damage * damage_mult
-	# Hitbox do beam do boss é levemente menor que o do player (-2) — visual
-	# do beam é o mesmo, mas tolera mais miss perto da borda pro player
-	# conseguir desviar.
+	# Hitbox do beam do boss alinhada ao sprite (tiles 32px = ±16 do centro).
+	# Antes era hit_radius - 2 = 31, quase o dobro da extensão visual — player
+	# sentia que pegava "fora da animação". Mantém 17 pra dar 1px de folga em
+	# favor do player na borda. Player skill (curse Q lv4) mantém 33.
 	if "hit_radius" in beam:
-		beam.hit_radius = maxf(beam.hit_radius - 2.0, 1.0)
+		beam.hit_radius = 17.0
 	_get_world().add_child(beam)
 	if beam.has_method("setup"):
 		beam.setup(origin, dir)
@@ -615,12 +622,18 @@ func _die() -> void:
 	for m in _minions:
 		if is_instance_valid(m) and m.has_method("take_damage"):
 			m.take_damage(99999.0)
-	# Drops generosos.
+	# Drops generosos com pool ponderada (ver gold_drop_pivot acima).
 	if gold_scene != null and gold_drop_chance > 0.0:
+		var amount: int
+		var pivot: int = clampi(gold_drop_pivot, gold_drop_min, gold_drop_max)
+		if randf() < gold_drop_pivot_chance or pivot >= gold_drop_max:
+			amount = randi_range(gold_drop_min, pivot)
+		else:
+			amount = randi_range(pivot + 1, gold_drop_max)
 		GoldDrop.try_drop(_get_world(), gold_scene, global_position,
-			gold_drop_chance, gold_drop_min, gold_drop_max)
+			gold_drop_chance, amount, amount)
 	if heart_scene != null:
-		HeartDrop.try_drop(_get_world(), heart_scene, global_position)
+		HeartDrop.try_drop(_get_world(), heart_scene, global_position, self)
 	var p := get_tree().get_first_node_in_group("player")
 	if p != null and p.has_method("notify_enemy_killed"):
 		p.notify_enemy_killed()

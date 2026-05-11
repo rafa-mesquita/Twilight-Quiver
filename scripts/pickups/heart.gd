@@ -23,8 +23,14 @@ const INDICATOR_COLOR: Color = Color(0.95, 0.25, 0.3, 1.0)
 # Life Steal L3+: coração persegue o player. Mesmo padrão do Imã de Gold.
 # L3 limita o pull ao raio MAGNET_RADIUS (decisão tática preservada).
 # L4 ignora o raio (puxa do mapa inteiro).
-const MAGNET_PULL_SPEED: float = 130.0
+# Speed mais lenta que o player (~120 walking) — jogador consegue interceptar
+# andando se quiser acelerar a coleta.
+const MAGNET_PULL_SPEED: float = 75.0
 const MAGNET_RADIUS: float = 110.0
+# End-of-wave sweep usa um magnet ainda mais lento, e wave_manager chama um por
+# vez (próximo só inicia quando o anterior é coletado). Player pode interceptar
+# qualquer um andando — pickup normal via body_entered cura na hora.
+const MAGNET_END_WAVE_SPEED: float = 55.0
 
 @onready var visual: Node2D = $Visual
 @onready var sprite: AnimatedSprite2D = $Visual/Sprite
@@ -35,36 +41,18 @@ var _picked: bool = false
 var _silhouette_mat: ShaderMaterial
 # Cache lazy do player pra checar `life_steal_level` sem buscar no group todo frame.
 var _player_ref: Node2D = null
+# Flag do magnet de fim-de-wave (acionado por wave_manager). Diferente do magnet
+# de Life Steal L3/L4: pickup acontece via body_entered normal (player anda em
+# cima) — não força heal automático no final.
+var _end_wave_magnet: bool = false
 
 
-func magnet_to_player(target_pos_callable: Callable) -> void:
-	# Modo magnet pro fim de wave (espelha o gold). Suga todos os corações
-	# restantes pro player ao terminar a round.
+func magnet_to_player(_target_pos_callable: Callable = Callable()) -> void:
+	# End-of-wave sweep: ativa magnet contínuo até o player tocar o coração
+	# (body_entered cura normal). Player pode acelerar andando ao encontro.
 	if _picked:
 		return
-	_picked = true
-	set_process(false)
-	var tween: Tween = create_tween()
-	tween.tween_method(_magnet_step.bind(target_pos_callable), 0.0, 1.0, 0.55)\
-		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.tween_callback(_magnet_finalize)
-
-
-func _magnet_step(t: float, target_callable: Callable) -> void:
-	var target: Vector2 = global_position
-	if target_callable.is_valid():
-		var got: Variant = target_callable.call()
-		if got is Vector2:
-			target = got
-	global_position = global_position.lerp(target, t * 0.4 + 0.05)
-
-
-func _magnet_finalize() -> void:
-	var player := get_tree().get_first_node_in_group("player")
-	if player != null and player.has_method("heal") and "max_hp" in player:
-		player.heal(player.max_hp * heal_pct)
-	_play_pickup_sound()
-	queue_free()
+	_end_wave_magnet = true
 
 
 func _ready() -> void:
@@ -106,8 +94,12 @@ func _process(delta: float) -> void:
 	_elapsed += delta
 	# Life Steal L3+: persegue o player (L3 só dentro do raio, L4 mapa todo).
 	# Skip lifetime/hop/bob — coração magnetado não expira.
+	# End-wave magnet usa speed menor pra dar tempo do player ler/interceptar.
+	if _end_wave_magnet:
+		_magnet_chase_player(delta, MAGNET_END_WAVE_SPEED)
+		return
 	if _is_player_magnet_active():
-		_magnet_chase_player(delta)
+		_magnet_chase_player(delta, MAGNET_PULL_SPEED)
 		return
 	# lifetime <= 0 = coração nunca expira (Coleta de Coração não some).
 	if lifetime > 0.0 and _elapsed >= lifetime:
@@ -149,12 +141,18 @@ func _is_player_magnet_active() -> bool:
 	return global_position.distance_squared_to(_player_ref.global_position) <= MAGNET_RADIUS * MAGNET_RADIUS
 
 
-func _magnet_chase_player(delta: float) -> void:
+func _magnet_chase_player(delta: float, speed: float = MAGNET_PULL_SPEED) -> void:
+	# Garante ref do player mesmo se o magnet foi acionado externamente
+	# (end-wave magnet não passa por _is_player_magnet_active).
+	if _player_ref == null or not is_instance_valid(_player_ref):
+		_player_ref = get_tree().get_first_node_in_group("player") as Node2D
+	if _player_ref == null:
+		return
 	var dir: Vector2 = _player_ref.global_position - global_position
 	var dist: float = dir.length()
 	if dist < 0.5:
 		return
-	global_position += (dir / dist) * MAGNET_PULL_SPEED * delta
+	global_position += (dir / dist) * speed * delta
 
 
 func _on_body_entered(body: Node) -> void:

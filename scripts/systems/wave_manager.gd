@@ -558,6 +558,10 @@ func _spawn_one(type_key: String) -> void:
 			enemy.gold_drop_min = int(round(float(enemy.gold_drop_min) * BOSS_REDUX_GOLD_MULT))
 		if "gold_drop_max" in enemy:
 			enemy.gold_drop_max = int(round(float(enemy.gold_drop_max) * BOSS_REDUX_GOLD_MULT))
+		# Pivot da pool ponderada também escala — sem isso, a faixa rara
+		# (24-30 no base) sobreescreveria a comum em wave 14.
+		if "gold_drop_pivot" in enemy:
+			enemy.gold_drop_pivot = int(round(float(enemy.gold_drop_pivot) * BOSS_REDUX_GOLD_MULT))
 	world.add_child(enemy)
 	enemy.global_position = pos
 	spawned_this_wave[type_key] = spawned_this_wave.get(type_key, 0) + 1
@@ -834,12 +838,32 @@ func _magnet_remaining_gold() -> void:
 			continue
 		if coin.has_method("magnet_to_player"):
 			coin.magnet_to_player(get_player_pos)
-	# Mesmo magnet pros corações de Life Steal — sweep de pickups no fim da wave.
-	for heart in get_tree().get_nodes_in_group("heart"):
-		if not is_instance_valid(heart):
-			continue
-		if heart.has_method("magnet_to_player"):
-			heart.magnet_to_player(get_player_pos)
+	# Corações sobrando: sweep SEQUENCIAL — só puxa o próximo quando o anterior
+	# é coletado (tree_exited). Cada coração se move devagar até o player, então
+	# o jogador pode interceptar andando ao encontro pra acelerar. Sem isso, com
+	# Life Steal L4 + várias mortes de fim de round o player curava 100% no
+	# instante da transição (fountain).
+	var hearts: Array = []
+	for h in get_tree().get_nodes_in_group("heart"):
+		if is_instance_valid(h) and (h as Node).has_method("magnet_to_player"):
+			hearts.append(h)
+	_magnet_next_heart_sequential(hearts, 0, get_player_pos)
+
+
+func _magnet_next_heart_sequential(hearts: Array, idx: int, target_callable: Callable) -> void:
+	if idx >= hearts.size():
+		return
+	var h: Node = hearts[idx]
+	if not is_instance_valid(h):
+		_magnet_next_heart_sequential(hearts, idx + 1, target_callable)
+		return
+	# Quando o coração sair da árvore (pickup ou queue_free externo), inicia o
+	# próximo após um pequeno respiro visual.
+	h.tree_exited.connect(func() -> void:
+		var t := get_tree().create_timer(0.18)
+		t.timeout.connect(func() -> void:
+			_magnet_next_heart_sequential(hearts, idx + 1, target_callable)))
+	h.magnet_to_player(target_callable)
 
 
 func _open_shop() -> void:
@@ -1129,6 +1153,8 @@ func _prespawn_boss_wave_entities() -> void:
 					enemy.gold_drop_min = int(round(float(enemy.gold_drop_min) * BOSS_REDUX_GOLD_MULT))
 				if "gold_drop_max" in enemy:
 					enemy.gold_drop_max = int(round(float(enemy.gold_drop_max) * BOSS_REDUX_GOLD_MULT))
+				if "gold_drop_pivot" in enemy:
+					enemy.gold_drop_pivot = int(round(float(enemy.gold_drop_pivot) * BOSS_REDUX_GOLD_MULT))
 			world.add_child(enemy)
 			enemy.global_position = _pick_spawn_for(type_key)
 			spawned_this_wave[type_key] = spawned_this_wave.get(type_key, 0) + 1

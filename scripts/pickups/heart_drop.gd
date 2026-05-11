@@ -3,22 +3,26 @@ extends RefCounted
 
 # Helper estático pra inimigos dropar coração ao morrer.
 # Só dropa se o player tem `life_steal_level > 0`. Chance e heal_pct escalam:
-# - Stack 1: 10% chance, 20% heal
-# - Stack N: (10 + 5*(N-1))% chance, (20 + 10*(N-1))% heal
+# - Stack 1: 12% chance, 20% heal
+# - Stack 4: 27% chance, 35% heal
 # Inseto NÃO chama (anti-exploit summoner farm), igual ao gold.
+# Inimigos do contexto boss (grupo "boss" ou "boss_minion") têm -5% chance
+# em todos os níveis pra evitar fountain durante a boss fight.
 
 const PICKUP_SPREAD: float = 14.0
 const BASE_CHANCE: float = 0.12
 const CHANCE_PER_STACK: float = 0.05
 const BASE_HEAL_PCT: float = 0.20
-const HEAL_PCT_PER_STACK: float = 0.10
+const HEAL_PCT_PER_STACK: float = 0.05
+const BOSS_CONTEXT_CHANCE_PENALTY: float = 0.05
 # Distância mínima de gold/coração já existente — evita pickups sobrepostos
 # quando ambos dropam do mesmo inimigo.
 const MIN_PICKUP_SEPARATION: float = 16.0
 const PLACEMENT_ATTEMPTS: int = 12
 
 
-static func try_drop(world: Node, scene: PackedScene, drop_position: Vector2) -> void:
+static func try_drop(world: Node, scene: PackedScene, drop_position: Vector2,
+		source: Node = null) -> void:
 	if scene == null or world == null:
 		return
 	var player := world.get_tree().get_first_node_in_group("player")
@@ -30,6 +34,8 @@ static func try_drop(world: Node, scene: PackedScene, drop_position: Vector2) ->
 	if level <= 0:
 		return
 	var chance: float = BASE_CHANCE + CHANCE_PER_STACK * float(level - 1)
+	if source != null and (source.is_in_group("boss") or source.is_in_group("boss_minion")):
+		chance = max(0.0, chance - BOSS_CONTEXT_CHANCE_PENALTY)
 	if randf() > chance:
 		return
 	var heal_pct: float = BASE_HEAL_PCT + HEAL_PCT_PER_STACK * float(level - 1)

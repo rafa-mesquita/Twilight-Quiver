@@ -48,9 +48,11 @@ var hp: float
 var gold: int = 0
 # Upgrade tracking — incrementa ao comprar na shop pós-wave.
 var hp_upgrades: int = 0
-# Armor (status): reduz % do dano recebido. Computado de armor_level.
+# Armor (status): reduz % do dano recebido E % do slow recebido (resistência).
+# Computado de armor_level. Slow reduction é metade da damage reduction.
 var armor_level: int = 0
 var damage_reduction_pct: float = 0.0
+var slow_resistance_pct: float = 0.0
 var damage_upgrades: int = 0
 var perfuracao_level: int = 0  # capa em 4 (níveis 1-4)
 var attack_speed_level: int = 0
@@ -286,6 +288,11 @@ func apply_slow(multiplier: float, duration: float) -> void:
 	# Pega o slow mais forte ativo (multiplier mais baixo) e estende a duração se necessário.
 	if is_dead:
 		return
+	# Armor reduz a intensidade do slow recebido: lerp do multiplier rumo a 1.0
+	# pela slow_resistance_pct. Ex: slow 50% (mult=0.5) com 10% res → mult final
+	# = 0.5 + (1.0 - 0.5) × 0.10 = 0.55 (45% slow em vez de 50%).
+	if slow_resistance_pct > 0.0 and multiplier < 1.0:
+		multiplier = lerp(multiplier, 1.0, clampf(slow_resistance_pct, 0.0, 1.0))
 	if multiplier < _slow_factor or _slow_remaining <= 0.0:
 		_slow_factor = multiplier
 	_slow_remaining = maxf(_slow_remaining, duration)
@@ -1213,6 +1220,7 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"armor":
 			armor_level += 1
 			damage_reduction_pct = _compute_damage_reduction(armor_level)
+			slow_resistance_pct = damage_reduction_pct * 0.5
 		"damage":
 			damage_upgrades += 1
 			# +20% no dano da flecha por stack

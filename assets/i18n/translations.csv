@@ -160,11 +160,11 @@ SHOP_HP_PLUS_25,+25 HP,+25 HP,+25 HP,+25 PV
 SHOP_DAMAGE,+20% dano,+20% dmg,+20% daño,+20% dégâts
 SHOP_ATTACK_SPEED,+27% atk speed,+27% atk speed,+27% vel. ataque,+27% vit. attaque
 SHOP_MOVE_SPEED,+10% move speed,+10% move speed,+10% vel. movimiento,+10% vit. déplacement
-SHOP_ARMOR_8,+8% dano reduzido,+8% dmg reduced,+8% daño reducido,+8% dégâts réduits
-SHOP_ARMOR_12,+12% dano reduzido,+12% dmg reduced,+12% daño reducido,+12% dégâts réduits
-SHOP_ARMOR_16,+16% dano reduzido,+16% dmg reduced,+16% daño reducido,+16% dégâts réduits
-SHOP_ARMOR_20,+20% dano reduzido,+20% dmg reduced,+20% daño reducido,+20% dégâts réduits
-SHOP_ARMOR_3,+3% dano reduzido,+3% dmg reduced,+3% daño reducido,+3% dégâts réduits
+SHOP_ARMOR_8,+8% dano / +4% lentidão reduzidos,+8% dmg / +4% slow reduced,+8% daño / +4% lentitud reducidos,+8% dégâts / +4% ralentissement réduits
+SHOP_ARMOR_12,+12% dano / +6% lentidão reduzidos,+12% dmg / +6% slow reduced,+12% daño / +6% lentitud reducidos,+12% dégâts / +6% ralentissement réduits
+SHOP_ARMOR_16,+16% dano / +8% lentidão reduzidos,+16% dmg / +8% slow reduced,+16% daño / +8% lentitud reducidos,+16% dégâts / +8% ralentissement réduits
+SHOP_ARMOR_20,+20% dano / +10% lentidão reduzidos,+20% dmg / +10% slow reduced,+20% daño / +10% lentitud reducidos,+20% dégâts / +10% ralentissement réduits
+SHOP_ARMOR_3,+3% dano / +1.5% lentidão reduzidos,+3% dmg / +1.5% slow reduced,+3% daño / +1.5% lentitud reducidos,+3% dégâts / +1.5% ralentissement réduits
 SHOP_UPG_PERFURACAO,Perfuracao,Piercing,Perforación,Perforation
 SHOP_UPG_MULTI_ARROW,Multiplas Flechas,Multiple Arrows,Flechas Múltiples,Flèches Multiples
 SHOP_UPG_DOUBLE_ARROWS,Flechas Duplas,Double Arrows,Flechas Dobles,Flèches Doubles
@@ -183,31 +183,31 @@ SHOP_HP_DESC_1,+18 HP maximo,+18 max HP,+18 HP máximo,+18 PV max
 SHOP_HP_DESC_2,+20 HP maximo,+20 max HP,+20 HP máximo,+20 PV max
 SHOP_HP_DESC_3,+22 HP maximo,+22 max HP,+22 HP máximo,+22 PV max
 SHOP_HP_DESC_4,+25 HP maximo,+25 max HP,+25 HP máximo,+25 PV max
-SHOP_ARMOR_DESC_1,"8% de dano
-reduzido","8% damage
-reduced","8% de daño
-reducido","8% de dégâts
-réduits"
-SHOP_ARMOR_DESC_2,"12% de dano
-reduzido","12% damage
-reduced","12% de daño
-reducido","12% de dégâts
-réduits"
-SHOP_ARMOR_DESC_3,"16% de dano
-reduzido","16% damage
-reduced","16% de daño
-reducido","16% de dégâts
-réduits"
-SHOP_ARMOR_DESC_4,"20% de dano
-reduzido","20% damage
-reduced","20% de daño
-reducido","20% de dégâts
-réduits"
-SHOP_ARMOR_DESC_5,"+3% dano reduzido
-por compra","+3% damage reduced
-per purchase","+3% daño reducido
-por compra","+3% dégâts réduits
-par achat"
+SHOP_ARMOR_DESC_1,"8% de dano e 4%
+de lentidão reduzidos","8% damage and 4%
+slow reduced","8% de daño y 4%
+de lentitud reducidos","8% de dégâts et 4%
+de ralentissement réduits"
+SHOP_ARMOR_DESC_2,"12% de dano e 6%
+de lentidão reduzidos","12% damage and 6%
+slow reduced","12% de daño y 6%
+de lentitud reducidos","12% de dégâts et 6%
+de ralentissement réduits"
+SHOP_ARMOR_DESC_3,"16% de dano e 8%
+de lentidão reduzidos","16% damage and 8%
+slow reduced","16% de daño y 8%
+de lentitud reducidos","16% de dégâts et 8%
+de ralentissement réduits"
+SHOP_ARMOR_DESC_4,"20% de dano e 10%
+de lentidão reduzidos","20% damage and 10%
+slow reduced","20% de daño y 10%
+de lentitud reducidos","20% de dégâts et 10%
+de ralentissement réduits"
+SHOP_ARMOR_DESC_5,"+3% dano e +1.5% lentidão
+reduzidos por compra","+3% damage and +1.5% slow
+reduced per purchase","+3% daño y +1.5% lentitud
+reducidos por compra","+3% dégâts et +1.5% ralentissement
+réduits par achat"
 SHOP_DAMAGE_DESC,+20% dano da flecha,+20% arrow damage,+20% daño de flecha,+20% dégâts de flèche
 SHOP_PERFURACAO_DESC_1,"A cada 3 ataques flecha
 atravessa, +30% dano","Every 3 attacks arrow

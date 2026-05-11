@@ -12,6 +12,13 @@ extends Node
 # (não quando o inimigo morre antes). 0 = desabilitado.
 @export var final_bonus_damage: float = 0.0
 
+# Splash: a cada tick, os 2 inimigos vivos mais próximos do queimando levam
+# metade do tick_dmg como dano direto (sem propagar burn). Aplica em todos os
+# níveis da Flecha de Fogo.
+const SPLASH_RADIUS: float = 70.0
+const SPLASH_DAMAGE_MULT: float = 0.5
+const SPLASH_TARGETS: int = 2
+
 var _remaining: float = 0.0
 var _tick_accum: float = 0.0
 
@@ -50,6 +57,46 @@ func _apply_tick() -> void:
 	var was_alive: bool = (not ("hp" in parent)) or float(parent.hp) > 0.0
 	parent.take_damage(tick_dmg)
 	_notify_player_dmg_kill(tick_dmg, "fire_arrow", was_alive, parent)
+	_apply_splash(parent as Node2D, tick_dmg)
+
+
+func _apply_splash(source: Node2D, tick_dmg: float) -> void:
+	# Procura os SPLASH_TARGETS inimigos vivos mais próximos do queimando
+	# (dentro de SPLASH_RADIUS) e aplica SPLASH_DAMAGE_MULT × tick_dmg em cada.
+	# Não propaga burn nem aplica status — só dano direto.
+	if source == null:
+		return
+	var splash_dmg: float = tick_dmg * SPLASH_DAMAGE_MULT
+	if splash_dmg <= 0.0:
+		return
+	var src_pos: Vector2 = source.global_position
+	var radius_sq: float = SPLASH_RADIUS * SPLASH_RADIUS
+	# Coleta candidatos com distância pra ordenar.
+	var candidates: Array = []
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if e == source or not is_instance_valid(e) or not (e is Node2D):
+			continue
+		if not e.has_method("take_damage"):
+			continue
+		if (e as Node).is_queued_for_deletion():
+			continue
+		if "hp" in e and float(e.hp) <= 0.0:
+			continue
+		var d_sq: float = (e as Node2D).global_position.distance_squared_to(src_pos)
+		if d_sq > radius_sq:
+			continue
+		candidates.append({"node": e, "d_sq": d_sq})
+	if candidates.is_empty():
+		return
+	candidates.sort_custom(func(a, b): return a["d_sq"] < b["d_sq"])
+	var n: int = mini(SPLASH_TARGETS, candidates.size())
+	for i in n:
+		var target: Node = candidates[i]["node"]
+		if not is_instance_valid(target):
+			continue
+		var t_alive: bool = (not ("hp" in target)) or float(target.hp) > 0.0
+		target.take_damage(splash_dmg)
+		_notify_player_dmg_kill(splash_dmg, "fire_arrow", t_alive, target)
 
 
 # Refresca duração se nova flecha de fogo bate no mesmo alvo.

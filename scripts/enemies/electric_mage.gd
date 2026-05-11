@@ -2,14 +2,14 @@ extends MageEnemy
 
 # Mago elétrico — variante do MageEnemy. Único ataque: castar DOIS raios
 # simultâneos (um na posição atual do alvo, outro na posição prevista pela
-# velocidade × bolt_lead_time). Range bem alto, atk speed lento (5s entre
-# ataques — é forte). Sem tiro normal e sem invocação.
+# velocidade × bolt_lead_time). Range alto, atk speed lento (6.25s entre
+# ataques). Sem tiro normal e sem invocação.
 
 # Cena do raio que pousa numa área e dá dano.
 @export var lightning_bolt_scene: PackedScene
 # Dano de cada raio (cada ataque solta 2 raios — total max 2× se ambos
 # atingirem). Multiplicado pelo damage_mult do scaling de wave.
-@export var bolt_damage: float = 15.0
+@export var bolt_damage: float = 12.75
 # Tempo entre spawn do raio e impacto = FADE_IN_DURATION + frames-até-impacto.
 # Usado como lead time pra previsão de movimento do alvo.
 # Cálculo: 0.5s (fade) + 4/14 fps (frames até impacto) ≈ 0.79s.

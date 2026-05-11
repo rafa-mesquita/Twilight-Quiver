@@ -2054,9 +2054,10 @@ func _get_stat_gain_text(id: String, lvl: int, p: Node) -> String:
 			var m3: float = float(p.get("attack_speed_multiplier")) if "attack_speed_multiplier" in p else 1.0
 			return "+%d%%" % int(round((m3 - 1.0) * 100.0))
 		"armor":
-			# damage_reduction_pct é fração 0.0-0.75 (já é uma porcentagem).
+			# Mostra dano reduzido / lentidão reduzida (slow res = metade do dr).
 			var dr: float = float(p.get("damage_reduction_pct")) if "damage_reduction_pct" in p else 0.0
-			return "%d%%" % int(round(dr * 100.0))
+			var sr: float = float(p.get("slow_resistance_pct")) if "slow_resistance_pct" in p else dr * 0.5
+			return "%d%% / %d%%" % [int(round(dr * 100.0)), int(round(sr * 100.0))]
 	return ""
 
 
