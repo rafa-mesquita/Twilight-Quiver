@@ -97,6 +97,8 @@ Alliés créés : %d
 Dégâts infligés : %d
 Dégâts subis : %d"
 HUD_UNLOCK_TITLE,SKIN DESBLOQUEADA!,SKIN UNLOCKED!,¡SKIN DESBLOQUEADA!,APPARENCE DÉBLOQUÉE !
+RELEASE_NOTES_TITLE,NOVA VERSAO,NEW VERSION,NUEVA VERSION,NOUVELLE VERSION
+RELEASE_NOTES_DISMISS,Entendi,Got it,Entendido,Compris
 HUD_TOWER_ATTACKED,Torre sob ataque,Tower under attack,Torre bajo ataque,Tour attaquée
 HUD_PAUSE_TITLE,PAUSADO,PAUSED,PAUSADO,EN PAUSE
 HUD_PAUSE_CONTINUE,Continuar,Continue,Continuar,Continuer

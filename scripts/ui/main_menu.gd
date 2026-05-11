@@ -1,6 +1,9 @@
 extends Control
 
 const _SETTINGS_PATH: String = "user://settings.cfg"
+const _RELEASE_CLIENT := preload("res://scripts/systems/release_client.gd")
+const _RELEASE_NOTES_MODAL: PackedScene = preload("res://scenes/ui/release_notes_modal.tscn")
+const _RELEASE_NOTES_MODAL_SCRIPT := preload("res://scripts/ui/release_notes_modal.gd")
 
 @onready var start_button: Button = $Center/VBox/StartButton
 @onready var skins_button: Button = $Center/VBox/SkinsButton
@@ -31,6 +34,38 @@ func _ready() -> void:
 	else:
 		nickname_prompt.visible = false
 		start_button.grab_focus()
+	# Patch notes da última versão (uma vez por versão por usuário).
+	_maybe_show_release_notes()
+
+
+func _maybe_show_release_notes() -> void:
+	# Skip se já viu a versão local. Não bloqueia se request falhar — silencioso.
+	var client: Node = _RELEASE_CLIENT.new()
+	add_child(client)
+	client.latest_fetched.connect(_on_release_latest_fetched)
+	client.fetch_latest()
+
+
+func _on_release_latest_fetched(release: Dictionary) -> void:
+	if release.is_empty():
+		return
+	var version: String = String(release.get("version", ""))
+	if version.is_empty():
+		return
+	var notes: String = String(release.get("notes", ""))
+	if notes.is_empty():
+		return
+	# Compara com a última versão que o user já dispensou. Se for igual, skip.
+	if _RELEASE_NOTES_MODAL_SCRIPT.load_last_seen() == version:
+		return
+	var modal: Control = _RELEASE_NOTES_MODAL.instantiate()
+	add_child(modal)
+	modal.show_release(version, notes)
+	modal.closed.connect(_save_release_seen.bind(version))
+
+
+func _save_release_seen(version: String) -> void:
+	_RELEASE_NOTES_MODAL_SCRIPT.save_last_seen(version)
 
 
 func _unhandled_input(event: InputEvent) -> void:
