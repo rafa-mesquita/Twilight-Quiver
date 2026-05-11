@@ -74,7 +74,10 @@ func setup(player_pos: Vector2, dir: Vector2) -> void:
 	# Setup é chamado pelo player APÓS add_child — _ready já rodou e os @onready
 	# estão prontos. Build_visual fica aqui pra usar a direção/posição corretas
 	# (no _ready elas ainda estão nos defaults).
-	_player_pos = player_pos
+	# Shifta pro nível do peito: hit_check faz target_pos = enemy.global_position
+	# + body_offset (chest). Visual também tem que sair da posição do peito,
+	# senão o beam aparece nos pés e o hitbox fica "12px pra cima" do sprite.
+	_player_pos = player_pos + player_body_offset
 	_direction = dir.normalized()
 	_start = _player_pos - _direction * max_range_per_side
 	_end = _player_pos + _direction * max_range_per_side

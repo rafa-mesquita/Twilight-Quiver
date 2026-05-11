@@ -921,6 +921,7 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 	var dmg_by_src: Dictionary = {}
 	var dmg_dealt_by_src: Dictionary = {}
 	var kills_by_src: Dictionary = {}
+	var killed_by: String = ""
 	if p != null:
 		kills = int(p.get("stats_enemies_killed")) if "stats_enemies_killed" in p else 0
 		allies = int(p.get("stats_allies_made")) if "stats_allies_made" in p else 0
@@ -943,6 +944,8 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 			var raw_k: Dictionary = p.get("stats_kills_by_source")
 			for k in raw_k.keys():
 				kills_by_src[String(k)] = int(raw_k[k])
+		if "stats_killed_by" in p:
+			killed_by = String(p.get("stats_killed_by"))
 	return {
 		"wave": wave_num,
 		"kills": kills,
@@ -953,6 +956,7 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 		"dmg_taken_by_source": dmg_by_src,
 		"dmg_dealt_by_source": dmg_dealt_by_src,
 		"kills_by_source": kills_by_src,
+		"killed_by": killed_by,
 		"bosses_killed": bosses,
 	}
 

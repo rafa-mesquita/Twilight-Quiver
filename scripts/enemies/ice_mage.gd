@@ -84,6 +84,8 @@ func _fire_normal_shot() -> void:
 	if projectile_scene == null:
 		return
 	var proj := projectile_scene.instantiate()
+	if "source_id" in proj:
+		proj.source_id = "ice_mage"
 	if "damage" in proj and damage_mult != 1.0:
 		proj.damage = proj.damage * damage_mult
 	# Curse-ally: marca projétil como ally_source (mira em enemy).

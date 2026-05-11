@@ -24,6 +24,9 @@ const FADE_ANIM_NAME: StringName = &"fade"
 # True: spawnado por enemy (atinge player + aliados + estruturas).
 # False: spawnado por curse-ally (atinge enemies).
 @export var is_enemy_source: bool = true
+# Source id pra telemetria quando target é o player. Default = "electric_mage"
+# (uso típico). mage_monkey/outros enemies que spawnam bolt sobrescrevem.
+@export var enemy_source_id: String = "electric_mage"
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var strike_sound: AudioStreamPlayer2D = get_node_or_null("StrikeSound")
@@ -194,7 +197,13 @@ func _apply_damage() -> void:
 			var dist: float = (b2d.global_position - global_position).length()
 			if dist <= damage_radius and body.has_method("take_damage"):
 				var was_alive_lb: bool = (not ("hp" in body)) or float(body.hp) > 0.0
-				body.take_damage(damage)
+				# Enemy-source + target player: passa source_id pro player tracking.
+				# Outros casos (enemy hits ally/structure, ou player-source hits enemy)
+				# usam signature 1-arg que cada take_damage suporta.
+				if is_enemy_source and body.is_in_group("player"):
+					body.take_damage(damage, enemy_source_id)
+				else:
+					body.take_damage(damage)
 				if not is_enemy_source:
 					_notify_player_dmg_kill(damage, "chain_lightning_skill", was_alive_lb, body)
 

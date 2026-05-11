@@ -253,6 +253,10 @@ func _fire_projectile() -> void:
 	if projectile_scene == null:
 		return
 	var proj := projectile_scene.instantiate()
+	# Source ID pra telemetria — summoner_mage e mage_enemy compartilham
+	# este script, então diferencia pelo grupo.
+	if "source_id" in proj:
+		proj.source_id = "summoner_mage" if is_in_group("summoner_mage") else "mage"
 	if "damage" in proj and damage_mult != 1.0:
 		proj.damage = proj.damage * damage_mult
 	# Maldição: mago convertido marca projétil como ally_source (mira em enemy,

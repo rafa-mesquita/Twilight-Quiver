@@ -216,6 +216,9 @@ var stats_damage_taken: float = 0.0
 # Ex: { "melee": 120.5, "mage": 200.0, "monkey": 80.0, "insect": 40.0 }
 # Enviado em run_end pra analytics ver qual inimigo mais machuca.
 var stats_damage_taken_by_source: Dictionary = {}
+# Source_id do golpe final que matou o player (empty se ainda vivo / suicide).
+# Capturado em take_damage / _apply_poison_tick quando hp chega a 0.
+var stats_killed_by: String = ""
 # Breakdown de dano CAUSADO pelo player por fonte (upgrade/skill/aliado).
 # Ex: { "arrow_base": 1500, "fire_arrow": 800, "graviton": 400 }
 var stats_damage_dealt_by_source: Dictionary = {}
@@ -334,12 +337,13 @@ func _apply_poison_tick(amount: float) -> void:
 	if is_dead or amount <= 0.0:
 		return
 	hp = maxf(hp - amount, 0.0)
-	notify_damage_taken(amount, "poison")
+	notify_damage_taken(amount, "insect_poison")
 	hp_changed.emit(hp, max_hp)
 	if hp_bar != null:
 		hp_bar.set_ratio(hp / max_hp)
 	_spawn_poison_number(amount)
 	if hp == 0.0:
+		stats_killed_by = "insect_poison"
 		_die()
 
 
@@ -1623,6 +1627,7 @@ func take_damage(amount: float, source_id: String = "") -> void:
 	if damage_audio != null:
 		damage_audio.play()
 	if hp == 0.0:
+		stats_killed_by = source_id if not source_id.is_empty() else "unknown"
 		_die()
 
 
