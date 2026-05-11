@@ -12,6 +12,9 @@ extends Camera2D
 
 var player: Node2D
 var overview_mode: bool = false
+# Cinematic: bloqueia o follow do player pra script externo controlar
+# manualmente a global_position (boss intro, etc).
+var cinematic_mode: bool = false
 var _saved_zoom: Vector2 = Vector2.ONE
 var _transition_tween: Tween
 
@@ -21,13 +24,25 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if overview_mode:
+	if overview_mode or cinematic_mode:
 		return
 	if player == null or not is_instance_valid(player):
 		player = get_tree().get_first_node_in_group("player") as Node2D
 		if player == null:
 			return
 	global_position = player.global_position + follow_offset
+
+
+# Pan suave da câmera pra uma posição mundo (usado no fim da cinematic do
+# boss pra ir do boss → player). Não desliga cinematic_mode — caller que
+# decide quando "soltar" a câmera.
+func pan_to(target_world_pos: Vector2, duration: float = 1.0) -> Tween:
+	if _transition_tween != null and _transition_tween.is_valid():
+		_transition_tween.kill()
+	_transition_tween = create_tween()\
+		.set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_IN_OUT)
+	_transition_tween.tween_property(self, "global_position", target_world_pos, duration)
+	return _transition_tween
 
 
 func set_overview_mode(active: bool) -> void:

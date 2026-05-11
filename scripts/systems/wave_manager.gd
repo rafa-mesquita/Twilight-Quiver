@@ -49,10 +49,20 @@ extends Node2D
 # ~2.53× dmg comparado ao boss da wave 7 — dentro do range pedido.
 @export var boss_redux_wave: int = 14
 @export var boss_redux_extra_mult: float = 1.75
+# Música das waves de boss (wave 7 e boss_redux_wave). Restaura a track default
+# nas outras waves. Default music = stream original do node Music no main.tscn,
+# capturado no _ready (não precisa hardcoded aqui).
+@export var boss_music: AudioStream = preload("res://audios/musics/monkey mage wave.mp3")
 # Boss redux dropa MAIS gold pra compensar a perda dos drops dos minions
 # (que ficam zerados nas waves de boss). 3.5× sobre o base 9-12 → 32-42 coins.
 # Equivale (com folga) ao gold que viria dos ~16 minions na wave 14.
 const BOSS_REDUX_GOLD_MULT: float = 3.5
+# Tempo (s) que a camera fica parada no boss depois do overlay preto sumir,
+# antes de começar o pan pro player. Dá tempo do jogador ver o boss em defense
+# + a horda ao redor antes do round começar.
+const BOSS_INTRO_HOLD_ON_BOSS: float = 2.5
+# Duração do pan suave da camera boss → player. Movimento dramático.
+const BOSS_INTRO_PAN_DURATION: float = 2.0
 
 var wave_number: int = 0
 var spawn_points: Array[Marker2D] = []
@@ -68,6 +78,9 @@ var last_progress_killed: int = -1  # cache pra evitar spam de update na HUD
 var _coins_dropped_this_wave: int = 0  # tracker pro pity system de gold drops da wave 1
 var _player_gold_at_wave_start: int = 0  # snapshot pro pity computar gold real ganho na wave
 var _boss_died_this_wave: bool = false  # setado por notify_boss_died → atrasa o magnet/cleanup
+# Stream original do node Music (default track) capturado no _ready pra
+# restaurar depois das waves de boss.
+var _default_music: AudioStream = null
 # Wave 7 (boss) overrides: spawn fixo do player numa extremidade, magos nas
 # outras 3, boss no centro. Setado em _start_next_wave quando wave_number == 7.
 var _wave7_player_spawn: Vector2 = Vector2.ZERO
@@ -90,6 +103,10 @@ func _ready() -> void:
 	# do mapa ficar limpo — sem CanvasLayers cobrindo a view de edição.
 	_instantiate_overlays()
 	_collect_spawn_points()
+	# Captura a stream default do node Music pra restaurar nas waves não-boss.
+	var music_node := get_tree().get_first_node_in_group("music") as AudioStreamPlayer
+	if music_node != null:
+		_default_music = music_node.stream
 	type_registry = {
 		"monkey": {"scene": monkey_scene, "group": "monkey"},
 		"mage": {"scene": mage_scene, "group": "mage"},
@@ -262,10 +279,18 @@ func _start_next_wave() -> void:
 	# Renasce torres/aliados destruídos na wave anterior na mesma posição.
 	_respawn_owned_structures()
 
-	# Intro "Raid X" antes de spawnar nada.
+	# Wave de boss: cinematic especial — música muda, boss + horda inicial são
+	# pré-spawnados, camera trava no boss, cinematic toca, camera pan pro player.
 	var hud := get_tree().get_first_node_in_group("hud")
-	if hud != null and hud.has_method("play_raid_intro"):
-		await hud.play_raid_intro(wave_number)
+	if _is_boss_wave(wave_number):
+		_swap_to_boss_music()
+		_prespawn_boss_wave_entities()
+		await _play_boss_intro_cinematic(hud)
+	else:
+		# Outras waves: música default + intro padrão.
+		_restore_default_music()
+		if hud != null and hud.has_method("play_raid_intro"):
+			await hud.play_raid_intro(wave_number)
 	if stopped:
 		return
 	wave_active = true
@@ -996,3 +1021,130 @@ func _show_free_upgrade_popup(name_key: String) -> void:
 	await btn.pressed
 	if is_instance_valid(layer):
 		layer.queue_free()
+
+
+# ---------- Boss intro cinematic (waves 7 e 14) ----------
+
+func _swap_to_boss_music() -> void:
+	if boss_music == null:
+		return
+	var music_node := get_tree().get_first_node_in_group("music") as AudioStreamPlayer
+	if music_node == null or music_node.stream == boss_music:
+		return
+	music_node.stream = boss_music
+	music_node.play()
+
+
+func _restore_default_music() -> void:
+	if _default_music == null:
+		return
+	var music_node := get_tree().get_first_node_in_group("music") as AudioStreamPlayer
+	if music_node == null or music_node.stream == _default_music:
+		return
+	music_node.stream = _default_music
+	music_node.play()
+
+
+# Pré-spawna boss + horda inicial ANTES da cinematic (pra quando o overlay
+# preto fadeia o mundo já tem todos posicionados). Boss vem com flag pra
+# pular a animação de pop-in (a cinematic já é a entrada visual).
+func _prespawn_boss_wave_entities() -> void:
+	var world := get_tree().get_first_node_in_group("world")
+	if world == null:
+		return
+	# Itera o wave_config e spawna tudo de uma vez, marcando spawned_this_wave
+	# pra o loop normal do _process não tentar spawnar de novo.
+	for type_key: String in wave_config.keys():
+		var info: Dictionary = type_registry.get(type_key, {})
+		if info.is_empty() or info["scene"] == null:
+			continue
+		var total: int = int(wave_config[type_key]["total"])
+		for i in total:
+			var enemy: Node2D = info["scene"].instantiate()
+			# Boss pula a animação de entrada — cinematic toma o lugar.
+			if type_key == "mage_monkey" and "skip_entrance_animation" in enemy:
+				enemy.skip_entrance_animation = true
+			# Aplica regras de drop/scaling iguais ao _spawn_one normal.
+			if _is_boss_wave(wave_number) and type_key != "mage_monkey":
+				if "gold_drop_chance" in enemy:
+					enemy.gold_drop_chance = 0.0
+				if "heart_scene" in enemy:
+					enemy.heart_scene = null
+			if wave_number != 7 or type_key == "mage_monkey":
+				_apply_wave_scaling(enemy)
+			if wave_number == boss_redux_wave and type_key == "mage_monkey" and BOSS_REDUX_GOLD_MULT > 1.0:
+				if "gold_drop_min" in enemy:
+					enemy.gold_drop_min = int(round(float(enemy.gold_drop_min) * BOSS_REDUX_GOLD_MULT))
+				if "gold_drop_max" in enemy:
+					enemy.gold_drop_max = int(round(float(enemy.gold_drop_max) * BOSS_REDUX_GOLD_MULT))
+			world.add_child(enemy)
+			enemy.global_position = _pick_spawn_for(type_key)
+			spawned_this_wave[type_key] = spawned_this_wave.get(type_key, 0) + 1
+
+
+# Orquestra a cinematic: trava camera no boss, chama play_boss_intro na HUD,
+# depois pan suave da camera pra o player. Boss já está em defense (porque
+# minions foram pré-spawnados antes da cinematic).
+func _play_boss_intro_cinematic(hud: Node) -> void:
+	var camera := get_tree().get_first_node_in_group("camera")
+	if camera == null:
+		camera = _find_camera_fallback()
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	# Congela player + enemies pré-spawnados durante a cinematic (não andam,
+	# não atiram). Quando o pan voltar todos estão em pose estática.
+	_freeze_entities(true)
+	# Trava camera no centro do boss durante a cinematic.
+	if camera != null and "cinematic_mode" in camera:
+		camera.cinematic_mode = true
+		if camera is Node2D:
+			(camera as Node2D).global_position = _wave7_boss_center
+	# HUD: black overlay + texto + cinematic sprite (16 frames @ 2 fps = 8s).
+	if hud != null and hud.has_method("play_boss_intro"):
+		await hud.play_boss_intro(wave_number)
+	if stopped:
+		if camera != null and "cinematic_mode" in camera:
+			camera.cinematic_mode = false
+		_freeze_entities(false)
+		return
+	# Hold 2.5s focado no boss depois da cinematic acabar — player vê o boss
+	# em defense + a horda ao redor antes da camera começar a mover.
+	await get_tree().create_timer(BOSS_INTRO_HOLD_ON_BOSS).timeout
+	if stopped:
+		if camera != null and "cinematic_mode" in camera:
+			camera.cinematic_mode = false
+		_freeze_entities(false)
+		return
+	# Pan LENTO do boss → player (movimento dramático).
+	if camera != null and camera.has_method("pan_to") and player != null:
+		var pan_target: Vector2 = player.global_position + Vector2(0, -16)
+		var pan_tween: Tween = camera.pan_to(pan_target, BOSS_INTRO_PAN_DURATION)
+		if pan_tween != null:
+			await pan_tween.finished
+	# Libera camera + descongela tudo.
+	if camera != null and "cinematic_mode" in camera:
+		camera.cinematic_mode = false
+	_freeze_entities(false)
+
+
+func _freeze_entities(freeze: bool) -> void:
+	# Congela/descongela player + enemies + allies/estruturas. Usado pra
+	# cinematic do boss não permitir AI rodando durante o overlay preto.
+	var mode: int = Node.PROCESS_MODE_DISABLED if freeze else Node.PROCESS_MODE_INHERIT
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null:
+		(player as Node).process_mode = mode
+	for group_name in ["enemy", "ally", "structure"]:
+		for n in get_tree().get_nodes_in_group(group_name):
+			if is_instance_valid(n):
+				(n as Node).process_mode = mode
+
+
+func _find_camera_fallback() -> Node:
+	# Camera não está num grupo "camera" — busca por tipo na cena.
+	var root := get_tree().current_scene
+	if root == null:
+		return null
+	for child in root.get_children():
+		if child is Camera2D:
+			return child
+	return null

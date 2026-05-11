@@ -571,7 +571,7 @@ position = Vector2(-114, 53)
 [node name="CercaCimaEnd2" parent="Entities" unique_id=630871252 instance=ExtResource("13_muem4")]
 position = Vector2(-114, 93)
 
-[node name="Camera2D" type="Camera2D" parent="." unique_id=1704360500]
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1704360500 groups=["camera"]]
 zoom = Vector2(3.5, 3.5)
 limit_left = -156
 limit_top = -112
@@ -579,7 +579,7 @@ limit_right = 657
 limit_bottom = 414
 script = ExtResource("4_camera")
 
-[node name="Music" type="AudioStreamPlayer" parent="." unique_id=713352579]
+[node name="Music" type="AudioStreamPlayer" parent="." unique_id=713352579 groups=["music"]]
 stream = ExtResource("9_music")
 volume_db = -30.0
 autoplay = true

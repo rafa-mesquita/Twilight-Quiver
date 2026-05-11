@@ -19,6 +19,9 @@ extends CharacterBody2D
 # Janela de espera no início pra o wave_manager terminar de spawnar a horda
 # inicial (do config) antes do boss decidir se invoca a 1ª horda própria.
 @export var initial_horde_grace: float = 6.0
+# Wave_manager seta isso pra TRUE antes de add_child quando a cinematic
+# do boss tá rodando — pula a animação de pop-in (a cinematic É a entrada).
+var skip_entrance_animation: bool = false
 
 # === Skill 1: volley de tiros ===
 @export var projectile_scene: PackedScene  # mage_projectile
@@ -148,7 +151,10 @@ func _ready() -> void:
 	# grupo pra pets já saberem de cara que não devem atacar.
 	add_to_group("boss_shielded")
 	# Anima entrada do boss: pop in com scale + summon effect roxo grande.
-	_play_entrance_animation()
+	# Pulado quando o boss vem da cinematic da wave (skip_entrance_animation
+	# setado pelo wave_manager) — a cinematic já É a entrada visual.
+	if not skip_entrance_animation:
+		_play_entrance_animation()
 	# Cooldowns iniciais — primeiro beam usa first_beam_delay (curto). Beams
 	# subsequentes voltam ao curse_beam_interval normal.
 	_beam_cd = first_beam_delay

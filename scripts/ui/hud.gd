@@ -459,6 +459,76 @@ func play_raid_intro(wave_number: int) -> void:
 	intro_overlay.visible = false
 
 
+# ---------- Boss intro cinematic (waves 7 e 14) ----------
+# Sequência:
+#   1. Black overlay full + "Raid X" text fade in.
+#   2. Hold com texto.
+#   3. Texto fade out.
+#   4. Cinematic sprite (16 frames @ 8 fps = 2s) toca no centro da tela.
+#   5. Black overlay fade out → revela o mundo (boss já em defense, magos
+#      já spawnados pelo wave_manager).
+# Total: ~5s. wave_manager controla camera e music separadamente.
+
+const BOSS_CINEMATIC_SHEET: Texture2D = preload(
+	"res://assets/enemies/mage-monkey/animação surgimento.png"
+)
+const BOSS_CINEMATIC_FRAME_COUNT: int = 16
+const BOSS_CINEMATIC_FRAME_SIZE: Vector2i = Vector2i(64, 64)
+const BOSS_CINEMATIC_FPS: float = 2.0
+const BOSS_CINEMATIC_SCALE: float = 5.0  # pixel art 64×64 escalado pra dar peso visual
+
+
+func play_boss_intro(wave_number: int) -> void:
+	intro_label.text = tr("HUD_RAID_INTRO") % wave_number
+	intro_overlay.modulate.a = 1.0
+	intro_overlay.visible = true
+	# Fase 1: hold "Raid X" sobre o preto.
+	await get_tree().create_timer(1.2).timeout
+	# Fase 2: fade do texto.
+	var t1 := create_tween()
+	t1.tween_property(intro_label, "modulate:a", 0.0, 0.3)
+	await t1.finished
+	# Fase 3: cinematic sprite — toca sobre o overlay preto.
+	var cinematic: AnimatedSprite2D = _build_boss_cinematic_sprite()
+	cinematic.play(&"surgimento")
+	var cinematic_duration: float = float(BOSS_CINEMATIC_FRAME_COUNT) / BOSS_CINEMATIC_FPS
+	await get_tree().create_timer(cinematic_duration).timeout
+	# Fase 4: cinematic some + fade do overlay preto revelando o mundo.
+	var t2 := create_tween().set_parallel(true)
+	t2.tween_property(cinematic, "modulate:a", 0.0, 0.4)
+	t2.tween_property(intro_overlay, "modulate:a", 0.0, 0.6)
+	await t2.finished
+	# Cleanup: remove sprite cinematic + reseta label/overlay.
+	cinematic.queue_free()
+	intro_overlay.visible = false
+	intro_label.modulate.a = 1.0
+
+
+func _build_boss_cinematic_sprite() -> AnimatedSprite2D:
+	# Constrói o AnimatedSprite2D do surgimento programaticamente. Spritefames
+	# tem 1 animação "surgimento" com 16 frames de 64×64 do sheet 1024×64.
+	var sprite := AnimatedSprite2D.new()
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.scale = Vector2(BOSS_CINEMATIC_SCALE, BOSS_CINEMATIC_SCALE)
+	# Posiciona no centro da tela (IntroOverlay é Control fullscreen).
+	sprite.position = intro_overlay.get_size() * 0.5
+	var sf := SpriteFrames.new()
+	sf.add_animation(&"surgimento")
+	sf.set_animation_loop(&"surgimento", false)
+	sf.set_animation_speed(&"surgimento", BOSS_CINEMATIC_FPS)
+	for i in BOSS_CINEMATIC_FRAME_COUNT:
+		var atlas := AtlasTexture.new()
+		atlas.atlas = BOSS_CINEMATIC_SHEET
+		atlas.region = Rect2(
+			i * BOSS_CINEMATIC_FRAME_SIZE.x, 0,
+			BOSS_CINEMATIC_FRAME_SIZE.x, BOSS_CINEMATIC_FRAME_SIZE.y
+		)
+		sf.add_frame(&"surgimento", atlas)
+	sprite.sprite_frames = sf
+	intro_overlay.add_child(sprite)
+	return sprite
+
+
 func play_wave_cleared(wave_number: int) -> void:
 	cleared_label.text = tr("HUD_WAVE_CLEARED") % wave_number
 	cleared_overlay.modulate.a = 0.0
