@@ -1,125 +1,144 @@
 # Próxima Sessão
 
-> Última atualização: 2026-05-07 02:30
-> Sessão anterior: Deploy GH Pages + correção massiva de bugs (laser, conversão maldição, audio, gold drop pity, scaling) + Maldição Lv2-4 (refeita pra spec correta de conversão de aliados)
+> Última atualização: 2026-05-11
+> Sessão anterior: Boss mage_monkey cinematic intro + buff (HP 1600, cast 2s, +80% dano em aliados, mushroom clear) + Electric Mage completo (lightning bolt 2 strikes + fade) + Ice Mage completo + reorganização de assets + bugfixes (hp bar squash, chain Q em cc_immune, music loop)
 
 ## Estado atual
 
-- **Branch:** `main` no `https://github.com/rafa-mesquita/Twilight-Quiver` (público). Último commit `8d27fd5`.
-- **🎮 JOGO NO AR:** `https://rafa-mesquita.github.io/Twilight-Quiver/` — auto-deploy a cada push pro main via GitHub Actions ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)). Build ~1-3min com cache.
-- **Maldição Lv1-4 100% implementada** (spec correta de conversão de aliados, NÃO o trail/skill que tinha implementado errado antes).
-- **Fogo Lv1-4 100% implementado** (BurnDoT + trail + skill Q + passivo).
-- **Aliados (woodwarden) + estruturas (torre)** funcionando, com diferenciação visual e comportamental (flecha do player passa por woodwarden mas para na torre).
-- **Wave 2 com -5% e Wave 3+ com -13% inimigos**. Wave 1 garante mínimo 4 moedas via pity system.
+- **Branch:** `main` no `https://github.com/rafa-mesquita/Twilight-Quiver`. Último commit `ad86fe8`. Working tree limpo.
+- **Versão:** `pre-alpha-0.3.0` (bumpada pelo Henrique no `22a2125`)
+- **🎮 Auto-deploy GH Pages:** `https://rafa-mesquita.github.io/Twilight-Quiver/` (push pro main → GitHub Actions builda em ~1-3min)
+- **3 novos magos elementais implementados:** Fire (já existia), Ice (slow 37% via área 13-tile diamante), Electric (2 raios simultâneos com cloud→strike→idle 3s→strike→fade)
+- **Boss Mage Monkey buffed:** HP 1600 base, cast 2s pra invocação, +80% dano em aliados, cogumelos somem na wave, magos roubados por maldição 50% mais fracos, drops 3.5× na wave 14 redux
+- **Cinematic do boss:** intro completa nas waves 7 e 14 (~14.6s) — black overlay + texto + animação 16 frames + hold 2.5s no boss + pan suave pro player, com música swap + freeze de entities
 
 ## Por onde começar
 
-1. **Coletar feedback dos amigos** — o link `rafa-mesquita.github.io/Twilight-Quiver` está pra teste. Esperar reações: dificuldade, bugs visuais, performance no browser, qual elemento usaram.
+1. **Coletar feedback playtest do boss redux** — wave 14 com escalas 2.5×-3× + cinematic + electric mage podem estar muito difíceis ou muito fáceis. Ver telemetria do Henrique (`twilight.hotsed.com/api`) pra ver curva de mortes.
 
-2. **Restrição "uma categoria elemental por jogo"** — pendência do excalidraw, ainda não enforced. Quando player tem fogo (lv1+), curse não deveria mais aparecer no shop, e vice-versa. Implementar em `_roll_upg_slots` em [scripts/wave_shop.gd](scripts/wave_shop.gd).
+2. **Tunar quantidades de elementais na wave 8+** — acabou de bumpar (fire/ice 2/3 → cap 4/6, electric 2/3 → cap 4/6 a partir wave 10) e reduzir mages normais 40%. Validar se ficou balanceado ou over-tuned.
 
-3. **HUD do curse skill** — ícone existe ([scenes/hud.tscn](scenes/hud.tscn) `CurseSkillIcon`) e funciona, MAS está no mesmo slot do FireSkillIcon (overlap intencional já que só uma categoria por jogo). Verificar visualmente se a coexistência está OK quando ambos os elementos estão no dev mode.
+3. **Verificar que skin "Linked" desbloqueia** — quest é 200 macacos convertidos via Disparo Profano (`STAT_MONKEYS_CURSED`, persistente). Skin é `hidden: true`, só aparece quando desbloqueia. Player precisa ter curse_arrow lv2+ (que ativa conversão).
 
-4. **Archer enemy não suporta conversão Maldição** — pendência conhecida. Adicionar `is_curse_ally` flag + `_pick_curse_ally_target` em [scripts/archer_enemy.gd](scripts/archer_enemy.gd) seguindo o pattern do monkey_enemy.
+4. **Stone cube vs raio Q** — bug acabou de ser corrigido (cc_immune não devia bloquear dano puro). Confirmar visualmente que stone cubes agora tomam dano da Q.
 
 ## Contexto crítico
 
-### NÃO desfazer: regra do "curse antes do take_damage"
-**Em todos os pontos onde aliado/laser/flecha causa dano**, a ordem é `apply_curse → take_damage`. Se inverter, a conversão da maldição NUNCA procca em kill direto (porque `try_convert_on_death` precisa do CurseDebuff já anexado). Pontos:
-- [scripts/arrow.gd](scripts/arrow.gd) `_on_hit` + `_proc_chain_lightning`
-- [scripts/curse_beam.gd](scripts/curse_beam.gd) `_apply_tick`
-- [scripts/woodwarden.gd](scripts/woodwarden.gd) `_apply_hit`
-- [scripts/monkey_enemy.gd](scripts/monkey_enemy.gd) `_on_frame_changed` (ally)
-- [scripts/mage_projectile.gd](scripts/mage_projectile.gd) `_on_body_entered` (ally)
-- [scripts/insect_projectile.gd](scripts/insect_projectile.gd) `_on_body_entered` (ally)
+### NÃO desfazer: `_base_scale` no hp_bar.gd
+O HpBar do boss tem `scale = Vector2(2, 2)` no .tscn pra ficar maior visualmente. O método `_squash()` antes setava `scale = Vector2(0.85, 1.6)` direto e tweenava pra `Vector2.ONE` — perdia o 2× permanente após o 1º hit. Agora captura `_base_scale = scale` no _ready e aplica squash MULTIPLICATIVAMENTE. Não regredir.
 
-### NÃO regressar: damage_sound como filho do enemy
-[scripts/monkey_enemy.gd](scripts/monkey_enemy.gd), [scripts/mage_enemy.gd](scripts/mage_enemy.gd), [scripts/insect_enemy.gd](scripts/insect_enemy.gd) — `_play_damage_sound` agora faz `add_child(player)` (NÃO `_get_world().add_child`). Audio morre com o enemy, evita som contínuo após morte. Adicionalmente, DoTs (CurseDebuff/BurnDoT) `_apply_tick` pulam tick se `parent.hp <= 0` ou `is_queued_for_deletion`.
+### NÃO desfazer: cc_immune ≠ damage immunity
+Lightning bolt (`scripts/skills/lightning_bolt.gd:_apply_damage`) NÃO filtra cc_immune. O grupo cc_immune é só pra crowd control (stun/slow/knockback), não pra damage. Stone cube + boss DEVEM tomar dano da Q de raio. Se voltar a filtrar, regride o bug de "raio não bate na pedra/boss".
 
-### Maldição Lv2-4 = CONVERSÃO DE INIMIGOS, não trail/skill
-A primeira implementação tinha trail/skill area/passivo (espelhando Fogo). O user corrigiu mostrando spec real do excalidraw:
-- Lv2: 18% chance ao matar enemy → vira aliado até fim da horda
-- Lv3: 33% + todos aliados aplicam slow/DoT da maldição ao causarem dano
-- Lv4: 50% + skill Q (raio roxo gigante)
+### Boss music precisa de loop runtime
+`monkey mage wave.mp3.import` tem `loop=false` (default Godot pra mp3). Em `_swap_to_boss_music()` força `(boss_music as AudioStreamMP3).loop = true` antes de play. Sem isso a música toca uma vez e silencia mid-fight.
 
-Centralizado em [scripts/curse_ally_helper.gd](scripts/curse_ally_helper.gd) (`try_convert_on_death`, `convert_to_ally`, `apply_ally_curse_on_damage`).
+### Cinematic do boss congela TUDO
+`_freeze_entities(true)` seta `process_mode = PROCESS_MODE_DISABLED` em player + grupos `enemy` + `ally` + `structure`. Senão minions pré-spawnados atiravam no player frozen durante a cinematic. Re-enable com PROCESS_MODE_INHERIT no fim. Camera fica em `cinematic_mode = true` (flag em camera_follow.gd que skipa o player-follow loop).
 
-### Diferenciação ally vs structure pra colisão de flecha
-- Tower: groups `structure` + `ally` (sem `tank_ally`) → flecha PARA (parede)
-- Woodwarden: `structure` + `ally` + `tank_ally` + `insect_immune` → flecha PASSA
-- Lógica em [scripts/arrow.gd](scripts/arrow.gd) `_on_hit`: check `tank_ally` PRIMEIRO (passa), depois `structure` (para). Ordem importa porque woodwarden está em ambos.
+### Boss redux (wave 14) usa scaling natural + 1.75×
+[scripts/systems/wave_manager.gd](scripts/systems/wave_manager.gd) `boss_redux_extra_mult = 1.75` aplicado em cima do scaling natural da wave 14 → HP/dmg ~2.85×/~2.53× da wave 7. Drops do boss usam `BOSS_REDUX_GOLD_MULT = 3.5` SEPARADAMENTE (não usa o 1.75) pra compensar minions sem drop.
 
-### Web export config (NÃO mexer sem motivo)
-[export_presets.cfg](export_presets.cfg):
-- `variant/thread_support=true` + `progressive_web_app/enabled=true` + `progressive_web_app/ensure_cross_origin_isolation_headers=true` — necessário pra threading rodar no GitHub Pages (PWA service worker injeta os headers COOP/COEP).
-- [project.godot](project.godot): `window/stretch/scale_mode="fractional"` + `window/size/resizable=true` — pro jogo escalar suavemente no browser sem cortar HUD.
+### Distribuição da horda do boss (após mudança recente)
+Em `_do_summon_horde` (mage_monkey.gd ~linha 512):
+- 30% mage normal
+- 17.5% summoner / 17.5% fire / 17.5% ice / 17.5% electric
+Threshold cumulativo: 0–0.175 summ, 0.175–0.350 fire, 0.350–0.525 ice, 0.525–0.700 electric, 0.700+ mage. Fallback pro mage normal se alguma cena estiver null.
 
-### Service worker do PWA cacheia agressivamente
-Após push, o link `rafa-mesquita.github.io/Twilight-Quiver` pode mostrar versão antiga via cache do SW. Pra testar versão fresca: **aba anônima** (Ctrl+Shift+N) ou DevTools → Application → Unregister Service Worker + Clear site data.
+### Woodwarden tem prioridade no boss vulnerável + dano nerfado
+`_pick_enemy_target` checa boss em grupo `mage_monkey` que NÃO esteja em `boss_shielded` ANTES de qualquer outro filtro — woodwarden ignora distância do player nesse caso. Dano reduzido por `WOODWARDEN_BOSS_DMG_MULT = 0.75` quando target é boss.
 
-### Wave 1 pity é "top-up", não "boost"
-[scripts/wave_manager.gd](scripts/wave_manager.gd) `_top_up_wave1_coins` só spawna moedas faltantes pra atingir `wave1_min_guaranteed_drops` (default 4) **se RNG não dropou o suficiente naturalmente**. Se RNG já entregou ≥4, não adiciona nada (não infla). Spawn no _finish_wave perto do player → magnet absorve junto.
+### Ice slow area visual + collision
+13 RectangleShape2D 16×16 em padrão diamante (mesmo offsets do visual) — colisão match exato com sprite. Slow refrescado por frame com duração 0.15s — ao sair da área expira em <1 frame. Tiles têm `z_index = -1` absoluto (mesmo bucket do Ground TileMap → tree order coloca em cima do chão e atrás de tudo z=0).
 
-### Woodwarden é móvel, não tem proximidade fixa
-[scripts/wave_manager.gd](scripts/wave_manager.gd) `register_structure` aceita um 3º parâmetro `instance: Node2D` pra rastrear pelo node ref. Antes usava proximidade de posição (8px), o que falhava pro woodwarden que segue o player → respawn duplicado entre waves. Agora `_respawn_owned_structures` checa `is_instance_valid(inst_ref)` em vez de posição.
+### Electric mage bolt: 2 strikes com nuvem idle entre
+Lightning bolt anim flow: fade-in (0.5s) → strike 1 (frames 0-6 @ 14 fps) → idle_cloud loop (3s @ 4 fps) → strike 2 → fade out (3 frames @ 4 fps). Sprite usa um sheet único `eletric mage power-Sheet-export.png` (250×64, 10 frames de 25×64) + sheet separado `nuvem.png` (175×64, 7 frames idle). Audio bolt -28 dB, espera `finished` antes do queue_free pra não cortar.
+
+### Magos elementais (fire/ice/electric) no mage_monkey.gd
+Exports `minion_fire_mage_scene`/`minion_ice_mage_scene`/`minion_electric_mage_scene` atribuídos no [scenes/enemies/mage_monkey.tscn](scenes/enemies/mage_monkey.tscn). Boss invoca todos os 5 tipos quando rola horda nova.
+
+### Decisões antigas a preservar (do session anterior)
+
+- **Curse antes do take_damage** em TODOS os call sites de aliado — sem isso `try_convert_on_death` não enxerga o debuff em kill direto. Pontos: arrow.gd, curse_beam.gd, woodwarden.gd, monkey_enemy.gd, mage_projectile.gd, insect_projectile.gd.
+- **damage_sound como filho do enemy** — `_play_damage_sound` faz `add_child(player)` (NÃO `_get_world().add_child`). Audio morre com o enemy.
+- **Tower vs Woodwarden colisão de flecha**: tower em `structure+ally` (PARA), woodwarden em `structure+ally+tank_ally+insect_immune` (PASSA). Arrow checa `tank_ally` PRIMEIRO.
+- **Web export config:** `variant/thread_support=true` + `progressive_web_app/enabled=true` + `progressive_web_app/ensure_cross_origin_isolation_headers=true` no export_presets.cfg. NÃO desativar — PWA injeta COOP/COEP pro threading no GH Pages.
+- **PWA service worker cacheia agressivo:** testar versão fresca em aba anônima ou Clear site data.
 
 ## Pendências conhecidas
 
-- [ ] **Restrição "uma categoria elemental por jogo"** — não enforced. Filtrar em `_roll_upg_slots`.
-- [ ] **Archer enemy** não suporta conversão por Maldição. Adicionar flag + pick_target invertido.
-- [ ] **Aliados convertidos** têm tint roxo mas mesma sprite — sem indicador único (poderia ter aura roxa pulsante).
-- [ ] **Insect enemy** não suporta drop de gold (anti-exploit do summoner mage). Confirmar se ainda faz sentido com o pity system de wave 1.
-- [ ] **Performance no browser** — single-thread (até desativar PWA) ou multi-thread (via PWA, agora ativo). Ainda pode ter lag em runs longas. Monitorar.
-- [ ] **Wave 4+ balance** — só wave 2 (-5%) e wave 3+ (-13%) foram balanceadas. Waves longas podem ficar abusivas.
-- [ ] **Som de hit de aliados removido** (estava bugando contínuo). Se quiser revisitar, ver decisão na seção "Decisões".
+- [ ] Confirmar visualmente: stone cube agora toma dano da Q de raio (bug recém-corrigido)
+- [ ] Confirmar visualmente: HP bar do boss não encolhe mais no 1º hit
+- [ ] Playtest da wave 14 com escalas novas + electric mage — pode estar muito brutal
+- [ ] Eletric mage não tem comportamento curse-ally testado a fundo (`is_enemy_source` flip no spawn_bolt)
+- [ ] Skin "Linked" oculta — testar caminho de unlock (200 macacos convertidos via curse arrow lv2+)
+- [ ] Boss redux drops 3.5× pode estar muito generoso — re-tunar se feedback achar
+- [ ] Cinematic intro (~14.6s) — verificar se não é tedioso após primeiro replay (talvez skippable na 2ª vez?)
+- [ ] **Restrição "uma categoria elemental por jogo"** (pendência antiga) — fogo/curse mutuamente exclusivos mas chain lightning agora é skill ativa independente. Confirmar interação.
+- [ ] **Archer enemy** não suporta conversão por Maldição (pendência antiga ainda válida)
 
 ## Arquivos / locais relevantes
 
-- [.github/workflows/deploy.yml](.github/workflows/deploy.yml) — auto-deploy GH Pages. Cache do Godot ativo.
-- [export_presets.cfg](export_presets.cfg) — preset Web (multi-thread + PWA + COI).
-- [project.godot](project.godot) — config window/stretch pra browser.
-- [scripts/curse_ally_helper.gd](scripts/curse_ally_helper.gd) — central da conversão de inimigos pela maldição.
-- [scripts/curse_debuff.gd](scripts/curse_debuff.gd) — slow + DoT toxic (com `release()` que restaura speed pra conversão limpa).
-- [scripts/curse_beam.gd](scripts/curse_beam.gd) + [scenes/curse_beam.tscn](scenes/curse_beam.tscn) — Skill Q lv4. **Visual editável no .tscn** (GlowUnderlay/ChargeOrb/TileTemplate/LightTemplate como nodes).
-- [scripts/wave_manager.gd](scripts/wave_manager.gd) — config de waves + pity system + respawn de aliados/torres por instance ref.
-- [scripts/gold.gd](scripts/gold.gd) — pickup com indicador pulsante pequeno (1.5px, alpha 0.6→1.0) pra moedas atrás de objetos.
-- [scripts/dev_panel.gd](scripts/dev_panel.gd) + [scenes/dev_panel.tscn](scenes/dev_panel.tscn) — upgrades organizados em sub-categorias colapsáveis.
-- [memory/feature_curse_arrow.md](memory/feature_curse_arrow.md) — spec completa da Maldição.
-- [memory/feature_fire_arrow.md](memory/feature_fire_arrow.md) — spec completa do Fogo.
+- [scripts/enemies/mage_monkey.gd](scripts/enemies/mage_monkey.gd) — boss completo: cast delay, summon pool 5 tipos, mushroom cleanup, +80% dmg em allies via projectile/beam
+- [scripts/enemies/mage_projectile.gd](scripts/enemies/mage_projectile.gd) — `pierce_allies` + `BOSS_ALLY_DMG_MULT 1.8`
+- [scripts/enemies/electric_mage.gd](scripts/enemies/electric_mage.gd) — dispara 2 raios simultâneos (pos atual + pos prevista com lead 0.8s)
+- [scripts/skills/lightning_bolt.gd](scripts/skills/lightning_bolt.gd) — strike+idle+strike+fade, sombra 2-camadas iso, sem cc_immune filter
+- [scripts/skills/ice_slow_area.gd](scripts/skills/ice_slow_area.gd) — 13 tiles, refresh por frame, walk audio
+- [scripts/skills/curse_ally_helper.gd](scripts/skills/curse_ally_helper.gd) — `BOSS_WAVE_CONVERT_PENALTY = 0.5` em waves de boss
+- [scripts/skills/curse_beam.gd](scripts/skills/curse_beam.gd) — `BOSS_ALLY_DMG_MULT 1.8` quando is_enemy_source
+- [scripts/enemies/woodwarden.gd](scripts/enemies/woodwarden.gd) — prioriza boss vulnerável + `WOODWARDEN_BOSS_DMG_MULT 0.75`
+- [scripts/systems/wave_manager.gd](scripts/systems/wave_manager.gd) — config 7+14, boss intro cinematic orquestração, music swap, BOSS_REDUX_GOLD_MULT 3.5, BOSS_INTRO_HOLD_ON_BOSS 2.5, BOSS_INTRO_PAN_DURATION 2.0
+- [scripts/ui/hud.gd](scripts/ui/hud.gd) `play_boss_intro` — cinematic overlay + cinematic sprite (16 frames @ 2 fps)
+- [scripts/ui/hp_bar.gd](scripts/ui/hp_bar.gd) — `_base_scale` preservado no squash
+- [scripts/player/camera_follow.gd](scripts/player/camera_follow.gd) — `cinematic_mode` + `pan_to(pos, duration)`
+- [scripts/systems/skin_loadout.gd](scripts/systems/skin_loadout.gd) — `SKIN_QUESTS` com 5 skins (Red_Velvet, Gingerale, Bluey, Linked HIDDEN, Hawk)
+- [assets/enemies/mage/electric_power/](assets/enemies/mage/electric_power/) — pasta com sheet eletric + nuvem
+- [audios/musics/monkey mage wave.mp3](audios/musics/monkey mage wave.mp3) — música boss
 
 ## Comandos úteis
 
 ```bash
-# Deploy automático: basta git push pro main
-git push
+# Push (auto-deploya pro GH Pages via Actions)
+rtk git push
 
-# Forçar rebuild manual sem push
-gh workflow run "Deploy to GitHub Pages" --ref main
+# Pull (Henrique pode estar pushando paralelamente)
+rtk git pull --no-rebase
 
-# Ver status dos builds
+# Ver builds do GH Actions
 gh run list --limit 5
-
-# Ver detalhes do último build
 gh run view --log
 
-# Testar versão atual (use aba anônima pra evitar cache do PWA)
+# Testar build atual (anônima evita cache PWA)
 # https://rafa-mesquita.github.io/Twilight-Quiver/
+
+# Bump version pre-deploy
+# Editar application/config/version em project.godot pra pre-alpha-X.Y.Z
 ```
 
 ## Decisões tomadas nesta sessão
 
-- **Maldição Lv2-4 refeita pra spec correta** (conversão de inimigos em aliados). Implementação anterior (trail/skill area/passivo) deletada — usuário corrigiu mostrando texto exato do excalidraw.
-- **Som de hit de aliados removido** — bug irreproduzível causava som contínuo após mortes/conversões. Múltiplas hipóteses tentadas (throttle, child do enemy, hp check em DoTs). Usuário decidiu remover ao invés de continuar tentando.
-- **Hospedagem em GitHub Pages com auto-deploy via Actions**. Repo tornado público (free tier do Pages exige). Custo zero. Trade-off: código aberto.
-- **PWA habilitado** pra suportar threading no GH Pages (COI service worker). Bonus: usuários podem "instalar" o jogo como app.
-- **Pity system de gold drop é "top-up" (só completa o que faltar)** — não inflar quando RNG já foi favorável.
-- **Indicador de moeda atrás de objetos** = bolinha dourada pequena (1.5px) pulsante (alpha 0.6→1.0) com z_index 100. Evita o hack de jogar a moeda inteira pra cima do y-sort.
-- **Waves nerf:** -5% wave 2, -13% wave 3+. Wave 1 mantida.
-- **Curse antes de damage** em TODOS os call sites de aliado — ordem invariante.
+- **Boss invoca os 5 tipos elementais** com 30% mage normal + 17.5% cada (summ/fire/ice/electric). Antes só 60/15/25 sem ice/electric.
+- **Cinematic do boss** tem hold de 2.5s focado no boss antes do pan, duração total ~14.6s. Drama > velocidade.
+- **Animação do surgimento a 2 fps** (16 frames = 8s) — explicitamente lenta a pedido do user pra dar peso visual.
+- **Boss redux gold = 3.5×** separado do scaling extra (1.75×) — compensa minions sem drop, com folga.
+- **Magos roubados em wave de boss saem 50% mais fracos** (HP + damage_mult × 0.5) pra build de Maldição não trivializar.
+- **Woodwarden bate -25% no boss** + ignora distância do player quando boss vulnerável.
+- **Mushrooms da Capivara Joe somem no início da boss wave** — fight focada sem buff/dano residual.
+- **`cc_immune` é exclusivamente pra CC (stun/slow/knockback)**, não pra damage. Não filtrar em skills puramente de dano (chain Q raio, etc).
+- **Assets do electric_power organizados em subpasta** `assets/enemies/mage/electric_power/` (sheet único + nuvem.png).
+- **Elementais wave 8+ buffed** (2/3 → cap 4/6, era 1/1 → cap 3/5) e mages normais × 0.6 — slot de mage cedido pros elementais.
 
-## Mudanças críticas de infra desta sessão
+## Histórico de commits da sessão (últimos 10)
 
-- Repo público em `https://github.com/rafa-mesquita/Twilight-Quiver`
-- Pages source: GitHub Actions (não branch)
-- Workflow runs em `ubuntu-latest`, baixa Godot 4.6.2-stable, exporta + deploya
-- `.gitignore` agora ignora `.claude/`, `capra jogo.png`, `/hud.tscn` (duplicata acidental)
+```
+ad86fe8 Boss balance + bugfixes: ice/electric summon + hp bar + chain Q
+683981c Fix: preview de skin em branco em build exportado (Henrique)
+22a2125 Release modal + bump pre-alpha-0.3.0 (Henrique)
+eb72bb6 Mage Monkey: cinematic intro + boss music
+063a380 Telemetria + Flechas Duplas + Cadeia skill ativa + free tower + skins (Henrique)
+9f8dab8 Mage Monkey buff: HP 1600 + cast 2s + boss wave anti-curse-build
+2c7d877 Electric Mage: poder do raio (2 strikes com nuvem idle + fade)
+17e3927 Electric Mage (esqueleto) + slow do Ice Mage 37%
+0095db4 Ice Mage + summon effect verde + fixes
+9e4c96c Shop redesign (Henrique)
+```
