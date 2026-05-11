@@ -51,6 +51,8 @@ var skip_entrance_animation: bool = false
 @export var minion_mage_scene: PackedScene
 @export var minion_summoner_scene: PackedScene
 @export var minion_fire_mage_scene: PackedScene
+@export var minion_ice_mage_scene: PackedScene
+@export var minion_electric_mage_scene: PackedScene
 @export var summon_effect_scene: PackedScene
 @export var summon_radius: float = 90.0
 # Delay do cast antes da invocação acontecer (segundos). Durante esse tempo o
@@ -509,12 +511,20 @@ func _do_summon_horde() -> void:
 			var off: Vector2 = Vector2(randf_range(-22.0, 22.0), randf_range(-22.0, 22.0))
 			pos = anchor + off
 			anchor_idx += 1
+		# Distribuição: 30% mage normal + 70% dividido igualmente entre os 4
+		# elementais (17.5% cada). Threshold cumulativo: 0.000–0.175 summ,
+		# 0.175–0.350 fire, 0.350–0.525 ice, 0.525–0.700 electric, 0.700+
+		# mage normal. Fallback pro mage normal se alguma cena estiver null.
 		var roll: float = randf()
 		var scn: PackedScene = minion_mage_scene
-		if roll < 0.15 and minion_summoner_scene != null:
+		if roll < 0.175 and minion_summoner_scene != null:
 			scn = minion_summoner_scene
-		elif roll < 0.40 and minion_fire_mage_scene != null:
+		elif roll < 0.350 and minion_fire_mage_scene != null:
 			scn = minion_fire_mage_scene
+		elif roll < 0.525 and minion_ice_mage_scene != null:
+			scn = minion_ice_mage_scene
+		elif roll < 0.700 and minion_electric_mage_scene != null:
+			scn = minion_electric_mage_scene
 		if scn == null:
 			continue
 		# Mesma anim que o mago invocador faz quando spawna inseto: efeito por

@@ -50,6 +50,9 @@ const SILHOUETTE_SHADER: Shader = preload("res://shaders/silhouette.gdshader")
 # não escapar do alcance durante a anim de 0.667s).
 const HIT_FRAME: int = 1
 const BODY_CENTER_OFFSET: Vector2 = Vector2(0, -12)
+# Boss (mage_monkey): woodwarden bate por 25% menos pra não trivializar a
+# fase vulnerável do boss com build de tank-ally.
+const WOODWARDEN_BOSS_DMG_MULT: float = 0.75
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var hp_bar: Node2D = $HpBar
@@ -161,6 +164,15 @@ func _separation_force() -> Vector2:
 
 
 func _pick_enemy_target() -> Node2D:
+	# Prioridade máxima: boss com defesa aberta (vulnerável) — woodwarden vai
+	# direto pra ele independente da distância pro player. Quando shielded,
+	# volta pra lógica normal de defender o player.
+	for boss in get_tree().get_nodes_in_group("mage_monkey"):
+		if not is_instance_valid(boss) or not (boss is Node2D):
+			continue
+		if (boss as Node).is_in_group("boss_shielded"):
+			continue
+		return boss as Node2D
 	# Foca em DEFENDER o player: só engaja inimigos dentro do defense_radius
 	# medido do PLAYER (não do warden). Inimigos fora desse anel ficam pro
 	# arco do player. Empate de distância: pega o mais perto do warden.
@@ -250,8 +262,13 @@ func _apply_hit() -> void:
 		# Curse ANTES do take_damage pra contar na conversão se o hit matar.
 		CurseAllyHelper.apply_ally_curse_on_damage(current_target, self)
 		var was_alive_ww: bool = (not ("hp" in current_target)) or float(current_target.hp) > 0.0
-		current_target.take_damage(damage)
-		_notify_player_dmg_kill(damage, "woodwarden", was_alive_ww, current_target)
+		# Boss (mage_monkey): woodwarden bate por 25% menos pra build de
+		# tank-ally não trivializar a fase vulnerável do boss.
+		var dmg: float = damage
+		if current_target.is_in_group("mage_monkey"):
+			dmg *= WOODWARDEN_BOSS_DMG_MULT
+		current_target.take_damage(dmg)
+		_notify_player_dmg_kill(dmg, "woodwarden", was_alive_ww, current_target)
 	if current_target.has_method("apply_stun"):
 		current_target.apply_stun(stun_duration)
 	if current_target.has_method("apply_knockback"):

@@ -174,7 +174,9 @@ func _finalize_cleanup() -> void:
 
 func _apply_damage() -> void:
 	# Itera grupos relevantes e dá dano em tudo dentro do damage_radius.
-	# Filtra cc_immune e checa take_damage.
+	# NÃO filtra cc_immune — esse grupo é só pra crowd control (stun/slow/
+	# knockback), e o raio não aplica nenhum CC, só dano puro. Stone cube e
+	# boss (ambos cc_immune) DEVEM tomar dano do raio.
 	var groups: Array[String] = []
 	if is_enemy_source:
 		groups = ["player", "ally", "structure"]
@@ -187,8 +189,6 @@ func _apply_damage() -> void:
 				continue
 			seen[body] = true
 			if not is_instance_valid(body) or not (body is Node2D):
-				continue
-			if body.is_in_group("cc_immune"):
 				continue
 			var b2d: Node2D = body
 			var dist: float = (b2d.global_position - global_position).length()

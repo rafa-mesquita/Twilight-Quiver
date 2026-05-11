@@ -414,6 +414,11 @@ func _build_wave_config(num: int) -> Dictionary:
 	var monkey_total: int = int(round(15 * scale + randf_range(0.0, 4.0)))
 	var mage_alive: int = int(round(3 * scale + randf_range(0.0, 2.0)))
 	var mage_total: int = int(round(6 * scale + randf_range(0.0, 3.0)))
+	# Wave 8+: reduz cota de mages normais — slot foi tomado pelos elementais
+	# (fire/ice/electric) que agora entram em quantidade maior.
+	if num >= 8:
+		mage_alive = int(round(float(mage_alive) * 0.6))
+		mage_total = int(round(float(mage_total) * 0.6))
 	# Invocadores entram a partir da wave 3. Wave 3 é a estreia (cota bem
 	# reduzida, ~1 summoner). Waves 4-8 levam metade. Wave 9+ valor cheio.
 	var summ_scale_mult: float = 1.0
@@ -462,15 +467,17 @@ func _build_wave_config(num: int) -> Dictionary:
 	var elec_alive: int = 0
 	var elec_total: int = 0
 	if num >= 8:
-		var elem_step: int = (num - 8) / 2  # +1 alive a cada 4 waves, +1 total a cada 2
-		fire_alive = mini(1 + elem_step / 2, 3)
-		fire_total = mini(1 + elem_step, 5)
-		ice_alive = mini(1 + elem_step / 2, 3)
-		ice_total = mini(1 + elem_step, 5)
+		# Quantidade aumentada — elementais agora pesam mais na composição.
+		# Wave 8 entra com 2 alive / 3 total (era 1/1). Cresce até cap 4/6.
+		var elem_step: int = (num - 8) / 2
+		fire_alive = mini(2 + elem_step, 4)
+		fire_total = mini(3 + elem_step, 6)
+		ice_alive = mini(2 + elem_step, 4)
+		ice_total = mini(3 + elem_step, 6)
 	if num >= 10:
 		var elec_step: int = (num - 10) / 2
-		elec_alive = mini(1 + elec_step / 2, 3)
-		elec_total = mini(1 + elec_step, 5)
+		elec_alive = mini(2 + elec_step, 4)
+		elec_total = mini(3 + elec_step, 6)
 	var cfg: Dictionary = {
 		"monkey": {"alive_target": maxi(monkey_alive, 1), "total": maxi(monkey_total, monkey_alive)},
 		"mage": {"alive_target": maxi(mage_alive, 1), "total": maxi(mage_total, mage_alive)},
@@ -1072,6 +1079,10 @@ func _swap_to_boss_music() -> void:
 	var music_node := get_tree().get_first_node_in_group("music") as AudioStreamPlayer
 	if music_node == null or music_node.stream == boss_music:
 		return
+	# Força loop em runtime: a .import do mp3 vem com loop=false (default Godot),
+	# então setamos aqui pra música tocar repetida durante toda a wave do boss.
+	if boss_music is AudioStreamMP3:
+		(boss_music as AudioStreamMP3).loop = true
 	music_node.stream = boss_music
 	music_node.play()
 

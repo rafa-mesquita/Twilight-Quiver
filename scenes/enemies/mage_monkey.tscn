@@ -8,6 +8,8 @@
 [ext_resource type="PackedScene" path="res://scenes/enemies/mage_enemy.tscn" id="5_mage"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/summoner_mage.tscn" id="6_summ"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/fire_mage.tscn" id="7_firemage"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/ice_mage.tscn" id="7_icemage"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/electric_mage.tscn" id="7_elecmage"]
 [ext_resource type="PackedScene" path="res://scenes/effects/summon_effect.tscn" id="8_summon_fx"]
 [ext_resource type="PackedScene" path="res://scenes/effects/damage_effect.tscn" id="9_dmg"]
 [ext_resource type="PackedScene" uid="uid://c0fhcseis1qub" path="res://scenes/ui/hp_bar.tscn" id="10_hpbar"]
@@ -120,6 +122,8 @@ curse_beam_scene = ExtResource("4_beam")
 minion_mage_scene = ExtResource("5_mage")
 minion_summoner_scene = ExtResource("6_summ")
 minion_fire_mage_scene = ExtResource("7_firemage")
+minion_ice_mage_scene = ExtResource("7_icemage")
+minion_electric_mage_scene = ExtResource("7_elecmage")
 summon_effect_scene = ExtResource("8_summon_fx")
 summon_sound = ExtResource("15_summon_sfx")
 damage_effect_scene = ExtResource("9_dmg")
