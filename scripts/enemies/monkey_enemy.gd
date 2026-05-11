@@ -224,7 +224,10 @@ func _on_frame_changed() -> void:
 				# Curse ANTES do take_damage pra contar na conversão se matar.
 				if is_curse_ally:
 					CurseAllyHelper.apply_ally_curse_on_damage(current_target, self)
-				current_target.take_damage(damage)
+				if current_target.is_in_group("player"):
+					current_target.take_damage(damage, "monkey")
+				else:
+					current_target.take_damage(damage)
 
 	# Pulinho do walk: sprite sobe nos frames pares (visual de saltitar).
 	# Sombra fica intacta porque é um node separado, não filho do sprite.

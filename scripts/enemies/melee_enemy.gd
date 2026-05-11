@@ -46,7 +46,7 @@ func _physics_process(_delta: float) -> void:
 func _attack() -> void:
 	can_hit = false
 	if player.has_method("take_damage"):
-		player.take_damage(damage)
+		player.take_damage(damage, "melee")
 	get_tree().create_timer(attack_cooldown).timeout.connect(func(): can_hit = true)
 
 

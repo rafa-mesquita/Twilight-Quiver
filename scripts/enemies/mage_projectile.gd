@@ -3,6 +3,10 @@ extends Area2D
 @export var speed: float = 165.0
 @export var lifetime: float = 2.5
 @export var damage: float = 15.0
+# Identificador da fonte pro stats_damage_taken_by_source do player. Cada
+# spawner pode sobrescrever — ex: fire_mage seta "fire_mage", mage_monkey
+# seta "mage_monkey".
+@export var source_id: String = "mage"
 @export var trail_max_points: int = 14
 @export var redirect_strength: float = 0.45  # desvio na metade (0 = sem desvio, 1 = trava no player)
 @export var final_redirect_strength: float = 0.85  # trava forte quando perto
@@ -111,6 +115,8 @@ func _on_body_entered(body: Node) -> void:
 		if pierce_allies and (body.is_in_group("ally") or body.is_in_group("structure")):
 			var pierce_target: Node = _find_damageable(body)
 			if pierce_target != null:
+				# Pierce sempre acerta ally/structure (não-player) — sem source_id.
+				# Boss dá +80% de dano em aliados (BOSS_ALLY_DMG_MULT).
 				pierce_target.take_damage(damage * BOSS_ALLY_DMG_MULT)
 			return
 	var target: Node = _find_damageable(body)
@@ -118,7 +124,10 @@ func _on_body_entered(body: Node) -> void:
 		# Curse ANTES do take_damage pra contar na conversão se matar.
 		if apply_curse:
 			CurseAllyHelper.apply_ally_curse_on_damage(target, self)
-		target.take_damage(damage)
+		if target.is_in_group("player"):
+			target.take_damage(damage, source_id)
+		else:
+			target.take_damage(damage)
 	_spawn_hit_effect()
 	_die()
 

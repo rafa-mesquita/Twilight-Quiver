@@ -66,7 +66,9 @@ func _on_hit(body: Node) -> void:
 	_spent = true
 	# Single-target damage no inimigo atingido.
 	if body.has_method("take_damage"):
+		var was_alive_ln: bool = (not ("hp" in body)) or float(body.hp) > 0.0
 		body.take_damage(damage)
+		_notify_player_dmg_kill(damage, "leno", was_alive_ln, body)
 	_play_hit_sound()
 	_spawn_hit_effect()
 	_spawn_slow_area()
@@ -136,3 +138,17 @@ func _spawn_slow_area() -> void:
 		var area: Node2D = SLOW_AREA_SCENE.instantiate()
 		world.add_child(area)
 		area.global_position = global_position + off
+
+
+func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, target: Node) -> void:
+	if not is_inside_tree():
+		return
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null:
+		return
+	if p.has_method("notify_damage_dealt_by_source"):
+		p.notify_damage_dealt_by_source(amount, source_id)
+	if was_alive and p.has_method("notify_kill_by_source"):
+		var killed: bool = ("hp" in target) and float(target.hp) <= 0.0
+		if killed:
+			p.notify_kill_by_source(source_id)

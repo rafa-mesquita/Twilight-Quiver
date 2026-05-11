@@ -60,14 +60,15 @@ const HUD_RUNTIME_SCALE: Vector2 = Vector2(3, 3)
 @onready var dash_cd_label: Label = $DashCdBar/Label
 @onready var fire_skill_icon: Control = $FireSkillIcon
 @onready var fire_skill_cd_label: Label = $FireSkillIcon/CdLabel
+@onready var chain_lightning_skill_icon: Control = $ChainLightningSkillIcon
+@onready var chain_lightning_skill_cd_label: Label = $ChainLightningSkillIcon/CdLabel
 @onready var curse_skill_icon: Control = $CurseSkillIcon
 @onready var curse_skill_cd_label: Label = $CurseSkillIcon/CdLabel
 @onready var upgrade_column_vbox: VBoxContainer = $UpgradeColumn/VBox
 @onready var boss_hp_bar: Control = $BossHpBar
-@onready var boss_hp_fill: ColorRect = $BossHpBar/Fill
+@onready var boss_hp_fill: ColorRect = $BossHpBar/ArtScale/Fill
 @onready var boss_hp_label: Label = $BossHpBar/Label
 @onready var boss_name_label: Label = $BossHpBar/NameLabel
-const BOSS_BAR_FILL_WIDTH: float = 500.0
 # Mapeamento de grupos de boss → nome a exibir. Mais bosses futuros: adicionar
 # entrada nesse dict.
 const BOSS_NAMES: Dictionary = {
@@ -80,7 +81,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 	# Status primeiro (sempre visíveis assim que comprados)
 	"hp", "armor", "damage", "attack_speed", "move_speed",
 	# Upgrades de gameplay
-	"perfuracao", "ricochet_arrow", "multi_arrow", "chain_lightning",
+	"perfuracao", "ricochet_arrow", "multi_arrow", "double_arrows", "chain_lightning",
 	"fire_arrow", "curse_arrow", "graviton", "life_steal", "dash",
 	"gold_magnet",
 	# Aliados
@@ -88,7 +89,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 ]
 # Caps onde "MAX" substitui "Lx" no badge (status escala infinito → sem cap).
 const _UPG_CAPS: Dictionary = {
-	"perfuracao": 4, "ricochet_arrow": 4, "multi_arrow": 4, "chain_lightning": 4,
+	"perfuracao": 4, "ricochet_arrow": 4, "multi_arrow": 4, "double_arrows": 4, "chain_lightning": 4,
 	"fire_arrow": 4, "curse_arrow": 4, "graviton": 4, "life_steal": 4,
 	"dash": 4, "gold_magnet": 4,
 	"woodwarden": 4, "leno": 4, "capivara_joe": 4,
@@ -102,6 +103,7 @@ const _UPG_PATHS: Dictionary = {
 	"fire_arrow": "res://assets/Hud/shop/upgrade/fire_arrow2.png",
 	"curse_arrow": "res://assets/Hud/shop/upgrade/curse_arrow.png",
 	"multi_arrow": "res://assets/Hud/shop/upgrade/multi_arrow.png",
+	"double_arrows": "res://assets/Hud/shop/upgrade/multi_arrow.png",  # compartilha arte do multi_arrow (mesma família marrom)
 	"chain_lightning": "res://assets/Hud/shop/upgrade/chain_lightning.png",
 	"graviton": "res://assets/Hud/shop/upgrade/graviton/graviton card-Sheet.png",
 	"perfuracao": "res://assets/Hud/shop/upgrade/perfuracao.png",
@@ -184,7 +186,7 @@ func _ready() -> void:
 	# morte/pausa precisam receber input — esses estão em DeathTopLayer/pause_layer
 	# (separados, não tocados aqui).
 	for control_path in [
-		"HudFrame", "HpBar", "DashCdBar", "FireSkillIcon", "CurseSkillIcon",
+		"HudFrame", "HpBar", "DashCdBar", "FireSkillIcon", "ChainLightningSkillIcon", "CurseSkillIcon",
 		"GoldDisplay", "TowerAlertIndicator",
 	]:
 		var n := get_node_or_null(control_path)
@@ -230,6 +232,13 @@ func _connect_player_signals() -> void:
 		player.fire_skill_cooldown_changed.connect(_on_fire_skill_cooldown_changed)
 	if "fire_arrow_level" in player and int(player.fire_arrow_level) >= 3:
 		_on_fire_skill_unlocked()
+	# Chain Lightning skill icon — aparece quando player chega no Chain Lightning lv3.
+	if player.has_signal("chain_lightning_skill_unlocked") and not player.chain_lightning_skill_unlocked.is_connected(_on_chain_lightning_skill_unlocked):
+		player.chain_lightning_skill_unlocked.connect(_on_chain_lightning_skill_unlocked)
+	if player.has_signal("chain_lightning_skill_cooldown_changed") and not player.chain_lightning_skill_cooldown_changed.is_connected(_on_chain_lightning_skill_cooldown_changed):
+		player.chain_lightning_skill_cooldown_changed.connect(_on_chain_lightning_skill_cooldown_changed)
+	if "chain_lightning_level" in player and int(player.chain_lightning_level) >= 3:
+		_on_chain_lightning_skill_unlocked()
 	# Curse skill icon — só aparece quando player chega na Maldição lv4.
 	if player.has_signal("curse_skill_unlocked") and not player.curse_skill_unlocked.is_connected(_on_curse_skill_unlocked):
 		player.curse_skill_unlocked.connect(_on_curse_skill_unlocked)
@@ -271,7 +280,11 @@ func _update_boss_hp_bar() -> void:
 	var hp: float = float(_current_boss.hp)
 	var maxhp: float = float(_current_boss.max_hp)
 	var ratio: float = 0.0 if maxhp <= 0.0 else clampf(hp / maxhp, 0.0, 1.0)
-	boss_hp_fill.size.x = BOSS_BAR_FILL_WIDTH * ratio
+	# Shader em Fill (boss_bar_fill.gdshader) faz o mascaramento dos caps via
+	# row-scan da arte e aplica fill_ratio pra deplecionar pela direita.
+	var mat: ShaderMaterial = boss_hp_fill.material as ShaderMaterial
+	if mat != null:
+		mat.set_shader_parameter("fill_ratio", ratio)
 	boss_hp_label.text = "%d/%d" % [int(round(hp)), int(round(maxhp))]
 
 
@@ -407,6 +420,19 @@ func _on_fire_skill_cooldown_changed(remaining: float, _total: float) -> void:
 		fire_skill_icon.modulate = Color(0.6, 0.55, 0.55, 1.0)
 
 
+func _on_chain_lightning_skill_unlocked() -> void:
+	chain_lightning_skill_icon.visible = true
+
+
+func _on_chain_lightning_skill_cooldown_changed(remaining: float, _total: float) -> void:
+	if remaining <= 0.001:
+		chain_lightning_skill_cd_label.text = ""
+		chain_lightning_skill_icon.modulate = Color.WHITE
+	else:
+		chain_lightning_skill_cd_label.text = "%d" % int(ceilf(remaining))
+		chain_lightning_skill_icon.modulate = Color(0.55, 0.6, 0.7, 1.0)
+
+
 func _on_curse_skill_unlocked() -> void:
 	curse_skill_icon.visible = true
 
@@ -445,6 +471,50 @@ func _process(delta: float) -> void:
 			_hud_alpha_tween.kill()
 		_hud_alpha_tween = create_tween()
 		_hud_alpha_tween.tween_property(hud_frame, "modulate:a", new_target, HUD_ALPHA_FADE)
+
+
+func flash_screen(color: Color = Color(0, 0, 0, 1), peak_alpha: float = 0.95, strobe_duration: float = 2.0, fade_duration: float = 1.0) -> void:
+	# Efeito de trovão dividido em duas fases:
+	# - strobe (strobe_duration): escuro bate → clareia → escuro de novo
+	# - fade (fade_duration): fade out lento de volta ao normal
+	# Total = strobe_duration + fade_duration.
+	var rect := ColorRect.new()
+	rect.color = Color(color.r, color.g, color.b, 0.0)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.anchor_right = 1.0
+	rect.anchor_bottom = 1.0
+	rect.offset_left = 0.0
+	rect.offset_top = 0.0
+	rect.offset_right = 0.0
+	rect.offset_bottom = 0.0
+	rect.size = get_viewport().get_visible_rect().size
+	rect.z_index = 100
+	add_child(rect)
+	move_child(rect, get_child_count() - 1)
+
+	# Proporções dentro do strobe (somam 1.0). Holds dominam pra dar peso de raio.
+	const FRAC_STRIKE_IN: float = 0.08
+	const FRAC_DARK_HOLD: float = 0.25
+	const FRAC_CLEAR_OUT: float = 0.10
+	const FRAC_CLEAR_HOLD: float = 0.14
+	const FRAC_STRIKE2_IN: float = 0.08
+	const FRAC_DARK2_HOLD: float = 0.35
+	var s: float = maxf(strobe_duration, 0.05)
+	var f: float = maxf(fade_duration, 0.05)
+
+	var tw: Tween = create_tween()
+	# 1. Bate escuro
+	tw.tween_property(rect, "color:a", peak_alpha, s * FRAC_STRIKE_IN)
+	tw.tween_interval(s * FRAC_DARK_HOLD)
+	# 2. Clareia (deixa cena passar)
+	tw.tween_property(rect, "color:a", 0.0, s * FRAC_CLEAR_OUT)
+	tw.tween_interval(s * FRAC_CLEAR_HOLD)
+	# 3. Bate escuro de novo
+	tw.tween_property(rect, "color:a", peak_alpha, s * FRAC_STRIKE2_IN)
+	tw.tween_interval(s * FRAC_DARK2_HOLD)
+	# 4. Fade out lento (fase separada)
+	tw.tween_property(rect, "color:a", 0.0, f)
+	tw.tween_callback(Callable(rect, "queue_free"))
 
 
 func play_raid_intro(wave_number: int) -> void:
@@ -588,9 +658,13 @@ func _show_restart_button() -> void:
 	var run_stats: Dictionary = _collect_run_stats(wave_num)
 	var newly_unlocked: Array = SkinLoadout.record_run(run_stats)
 
-	# Envio silencioso pro leaderboard (paralelo, não bloqueia UI).
+	# Em release: auto-envia score + telemetria. Em debug: nada é enviado,
+	# botões manuais (criados abaixo em _show_dev_send_buttons) fazem o envio.
 	if not OS.is_debug_build():
 		_auto_submit_score()
+		_track_run_end(wave_num)
+	else:
+		_show_dev_send_buttons(wave_num)
 
 	# Se há unlocks: mostra notificações em SEQUÊNCIA (uma de cada vez).
 	# Cada uma: fade in (0.5s) → hold (2.5s) → fade out (0.3s, só se tiver próxima).
@@ -647,6 +721,20 @@ func _show_unlock_notification(skin_name: String) -> void:
 func _on_menu_pressed() -> void:
 	# Garante despausar antes de trocar de cena (senão o menu carrega pausado).
 	get_tree().paused = false
+	# ESC-out de run em andamento (player vivo): emite run_end pra telemetria
+	# e flush sincronizado. Score NÃO vai pro leaderboard — só runs que terminam
+	# em morte (death screen) contam pro ranking.
+	# Se player já morreu, o death screen já tratou submit/track. Não duplica.
+	var player := get_tree().get_first_node_in_group("player")
+	var is_dead: bool = player != null and "is_dead" in player and bool(player.is_dead)
+	if not is_dead:
+		var wave_num: int = 0
+		var wm := get_tree().get_first_node_in_group("wave_manager")
+		if wm != null and "wave_number" in wm:
+			wave_num = int(wm.wave_number)
+		_track_run_end(wave_num)
+		if has_node("/root/Telemetry"):
+			get_node("/root/Telemetry").flush_now()
 	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
 
 
@@ -675,39 +763,126 @@ func _format_run_time(msec: int) -> String:
 
 # ---------- Leaderboard auto-submit ----------
 
+func _show_dev_send_buttons(wave_num: int) -> void:
+	# Em debug build, em vez de auto-enviar, mostra 2 botões na tela de morte
+	# pra disparo manual: telemetria run_end (com flush) e leaderboard submit.
+	# Útil pra testar o stack sem poluir o backend com runs de dev.
+	if death_top_layer == null:
+		return
+	var at01: Font = load("res://font/ByteBounce.ttf")
+
+	var tel_btn := Button.new()
+	tel_btn.name = "DevSendTelemetryBtn"
+	tel_btn.text = "[DEV] Enviar Telemetria"
+	tel_btn.set_anchors_preset(Control.PRESET_CENTER)
+	tel_btn.position = Vector2(-200, 312)
+	tel_btn.size = Vector2(400, 48)
+	if at01 != null:
+		tel_btn.add_theme_font_override("font", at01)
+	tel_btn.add_theme_font_size_override("font_size", 24)
+	tel_btn.add_theme_color_override("font_color", Color(0.65, 0.95, 1, 1))
+	tel_btn.pressed.connect(func(): _dev_send_telemetry(wave_num, tel_btn))
+	death_top_layer.add_child(tel_btn)
+
+	var score_btn := Button.new()
+	score_btn.name = "DevSendScoreBtn"
+	score_btn.text = "[DEV] Enviar Score"
+	score_btn.set_anchors_preset(Control.PRESET_CENTER)
+	score_btn.position = Vector2(-200, 370)
+	score_btn.size = Vector2(400, 48)
+	if at01 != null:
+		score_btn.add_theme_font_override("font", at01)
+	score_btn.add_theme_font_size_override("font_size", 24)
+	score_btn.add_theme_color_override("font_color", Color(1, 0.85, 0.55, 1))
+	score_btn.pressed.connect(func(): _dev_send_score(score_btn))
+	death_top_layer.add_child(score_btn)
+
+
+func _dev_send_telemetry(wave_num: int, btn: Button) -> void:
+	_track_run_end(wave_num)
+	if has_node("/root/Telemetry"):
+		get_node("/root/Telemetry").flush_now()
+	btn.disabled = true
+	btn.text = "[DEV] Telemetria enviada"
+
+
+func _dev_send_score(btn: Button) -> void:
+	_auto_submit_score()
+	btn.disabled = true
+	btn.text = "[DEV] Score enviado"
+
+
+func _track_run_end(wave_num: int) -> void:
+	# Emite o evento run_end com stats finais. Não dispara flush — caller decide
+	# (em release o auto-flush por timer pega; em debug é flush_now() do botão
+	# ou do ESC-out).
+	if not has_node("/root/Telemetry"):
+		return
+	var stats: Dictionary = _collect_run_stats(wave_num)
+	stats["score"] = _SCORE_CALC.calc(stats)
+	var t: Node = get_node("/root/Telemetry")
+	t.track("run_end", stats)
+	t.end_run()
+
+
 func _auto_submit_score() -> void:
 	var nick: String = _load_nickname()
 	if nick.is_empty():
-		# Sem nick salvo (cara abriu jogo, não preencheu prompt e foi direto pra death?
-		# Não deveria acontecer em fluxo normal). Skip silencioso.
+		push_warning("[leaderboard] skip submit: nickname vazio")
 		return
 	if _leaderboard_client == null:
 		_leaderboard_client = _LEADERBOARD_CLIENT.new()
 		add_child(_leaderboard_client)
-		# Sem listeners de upload_succeeded/failed — fire-and-forget.
-	_leaderboard_client.submit_run(_build_run_payload(nick))
+		_leaderboard_client.upload_succeeded.connect(func(): print("[leaderboard] submit OK"))
+		_leaderboard_client.upload_failed.connect(func(msg): push_warning("[leaderboard] submit FAIL: " + msg))
+	var payload: Dictionary = _build_run_payload(nick)
+	print("[leaderboard] submitting: ", payload)
+	_leaderboard_client.submit_run(payload)
 
 
 func _collect_run_stats(wave_num: int) -> Dictionary:
 	var p := get_tree().get_first_node_in_group("player")
 	var kills: int = 0
 	var allies: int = 0
+	var monkeys_cursed: int = 0
 	var dmg_dealt: int = 0
 	var dmg_taken: int = 0
 	var bosses: Array = []
+	var dmg_by_src: Dictionary = {}
+	var dmg_dealt_by_src: Dictionary = {}
+	var kills_by_src: Dictionary = {}
 	if p != null:
 		kills = int(p.get("stats_enemies_killed")) if "stats_enemies_killed" in p else 0
 		allies = int(p.get("stats_allies_made")) if "stats_allies_made" in p else 0
+		monkeys_cursed = int(p.get("stats_monkeys_cursed")) if "stats_monkeys_cursed" in p else 0
 		dmg_dealt = int(round(float(p.get("stats_damage_dealt")))) if "stats_damage_dealt" in p else 0
 		dmg_taken = int(round(float(p.get("stats_damage_taken")))) if "stats_damage_taken" in p else 0
 		if "stats_bosses_killed" in p:
 			bosses = p.get("stats_bosses_killed")
+		# Snapshot do breakdown por fonte; valores arredondados pra int pra
+		# casar com dmg_taken total (que também é int).
+		if "stats_damage_taken_by_source" in p:
+			var raw: Dictionary = p.get("stats_damage_taken_by_source")
+			for k in raw.keys():
+				dmg_by_src[String(k)] = int(round(float(raw[k])))
+		if "stats_damage_dealt_by_source" in p:
+			var raw_dd: Dictionary = p.get("stats_damage_dealt_by_source")
+			for k in raw_dd.keys():
+				dmg_dealt_by_src[String(k)] = int(round(float(raw_dd[k])))
+		if "stats_kills_by_source" in p:
+			var raw_k: Dictionary = p.get("stats_kills_by_source")
+			for k in raw_k.keys():
+				kills_by_src[String(k)] = int(raw_k[k])
 	return {
 		"wave": wave_num,
 		"kills": kills,
 		"allies": allies,
+		"monkeys_cursed": monkeys_cursed,
 		"dmg_dealt": dmg_dealt,
 		"dmg_taken": dmg_taken,
+		"dmg_taken_by_source": dmg_by_src,
+		"dmg_dealt_by_source": dmg_dealt_by_src,
+		"kills_by_source": kills_by_src,
 		"bosses_killed": bosses,
 	}
 

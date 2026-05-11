@@ -82,6 +82,18 @@ const SKIN_QUESTS: Dictionary = {
 		"label": "PLAYER_QUEST_BLUEY",
 		"hidden": false,
 	},
+	"Linked": {
+		"type": "monkeys_cursed",
+		"value": 200,
+		"label": "PLAYER_QUEST_LINKED",
+		"hidden": true,
+	},
+	"Hawk": {
+		"type": "wave_reached",
+		"value": 20,
+		"label": "PLAYER_QUEST_HAWK",
+		"hidden": false,
+	},
 }
 
 # Stats persistentes em [progress]. Chaves usadas pelo sistema.
@@ -91,6 +103,9 @@ const STAT_DMG_DEALT: StringName = &"dmg_dealt_total"
 const STAT_RUNS_COMPLETED: StringName = &"runs_completed"
 const STAT_RUNS_NO_DAMAGE: StringName = &"runs_no_damage"
 const STAT_BOSSES_KILLED_TOTAL: StringName = &"bosses_killed_total"
+# Macaquinhos (grupo "monkey") convertidos pelo disparo profano. Acumula
+# entre runs — unlock da skin Linked aos 200.
+const STAT_MONKEYS_CURSED: StringName = &"monkeys_cursed_total"
 # Set de boss IDs já abatidos (persistente entre runs). Armazenado como string
 # CSV no settings.cfg porque ConfigFile só aceita primitivos.
 const _KEY_BOSSES_KILLED_SET: String = "bosses_killed_set"
@@ -259,6 +274,8 @@ static func _is_quest_satisfied(quest: Dictionary) -> bool:
 			return get_stat(STAT_RUNS_NO_DAMAGE) >= int(raw_value)
 		"boss_killed":
 			return has_killed_boss(String(raw_value))
+		"monkeys_cursed":
+			return get_stat(STAT_MONKEYS_CURSED) >= int(raw_value)
 	return true  # type desconhecido: assume desbloqueada (não bloqueia o jogo).
 
 
@@ -330,6 +347,7 @@ static func record_run(run_stats: Dictionary) -> Array:
 	var run_kills: int = int(run_stats.get("kills", 0))
 	var run_dmg_dealt: int = int(run_stats.get("dmg_dealt", 0))
 	var run_dmg_taken: int = int(run_stats.get("dmg_taken", 0))
+	var run_monkeys_cursed: int = int(run_stats.get("monkeys_cursed", 0))
 
 	if run_wave > get_stat(STAT_MAX_WAVE):
 		set_stat(STAT_MAX_WAVE, run_wave)
@@ -337,6 +355,8 @@ static func record_run(run_stats: Dictionary) -> Array:
 		set_stat(STAT_KILLS, get_stat(STAT_KILLS) + run_kills)
 	if run_dmg_dealt > 0:
 		set_stat(STAT_DMG_DEALT, get_stat(STAT_DMG_DEALT) + run_dmg_dealt)
+	if run_monkeys_cursed > 0:
+		set_stat(STAT_MONKEYS_CURSED, get_stat(STAT_MONKEYS_CURSED) + run_monkeys_cursed)
 	set_stat(STAT_RUNS_COMPLETED, get_stat(STAT_RUNS_COMPLETED) + 1)
 	if run_dmg_taken == 0 and run_wave >= 1:
 		set_stat(STAT_RUNS_NO_DAMAGE, get_stat(STAT_RUNS_NO_DAMAGE) + 1)

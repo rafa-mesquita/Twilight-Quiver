@@ -161,7 +161,16 @@ func _apply_tick() -> void:
 		var tick_dmg: float = damage_per_tick
 		if is_enemy_source and (e as Node).is_in_group("ally"):
 			tick_dmg *= BOSS_ALLY_DMG_MULT
-		e.take_damage(tick_dmg)
+		# Source ID só importa quando o alvo é o player (beam do boss); enemies
+		# que recebem dano do beam (player ricocheteando) usam signature 1-arg
+		# + telemetria por fonte quando player é a source.
+		if (e as Node).is_in_group("player"):
+			e.take_damage(tick_dmg, "mage_monkey_beam")
+		else:
+			var was_alive_cb: bool = (not ("hp" in e)) or float(e.hp) > 0.0
+			e.take_damage(tick_dmg)
+			if not is_enemy_source:
+				_notify_player_dmg_kill(tick_dmg, "curse_skill", was_alive_cb, e)
 
 
 func _apply_curse_to(target: Node) -> void:
@@ -264,3 +273,17 @@ func _spawn_light_from_template(local_pos: Vector2, t_along: float, silhouette_p
 	var lt: Tween = light.create_tween()
 	lt.tween_interval(t_along * silhouette_phase * 0.85)
 	lt.tween_property(light, "energy", target_energy, 0.25)
+
+
+func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, target: Node) -> void:
+	if not is_inside_tree():
+		return
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null:
+		return
+	if p.has_method("notify_damage_dealt_by_source"):
+		p.notify_damage_dealt_by_source(amount, source_id)
+	if was_alive and p.has_method("notify_kill_by_source"):
+		var killed: bool = ("hp" in target) and float(target.hp) <= 0.0
+		if killed:
+			p.notify_kill_by_source(source_id)

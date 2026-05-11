@@ -172,14 +172,14 @@ const BOSS_SPAWN_NEARBY_CHANCE: float = 0.25
 
 
 func _play_entrance_animation() -> void:
-	# 1. Summon effect grande no boss (roxo).
+	# Summon effect grande no boss (roxo).
 	if summon_effect_scene != null:
 		var fx: Node2D = summon_effect_scene.instantiate()
 		_get_world().add_child(fx)
 		fx.global_position = global_position + BODY_CENTER_OFFSET
 		fx.scale = Vector2.ONE * ENTRANCE_FX_SCALE
 		_tint_summon_effect_purple(fx)
-	# 2. Áudio do summon (mesmo das hordas).
+	# 4. Áudio do summon (mesmo das hordas).
 	_play_summon_sound()
 	# 3. Sprite pop-in: parte invisível e pequeno → cresce com elastic ease.
 	if sprite != null:
@@ -336,6 +336,8 @@ func _fire_one_shot(giant: bool = false) -> void:
 		if player == null:
 			return
 	var proj := projectile_scene.instantiate()
+	if "source_id" in proj:
+		proj.source_id = "mage_monkey"
 	if "damage" in proj and damage_mult != 1.0:
 		proj.damage = float(proj.damage) * damage_mult
 	# Range infinito: lifetime altíssimo + redirect padrão do mage_projectile
@@ -473,6 +475,10 @@ func _do_summon_horde() -> void:
 		spawn_anchors = wm.get_farthest_spawn_points_from_player(2)
 	if spawn_anchors.is_empty():
 		spawn_anchors.append(global_position)
+	# Flash de tela tipo raio (cor preta) — sinaliza que o boss tá invocando.
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud != null and hud.has_method("flash_screen"):
+		hud.flash_screen()
 	# Efeito grande no centro do boss (um burst só pra dramatizar a invocação).
 	if summon_effect_scene != null:
 		var fx_center: Node2D = summon_effect_scene.instantiate()

@@ -83,6 +83,13 @@ var type_registry: Dictionary = {}
 # Usado pra renascer torres destruídas no início da próxima wave.
 var owned_structures: Array = []
 
+# Free tower grant: na wave 8 (primeira shop de estruturas), o player ganha uma
+# arrow_tower de graça pra colocar antes do shop normal abrir. Flag impede
+# re-entrega caso o shop reabra na mesma wave.
+const FREE_TOWER_WAVE: int = 8
+const FREE_TOWER_SCENE: String = "res://scenes/world/structures/arrow_tower.tscn"
+var _free_tower_delivered: bool = false
+
 
 func _ready() -> void:
 	add_to_group("wave_manager")
@@ -157,6 +164,18 @@ func spawn_enemy_at(type_key: String, pos: Vector2) -> Node:
 # Dev helper: salta direto pra wave N — limpa enemies vivos, reseta tracking
 # e dispara _start_next_wave com wave_number = N - 1 (o increment interno
 # leva pra N). Funciona mesmo no dev mode (que normalmente fica `stopped`).
+func dev_finish_wave() -> void:
+	# Mata todos os enemies vivos e força _finish_wave (vai pro shop).
+	if not wave_active:
+		return
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if is_instance_valid(e):
+			e.queue_free()
+	# _process detecta killed == total e chama _finish_wave naturalmente,
+	# mas pra acelerar, força aqui (clamp do counter pra não dar negativo).
+	_finish_wave()
+
+
 func dev_start_wave(target_wave: int) -> void:
 	if target_wave < 1:
 		return
@@ -167,6 +186,10 @@ func dev_start_wave(target_wave: int) -> void:
 	wave_number = target_wave - 1
 	wave_active = false
 	stopped = false
+	# Reseta flag da torre grátis se voltando pra antes da entrega — permite
+	# re-testar o fluxo wave 7 → finalize → torre grátis múltiplas vezes.
+	if target_wave <= FREE_TOWER_WAVE:
+		_free_tower_delivered = false
 	_start_next_wave.call_deferred()
 
 
@@ -222,6 +245,17 @@ func _start_next_wave() -> void:
 	if stopped:
 		return
 	wave_number += 1
+	# Telemetria: emite run_start na wave 1, wave_reached em waves >= 2.
+	if wave_number == 1 and Engine.has_singleton("Telemetry") == false:
+		# Telemetry é autoload, não Engine singleton — só guard contra null.
+		pass
+	if has_node("/root/Telemetry"):
+		var t: Node = get_node("/root/Telemetry")
+		if wave_number == 1:
+			t.start_run()
+			t.track("run_start", {})
+		else:
+			t.track("wave_reached", {"wave": wave_number})
 	wave_config = _build_wave_config(wave_number)
 	spawned_this_wave.clear()
 	for k: String in wave_config.keys():
@@ -781,6 +815,13 @@ func _open_shop() -> void:
 	if shop_scene == null:
 		return
 	var shop = shop_scene.instantiate()
+	# Free tower grant: na transição pra wave FREE_TOWER_WAVE (= 8), o shop é
+	# aberto APÓS o _finish_wave() da wave anterior (= 7). Nesse momento
+	# wave_number ainda é 7. Por isso checamos `wave_number == FREE_TOWER_WAVE - 1`.
+	# O player coloca a arrow_tower grátis ANTES da UI do shop aparecer.
+	if wave_number == FREE_TOWER_WAVE - 1 and not _free_tower_delivered:
+		shop.set("pending_free_tower_scene", FREE_TOWER_SCENE)
+		_free_tower_delivered = true
 	get_tree().current_scene.add_child(shop)
 	if shop.has_signal("closed"):
 		await shop.closed

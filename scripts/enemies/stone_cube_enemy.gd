@@ -201,7 +201,10 @@ func _on_frame_changed() -> void:
 			if d <= attack_range * 2.0 and current_target.has_method("take_damage"):
 				if is_curse_ally:
 					CurseAllyHelper.apply_ally_curse_on_damage(current_target, self)
-				current_target.take_damage(damage)
+				if current_target.is_in_group("player"):
+					current_target.take_damage(damage, "stone_cube")
+				else:
+					current_target.take_damage(damage)
 
 
 func _play_run_sound() -> void:

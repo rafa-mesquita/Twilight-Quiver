@@ -70,7 +70,7 @@ func _on_body_entered(body: Node) -> void:
 	# Inseto original: bate só no player (slow + poison existentes).
 	if body.is_in_group("player"):
 		if body.has_method("take_damage"):
-			body.take_damage(damage)
+			body.take_damage(damage, "insect")
 		if body.has_method("apply_slow") and slow_duration > 0.0 and randf() < slow_chance:
 			body.apply_slow(slow_multiplier, slow_duration)
 		if body.has_method("apply_poison"):

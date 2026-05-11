@@ -63,7 +63,9 @@ func _apply_tick() -> void:
 			_enemies_inside.erase(enemy)
 			continue
 		if enemy.has_method("take_damage"):
+			var was_alive_ft: bool = (not ("hp" in enemy)) or float(enemy.hp) > 0.0
 			enemy.take_damage(amount)
+			_notify_player_dmg_kill(amount, "fire_arrow", was_alive_ft, enemy)
 
 
 func _on_body_entered(body: Node) -> void:
@@ -73,3 +75,17 @@ func _on_body_entered(body: Node) -> void:
 
 func _on_body_exited(body: Node) -> void:
 	_enemies_inside.erase(body)
+
+
+func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, target: Node) -> void:
+	if not is_inside_tree():
+		return
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null:
+		return
+	if p.has_method("notify_damage_dealt_by_source"):
+		p.notify_damage_dealt_by_source(amount, source_id)
+	if was_alive and p.has_method("notify_kill_by_source"):
+		var killed: bool = ("hp" in target) and float(target.hp) <= 0.0
+		if killed:
+			p.notify_kill_by_source(source_id)

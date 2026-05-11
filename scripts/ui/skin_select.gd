@@ -12,9 +12,20 @@ extends Control
 const _MAIN_MENU_PATH: String = "res://scenes/ui/main_menu.tscn"
 const _NONE_LABEL: String = "COMMON_NONE"
 const _IDLE_FRAME_REGION: Rect2 = Rect2(0, 0, 32, 32)
+# Sentinel slot pra tab de "Kits" (aplica skin inteira em todos os slots de uma vez).
+# Não bate com nenhum slot real de SkinLoadout.SLOTS.
+const _KIT_SLOT: StringName = &"_kit"
+# Quantos slots distintos um display_name precisa ocupar pra ser considerado um "kit".
+const _KIT_MIN_SLOTS: int = 2
+# Ordem de empilhamento do thumbnail de kit (back → front). Bate com a ordem
+# das camadas em scenes/ui/player_preview.tscn.
+const _KIT_LAYER_ORDER: Array[StringName] = [
+	&"cape", &"body", &"legs", &"quiver", &"shirt", &"alfaja", &"hair", &"bow"
+]
 
 # Translation keys por slot — tr() onde o label é exibido (tabs).
 const _SLOT_LABELS: Dictionary = {
+	&"_kit":   "PLAYER_SLOT_KITS",
 	&"body":   "PLAYER_SLOT_BODY",
 	&"legs":   "PLAYER_SLOT_LEGS",
 	&"shirt":  "PLAYER_SLOT_SHIRT",
@@ -69,7 +80,8 @@ func _ready() -> void:
 
 	_build_stats_panel()
 	_build_tabs()
-	var first_slot: StringName = _first_slot_with_parts()
+	# Abre na tab de Kits se existir, senão no primeiro slot com peças.
+	var first_slot: StringName = _KIT_SLOT if not _list_available_kits().is_empty() else _first_slot_with_parts()
 	if first_slot != &"":
 		_set_active_slot(first_slot)
 	else:
@@ -169,6 +181,12 @@ func _build_tabs() -> void:
 	for child in tabs_container.get_children():
 		child.queue_free()
 	_tab_buttons.clear()
+	# Kit tab primeiro — atalho pra equipar uma skin inteira de uma vez.
+	if not _list_available_kits().is_empty():
+		var kit_label: String = tr(String(_SLOT_LABELS[_KIT_SLOT]))
+		var kit_btn: Button = _make_tab_button(_KIT_SLOT, kit_label)
+		tabs_container.add_child(kit_btn)
+		_tab_buttons[_KIT_SLOT] = kit_btn
 	for slot in SkinLoadout.SLOTS:
 		if (_available.get(slot, []) as Array).is_empty():
 			continue
@@ -212,6 +230,9 @@ func _refresh_tab_highlights() -> void:
 func _build_cards_for_slot(slot: StringName) -> void:
 	for child in cards_grid.get_children():
 		child.queue_free()
+	if slot == _KIT_SLOT:
+		_build_kit_cards()
+		return
 	var parts: Array = (_available.get(slot, []) as Array).duplicate()
 	if SkinLoadout.REMOVABLE_SLOTS.has(slot):
 		parts.insert(0, null)  # "Nenhum" card primeiro
@@ -221,6 +242,188 @@ func _build_cards_for_slot(slot: StringName) -> void:
 			continue
 		var card: Control = _make_card(slot, part)
 		cards_grid.add_child(card)
+
+
+# ---------- Kits ----------
+
+func _list_available_kits() -> Array:
+	# Retorna display_names ordenados que aparecem em >= _KIT_MIN_SLOTS slots
+	# (= são kits completos). Skins hidden-locked NÃO entram na listagem.
+	var counts: Dictionary = {}
+	var sample: Dictionary = {}  # name -> SkinPart (pra checar lock/hidden)
+	for slot in SkinLoadout.SLOTS:
+		var parts_arr: Array = _available.get(slot, [])
+		for p in parts_arr:
+			var part: SkinPart = p
+			if part == null:
+				continue
+			var n: String = part.display_name
+			counts[n] = int(counts.get(n, 0)) + 1
+			if not sample.has(n):
+				sample[n] = part
+	var kits: Array = []
+	for n in counts.keys():
+		if int(counts[n]) < _KIT_MIN_SLOTS:
+			continue
+		var s: SkinPart = sample[n]
+		# Hidden-locked = não aparece. Locked sem hidden = aparece como card travado.
+		if SkinLoadout.is_hidden_locked(s):
+			continue
+		kits.append(String(n))
+	kits.sort()
+	return kits
+
+
+func _build_kit_cards() -> void:
+	for kit_name in _list_available_kits():
+		var card: Control = _make_kit_card(kit_name)
+		cards_grid.add_child(card)
+
+
+func _make_kit_card(kit_name: String) -> Control:
+	var kit_parts: Dictionary = SkinLoadout.get_parts_by_skin_name(kit_name)
+	# Parts efetivas mostradas no preview = peças do kit + Default nos slots
+	# que o kit não cobre (mesma regra do apply em _on_kit_picked).
+	var preview_parts: Dictionary = kit_parts.duplicate()
+	for slot in SkinLoadout.SLOTS:
+		if preview_parts.has(slot):
+			continue
+		var def: SkinPart = _default_part_for_slot(slot)
+		if def != null:
+			preview_parts[slot] = def
+	# Lock flag vem do body (ou primeira peça do kit) — todas as peças do
+	# mesmo display_name compartilham a mesma quest.
+	var first_kit_part: SkinPart = kit_parts.get(&"body")
+	if first_kit_part == null:
+		for slot in kit_parts.keys():
+			first_kit_part = kit_parts[slot]
+			break
+	var is_unlocked: bool = first_kit_part == null or SkinLoadout.is_unlocked(first_kit_part)
+	var is_selected: bool = _is_kit_currently_selected(kit_parts)
+
+	var btn := Button.new()
+	btn.custom_minimum_size = _CARD_SIZE
+	btn.toggle_mode = false
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.disabled = not is_unlocked
+	if _font != null:
+		btn.add_theme_font_override("font", _font)
+	btn.add_theme_font_size_override("font_size", 20)
+	btn.add_theme_stylebox_override("normal", _make_card_stylebox(is_selected, false))
+	btn.add_theme_stylebox_override("hover", _make_card_stylebox(is_selected, true))
+	btn.add_theme_stylebox_override("pressed", _make_card_stylebox(is_selected, true))
+	btn.add_theme_stylebox_override("disabled", _make_card_stylebox(false, false))
+
+	var vbox := VBoxContainer.new()
+	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 6)
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	btn.add_child(vbox)
+
+	var thumb: Control = _make_kit_thumbnail(preview_parts, not is_unlocked)
+	vbox.add_child(thumb)
+
+	var label := Label.new()
+	if not is_unlocked:
+		var quest: Dictionary = SkinLoadout.get_quest_for(kit_name)
+		label.text = String(quest.get("label", "COMMON_LOCKED"))
+	else:
+		label.text = kit_name
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if _font != null:
+		label.add_theme_font_override("font", _font)
+	label.add_theme_font_size_override("font_size", 18 if not is_unlocked else 22)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var label_color: Color
+	if not is_unlocked:
+		label_color = Color(0.95, 0.5, 0.5, 1)
+	elif is_selected:
+		label_color = Color(1, 0.92, 0.4, 1)
+	else:
+		label_color = Color(0.92, 0.88, 1, 1)
+	label.add_theme_color_override("font_color", label_color)
+	vbox.add_child(label)
+
+	if is_unlocked:
+		btn.pressed.connect(_on_kit_picked.bind(kit_name))
+	return btn
+
+
+func _is_kit_currently_selected(kit_parts: Dictionary) -> bool:
+	# Kit "ativo" = todos os slots batem: peças do kit nos slots que ele cobre,
+	# Default (ou null em removíveis sem Default) nos slots ausentes.
+	if kit_parts.is_empty():
+		return false
+	for slot in SkinLoadout.SLOTS:
+		if kit_parts.has(slot):
+			if not _is_same_part(_current.get(slot), kit_parts[slot]):
+				return false
+		else:
+			var expected: SkinPart = _default_part_for_slot(slot)
+			if expected == null and not SkinLoadout.REMOVABLE_SLOTS.has(slot):
+				# Slot não-removível sem Default — ignora na comparação.
+				continue
+			if not _is_same_part(_current.get(slot), expected):
+				return false
+	return true
+
+
+func _make_kit_thumbnail(parts: Dictionary, locked: bool) -> Control:
+	# Container do tamanho do thumbnail com TextureRects empilhados em camadas.
+	# Cada camada renderiza o frame 0 (idle) da textura do slot — visualmente
+	# equivalente ao preview animado, mas estático.
+	var holder := Control.new()
+	holder.custom_minimum_size = _THUMBNAIL_SIZE
+	holder.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for slot in _KIT_LAYER_ORDER:
+		var part: SkinPart = parts.get(slot)
+		if part == null or part.texture == null:
+			continue
+		var layer := TextureRect.new()
+		layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+		layer.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		layer.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var atlas := AtlasTexture.new()
+		atlas.atlas = part.texture
+		atlas.region = _IDLE_FRAME_REGION
+		layer.texture = atlas
+		if locked:
+			layer.modulate = Color(0.4, 0.4, 0.4, 1)
+		holder.add_child(layer)
+	return holder
+
+
+func _default_part_for_slot(slot: StringName) -> SkinPart:
+	# Procura uma peça com display_name == "Default" no slot. Usada como
+	# fallback quando um kit não cobre todos os slots.
+	for p in (_available.get(slot, []) as Array):
+		var part: SkinPart = p
+		if part != null and part.display_name == "Default":
+			return part
+	return null
+
+
+func _on_kit_picked(kit_name: String) -> void:
+	var kit_parts: Dictionary = SkinLoadout.get_parts_by_skin_name(kit_name)
+	for slot in SkinLoadout.SLOTS:
+		if kit_parts.has(slot):
+			_current[slot] = kit_parts[slot]
+		else:
+			# Sem peça do kit pra esse slot — usa Default. Se não tem Default
+			# nem é removível, mantém o atual (caso raro).
+			var default_part: SkinPart = _default_part_for_slot(slot)
+			if default_part != null:
+				_current[slot] = default_part
+			elif SkinLoadout.REMOVABLE_SLOTS.has(slot):
+				_current[slot] = null
+	_apply_to_preview()
+	_build_cards_for_slot(_KIT_SLOT)
+	status_label.text = ""
 
 
 func _make_card(slot: StringName, part: SkinPart) -> Control:

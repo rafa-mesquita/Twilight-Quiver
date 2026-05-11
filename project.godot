@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="Twilight Quiver"
-config/version="pre-alpha-0.2.2"
+config/version="pre-alpha-0.3.0"
 run/main_scene="res://scenes/ui/splash.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="uid://c7qgqbvckpcdr"
@@ -23,6 +23,7 @@ config/icon="uid://c7qgqbvckpcdr"
 [autoload]
 
 GameState="*res://scripts/systems/game_state.gd"
+Telemetry="*res://scripts/systems/telemetry.gd"
 
 [display]
 
@@ -73,6 +74,11 @@ dash={
 fire_cast={
 "deadzone": 0.5,
 "events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":81,"key_label":0,"unicode":113,"location":0,"echo":false,"script":null)
+]
+}
+lightning_cast={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":69,"key_label":0,"unicode":101,"location":0,"echo":false,"script":null)
 ]
 }
 

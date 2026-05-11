@@ -214,9 +214,16 @@ func _explode() -> void:
 			continue
 		if (e as Node2D).global_position.distance_to(global_position) > radius:
 			continue
+		var was_alive_gv: bool = (not ("hp" in e)) or float(e.hp) > 0.0
 		e.take_damage(explosion_damage)
 		if source != null and source.has_method("notify_damage_dealt"):
 			source.notify_damage_dealt(explosion_damage)
+		if source != null and source.has_method("notify_damage_dealt_by_source"):
+			source.notify_damage_dealt_by_source(explosion_damage, "graviton")
+		if was_alive_gv and source != null and source.has_method("notify_kill_by_source"):
+			var killed_gv: bool = ("hp" in e) and float(e.hp) <= 0.0
+			if killed_gv:
+				source.notify_kill_by_source("graviton")
 	# Burst da explosão.
 	var burst := Polygon2D.new()
 	var pts := PackedVector2Array()

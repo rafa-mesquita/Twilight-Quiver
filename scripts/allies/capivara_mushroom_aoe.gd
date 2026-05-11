@@ -39,4 +39,20 @@ func _apply_tick_damage() -> void:
 		if not body.is_in_group("enemy"):
 			continue
 		if body.has_method("take_damage"):
+			var was_alive_cap: bool = (not ("hp" in body)) or float(body.hp) > 0.0
 			body.take_damage(per_tick)
+			_notify_player_dmg_kill(per_tick, "capivara_joe", was_alive_cap, body)
+
+
+func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, target: Node) -> void:
+	if not is_inside_tree():
+		return
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null:
+		return
+	if p.has_method("notify_damage_dealt_by_source"):
+		p.notify_damage_dealt_by_source(amount, source_id)
+	if was_alive and p.has_method("notify_kill_by_source"):
+		var killed: bool = ("hp" in target) and float(target.hp) <= 0.0
+		if killed:
+			p.notify_kill_by_source(source_id)

@@ -66,6 +66,7 @@ PLAYER_SLOT_CAPE,Capa,Cape,Capa,Cape
 PLAYER_SLOT_QUIVER,Aljava,Quiver,Aljaba,Carquois
 PLAYER_SLOT_HAIR,Cabelo,Hair,Cabello,Cheveux
 PLAYER_SLOT_BOW,Arco,Bow,Arco,Arc
+PLAYER_SLOT_KITS,Kits,Kits,Kits,Kits
 PLAYER_STAT_MAX_WAVE,Wave maxima,Max raid,Raid máximo,Raid max
 PLAYER_STAT_KILLS,Inimigos mortos,Enemies killed,Enemigos eliminados,Ennemis tués
 PLAYER_STAT_DAMAGE,Dano causado,Damage dealt,Daño causado,Dégâts infligés
@@ -109,6 +110,7 @@ SHOP_HEADER_ALLIES,ALIADOS,ALLIES,ALIADOS,ALLIÉS
 SHOP_HEADER_UPGRADES,UPGRADES,UPGRADES,MEJORAS,AMÉLIORATIONS
 SHOP_UPG_CAT_ELEMENTAL,Elemental · escolha 1,Elemental · pick 1,Elemental · elige 1,Élémentaire · choisissez 1
 SHOP_UPG_CAT_ARROW_MOD,Tipo de flecha · escolha 1,Arrow type · pick 1,Tipo de flecha · elige 1,Type de flèche · choisissez 1
+SHOP_UPG_CAT_ARROW_VOLLEY,Salva de flechas · escolha 1,Arrow volley · pick 1,Salva de flechas · elige 1,Volée de flèches · choisissez 1
 SHOP_STAT_HP,Vida,HP,Vida,PV
 SHOP_STAT_DAMAGE,Dano,Damage,Daño,Dégâts
 SHOP_STAT_MOVE_SPEED,Vel. Mov.,Move,Vel. Mov.,Mvt.
@@ -163,6 +165,7 @@ SHOP_ARMOR_20,+20% dano reduzido,+20% dmg reduced,+20% daño reducido,+20% dég�
 SHOP_ARMOR_3,+3% dano reduzido,+3% dmg reduced,+3% daño reducido,+3% dégâts réduits
 SHOP_UPG_PERFURACAO,Perfuracao,Piercing,Perforación,Perforation
 SHOP_UPG_MULTI_ARROW,Multiplas Flechas,Multiple Arrows,Flechas Múltiples,Flèches Multiples
+SHOP_UPG_DOUBLE_ARROWS,Flechas Duplas,Double Arrows,Flechas Dobles,Flèches Doubles
 SHOP_UPG_CHAIN_LIGHTNING,Cadeia de Raios,Chain Lightning,Cadena de Rayos,Chaîne d'Éclairs
 SHOP_UPG_LIFE_STEAL,Mestre da Cura,Heal Master,Maestro de Cura,Maître Soigneur
 SHOP_UPG_GOLD_MAGNET,Chuva de Coins,Coin Rain,Lluvia de Monedas,Pluie de Pièces
@@ -237,6 +240,26 @@ as direcoes","10 arrows in every
 direction","10 flechas en todas
 las direcciones","10 flèches dans
 toutes les directions"
+SHOP_DOUBLE_ARROWS_DESC_1,"30% chance flechas duplas
+Secundária dá 50% dano","30% chance double arrows
+Secondary deals 50% damage","30% chance flechas dobles
+Secundaria da 50% daño","30% chance flèches doubles
+Secondaire 50% dégâts"
+SHOP_DOUBLE_ARROWS_DESC_2,"30% chance duplas
+Ambas com dano total","30% chance double
+Both at full damage","30% chance dobles
+Ambas dañan total","30% chance doubles
+Deux dégâts pleins"
+SHOP_DOUBLE_ARROWS_DESC_3,"60% duplas + 30% triplas
+Maior quantidade prevalece","60% double + 30% triple
+Higher count wins","60% dobles + 30% triples
+Gana el mayor","60% doubles + 30% triples
+Le plus grand l'emporte"
+SHOP_DOUBLE_ARROWS_DESC_4,"90% duplas, 60% triplas
+1% quíntuplas (maior prevalece)","90% double, 60% triple
+1% quintuple (higher wins)","90% dobles, 60% triples
+1% quíntuples (mayor gana)","90% doubles, 60% triples
+1% quintuples (max gagne)"
 SHOP_CHAIN_LIGHTNING_DESC_1,"30% dano no inimigo
 mais proximo","30% damage to nearest
 enemy","30% daño al enemigo
@@ -247,16 +270,16 @@ SHOP_CHAIN_LIGHTNING_DESC_2,"50% dano em 2 inimigos
 +30% chance on 3rd","50% daño en 2 enemigos
 +30% chance en el 3º","50% dégâts sur 2 ennemis
 +30% chance sur le 3e"
-SHOP_CHAIN_LIGHTNING_DESC_3,"60% dano em 4
-inimigos","60% damage on 4
-enemies","60% daño en 4
-enemigos","60% dégâts sur 4
-ennemis"
-SHOP_CHAIN_LIGHTNING_DESC_4,"100% dano em todos
-da area","100% damage on all
-in area","100% daño en todos
-del área","100% dégâts sur tous
-dans la zone"
+SHOP_CHAIN_LIGHTNING_DESC_3,"60% dano em 4 inimigos
+Destrava skill ativável (E)","60% damage on 4 enemies
+Unlocks active skill (E)","60% daño en 4 enemigos
+Desbloquea habilidad activa (E)","60% dégâts sur 4 ennemis
+Débloque compétence active (E)"
+SHOP_CHAIN_LIGHTNING_DESC_4,"100% dano em todos da area
++20% dano no raio invocado","100% damage on all in area
++20% damage to invoked bolt","100% daño en todos del área
++20% daño al rayo invocado","100% dégâts sur tous dans la zone
++20% dégâts à l'éclair invoqué"
 SHOP_MOVE_SPEED_DESC,"+10% velocidade de
 movimento","+10% movement
 speed","+10% velocidad de
@@ -458,3 +481,5 @@ SHOP_UPG_MOVE_SPEED,Velocidade de Movimento,Move Speed,Velocidad de Movimiento,V
 SHOP_UPG_ARMOR,Armadura,Armor,Armadura,Armure
 PLAYER_QUEST_GINGERALE,Mate 3000 inimigos no total,Kill 3000 enemies total,Mata 3000 enemigos en total,Tuez 3000 ennemis au total
 PLAYER_QUEST_BLUEY,Derrote o boss Mage Monkey (raid 7),Defeat the Mage Monkey boss (raid 7),Derrota al jefe Mago Mono (oleada 7),Vainquez le boss Singe Mage (vague 7)
+PLAYER_QUEST_LINKED,Renasça 200 macaquinhos com o disparo profano,Reincarnate 200 monkeys with the unholy shot,Renace 200 monitos con el disparo profano,Faites renaître 200 petits singes avec le tir profane
+PLAYER_QUEST_HAWK,Alcance a raid 20,Reach raid 20,Alcanza el raid 20,Atteignez le raid 20

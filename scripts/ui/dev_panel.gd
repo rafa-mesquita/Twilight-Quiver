@@ -21,6 +21,7 @@ const UPGRADE_BTNS: Array = [
 	{"id": "perfuracao", "node": "UpgPerfBtn", "max": 4, "base_text": "+1 Perfuracao"},
 	{"id": "attack_speed", "node": "UpgAtkSpeedBtn", "max": INF_LEVEL, "base_text": "+1 Atk Speed"},
 	{"id": "multi_arrow", "node": "UpgMultiArrowBtn", "max": 4, "base_text": "+1 Multi Arrow"},
+	{"id": "double_arrows", "node": "UpgDoubleArrowsBtn", "max": 4, "base_text": "+1 Flechas Duplas"},
 	{"id": "chain_lightning", "node": "UpgChainBtn", "max": 4, "base_text": "+1 Cadeia de Raios"},
 	{"id": "move_speed", "node": "UpgMoveSpeedBtn", "max": INF_LEVEL, "base_text": "+1 Move Speed"},
 	{"id": "gold_magnet", "node": "UpgGoldMagnetBtn", "max": 4, "base_text": "+1 Chuva de Coins"},
@@ -62,8 +63,13 @@ func _ready() -> void:
 		var btn := _upgrade_btn(entry["node"]) as Button
 		if btn != null:
 			btn.pressed.connect(_apply_upgrade.bind(entry["id"]))
-	# Simulação de waves específicas (dev). Por enquanto só wave 7 (boss).
+	# Controles de wave + simulação de waves específicas (dev).
+	$Content/Scroll/VBox/WavesSection/WavesContent/StartWavesBtn.pressed.connect(_simulate_wave.bind(1))
+	$Content/Scroll/VBox/WavesSection/WavesContent/FinishWaveBtn.pressed.connect(_finish_current_wave)
 	$Content/Scroll/VBox/WavesSection/WavesContent/Wave7Btn.pressed.connect(_simulate_wave.bind(7))
+	$Content/Scroll/VBox/WavesSection/WavesContent/Wave8Btn.pressed.connect(_simulate_wave.bind(8))
+	$Content/Scroll/VBox/WavesSection/WavesContent/Wave14Btn.pressed.connect(_simulate_wave.bind(14))
+	$Content/Scroll/VBox/StatsSection/StatsContent/FlushTelemetryBtn.pressed.connect(_flush_telemetry)
 	$Content/Scroll/VBox/MenuBtn.pressed.connect(_back_to_menu)
 	# Refresh inicial após o player estar pronto pra ler níveis atuais.
 	_refresh_upgrade_buttons.call_deferred()
@@ -73,7 +79,11 @@ func _ready() -> void:
 	_setup_section($Content/Scroll/VBox/UpgPadraoSection/UpgPadraoHeader,
 		$Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent, "Upgrades padrao")
 	_setup_section($Content/Scroll/VBox/UpgElementaisSection/UpgElementaisHeader,
-		$Content/Scroll/VBox/UpgElementaisSection/UpgElementaisContent, "Upgrades elementais")
+		$Content/Scroll/VBox/UpgElementaisSection/UpgElementaisContent, "Poderes / Elementais")
+	# Sub-seção "Poderes" dentro de Elementais — agrupa os 3 upgrades que destravam
+	# skill ativável (Fogo lv3, Chain Lightning lv3, Maldição lv4).
+	_setup_section($Content/Scroll/VBox/UpgElementaisSection/UpgElementaisContent/PoderesSubSection/PoderesHeader,
+		$Content/Scroll/VBox/UpgElementaisSection/UpgElementaisContent/PoderesSubSection/PoderesContent, "Poderes (skills ativas)")
 	_setup_section($Content/Scroll/VBox/EstruturasSection/EstruturasHeader,
 		$Content/Scroll/VBox/EstruturasSection/EstruturasContent, "Estruturas e pets")
 	_setup_section($Content/Scroll/VBox/StatsSection/StatsHeader,
@@ -175,6 +185,15 @@ func _simulate_wave(target_wave: int) -> void:
 	wm.dev_start_wave(target_wave)
 
 
+func _finish_current_wave() -> void:
+	# Mata todos os enemies e força _finish_wave → vai pro shop. Só funciona
+	# se uma wave estiver ativa.
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm == null or not wm.has_method("dev_finish_wave"):
+		return
+	wm.dev_finish_wave()
+
+
 func _open_shop_directly() -> void:
 	# Abre o shop standalone (não bloqueia o jogo). Útil pra testar UI sem terminar wave.
 	var shop_scene: PackedScene = load("res://scenes/ui/wave_shop.tscn")
@@ -199,6 +218,20 @@ func _add_test_gold() -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	if player != null and player.has_method("add_gold"):
 		player.add_gold(50)
+
+
+func _flush_telemetry() -> void:
+	# Força flush do buffer da telemetria (dev: em debug build, eventos só
+	# saem manualmente). Print no Output mostra resultado do POST.
+	if has_node("/root/Telemetry"):
+		var t: Node = get_node("/root/Telemetry")
+		if t.has_method("flush_now"):
+			t.flush_now()
+			print("[dev] Telemetry.flush_now() called")
+		else:
+			print("[dev] Telemetry has no flush_now() method")
+	else:
+		print("[dev] /root/Telemetry not found")
 
 
 func _spawn_tower_at_player() -> void:

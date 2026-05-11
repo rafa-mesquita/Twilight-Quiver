@@ -249,7 +249,9 @@ func _apply_hit() -> void:
 	if current_target.has_method("take_damage"):
 		# Curse ANTES do take_damage pra contar na conversão se o hit matar.
 		CurseAllyHelper.apply_ally_curse_on_damage(current_target, self)
+		var was_alive_ww: bool = (not ("hp" in current_target)) or float(current_target.hp) > 0.0
 		current_target.take_damage(damage)
+		_notify_player_dmg_kill(damage, "woodwarden", was_alive_ww, current_target)
 	if current_target.has_method("apply_stun"):
 		current_target.apply_stun(stun_duration)
 	if current_target.has_method("apply_knockback"):
@@ -450,3 +452,17 @@ func _spawn_death_silhouette() -> void:
 func _get_world() -> Node:
 	var w := get_tree().get_first_node_in_group("world")
 	return w if w != null else get_tree().current_scene
+
+
+func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, target: Node) -> void:
+	if not is_inside_tree():
+		return
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null:
+		return
+	if p.has_method("notify_damage_dealt_by_source"):
+		p.notify_damage_dealt_by_source(amount, source_id)
+	if was_alive and p.has_method("notify_kill_by_source"):
+		var killed: bool = ("hp" in target) and float(target.hp) <= 0.0
+		if killed:
+			p.notify_kill_by_source(source_id)
