@@ -12,6 +12,9 @@ extends RefCounted
 # chamado em cada hit de aliado.
 
 const PURPLE_ALLY_TINT: Color = Color(0.85, 0.55, 1.0, 1.0)
+# Wave de boss (mage_monkey vivo): aliados convertidos pela maldição saem
+# nerfados (HP × 0.5, damage_mult × 0.5) pra build de Maldição não trivializar.
+const BOSS_WAVE_CONVERT_PENALTY: float = 0.5
 # Cor verde padrão dos aliados (mesmo fg_color do woodwarden e arrow_tower).
 const ALLY_HP_COLOR: Color = Color(0.4627451, 0.654902, 0.29803923, 1)
 const SUMMON_EFFECT_SCENE: PackedScene = preload("res://scenes/effects/summon_effect.tscn")
@@ -40,6 +43,15 @@ static func try_convert_on_death(enemy: Node) -> bool:
 static func convert_to_ally(enemy: Node) -> void:
 	# Restaura full HP, switches grupos, tinta sprite roxo, seta flag.
 	# Wave_manager rastreia via grupo "curse_ally" pra cleanup no fim da horda.
+	# Wave de boss: aliados convertidos saem 50% mais fracos (HP + dano) pra
+	# não trivializar a boss fight via build de Maldição.
+	var boss_node: Node = enemy.get_tree().get_first_node_in_group("mage_monkey")
+	var on_boss_wave: bool = boss_node != null and boss_node != enemy
+	if on_boss_wave:
+		if "max_hp" in enemy:
+			enemy.max_hp = float(enemy.max_hp) * BOSS_WAVE_CONVERT_PENALTY
+		if "damage_mult" in enemy:
+			enemy.damage_mult = float(enemy.damage_mult) * BOSS_WAVE_CONVERT_PENALTY
 	if "max_hp" in enemy and "hp" in enemy:
 		enemy.hp = enemy.max_hp
 	if enemy.is_in_group("enemy"):

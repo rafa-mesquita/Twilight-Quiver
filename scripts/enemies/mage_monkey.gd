@@ -6,7 +6,7 @@ extends CharacterBody2D
 # por X segundos, depois invoca nova horda e o shield volta.
 
 # === Stats principais ===
-@export var max_hp: float = 800.0
+@export var max_hp: float = 1600.0
 @export var damage_mult: float = 1.0  # setado pelo wave_manager
 @export var hp_mult: float = 1.0  # idem
 
@@ -50,6 +50,10 @@ extends CharacterBody2D
 @export var minion_fire_mage_scene: PackedScene
 @export var summon_effect_scene: PackedScene
 @export var summon_radius: float = 90.0
+# Delay do cast antes da invocação acontecer (segundos). Durante esse tempo o
+# boss toca a animação "cast" em loop — período de telegrafia onde o player
+# pode bater no boss livremente (já está vulnerável).
+@export var summon_cast_delay: float = 2.0
 @export var summon_sound: AudioStream
 @export var summon_sound_volume_db: float = -10.0
 # Skip dos primeiros N seg do mp3 (intro silenciosa). Stop em final-N seg
@@ -103,6 +107,9 @@ var _giant_shot_queued: bool = false  # tiro extra gigante já roladoado pra ess
 var _next_shot_giant: bool = false  # marca o próximo disparo como gigante
 var _initial_delay_remaining: float = 0.0
 var _beam_cd: float = 0.0
+# Flag pra evitar re-trigger de _summon_horde durante o cast (vulnerable
+# countdown segue rodando senão dispararia múltiplas vezes nos 2s do cast).
+var _is_casting: bool = false
 # Conta quantas hordas o boss já invocou (incluindo a 1ª). A cada nova horda
 # os minions ficam mais fortes — escala progressiva pra não trivializar
 # loops longos de "mata minions, fica vulnerável, repete".
@@ -117,6 +124,9 @@ func _ready() -> void:
 	add_to_group("enemy")
 	add_to_group("mage_monkey")
 	add_to_group("boss")
+	# Cogumelos da Capivara Joe somem ao entrar a wave de boss — limpa o mapa
+	# pra o boss fight ficar focado (sem buffs/dano residual de cogumelos).
+	_clear_capivara_mushrooms()
 	# Boss é imune a CC: knockback/stun/slow/pull não fazem nada (mesma flag do stone_cube).
 	add_to_group("cc_immune")
 	# Reposiciona pro centro da arena: se houver node em grupo "boss_arena_center"
@@ -206,8 +216,9 @@ func _physics_process(delta: float) -> void:
 	_minions = _minions.filter(func(m): return is_instance_valid(m) and (m as Node).is_in_group("enemy"))
 	# Atualiza estado (SHIELDED ↔ VULNERABLE) baseado na contagem.
 	_update_state()
-	# Vulnerable countdown → invoca nova horda quando chega a 0.
-	if not _is_shielded:
+	# Vulnerable countdown → invoca nova horda quando chega a 0. Não decrementa
+	# durante o cast (já está em transição pra summon, evita re-trigger).
+	if not _is_shielded and not _is_casting:
 		_vulnerable_remaining -= delta
 		if _vulnerable_remaining <= 0.0:
 			_summon_horde()
@@ -424,11 +435,31 @@ func _cast_curse_beam() -> void:
 # ---------- Skill 3: invocação ----------
 
 func _summon_horde() -> void:
+	# Entry point da invocação: começa cast de `summon_cast_delay` segundos,
+	# durante o qual o boss toca "cast" em loop (visual de canalização). Depois
+	# do timer, _do_summon_horde rola a invocação real. Boss continua vulnerável
+	# durante o cast (player pode bater livremente).
+	if _is_casting:
+		return
+	_is_casting = true
+	if sprite != null:
+		sprite.play("cast")
+	if summon_cast_delay > 0.0:
+		get_tree().create_timer(summon_cast_delay).timeout.connect(_do_summon_horde)
+	else:
+		_do_summon_horde()
+
+
+func _do_summon_horde() -> void:
 	# Spawn de minions: 75% vão pros 2 spawn points padrão MAIS LONGES do
 	# player no momento da invocação (alternando entre eles), 25% spawnam
 	# aleatoriamente PERTO do boss pra criar pressão central também.
 	# Mistura tipos: 60% mage normal, 25% fire mage, 15% summoner mage. Cada
 	# horda subsequente os minions ficam mais fortes (horde_hp_growth × horde_count etc).
+	_is_casting = false
+	# Boss pode ter morrido durante o cast — aborta se não estiver mais no tree.
+	if not is_inside_tree():
+		return
 	_horde_count += 1
 	var horde_hp_mult: float = 1.0 + horde_hp_growth * float(_horde_count - 1)
 	var horde_dmg_mult: float = 1.0 + horde_damage_growth * float(_horde_count - 1)
@@ -583,6 +614,17 @@ func _die() -> void:
 	_spawn_kill_effect()
 	_spawn_death_silhouette()
 	queue_free()
+
+
+# ---------- Helpers ----------
+
+func _clear_capivara_mushrooms() -> void:
+	# Remove TODOS os cogumelos da Capivara Joe do mapa — boss fight rola sem
+	# buff/dano residual no chão. Cogumelos novos podem ser spawnados depois
+	# pela própria capivara aliada se o player tiver, mas a tela começa limpa.
+	for m in get_tree().get_nodes_in_group("capivara_mushroom"):
+		if is_instance_valid(m):
+			m.queue_free()
 
 
 # ---------- Visuais / sons ----------

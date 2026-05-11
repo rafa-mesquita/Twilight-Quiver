@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://b13hyywitf72i" path="res://scripts/enemies/mage_monkey.gd" id="1_boss"]
 [ext_resource type="Texture2D" uid="uid://blsgseqaxq1rr" path="res://assets/enemies/mage-monkey/monkey mage-Sheet.png" id="2_sheet"]
+[ext_resource type="Texture2D" path="res://assets/enemies/mage-monkey/cxast other mages.png" id="2_cast_sheet"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/mage_projectile.tscn" id="3_proj"]
 [ext_resource type="PackedScene" uid="uid://b0cursebeam01" path="res://scenes/skills/curse_beam.tscn" id="4_beam"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/mage_enemy.tscn" id="5_mage"]
@@ -45,6 +46,18 @@ region = Rect2(192, 0, 64, 64)
 atlas = ExtResource("2_sheet")
 region = Rect2(256, 0, 64, 64)
 
+[sub_resource type="AtlasTexture" id="A_cast_0"]
+atlas = ExtResource("2_cast_sheet")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="A_cast_1"]
+atlas = ExtResource("2_cast_sheet")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="A_cast_2"]
+atlas = ExtResource("2_cast_sheet")
+region = Rect2(128, 0, 64, 64)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_boss"]
 animations = [{
 "frames": [{
@@ -76,6 +89,20 @@ animations = [{
 }],
 "loop": true,
 "name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_cast_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_cast_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_cast_2")
+}],
+"loop": true,
+"name": &"cast",
 "speed": 5.0
 }]
 

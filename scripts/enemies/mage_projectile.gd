@@ -31,6 +31,9 @@ var is_ally_source: bool = false
 var apply_curse: bool = false
 # Boss gorila: projétil ignora aliados/estruturas e só bate no player.
 var pierce_allies: bool = false
+# Multiplicador de dano que o boss aplica em aliados (= +80% extra). Usado
+# só na lógica de pierce_allies — não afeta dano no player nem em enemies.
+const BOSS_ALLY_DMG_MULT: float = 1.8
 
 
 func _ready() -> void:
@@ -103,11 +106,12 @@ func _on_body_entered(body: Node) -> void:
 		if body.is_in_group("enemy"):
 			return
 		# Boss gorila: atravessa aliados/estruturas mas ainda aplica dano de
-		# passagem (o projétil segue rumo ao player).
+		# passagem (o projétil segue rumo ao player). Boss dá +80% de dano em
+		# aliados (BOSS_ALLY_DMG_MULT) — ataque é forte contra eles.
 		if pierce_allies and (body.is_in_group("ally") or body.is_in_group("structure")):
 			var pierce_target: Node = _find_damageable(body)
 			if pierce_target != null:
-				pierce_target.take_damage(damage)
+				pierce_target.take_damage(damage * BOSS_ALLY_DMG_MULT)
 			return
 	var target: Node = _find_damageable(body)
 	if target != null:

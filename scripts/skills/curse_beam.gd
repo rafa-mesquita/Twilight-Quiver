@@ -43,6 +43,9 @@ extends Node2D
 @export var player_body_offset: Vector2 = Vector2(0, -12)
 
 const FRAME_SIZE: int = 32
+# Multiplicador de dano que o boss aplica em aliados (= +80% extra). Usado
+# só quando is_enemy_source — não afeta player nem estruturas.
+const BOSS_ALLY_DMG_MULT: float = 1.8
 const TILE_FADE_IN: float = 0.18
 const SILHOUETTE_FRACTION: float = 0.65
 const SILHOUETTE_COLOR: Color = Color(0.42, 0.18, 0.62, 1.0)
@@ -154,7 +157,11 @@ func _apply_tick() -> void:
 		# se o tick matar o enemy. Pulado quando boss é o source.
 		if apply_curse_on_hit:
 			_apply_curse_to(e)
-		e.take_damage(damage_per_tick)
+		# Boss source: +80% de dano em aliados (não em player nem estruturas).
+		var tick_dmg: float = damage_per_tick
+		if is_enemy_source and (e as Node).is_in_group("ally"):
+			tick_dmg *= BOSS_ALLY_DMG_MULT
+		e.take_damage(tick_dmg)
 
 
 func _apply_curse_to(target: Node) -> void:
