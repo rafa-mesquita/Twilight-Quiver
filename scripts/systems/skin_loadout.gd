@@ -121,13 +121,38 @@ static func load_loadout() -> Dictionary:
 	var result: Dictionary = {}
 	var by_slot: Dictionary = scan_available_parts()
 	for slot in SLOTS:
-		var saved_path: String = str(cfg.get_value(_SECTION, String(slot), ""))
-		if saved_path.is_empty():
+		var saved: String = str(cfg.get_value(_SECTION, String(slot), ""))
+		if saved.is_empty():
 			continue
 		var parts: Array = by_slot.get(slot, [])
+		# Match em 2 etapas pra compat: 1º tenta display_name (formato novo,
+		# estável entre builds); 2º tenta resource_path (formato legado pré-fix).
+		# Resource_path quebrava em build exportado porque texturas viram .ctex
+		# com hash que difere entre builds.
+		var matched: SkinPart = null
 		for p in parts:
 			var part: SkinPart = p
-			if part.texture != null and part.texture.resource_path == saved_path and is_unlocked(part):
+			if not is_unlocked(part):
+				continue
+			if part.display_name == saved:
+				matched = part
+				break
+		if matched == null:
+			for p in parts:
+				var part2: SkinPart = p
+				if part2.texture != null and part2.texture.resource_path == saved and is_unlocked(part2):
+					matched = part2
+					break
+		if matched != null:
+			result[slot] = matched
+	# Fill-in: pra qualquer slot ainda vazio que tenha Default disponível,
+	# usa Default (resiliente a settings corrompido / migração de versão).
+	for slot in SLOTS:
+		if result.has(slot):
+			continue
+		for p in (by_slot.get(slot, []) as Array):
+			var part: SkinPart = p
+			if part.display_name == "Default" and is_unlocked(part):
 				result[slot] = part
 				break
 	return result
@@ -138,8 +163,10 @@ static func save_loadout(loadout: Dictionary) -> void:
 	cfg.load(_SETTINGS_PATH)
 	for slot in SLOTS:
 		var part: SkinPart = loadout.get(slot)
-		var path: String = part.texture.resource_path if part != null and part.texture != null else ""
-		cfg.set_value(_SECTION, String(slot), path)
+		# Salva display_name (basename do PNG) — estável entre builds. O
+		# resource_path do imported .ctex pode mudar e quebrava o load.
+		var saved: String = part.display_name if part != null else ""
+		cfg.set_value(_SECTION, String(slot), saved)
 	cfg.save(_SETTINGS_PATH)
 
 
