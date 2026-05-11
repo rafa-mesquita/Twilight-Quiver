@@ -14,6 +14,7 @@ const API_KEY: String = "wza5IedBNiVyjE6fc8dtagUSJUJrr0KSRZ2YNfXfA54"
 const RUNS_ENDPOINT: String = "/api/runs"
 const RUNS_VERSIONS_ENDPOINT: String = "/api/runs/versions"
 const EVENTS_ENDPOINT: String = "/api/events"
+const RELEASES_ENDPOINT: String = "/api/releases"
 
 
 static func is_configured() -> bool:
