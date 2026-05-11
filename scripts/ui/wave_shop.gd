@@ -49,6 +49,7 @@ const STATUS_POOL: Array = [
 const UPGRADE_POOL: Array = [
 	{"id": "perfuracao", "name": "SHOP_UPG_PERFURACAO", "max_level": 4},
 	{"id": "multi_arrow", "name": "SHOP_UPG_MULTI_ARROW", "max_level": 4},
+	{"id": "double_arrows", "name": "SHOP_UPG_DOUBLE_ARROWS", "max_level": 4},
 	{"id": "chain_lightning", "name": "SHOP_UPG_CHAIN_LIGHTNING", "max_level": 4},
 	{"id": "life_steal", "name": "SHOP_UPG_LIFE_STEAL", "max_level": 4},
 	{"id": "gold_magnet", "name": "SHOP_UPG_GOLD_MAGNET", "max_level": 4},
@@ -67,8 +68,12 @@ const UPGRADE_PRICE_OVERRIDES: Dictionary = {}
 # - Perfuração ↔ Flecha Ricochete (mesmo "slot" no design — flecha modifica o
 #   comportamento ao bater, escolha uma)
 const EXCLUSIVE_PAIRS: Array = [
-	["fire_arrow", "curse_arrow"],
+	# Elementais: só 1 por run (fogo / maldição / cadeia de raios).
+	["fire_arrow", "curse_arrow", "chain_lightning"],
+	# Tipo de flecha (modifier on-hit): perfuração ou ricochete.
 	["perfuracao", "ricochet_arrow"],
+	# Salva de flechas: multi (leque 30°) ou duplas (chance + apertado).
+	["multi_arrow", "double_arrows"],
 ]
 
 # Descrições por upgrade. Cada entry é uma translation key — resolvida via
@@ -100,6 +105,12 @@ const MULTI_ARROW_DESCS: Array[String] = [
 	"SHOP_MULTI_ARROW_DESC_2",
 	"SHOP_MULTI_ARROW_DESC_3",
 	"SHOP_MULTI_ARROW_DESC_4",
+]
+const DOUBLE_ARROWS_DESCS: Array[String] = [
+	"SHOP_DOUBLE_ARROWS_DESC_1",
+	"SHOP_DOUBLE_ARROWS_DESC_2",
+	"SHOP_DOUBLE_ARROWS_DESC_3",
+	"SHOP_DOUBLE_ARROWS_DESC_4",
 ]
 const CHAIN_LIGHTNING_DESCS: Array[String] = [
 	"SHOP_CHAIN_LIGHTNING_DESC_1",
@@ -263,6 +274,13 @@ var _placement_ghosts: Array[Node2D] = []
 var _placement_queue: Array[Dictionary] = []
 var _placement_current: Dictionary = {}
 
+# Setado pelo wave_manager antes do add_child quando o player ganha uma torre
+# grátis na entrada da wave 8. Não-vazio dispara placement antes do shop abrir.
+var pending_free_tower_scene: String = ""
+# True enquanto processamos o placement da free tower — impede que o fim do
+# placement comite upgrades/feche o shop (queremos voltar ao shop normal).
+var _free_tower_in_progress: bool = false
+
 const SELECTED_TINT: Color = Color(1.4, 1.25, 0.5, 1.0)
 # Box roxa translúcida sobreposta a um card selecionado pra deixar claro.
 const SELECTION_OVERLAY_COLOR: Color = Color(0.55, 0.25, 0.85, 0.4)
@@ -290,6 +308,27 @@ func _ready() -> void:
 	_refresh_stats_card()
 	_refresh_pets_box()
 	_refresh_structures_box()
+	# Free tower grant: wave_manager seta pending_free_tower_scene quando o
+	# player entra na wave 8. Dispara placement ANTES de liberar o shop.
+	if pending_free_tower_scene != "":
+		call_deferred("_start_free_tower_placement")
+
+
+func _start_free_tower_placement() -> void:
+	var free_slot: Dictionary = {
+		"id": "arrow_tower",
+		"name": "SHOP_TOWER_NAME",
+		"desc": "SHOP_TOWER_DESC",
+		"price": 0,
+		"available": true,
+		"scene": pending_free_tower_scene,
+		"free": true,
+	}
+	pending_free_tower_scene = ""
+	_free_tower_in_progress = true
+	_placement_queue.clear()
+	_placement_queue.append({"type": "estrutura", "slot": free_slot, "free": true})
+	_process_next_placement()
 
 
 func _grant_free_random_pet() -> void:
@@ -462,6 +501,14 @@ func _status_price_for(_id: String, current_level: int) -> int:
 
 func _roll_estrutura_slots() -> void:
 	estrutura_slots.clear()
+	# Gate: estruturas só aparecem a partir da wave 8.
+	var wn_struct: int = _current_wave_number()
+	if wn_struct < 8:
+		var turns_to_8: int = max(8 - wn_struct, 1)
+		var msg8: String = _build_lock_title(turns_to_8)
+		for i in 2:
+			estrutura_slots.append({"id": "locked", "name": msg8, "desc": "", "price": 0, "available": false})
+		return
 	var lock_remaining: int = _waves_until_unlock(ESTRUT_UNLOCK_INTERVAL)
 	if lock_remaining > 0:
 		var msg: String = _build_lock_title(lock_remaining)
@@ -810,6 +857,17 @@ func _roll_upg_slots() -> void:
 			# → some Ricochete).
 			if _player_has_exclusive_counterpart(player, id):
 				continue
+			# Também bloqueia se OUTRO id do mesmo grupo exclusivo já foi pickeado
+			# nesta mesma shop (ex: card 1 = chain → cards 2/3 não podem ter fogo
+			# nem curse). Sem isso, dava pra comprar 2 elementais na mesma wave.
+			var same_group_already_picked: bool = false
+			for prev_id in already_picked_ids:
+				var prev_group: Array = _get_exclusive_group(prev_id)
+				if not prev_group.is_empty() and id in prev_group:
+					same_group_already_picked = true
+					break
+			if same_group_already_picked:
+				continue
 			var requires: String = u.get("requires", "")
 			if requires != "":
 				var req_lvl: int = 0
@@ -857,6 +915,7 @@ func _get_upgrade_descs_array(id: String) -> Array:
 		"perfuracao": return PERFURACAO_DESCS
 		"attack_speed": return ATTACK_SPEED_DESCS
 		"multi_arrow": return MULTI_ARROW_DESCS
+		"double_arrows": return DOUBLE_ARROWS_DESCS
 		"chain_lightning": return CHAIN_LIGHTNING_DESCS
 		"move_speed": return MOVE_SPEED_DESCS
 		"gold_magnet": return GOLD_MAGNET_DESCS
@@ -885,8 +944,11 @@ func _get_upgrade_desc(id: String, target_level: int) -> String:
 const UPGRADE_CATEGORIES: Dictionary = {
 	"fire_arrow": "SHOP_UPG_CAT_ELEMENTAL",
 	"curse_arrow": "SHOP_UPG_CAT_ELEMENTAL",
+	"chain_lightning": "SHOP_UPG_CAT_ELEMENTAL",
 	"perfuracao": "SHOP_UPG_CAT_ARROW_MOD",
 	"ricochet_arrow": "SHOP_UPG_CAT_ARROW_MOD",
+	"multi_arrow": "SHOP_UPG_CAT_ARROW_VOLLEY",
+	"double_arrows": "SHOP_UPG_CAT_ARROW_VOLLEY",
 }
 
 
@@ -1051,6 +1113,7 @@ const STATUS_FILE_OVERRIDES: Dictionary = {
 const UPGRADE_TITLE_COLORS: Dictionary = {
 	"chain_lightning": Color(0xfb / 255.0, 0xdd / 255.0, 0x82 / 255.0),  # #fbdd82
 	"multi_arrow": Color(0x3d / 255.0, 0x15 / 255.0, 0x00 / 255.0),  # #3d1500 (marrom escuro)
+	"double_arrows": Color(0x3d / 255.0, 0x15 / 255.0, 0x00 / 255.0),  # #3d1500 (marrom escuro — mesma família do multi_arrow)
 	"fire_arrow": Color(0x77 / 255.0, 0x20 / 255.0, 0x00 / 255.0),  # #772000
 	"curse_arrow": Color(0x45 / 255.0, 0x14 / 255.0, 0x58 / 255.0),  # #451458
 	"leno": Color(0xfc / 255.0, 0xb4 / 255.0, 0xcc / 255.0),  # #fcb4cc
@@ -1088,6 +1151,9 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	"fire_arrow": "res://assets/Hud/shop/upgrade/fire_arrow2.png",
 	# id "dash" mas arquivo é "deslizando.png" (nome PT do upgrade).
 	"dash": "res://assets/Hud/shop/upgrade/deslizando.png",
+	# double_arrows compartilha a arte do multi_arrow (mesma família — marrom).
+	# Quando tiver arte própria, trocar pra "res://assets/Hud/shop/upgrade/double_arrows.png".
+	"double_arrows": "res://assets/Hud/shop/upgrade/multi_arrow.png",
 }
 # Cor única pros aliados (todos compartilham por enquanto).
 const ALIADO_TEXT_COLOR: Color = Color(0x2c / 255.0, 0x1f / 255.0, 0x1f / 255.0)  # #2c1f1f
@@ -1395,33 +1461,41 @@ func _buy_upgrade(idx: int) -> void:
 
 
 func _is_elemental_blocked_by_selection(id: String) -> bool:
-	# Mantém o nome legado mas hoje cobre TODOS os pares exclusivos
-	# (não só elementais — inclui Perfuração ↔ Ricochete).
-	var counterpart: String = _get_exclusive_counterpart(id)
-	if counterpart == "":
+	# Cobre TODOS os grupos exclusivos (elementais, tipo de flecha, salva).
+	# Bloqueia se OUTRO item do mesmo grupo já está selecionado nesta shop.
+	var group: Array = _get_exclusive_group(id)
+	if group.is_empty():
 		return false
 	for sel_idx in _selected_upgrade_idxs:
-		if upg_slots[sel_idx].get("id", "") == counterpart:
+		var sel_id: String = upg_slots[sel_idx].get("id", "")
+		if sel_id == id:
+			continue
+		if sel_id in group:
 			return true
 	return false
 
 
-func _get_exclusive_counterpart(id: String) -> String:
-	for pair in EXCLUSIVE_PAIRS:
-		if pair[0] == id:
-			return pair[1]
-		if pair[1] == id:
-			return pair[0]
-	return ""
+func _get_exclusive_group(id: String) -> Array:
+	# Retorna o grupo inteiro (incluindo o próprio id) ao qual o upgrade pertence.
+	# Vazio se não tem grupo (upgrades sem restrição).
+	for group in EXCLUSIVE_PAIRS:
+		if id in group:
+			return group
+	return []
 
 
 func _player_has_exclusive_counterpart(player: Node, id: String) -> bool:
 	if player == null or not player.has_method("get_upgrade_count"):
 		return false
-	var counterpart: String = _get_exclusive_counterpart(id)
-	if counterpart == "":
+	var group: Array = _get_exclusive_group(id)
+	if group.is_empty():
 		return false
-	return player.get_upgrade_count(counterpart) > 0
+	for other_id in group:
+		if other_id == id:
+			continue
+		if int(player.get_upgrade_count(other_id)) > 0:
+			return true
+	return false
 
 
 # ---------- Selection accounting ----------
@@ -1564,6 +1638,11 @@ func _on_continue_pressed() -> void:
 
 func _process_next_placement() -> void:
 	if _placement_queue.is_empty():
+		if _free_tower_in_progress:
+			# Fim do placement da torre grátis — devolve controle pro shop
+			# normal sem comitar nada.
+			_free_tower_in_progress = false
+			return
 		_commit_status_only()
 		_commit_aliado_no_placement()
 		_commit_upgrades_and_close()
@@ -1645,7 +1724,12 @@ func _enter_placement_mode(slot: Dictionary) -> void:
 func _confirm_placement_at(chosen: Node2D) -> void:
 	var slot: Dictionary = _placement_current["slot"]
 	var player := _get_player()
-	if player == null or not player.spend_gold(int(slot["price"])):
+	if player == null:
+		_cancel_placement()
+		return
+	# Free tower (grant da wave 8) não debita gold.
+	var is_free: bool = bool(slot.get("free", false))
+	if not is_free and not player.spend_gold(int(slot["price"])):
 		_cancel_placement()
 		return
 	for g in _placement_ghosts:
@@ -1685,6 +1769,10 @@ func _cancel_placement() -> void:
 	_placement_ghosts.clear()
 	_placement_queue.clear()
 	_placement_current = {}
+	# Se o player cancelou durante a free tower, libera a flag pra não bloquear
+	# fluxos futuros — a torre grátis é perdida (já foi marcada como entregue
+	# no wave_manager).
+	_free_tower_in_progress = false
 	_exit_placement_mode()
 	_refresh_button_states()
 
@@ -1847,6 +1935,15 @@ func _on_global_reroll() -> void:
 	if player == null or not player.spend_gold(cost):
 		return
 	_global_rerolls_used += 1
+	# Telemetria: registra reroll com wave atual + custo + qual uso é esse.
+	if has_node("/root/Telemetry"):
+		var wm := get_tree().get_first_node_in_group("wave_manager")
+		var wave_num: int = int(wm.wave_number) if wm != null and "wave_number" in wm else 0
+		get_node("/root/Telemetry").track("shop_reroll", {
+			"wave": wave_num,
+			"cost": cost,
+			"reroll_index": _global_rerolls_used,
+		})
 	# Limpa todas as seleções pendentes (vão sair do roll).
 	_selected_status_idx = -1
 	_selected_estrut_idx = -1
@@ -2325,6 +2422,7 @@ func _augment_title_for(id: String) -> String:
 		"perfuracao": return "SHOP_UPG_PERFURACAO"
 		"ricochet_arrow": return "SHOP_UPG_RICOCHET"
 		"multi_arrow": return "SHOP_UPG_MULTI_ARROW"
+		"double_arrows": return "SHOP_UPG_DOUBLE_ARROWS"
 		"chain_lightning": return "SHOP_UPG_CHAIN_LIGHTNING"
 		"fire_arrow": return "SHOP_UPG_FIRE_ARROW"
 		"curse_arrow": return "SHOP_UPG_CURSE_ARROW"

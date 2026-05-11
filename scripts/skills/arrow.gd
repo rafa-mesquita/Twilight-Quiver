@@ -86,6 +86,10 @@ static var _last_chain_sound_msec: int = -1000
 # Quem disparou a flecha. Usado pra ignorar colisão com o próprio shooter
 # (ex: torre não atira em si mesma, mas colide com flecha do player).
 var source: Node = null
+# Override do source_id pra telemetria (default "arrow_base"). Usado por
+# atiradores não-player (ex: arrow_tower="arrow_tower", leno="leno") pra separar
+# dano/kills no dmg_dealt_by_source do player.
+var telemetry_source_id: String = "arrow_base"
 var _hit_bodies: Array[Node] = []
 var _pierce_hits: int = 0  # quantos targets a flecha perfurante já atravessou
 # Multiplicador de dano aplicado SÓ no primeiro alvo (perfuracao bonus). 2º
@@ -326,7 +330,9 @@ func _on_hit(body: Node) -> void:
 		# Ticks/aliados/estruturas não setam o flag e não cancelam.
 		if target.is_in_group("stone_cube"):
 			target._arrow_hit_flag = true
+		var _was_alive_arrow: bool = (not ("hp" in target)) or float(target.hp) > 0.0
 		target.take_damage(dmg_to_apply)
+		_notify_player_dmg_kill(dmg_to_apply, telemetry_source_id, _was_alive_arrow, target)
 		if target.has_method("apply_knockback"):
 			target.apply_knockback(direction, knockback_strength)
 		_play_oneshot(impact_sound, global_position, sound_volume_db, 0.7)
@@ -681,6 +687,8 @@ func _spawn_ricochet_clone(target: Node2D, hops: int, splits: int) -> void:
 		clone.ricochet_splits_remaining = splits
 	if "source" in clone:
 		clone.source = source
+	if "telemetry_source_id" in clone:
+		clone.telemetry_source_id = telemetry_source_id
 	_get_world().add_child(clone)
 	if clone.has_method("set_direction"):
 		var d: Vector2 = (target.global_position - global_position).normalized()
@@ -723,7 +731,9 @@ func _proc_chain_lightning(origin: Node) -> void:
 		# Curse ANTES do take_damage — pra try_convert_on_death enxergar o debuff.
 		if is_curse:
 			_apply_curse_to(enemy)
+		var _was_alive_chain: bool = (not ("hp" in enemy)) or float(enemy.hp) > 0.0
 		enemy.take_damage(chain_dmg)
+		_notify_player_dmg_kill(chain_dmg, "chain_lightning", _was_alive_chain, enemy)
 		if is_fire:
 			_apply_burn_to(enemy)
 		_spawn_lightning_visual(origin_pos, (enemy as Node2D).global_position)
@@ -772,6 +782,23 @@ func _play_chain_sound(pos: Vector2) -> void:
 		if is_instance_valid(ref):
 			ref.queue_free()
 	)
+
+
+func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, target: Node) -> void:
+	# Adiciona breakdown por fonte. NÃO chama notify_damage_dealt (total) nem
+	# notify_enemy_killed (total) pra evitar double-count: enemy take_damage()
+	# já contabiliza essas duas métricas globais.
+	if not is_inside_tree():
+		return
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null:
+		return
+	if p.has_method("notify_damage_dealt_by_source"):
+		p.notify_damage_dealt_by_source(amount, source_id)
+	if was_alive and p.has_method("notify_kill_by_source"):
+		var killed: bool = ("hp" in target) and float(target.hp) <= 0.0
+		if killed:
+			p.notify_kill_by_source(source_id)
 
 
 func _play_oneshot(stream: AudioStream, pos: Vector2, vol_db: float, max_duration: float) -> void:

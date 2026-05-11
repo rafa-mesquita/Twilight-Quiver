@@ -6,6 +6,10 @@
 [ext_resource type="Texture2D" uid="uid://43kh6plt35ba" path="res://assets/obecjts map/coins.png" id="4_coin_tex"]
 [ext_resource type="PackedScene" uid="uid://b8tw1gv0vqlbl" path="res://scenes/ui/version_label.tscn" id="5_version"]
 [ext_resource type="PackedScene" uid="uid://drv5fwua2gxqc" path="res://scenes/ui/player_preview.tscn" id="6_preview"]
+[ext_resource type="PackedScene" path="res://scenes/ui/boss_hp_bar.tscn" id="7_boss_bar"]
+[ext_resource type="Texture2D" path="res://assets/Hud/skillsIcons/fire.png" id="8_fire_icon"]
+[ext_resource type="Texture2D" path="res://assets/Hud/skillsIcons/thunder.png" id="9_thunder_icon"]
+[ext_resource type="Texture2D" path="res://assets/Hud/skillsIcons/profane.png" id="10_profane_icon"]
 
 [sub_resource type="AtlasTexture" id="AtlasTex_hud_frame"]
 atlas = ExtResource("2_hud_sheet")
@@ -195,22 +199,83 @@ anchor_right = 0.9
 anchor_bottom = 0.9
 color = Color(0.16, 0.06, 0.04, 1)
 
-[node name="FlameCore" type="Polygon2D" parent="FireSkillIcon" unique_id=4024]
-position = Vector2(38, 44)
-color = Color(1, 0.55, 0.18, 1)
-polygon = PackedVector2Array(0, -22, 8, -10, 14, 0, 12, 12, 6, 18, 0, 22, -6, 18, -12, 12, -14, 0, -8, -10)
-
-[node name="FlameInner" type="Polygon2D" parent="FireSkillIcon" unique_id=4025]
-position = Vector2(38, 46)
-color = Color(1, 0.85, 0.35, 1)
-polygon = PackedVector2Array(0, -14, 5, -7, 8, 0, 7, 8, 3, 12, 0, 14, -3, 12, -7, 8, -8, 0, -5, -7)
-
-[node name="FlameTip" type="Polygon2D" parent="FireSkillIcon" unique_id=4026]
-position = Vector2(38, 48)
-color = Color(1, 1, 0.85, 1)
-polygon = PackedVector2Array(0, -7, 2.5, -3, 4, 0, 3, 4, 0, 6, -3, 4, -4, 0, -2.5, -3)
+[node name="Sprite" type="TextureRect" parent="FireSkillIcon" unique_id=4028]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+texture = ExtResource("8_fire_icon")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="CdLabel" type="Label" parent="FireSkillIcon" unique_id=4027]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 28
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ChainLightningSkillIcon" type="Control" parent="." unique_id=4040]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+offset_left = 240.0
+offset_top = 160.0
+offset_right = 316.0
+offset_bottom = 236.0
+
+[node name="Bg" type="ColorRect" parent="ChainLightningSkillIcon" unique_id=4041]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.04, 0.06, 0.1, 0.92)
+
+[node name="FrameRing" type="ColorRect" parent="ChainLightningSkillIcon" unique_id=4042]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.05
+anchor_top = 0.05
+anchor_right = 0.95
+anchor_bottom = 0.95
+color = Color(0.15, 0.4, 0.7, 1)
+
+[node name="Inner" type="ColorRect" parent="ChainLightningSkillIcon" unique_id=4043]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.1
+anchor_right = 0.9
+anchor_bottom = 0.9
+color = Color(0.06, 0.1, 0.18, 1)
+
+[node name="Sprite" type="TextureRect" parent="ChainLightningSkillIcon" unique_id=4047]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+texture = ExtResource("9_thunder_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CdLabel" type="Label" parent="ChainLightningSkillIcon" unique_id=4046]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -258,20 +323,19 @@ anchor_right = 0.9
 anchor_bottom = 0.9
 color = Color(0.12, 0.04, 0.18, 1)
 
-[node name="BeamOuter" type="Polygon2D" parent="CurseSkillIcon" unique_id=4034]
-position = Vector2(38, 38)
-color = Color(0.45, 0.18, 0.78, 1)
-polygon = PackedVector2Array(-30, -5, 30, -5, 30, 5, -30, 5)
-
-[node name="BeamMid" type="Polygon2D" parent="CurseSkillIcon" unique_id=4035]
-position = Vector2(38, 38)
-color = Color(0.78, 0.45, 1, 1)
-polygon = PackedVector2Array(-26, -3, 26, -3, 26, 3, -26, 3)
-
-[node name="BeamInner" type="Polygon2D" parent="CurseSkillIcon" unique_id=4036]
-position = Vector2(38, 38)
-color = Color(1, 0.92, 1, 1)
-polygon = PackedVector2Array(-22, -1.2, 22, -1.2, 22, 1.2, -22, 1.2)
+[node name="Sprite" type="TextureRect" parent="CurseSkillIcon" unique_id=4038]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+texture = ExtResource("10_profane_icon")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="CdLabel" type="Label" parent="CurseSkillIcon" unique_id=4037]
 layout_mode = 1
@@ -331,64 +395,20 @@ anchor_bottom = 1.0
 mouse_filter = 2
 theme_override_constants/separation = 4
 
-[node name="BossHpBar" type="Control" parent="." unique_id=4600]
+[node name="BossHpBar" parent="." instance=ExtResource("7_boss_bar")]
 visible = false
-layout_mode = 3
-anchors_preset = 7
 anchor_left = 0.5
-anchor_top = 1.0
 anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -250.0
-offset_top = -50.0
-offset_right = 250.0
-offset_bottom = -30.0
-grow_horizontal = 2
-grow_vertical = 0
-mouse_filter = 2
+offset_left = -360.0
+offset_top = 80.0
+offset_right = 360.0
+offset_bottom = 152.0
 
-[node name="NameLabel" type="Label" parent="BossHpBar" unique_id=4601]
-layout_mode = 0
-offset_left = 0.0
-offset_top = -22.0
-offset_right = 500.0
-offset_bottom = -2.0
-theme_override_colors/font_color = Color(1, 0.85, 1, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 3
-theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 18
+[node name="NameLabel" parent="BossHpBar" index="1"]
 text = "MAGE MONKEY"
-horizontal_alignment = 1
-vertical_alignment = 1
 
-[node name="Fill" type="ColorRect" parent="BossHpBar" unique_id=4602]
-layout_mode = 0
-offset_right = 500.0
-offset_bottom = 20.0
-color = Color(0.65, 0.18, 0.78, 1)
-
-[node name="Border" type="Panel" parent="BossHpBar" unique_id=4603]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-mouse_filter = 2
-theme_override_styles/panel = SubResource("BossBarBorder")
-
-[node name="Label" type="Label" parent="BossHpBar" unique_id=4604]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 3
-theme_override_fonts/font = ExtResource("3_font")
-theme_override_font_sizes/font_size = 14
+[node name="Label" parent="BossHpBar" index="2"]
 text = "800/800"
-horizontal_alignment = 1
-vertical_alignment = 1
 
 [node name="IntroOverlay" type="Control" parent="." unique_id=1019720001]
 visible = false

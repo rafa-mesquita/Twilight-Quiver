@@ -94,6 +94,8 @@ func _fire_arrow(muzzle: Marker2D, target: Node2D) -> void:
 	# Source ANTES de add_child pra arrow ignorar colisão com a própria torre.
 	if "source" in arrow:
 		arrow.source = self
+	if "telemetry_source_id" in arrow:
+		arrow.telemetry_source_id = "arrow_tower"
 	_get_world().add_child(arrow)
 	arrow.global_position = muzzle.global_position
 	if "damage" in arrow:

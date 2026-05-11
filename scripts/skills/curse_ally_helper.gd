@@ -93,6 +93,10 @@ static func convert_to_ally(enemy: Node) -> void:
 	var p := enemy.get_tree().get_first_node_in_group("player")
 	if p != null and p.has_method("notify_ally_made"):
 		p.notify_ally_made()
+	# Stat extra: macacos (grupo "monkey") convertidos contam pro unlock da
+	# skin Linked (200 acumulados entre runs).
+	if p != null and p.has_method("notify_monkey_cursed") and enemy.is_in_group("monkey"):
+		p.notify_monkey_cursed()
 
 
 static func _spawn_summon_effect(enemy: Node) -> void:

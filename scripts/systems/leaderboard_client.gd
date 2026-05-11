@@ -1,8 +1,8 @@
 class_name LeaderboardClient
 extends Node
 
-# Cliente HTTP pro leaderboard no Supabase. Cria um HTTPRequest filho e expõe
-# três operações: submit_run() pra enviar score, fetch_top() pra ler ranking
+# Cliente HTTP pro leaderboard custom (twilight.limaostudios.com.br).
+# Três operações: submit_run() pra enviar score, fetch_top() pra ler ranking
 # (com filtro opcional por versão), fetch_versions() pra listar versões distintas.
 #
 # Requests são enfileiradas — HTTPRequest do Godot só processa uma de cada vez,
@@ -22,7 +22,7 @@ signal fetch_failed(message: String)
 signal versions_fetched(versions: Array)
 signal versions_fetch_failed(message: String)
 
-const _CONFIG := preload("res://scripts/systems/leaderboard_config.gd")
+const _CONFIG := preload("res://scripts/systems/api_config.gd")
 
 enum _Op { UPLOAD, FETCH, FETCH_VERSIONS }
 
@@ -40,15 +40,12 @@ func _ready() -> void:
 
 func submit_run(payload: Dictionary) -> void:
 	if not _CONFIG.is_configured():
-		upload_failed.emit("Leaderboard nao configurado")
+		upload_failed.emit("API nao configurada")
 		return
-	var headers: PackedStringArray = _build_headers()
-	headers.append("Content-Type: application/json")
-	headers.append("Prefer: return=minimal")
 	_enqueue({
 		"op": _Op.UPLOAD,
-		"url": _CONFIG.SUPABASE_URL + _CONFIG.RUNS_ENDPOINT,
-		"headers": headers,
+		"url": _CONFIG.API_BASE_URL + _CONFIG.RUNS_ENDPOINT,
+		"headers": _CONFIG.build_headers(true),
 		"method": HTTPClient.METHOD_POST,
 		"body": JSON.stringify(payload),
 	})
@@ -56,17 +53,15 @@ func submit_run(payload: Dictionary) -> void:
 
 func fetch_top(limit: int = 20, version_filter: String = "") -> void:
 	if not _CONFIG.is_configured():
-		fetch_failed.emit("Leaderboard nao configurado")
+		fetch_failed.emit("API nao configurada")
 		return
-	var url: String = "%s%s?order=score.desc&limit=%d" % [
-		_CONFIG.SUPABASE_URL, _CONFIG.RUNS_ENDPOINT, limit
-	]
+	var url: String = "%s%s?limit=%d" % [_CONFIG.API_BASE_URL, _CONFIG.RUNS_ENDPOINT, limit]
 	if not version_filter.is_empty():
-		url += "&version=eq.%s" % version_filter.uri_encode()
+		url += "&version=%s" % version_filter.uri_encode()
 	_enqueue({
 		"op": _Op.FETCH,
 		"url": url,
-		"headers": _build_headers(),
+		"headers": _CONFIG.build_headers(),
 		"method": HTTPClient.METHOD_GET,
 		"body": "",
 	})
@@ -74,16 +69,12 @@ func fetch_top(limit: int = 20, version_filter: String = "") -> void:
 
 func fetch_versions() -> void:
 	if not _CONFIG.is_configured():
-		versions_fetch_failed.emit("Leaderboard nao configurado")
+		versions_fetch_failed.emit("API nao configurada")
 		return
-	# PostgREST não tem DISTINCT — pega só o campo version e dedupe client-side.
-	var url: String = "%s%s?select=version&order=version.desc&limit=1000" % [
-		_CONFIG.SUPABASE_URL, _CONFIG.RUNS_ENDPOINT
-	]
 	_enqueue({
 		"op": _Op.FETCH_VERSIONS,
-		"url": url,
-		"headers": _build_headers(),
+		"url": _CONFIG.API_BASE_URL + _CONFIG.RUNS_VERSIONS_ENDPOINT,
+		"headers": _CONFIG.build_headers(),
 		"method": HTTPClient.METHOD_GET,
 		"body": "",
 	})
@@ -100,6 +91,9 @@ func _process_queue() -> void:
 	var req: Dictionary = _queue.pop_front()
 	_busy = true
 	_current_op = req.op
+	print("[leaderboard] %s %s" % [_method_name(req.method), req.url])
+	if req.body != "":
+		print("[leaderboard] payload: ", req.body)
 	var err: Error = _http.request(req.url, req.headers, req.method, req.body)
 	if err != OK:
 		_busy = false
@@ -108,11 +102,11 @@ func _process_queue() -> void:
 		_process_queue()
 
 
-func _build_headers() -> PackedStringArray:
-	return [
-		"apikey: " + _CONFIG.SUPABASE_ANON_KEY,
-		"Authorization: Bearer " + _CONFIG.SUPABASE_ANON_KEY,
-	]
+func _method_name(m: int) -> String:
+	match m:
+		HTTPClient.METHOD_GET: return "GET"
+		HTTPClient.METHOD_POST: return "POST"
+		_: return "M%d" % m
 
 
 func _emit_failure(op: int, message: String) -> void:
@@ -126,12 +120,15 @@ func _on_request_completed(result: int, response_code: int, _headers: PackedStri
 	var op: int = _current_op
 	_busy = false
 	_current_op = -1
+	var body_str_full: String = body.get_string_from_utf8()
+	var body_preview: String = body_str_full if body_str_full.length() < 300 else body_str_full.substr(0, 300) + "..."
+	print("[leaderboard] response result=%d code=%d body=%s" % [result, response_code, body_preview])
 	if result != HTTPRequest.RESULT_SUCCESS:
 		_emit_failure(op, "Falha de rede (codigo %d)" % result)
 		_process_queue()
 		return
 	var ok: bool = response_code >= 200 and response_code < 300
-	var body_str: String = body.get_string_from_utf8()
+	var body_str: String = body_str_full
 	match op:
 		_Op.UPLOAD:
 			if ok:
@@ -152,19 +149,15 @@ func _on_request_completed(result: int, response_code: int, _headers: PackedStri
 				versions_fetch_failed.emit("HTTP %d: %s" % [response_code, body_str])
 			else:
 				var parsed_v: Variant = JSON.parse_string(body_str)
-				if typeof(parsed_v) != TYPE_ARRAY:
-					versions_fetch_failed.emit("Resposta invalida do servidor")
+				# Espera-se { "versions": [...] }. Aceita também array direto.
+				var versions: Array = []
+				if typeof(parsed_v) == TYPE_DICTIONARY and parsed_v.has("versions"):
+					versions = parsed_v["versions"]
+				elif typeof(parsed_v) == TYPE_ARRAY:
+					versions = parsed_v
 				else:
-					# Dedupe client-side preservando ordem (mais novas primeiro).
-					var seen: Dictionary = {}
-					var unique: Array = []
-					for row in parsed_v:
-						if typeof(row) != TYPE_DICTIONARY:
-							continue
-						var v: String = str(row.get("version", ""))
-						if v.is_empty() or seen.has(v):
-							continue
-						seen[v] = true
-						unique.append(v)
-					versions_fetched.emit(unique)
+					versions_fetch_failed.emit("Resposta invalida do servidor")
+					_process_queue()
+					return
+				versions_fetched.emit(versions)
 	_process_queue()

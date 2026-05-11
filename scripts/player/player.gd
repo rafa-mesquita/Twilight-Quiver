@@ -11,6 +11,8 @@ signal dash_cooldown_changed(remaining: float, total: float)
 # e a cada frame durante o cooldown.
 signal fire_skill_unlocked
 signal fire_skill_cooldown_changed(remaining: float, total: float)
+signal chain_lightning_skill_unlocked
+signal chain_lightning_skill_cooldown_changed(remaining: float, total: float)
 # Curse Skill (lv4 do elemental Maldição): raio roxo em linha reta, cd 3s.
 signal curse_skill_unlocked
 signal curse_skill_cooldown_changed(remaining: float, total: float)
@@ -53,6 +55,7 @@ var damage_upgrades: int = 0
 var perfuracao_level: int = 0  # capa em 4 (níveis 1-4)
 var attack_speed_level: int = 0
 var multi_arrow_level: int = 0  # capa em 4 (níveis 1-4)
+var double_arrows_level: int = 0  # capa em 4 (níveis 1-4) — mutuamente exclusivo com multi_arrow
 var chain_lightning_level: int = 0  # capa em 4 (níveis 1-4)
 var move_speed_level: int = 0
 var life_steal_level: int = 0  # cada stack +5% chance e +10% heal nos drops de coração
@@ -93,6 +96,16 @@ const FIRE_SKILL_PROJECTILE_SCENE: PackedScene = preload("res://scenes/skills/fi
 var _fire_skill_cd_remaining: float = 0.0
 var _fire_skill_targeting: bool = false
 var _fire_skill_indicator: Node2D = null
+
+# Chain Lightning lv3: skill ativa que invoca um raio (lightning_bolt do
+# electric_mage) no ponto alvo. Mesma mecânica do fogo (range + indicator).
+# Lv4 buffa o dano do raio em +20%.
+const CHAIN_LIGHTNING_SKILL_COOLDOWN: float = 7.0
+const CHAIN_LIGHTNING_SKILL_AREA_RADIUS: float = 28.0
+const CHAIN_LIGHTNING_SKILL_BOLT_DAMAGE: float = 60.0
+const CHAIN_LIGHTNING_LV4_DAMAGE_MULT: float = 1.20
+const CHAIN_LIGHTNING_BOLT_SCENE: PackedScene = preload("res://scenes/skills/lightning_bolt.tscn")
+var _chain_lightning_skill_cd_remaining: float = 0.0
 # Curse skill (Q a partir do lv4 da Maldição): raio roxo gigante que corta o
 # mapa de um lado ao outro (ignora walls). Warmup 0.4s + sustained 5s. Cd 3s
 # começa depois que o beam acaba — total cycle = 8.4s.
@@ -192,8 +205,20 @@ var _poison_tick_accum: float = 0.0
 var _run_start_msec: int = 0
 var stats_enemies_killed: int = 0
 var stats_allies_made: int = 0
+# Macaquinhos (grupo "monkey") convertidos pelo disparo profano — desbloqueia
+# a skin Linked aos 200 totais acumulados entre runs.
+var stats_monkeys_cursed: int = 0
 var stats_damage_dealt: float = 0.0
 var stats_damage_taken: float = 0.0
+# Breakdown de dano recebido por tipo de fonte (source_id passado em take_damage).
+# Ex: { "melee": 120.5, "mage": 200.0, "monkey": 80.0, "insect": 40.0 }
+# Enviado em run_end pra analytics ver qual inimigo mais machuca.
+var stats_damage_taken_by_source: Dictionary = {}
+# Breakdown de dano CAUSADO pelo player por fonte (upgrade/skill/aliado).
+# Ex: { "arrow_base": 1500, "fire_arrow": 800, "graviton": 400 }
+var stats_damage_dealt_by_source: Dictionary = {}
+# Breakdown de kills por fonte. Ex: { "arrow_base": 12, "fire_arrow": 5 }
+var stats_kills_by_source: Dictionary = {}
 # Lista de IDs de bosses mortos nesta run. Usada pelo skin_loadout.record_run
 # pra detectar unlocks de skins do tipo `boss_killed`.
 var stats_bosses_killed: Array[String] = []
@@ -223,6 +248,7 @@ func _physics_process(delta: float) -> void:
 	_update_status_effects(delta)
 	_update_dash(delta)
 	_update_fire_skill(delta)
+	_update_chain_lightning_skill(delta)
 	_update_curse_skill(delta)
 	_update_player_fire_trail()
 	_check_woodwarden_respawns(delta)
@@ -301,7 +327,7 @@ func _apply_poison_tick(amount: float) -> void:
 	if is_dead or amount <= 0.0:
 		return
 	hp = maxf(hp - amount, 0.0)
-	notify_damage_taken(amount)
+	notify_damage_taken(amount, "poison")
 	hp_changed.emit(hp, max_hp)
 	if hp_bar != null:
 		hp_bar.set_ratio(hp / max_hp)
@@ -324,8 +350,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if is_dead:
 		return
 	if event.is_action_pressed("attack") and can_attack:
-		# Em target mode da fire skill, left-click confirma o cast em vez de
-		# atirar a flecha. Sem targeter aberto, comportamento normal.
+		# Em target mode de qualquer skill ativa, left-click confirma o cast
+		# em vez de atirar a flecha. Sem targeter aberto, comportamento normal.
 		if _fire_skill_targeting:
 			_confirm_fire_skill_cast()
 		else:
@@ -333,13 +359,20 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("skill"):
 		_use_skill()
 	elif event.is_action_pressed("fire_cast"):
-		# Q dispatcha pra elemental skill ativa. Fogo lv3+ → indicator+area.
-		# Maldição lv4+ → raio em linha reta instantâneo. Por design, só uma
-		# categoria por jogo. Se ambas (ex: dev mode), Fogo tem prioridade.
+		# Q dispatcha pra QUALQUER skill elemental ativa disponível, em ordem
+		# de prioridade: Fogo lv3+ → Chain Lightning lv3+ → Maldição lv4+.
+		# Como por design o player tem só 1 elemental por run, geralmente cai
+		# direto no que ele tem. Dev mode (com várias) usa essa ordem.
 		if fire_arrow_level >= 3:
 			_handle_fire_skill_press()
+		elif chain_lightning_level >= 3:
+			_handle_chain_lightning_skill_press()
 		elif curse_arrow_level >= 4:
 			_cast_curse_beam()
+	elif event.is_action_pressed("lightning_cast"):
+		# E é atalho alternativo específico pra Chain Lightning (lv3+).
+		if chain_lightning_level >= 3:
+			_handle_chain_lightning_skill_press()
 
 
 func _update_facing(input_vec: Vector2) -> void:
@@ -422,7 +455,13 @@ func _release_arrow() -> void:
 		# Só a primeira flecha toca o som — evita 3-10 cópias do shoot.mp3
 		# tocando juntas (cada uma +~3dB acima da anterior).
 		# is_primary = i == 0 → flechas extras têm fogo reduzido pra 35%.
-		_spawn_arrow(shot["dir"], shot["dmg_mult"], is_pierce, i == 0, i == 0, is_ricochet, is_graviton)
+		var delay: float = float(shot.get("delay_sec", 0.0))
+		if delay > 0.0:
+			get_tree().create_timer(delay).timeout.connect(
+				_spawn_arrow.bind(shot["dir"], shot["dmg_mult"], is_pierce, false, false, is_ricochet, is_graviton)
+			)
+		else:
+			_spawn_arrow(shot["dir"], shot["dmg_mult"], is_pierce, i == 0, i == 0, is_ricochet, is_graviton)
 
 
 # Cada entrada da volley = {dir: Vector2, dmg_mult: float} (relativo ao dmg base).
@@ -430,6 +469,8 @@ func _release_arrow() -> void:
 func _build_volley() -> Array:
 	var primary: Vector2 = locked_aim_dir
 	var shots: Array = []
+	if multi_arrow_level == 0 and double_arrows_level > 0:
+		return _build_double_arrows_volley(primary)
 	match multi_arrow_level:
 		0:
 			shots.append({"dir": primary, "dmg_mult": 1.0})
@@ -452,6 +493,62 @@ func _build_volley() -> Array:
 			for i in 10:
 				var ang: float = (TAU / 10.0) * float(i)
 				shots.append({"dir": primary.rotated(ang), "dmg_mult": 0.8})
+	return shots
+
+
+# Flechas Duplas — alternativo do Multi Arrow. Clusters mais apertados (±12/20/32°)
+# e contagem decidida por rolls. Counter de 3 ataques só conta a partir do NV2.
+# Resolução: roll 5-flechas (1%, só NV4) → roll 3-flechas (NV3 30% / NV4 60%) →
+# garantia/30% de duplas. Extras = 0.75x dano da primária.
+func _build_double_arrows_volley(primary: Vector2) -> Array:
+	# Spec por nível (cada roll independente; "maior contagem prevalece"):
+	#   NV1: 30% duplas. Secundária dá 50% dano.
+	#   NV2: 30% duplas. Ambas dano total.
+	#   NV3: 60% duplas + 30% triplas → maior prevalece (≤3 flechas).
+	#   NV4: 90% duplas + 60% triplas + 1% quíntuplas → maior prevalece (≤5).
+	var shots: Array = []
+	var lvl: int = double_arrows_level
+	var count: int = 1
+	match lvl:
+		1:
+			if randf() < 0.30:
+				count = 2
+		2:
+			if randf() < 0.30:
+				count = 2
+		3:
+			if randf() < 0.60:
+				count = maxi(count, 2)
+			if randf() < 0.30:
+				count = maxi(count, 3)
+		4:
+			if randf() < 0.90:
+				count = maxi(count, 2)
+			if randf() < 0.60:
+				count = maxi(count, 3)
+			if randf() < 0.01:
+				count = maxi(count, 5)
+	# Dano: NV1 secundária a 50%; NV2+ todas a 100%.
+	var extra_dmg: float = 0.5 if lvl == 1 else 1.0
+	# Delay entre flechas extras (burst rápido pra cada uma ser distinta no spawn).
+	const DELAY_PER_EXTRA: float = 0.04
+	# Ângulos APERTADOS: 1° de diferença entre flechas adjacentes — quase a mesma
+	# mira, mas separação suficiente pra não sobrepor visualmente no spawn.
+	if count == 1:
+		shots.append({"dir": primary, "dmg_mult": 1.0})
+	elif count == 2:
+		shots.append({"dir": primary.rotated(deg_to_rad(-0.5)), "dmg_mult": 1.0})
+		shots.append({"dir": primary.rotated(deg_to_rad(0.5)), "dmg_mult": extra_dmg, "delay_sec": DELAY_PER_EXTRA})
+	elif count == 3:
+		shots.append({"dir": primary, "dmg_mult": 1.0})
+		shots.append({"dir": primary.rotated(deg_to_rad(1.0)), "dmg_mult": extra_dmg, "delay_sec": DELAY_PER_EXTRA})
+		shots.append({"dir": primary.rotated(deg_to_rad(-1.0)), "dmg_mult": extra_dmg, "delay_sec": DELAY_PER_EXTRA * 2})
+	elif count == 5:
+		shots.append({"dir": primary, "dmg_mult": 1.0})
+		shots.append({"dir": primary.rotated(deg_to_rad(1.0)), "dmg_mult": extra_dmg, "delay_sec": DELAY_PER_EXTRA})
+		shots.append({"dir": primary.rotated(deg_to_rad(-1.0)), "dmg_mult": extra_dmg, "delay_sec": DELAY_PER_EXTRA * 2})
+		shots.append({"dir": primary.rotated(deg_to_rad(2.0)), "dmg_mult": extra_dmg, "delay_sec": DELAY_PER_EXTRA * 3})
+		shots.append({"dir": primary.rotated(deg_to_rad(-2.0)), "dmg_mult": extra_dmg, "delay_sec": DELAY_PER_EXTRA * 4})
 	return shots
 
 
@@ -838,6 +935,37 @@ func _update_fire_skill(delta: float) -> void:
 		fire_skill_cooldown_changed.emit(_fire_skill_cd_remaining, FIRE_SKILL_COOLDOWN)
 
 
+# ---------- Chain Lightning lv3+ skill ativa ----------
+
+func _handle_chain_lightning_skill_press() -> void:
+	# Cast direto na posição do cursor — sem range indicator, sem confirm.
+	# Cooldown padrão segura spam.
+	if _chain_lightning_skill_cd_remaining > 0.0:
+		return
+	var target: Vector2 = get_global_mouse_position()
+	if CHAIN_LIGHTNING_BOLT_SCENE != null:
+		var bolt: Node = CHAIN_LIGHTNING_BOLT_SCENE.instantiate()
+		var dmg_mult: float = CHAIN_LIGHTNING_LV4_DAMAGE_MULT if chain_lightning_level >= 4 else 1.0
+		if "damage" in bolt:
+			bolt.damage = CHAIN_LIGHTNING_SKILL_BOLT_DAMAGE * dmg_mult
+		if "damage_radius" in bolt:
+			bolt.damage_radius = CHAIN_LIGHTNING_SKILL_AREA_RADIUS
+		if "is_enemy_source" in bolt:
+			bolt.is_enemy_source = false
+		_get_world().add_child(bolt)
+		if bolt is Node2D:
+			(bolt as Node2D).global_position = target
+	_chain_lightning_skill_cd_remaining = CHAIN_LIGHTNING_SKILL_COOLDOWN
+	chain_lightning_skill_cooldown_changed.emit(_chain_lightning_skill_cd_remaining, CHAIN_LIGHTNING_SKILL_COOLDOWN)
+
+
+func _update_chain_lightning_skill(delta: float) -> void:
+	# Só tick do cooldown — cast é instantâneo agora, sem targeting state.
+	if _chain_lightning_skill_cd_remaining > 0.0:
+		_chain_lightning_skill_cd_remaining = maxf(_chain_lightning_skill_cd_remaining - delta, 0.0)
+		chain_lightning_skill_cooldown_changed.emit(_chain_lightning_skill_cd_remaining, CHAIN_LIGHTNING_SKILL_COOLDOWN)
+
+
 func _cast_curse_beam() -> void:
 	# Lv4: raio roxo sustentado por CURSE_SKILL_DURATION segundos. Direção
 	# travada no momento do cast (mouse). Aplica damage + CurseDebuff por tick.
@@ -1009,7 +1137,13 @@ func _dash_auto_attack_volley() -> void:
 	var volley: Array = _build_volley()
 	for i in volley.size():
 		var shot: Dictionary = volley[i]
-		_spawn_arrow(shot["dir"], shot["dmg_mult"], is_pierce, i == 0, i == 0, is_ricochet, is_graviton)
+		var delay: float = float(shot.get("delay_sec", 0.0))
+		if delay > 0.0:
+			get_tree().create_timer(delay).timeout.connect(
+				_spawn_arrow.bind(shot["dir"], shot["dmg_mult"], is_pierce, false, false, is_ricochet, is_graviton)
+			)
+		else:
+			_spawn_arrow(shot["dir"], shot["dmg_mult"], is_pierce, i == 0, i == 0, is_ricochet, is_graviton)
 	# Restaura aim e muzzle pro estado atual do sprite (next _update_facing
 	# fixaria de qualquer forma, mas restaurar evita visual flicker).
 	locked_aim_dir = saved_aim
@@ -1053,6 +1187,14 @@ func spend_gold(amount: int) -> bool:
 
 # Aplicação dos upgrades comprados na shop pós-wave.
 func apply_upgrade(upgrade_id: String) -> void:
+	# Telemetria: registra upgrade adquirido. Wave atual entra como propriedade.
+	if has_node("/root/Telemetry"):
+		var wm := get_tree().get_first_node_in_group("wave_manager")
+		var wave_num: int = int(wm.wave_number) if wm != null and "wave_number" in wm else 0
+		get_node("/root/Telemetry").track("upgrade_acquired", {
+			"id": upgrade_id,
+			"wave": wave_num,
+		})
 	match upgrade_id:
 		"hp":
 			hp_upgrades += 1
@@ -1084,8 +1226,14 @@ func apply_upgrade(upgrade_id: String) -> void:
 			attack_speed_multiplier += 0.27
 		"multi_arrow":
 			multi_arrow_level = mini(multi_arrow_level + 1, 4)
+		"double_arrows":
+			double_arrows_level = mini(double_arrows_level + 1, 4)
 		"chain_lightning":
+			var prev_cl: int = chain_lightning_level
 			chain_lightning_level = mini(chain_lightning_level + 1, 4)
+			# Lv3: destrava skill ativa (mesma lógica do Fogo). Só emite na 1ª transição.
+			if prev_cl < 3 and chain_lightning_level >= 3:
+				chain_lightning_skill_unlocked.emit()
 		"move_speed":
 			move_speed_level += 1
 			# +10% por stack (aditivo). Aplica imediatamente — _physics_process
@@ -1169,6 +1317,7 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"perfuracao": return perfuracao_level
 		"attack_speed": return attack_speed_level
 		"multi_arrow": return multi_arrow_level
+		"double_arrows": return double_arrows_level
 		"chain_lightning": return chain_lightning_level
 		"move_speed": return move_speed_level
 		"life_steal": return life_steal_level
@@ -1447,7 +1596,7 @@ func reset_perf_counter() -> void:
 	_perf_shot_counter = 0
 
 
-func take_damage(amount: float) -> void:
+func take_damage(amount: float, source_id: String = "") -> void:
 	if is_dead:
 		return
 	# I-frames do dash: ignora dano (inclui DoT/curse/burn que chamem take_damage).
@@ -1457,7 +1606,7 @@ func take_damage(amount: float) -> void:
 	# pra a UI mostrar o que de fato saiu do HP do player.
 	var reduced: float = amount * (1.0 - damage_reduction_pct)
 	hp = maxf(hp - reduced, 0.0)
-	notify_damage_taken(reduced)
+	notify_damage_taken(reduced, source_id)
 	hp_changed.emit(hp, max_hp)
 	hp_bar.set_ratio(hp / max_hp)
 	_flash_damage()
@@ -1635,10 +1784,22 @@ func notify_boss_killed(boss_id: String) -> void:
 	if boss_id.is_empty():
 		return
 	stats_bosses_killed.append(boss_id)
+	# Telemetria: evento individual pra time-to-kill analysis (com time_ms auto).
+	if has_node("/root/Telemetry"):
+		var wm := get_tree().get_first_node_in_group("wave_manager")
+		var wave_num: int = int(wm.wave_number) if wm != null and "wave_number" in wm else 0
+		get_node("/root/Telemetry").track("boss_killed", {
+			"boss_id": boss_id,
+			"wave": wave_num,
+		})
 
 
 func notify_ally_made() -> void:
 	stats_allies_made += 1
+
+
+func notify_monkey_cursed() -> void:
+	stats_monkeys_cursed += 1
 
 
 func notify_damage_dealt(amount: float) -> void:
@@ -1661,9 +1822,26 @@ func _heal_woodwardens_from_damage(amount: float) -> void:
 		ally.heal(heal_amount)
 
 
-func notify_damage_taken(amount: float) -> void:
+func notify_damage_dealt_by_source(amount: float, source_id: String) -> void:
+	if amount <= 0.0 or source_id.is_empty():
+		return
+	var cur: float = float(stats_damage_dealt_by_source.get(source_id, 0.0))
+	stats_damage_dealt_by_source[source_id] = cur + amount
+
+
+func notify_kill_by_source(source_id: String) -> void:
+	if source_id.is_empty():
+		return
+	var cur: int = int(stats_kills_by_source.get(source_id, 0))
+	stats_kills_by_source[source_id] = cur + 1
+
+
+func notify_damage_taken(amount: float, source_id: String = "") -> void:
 	if amount > 0.0:
 		stats_damage_taken += amount
+		var key: String = source_id if not source_id.is_empty() else "unknown"
+		var cur: float = float(stats_damage_taken_by_source.get(key, 0.0))
+		stats_damage_taken_by_source[key] = cur + amount
 
 
 func get_run_time_msec() -> int:

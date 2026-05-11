@@ -67,6 +67,8 @@ func _fire_projectile() -> void:
 	if target == null or not is_instance_valid(target):
 		return
 	var proj: Node2D = fire_skill_projectile_scene.instantiate()
+	if "source_id" in proj:
+		proj.source_id = "fire_mage"
 	if "fire_field_scene" in proj:
 		proj.fire_field_scene = fire_field_scene
 	if "field_dps" in proj:

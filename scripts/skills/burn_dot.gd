@@ -46,7 +46,10 @@ func _apply_tick() -> void:
 		return
 	if "hp" in parent and float(parent.hp) <= 0.0:
 		return
-	parent.take_damage(dps * tick_interval)
+	var tick_dmg: float = dps * tick_interval
+	var was_alive: bool = (not ("hp" in parent)) or float(parent.hp) > 0.0
+	parent.take_damage(tick_dmg)
+	_notify_player_dmg_kill(tick_dmg, "fire_arrow", was_alive, parent)
 
 
 # Refresca duração se nova flecha de fogo bate no mesmo alvo.
@@ -69,4 +72,20 @@ func _apply_final_bonus() -> void:
 		return
 	if not parent.has_method("take_damage"):
 		return
+	var was_alive: bool = (not ("hp" in parent)) or float(parent.hp) > 0.0
 	parent.take_damage(final_bonus_damage)
+	_notify_player_dmg_kill(final_bonus_damage, "fire_arrow", was_alive, parent)
+
+
+func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, target: Node) -> void:
+	if not is_inside_tree():
+		return
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null:
+		return
+	if p.has_method("notify_damage_dealt_by_source"):
+		p.notify_damage_dealt_by_source(amount, source_id)
+	if was_alive and p.has_method("notify_kill_by_source"):
+		var killed: bool = ("hp" in target) and float(target.hp) <= 0.0
+		if killed:
+			p.notify_kill_by_source(source_id)

@@ -76,7 +76,9 @@ func _apply_tick() -> void:
 	if "hp" in parent and float(parent.hp) <= 0.0:
 		return
 	var amount: float = dps * tick_interval
+	var was_alive: bool = (not ("hp" in parent)) or float(parent.hp) > 0.0
 	parent.take_damage(amount)
+	_notify_player_dmg_kill(amount, "curse_arrow", was_alive, parent)
 	_spawn_curse_number(amount)
 	if parent is Node2D and is_instance_valid(parent):
 		_spawn_curse_flash(parent as Node2D)
@@ -165,3 +167,17 @@ func refresh(new_duration: float, new_dps: float, new_slow_factor: float) -> voi
 	if new_slow_factor < slow_factor:
 		slow_factor = new_slow_factor
 		_apply_slow()  # re-aplica com slow mais forte
+
+
+func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, target: Node) -> void:
+	if not is_inside_tree():
+		return
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null:
+		return
+	if p.has_method("notify_damage_dealt_by_source"):
+		p.notify_damage_dealt_by_source(amount, source_id)
+	if was_alive and p.has_method("notify_kill_by_source"):
+		var killed: bool = ("hp" in target) and float(target.hp) <= 0.0
+		if killed:
+			p.notify_kill_by_source(source_id)
