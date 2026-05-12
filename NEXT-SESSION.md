@@ -1,99 +1,114 @@
 # Próxima Sessão
 
-> Última atualização: 2026-05-11
-> Sessão anterior: Boss mage_monkey cinematic intro + buff (HP 1600, cast 2s, +80% dano em aliados, mushroom clear) + Electric Mage completo (lightning bolt 2 strikes + fade) + Ice Mage completo + reorganização de assets + bugfixes (hp bar squash, chain Q em cc_immune, music loop)
+> Última atualização: 2026-05-12
+> Sessão anterior: Balance pass (Life Steal nerf + electric mage + boss gold pool + curse beam fix + armor slow res + insect nerf) + novo upgrade **Esquivando** completo (4 níveis, mutex com Dash, HUD com stacks/glow/rastro) + heart magnet limitado por raio + curse ally drops gold.
 
 ## Estado atual
 
-- **Branch:** `main` no `https://github.com/rafa-mesquita/Twilight-Quiver`. Último commit `ad86fe8`. Working tree limpo.
-- **Versão:** `pre-alpha-0.3.0` (bumpada pelo Henrique no `22a2125`)
-- **🎮 Auto-deploy GH Pages:** `https://rafa-mesquita.github.io/Twilight-Quiver/` (push pro main → GitHub Actions builda em ~1-3min)
-- **3 novos magos elementais implementados:** Fire (já existia), Ice (slow 37% via área 13-tile diamante), Electric (2 raios simultâneos com cloud→strike→idle 3s→strike→fade)
-- **Boss Mage Monkey buffed:** HP 1600 base, cast 2s pra invocação, +80% dano em aliados, cogumelos somem na wave, magos roubados por maldição 50% mais fracos, drops 3.5× na wave 14 redux
-- **Cinematic do boss:** intro completa nas waves 7 e 14 (~14.6s) — black overlay + texto + animação 16 frames + hold 2.5s no boss + pan suave pro player, com música swap + freeze de entities
+- **Branch:** `main` em `https://github.com/rafa-mesquita/Twilight-Quiver`. Último commit local `07f4c7b` (push feito). Working tree limpo (só CRLF warning no `.import` do esquivando, sem conteúdo).
+- **Versão:** `pre-alpha-0.3.3` (0.3.2 já foi pro download pelo Henrique; 0.3.3 ainda não deployed).
+- **🎮 Auto-deploy GH Pages:** `https://rafa-mesquita.github.io/Twilight-Quiver/` (push pro main → Actions builda ~1-3min).
+- **Novidade principal:** upgrade **Esquivando** (categoria movimentação) com 4 níveis, mutuamente exclusivo com Dash. Compartilha card art (`deslizando.png`) e barra de cooldown na HUD.
 
 ## Por onde começar
 
-1. **Coletar feedback playtest do boss redux** — wave 14 com escalas 2.5×-3× + cinematic + electric mage podem estar muito difíceis ou muito fáceis. Ver telemetria do Henrique (`twilight.hotsed.com/api`) pra ver curva de mortes.
+1. **Playtest do Esquivando** — Buff de +50% move por 3s (lv3+) com rastro branco no player. Confirmar feel: tempo, cooldown (15s lv3 / 10s lv4), buff stack 5/8/10% no atk+move speed, dodge 2/5%. Validar que ícone na HUD reposiciona corretamente: à esquerda (x=150) sem elemental, à direita (x=330) com elemental.
 
-2. **Tunar quantidades de elementais na wave 8+** — acabou de bumpar (fire/ice 2/3 → cap 4/6, electric 2/3 → cap 4/6 a partir wave 10) e reduzir mages normais 40%. Validar se ficou balanceado ou over-tuned.
+2. **Confirmar visualmente** os fixes do balance pass anterior:
+   - Boss curse beam: hitbox menor (17 vs 31), sem dano durante fade
+   - Heart magnet L4: só puxa dentro de 220px (não mais mapa todo)
+   - Fim de wave: corações fora de 260px somem silenciosamente
+   - Insect dmg -25%, electric mage atk speed 6.25s, dmg 12.75
+   - Fogo splash DoT (50% nos 2 inimigos mais próximos no raio 70px)
 
-3. **Verificar que skin "Linked" desbloqueia** — quest é 200 macacos convertidos via Disparo Profano (`STAT_MONKEYS_CURSED`, persistente). Skin é `hidden: true`, só aparece quando desbloqueia. Player precisa ter curse_arrow lv2+ (que ativa conversão).
+3. **Validar curse_ally agora dropa gold** — qualquer inimigo virado aliado via Maldição (mage, monkey, stone_cube) dropa gold com a mesma % original quando morre. Insect e boss minions (gold_drop_chance=0) continuam sem dropar.
 
-4. **Stone cube vs raio Q** — bug acabou de ser corrigido (cc_immune não devia bloquear dano puro). Confirmar visualmente que stone cubes agora tomam dano da Q.
+4. **Coletar feedback dos novos números** — armor slow resistance (metade da % de dano), boss gold 16-30 com pool ponderada (80% rola 16-23, 20% rola 24-30; wave 14 escala via BOSS_REDUX_GOLD_MULT 3.5 cobrindo min/max/pivot).
 
 ## Contexto crítico
 
-### NÃO desfazer: `_base_scale` no hp_bar.gd
-O HpBar do boss tem `scale = Vector2(2, 2)` no .tscn pra ficar maior visualmente. O método `_squash()` antes setava `scale = Vector2(0.85, 1.6)` direto e tweenava pra `Vector2.ONE` — perdia o 2× permanente após o 1º hit. Agora captura `_base_scale = scale` no _ready e aplica squash MULTIPLICATIVAMENTE. Não regredir.
+### NÃO desfazer: arrow.source/volley_id FORA do `if is_graviton:`
+Bug pré-existente: `arrow.source = self` estava indentado dentro do `if is_graviton:` em [scripts/player/player.gd](scripts/player/player.gd) `_spawn_arrow`. Resultado: pra flechas não-graviton, source era null e `notify_esquivando_hit` no arrow.gd retornava silenciosamente. Fix moveu source e volley_id pra fora do bloco. Se refatorar o `_spawn_arrow`, manter source/volley_id no nível do corpo da função.
 
-### NÃO desfazer: cc_immune ≠ damage immunity
-Lightning bolt (`scripts/skills/lightning_bolt.gd:_apply_damage`) NÃO filtra cc_immune. O grupo cc_immune é só pra crowd control (stun/slow/knockback), não pra damage. Stone cube + boss DEVEM tomar dano da Q de raio. Se voltar a filtrar, regride o bug de "raio não bate na pedra/boss".
+### Esquivando + Dash são mutuamente exclusivos
+Compartilham slot da barra de espaço. Adicionado a `EXCLUSIVE_PAIRS` em [scripts/ui/wave_shop.gd](scripts/ui/wave_shop.gd) e filtro bidirecional em `_grant_free_random_upgrade` ([scripts/systems/wave_manager.gd](scripts/systems/wave_manager.gd)). `apply_upgrade` em player.gd recusa defensivamente o segundo.
 
-### Boss music precisa de loop runtime
-`monkey mage wave.mp3.import` tem `loop=false` (default Godot pra mp3). Em `_swap_to_boss_music()` força `(boss_music as AudioStreamMP3).loop = true` antes de play. Sem isso a música toca uma vez e silencia mid-fight.
+### Esquivando volley_id: lv1-3 só 1 stack por volley
+[scripts/player/player.gd](scripts/player/player.gd) `notify_esquivando_hit`: lv1-3 bloqueia stacks adicionais se `arrow.gave_esquivando_stack` (flecha já stackou) OU `arrow.volley_id == _esquivando_last_stack_volley` (volley já stackou). Lv4 ignora ambos os flags — cada hit conta (multi-arrow, pierce, ricochet, cada um). Volley_id incrementa em `_release_arrow` e `_dash_auto_attack_volley`.
 
-### Cinematic do boss congela TUDO
-`_freeze_entities(true)` seta `process_mode = PROCESS_MODE_DISABLED` em player + grupos `enemy` + `ally` + `structure`. Senão minions pré-spawnados atiravam no player frozen durante a cinematic. Re-enable com PROCESS_MODE_INHERIT no fim. Camera fica em `cinematic_mode = true` (flag em camera_follow.gd que skipa o player-follow loop).
+### Esquivando ícone HUD reposiciona dinamicamente
+[scripts/ui/hud.gd](scripts/ui/hud.gd) `_update_esquivando_icon_position`: se player tem fire/chain lv3+ OU curse lv4+ → ícone vai pra x=330. Senão → x=150 (slot do elemental, ainda vago). Chamado em `_on_esquivando_unlocked`, `_on_fire_skill_unlocked`, `_on_chain_lightning_skill_unlocked`, `_on_curse_skill_unlocked`.
 
-### Boss redux (wave 14) usa scaling natural + 1.75×
-[scripts/systems/wave_manager.gd](scripts/systems/wave_manager.gd) `boss_redux_extra_mult = 1.75` aplicado em cima do scaling natural da wave 14 → HP/dmg ~2.85×/~2.53× da wave 7. Drops do boss usam `BOSS_REDUX_GOLD_MULT = 3.5` SEPARADAMENTE (não usa o 1.75) pra compensar minions sem drop.
+### Heart magnet AGORA tem raio limitado
+[scripts/pickups/heart.gd](scripts/pickups/heart.gd):
+- `MAGNET_RADIUS_L3 = 110` (mesmo de antes)
+- `MAGNET_RADIUS_L4 = 220` (NOVO — antes era "mapa todo")
+- `MAGNET_END_WAVE_RADIUS = 260` (NOVO — fim de wave também limita)
 
-### Distribuição da horda do boss (após mudança recente)
-Em `_do_summon_horde` (mage_monkey.gd ~linha 512):
-- 30% mage normal
-- 17.5% summoner / 17.5% fire / 17.5% ice / 17.5% electric
-Threshold cumulativo: 0–0.175 summ, 0.175–0.350 fire, 0.350–0.525 ice, 0.525–0.700 electric, 0.700+ mage. Fallback pro mage normal se alguma cena estiver null.
+[scripts/systems/wave_manager.gd](scripts/systems/wave_manager.gd) `_magnet_remaining_gold`: hearts fora de 260px do player fazem `queue_free()` silencioso. Não acumulam entre waves.
 
-### Woodwarden tem prioridade no boss vulnerável + dano nerfado
-`_pick_enemy_target` checa boss em grupo `mage_monkey` que NÃO esteja em `boss_shielded` ANTES de qualquer outro filtro — woodwarden ignora distância do player nesse caso. Dano reduzido por `WOODWARDEN_BOSS_DMG_MULT = 0.75` quando target é boss.
+### Curse_ally dropa gold mas NÃO heart nem conta como enemy_killed
+[scripts/enemies/mage_enemy.gd, monkey_enemy.gd, stone_cube_enemy.gd]: o `if not is_curse_ally:` agora envolve apenas heart drop + `notify_enemy_killed`. Gold drop foi movido pra FORA. Mesma chance % do inimigo original. Insect continua sem dropar (script nunca chama GoldDrop). Boss minions continuam sem dropar (gold_drop_chance=0 setado no spawn).
 
-### Ice slow area visual + collision
-13 RectangleShape2D 16×16 em padrão diamante (mesmo offsets do visual) — colisão match exato com sprite. Slow refrescado por frame com duração 0.15s — ao sair da área expira em <1 frame. Tiles têm `z_index = -1` absoluto (mesmo bucket do Ground TileMap → tree order coloca em cima do chão e atrás de tudo z=0).
+### Boss gold pool ponderada (range 16-30)
+[scripts/enemies/mage_monkey.gd](scripts/enemies/mage_monkey.gd) tem `gold_drop_min=16`, `gold_drop_max=30`, `gold_drop_pivot=23`, `gold_drop_pivot_chance=0.80`. No death: 80% rola randi_range(16, 23), 20% rola randi_range(24, 30). Wave 14 boss escala min/max/pivot por `BOSS_REDUX_GOLD_MULT = 3.5` → range 56-105 com pivot 80.
 
-### Electric mage bolt: 2 strikes com nuvem idle entre
-Lightning bolt anim flow: fade-in (0.5s) → strike 1 (frames 0-6 @ 14 fps) → idle_cloud loop (3s @ 4 fps) → strike 2 → fade out (3 frames @ 4 fps). Sprite usa um sheet único `eletric mage power-Sheet-export.png` (250×64, 10 frames de 25×64) + sheet separado `nuvem.png` (175×64, 7 frames idle). Audio bolt -28 dB, espera `finished` antes do queue_free pra não cortar.
+### Boss curse beam: hitbox alinhada ao sprite
+[scripts/skills/curse_beam.gd](scripts/skills/curse_beam.gd) + [scripts/enemies/mage_monkey.gd](scripts/enemies/mage_monkey.gd): `beam.hit_radius = 17.0` setado explicitamente quando is_enemy_source (era 31 antes, sprite tile é ±16). Também: o `_apply_tick` retorna early durante a fase fade — beam visualmente apagando não machuca mais.
 
-### Magos elementais (fire/ice/electric) no mage_monkey.gd
-Exports `minion_fire_mage_scene`/`minion_ice_mage_scene`/`minion_electric_mage_scene` atribuídos no [scenes/enemies/mage_monkey.tscn](scenes/enemies/mage_monkey.tscn). Boss invoca todos os 5 tipos quando rola horda nova.
+### Armor agora dá slow resistance
+[scripts/player/player.gd](scripts/player/player.gd) `apply_slow`: `multiplier = lerp(multiplier, 1.0, slow_resistance_pct)`. `slow_resistance_pct = damage_reduction_pct × 0.5`. Ex: L1 = 8% dmg / 4% slow res; L4 = 20% / 10%. Stat panel do shop mostra `dmg% / slow%`.
+
+### Fogo splash: pure dano, sem propagar burn
+[scripts/skills/burn_dot.gd](scripts/skills/burn_dot.gd) `_apply_splash`: a cada tick do BurnDoT no inimigo principal, os 2 inimigos vivos mais próximos (raio 70px, exceto o queimando) levam 50% do tick_dmg como dano direto. NÃO propaga BurnDoT, NÃO aplica status — só dano. Aplica em todos os níveis da Flecha de Fogo.
+
+### Versão segue regra: bump SÓ em deploy
+Memória `feedback_version_bump.md` documenta isso. 0.3.2 foi pro download pelo Henrique, então 0.3.3 já é o bump correto. Próxima versão só sobe quando o Henrique falar que vai deploy nova.
 
 ### Decisões antigas a preservar (do session anterior)
 
-- **Curse antes do take_damage** em TODOS os call sites de aliado — sem isso `try_convert_on_death` não enxerga o debuff em kill direto. Pontos: arrow.gd, curse_beam.gd, woodwarden.gd, monkey_enemy.gd, mage_projectile.gd, insect_projectile.gd.
-- **damage_sound como filho do enemy** — `_play_damage_sound` faz `add_child(player)` (NÃO `_get_world().add_child`). Audio morre com o enemy.
-- **Tower vs Woodwarden colisão de flecha**: tower em `structure+ally` (PARA), woodwarden em `structure+ally+tank_ally+insect_immune` (PASSA). Arrow checa `tank_ally` PRIMEIRO.
-- **Web export config:** `variant/thread_support=true` + `progressive_web_app/enabled=true` + `progressive_web_app/ensure_cross_origin_isolation_headers=true` no export_presets.cfg. NÃO desativar — PWA injeta COOP/COEP pro threading no GH Pages.
-- **PWA service worker cacheia agressivo:** testar versão fresca em aba anônima ou Clear site data.
+- **Curse antes do take_damage** em TODOS os call sites de aliado.
+- **damage_sound como filho do enemy** — morre com o enemy.
+- **`_base_scale` no hp_bar.gd** — preservar squash multiplicativo.
+- **`cc_immune` é exclusivamente pra CC** (stun/slow/knockback), não pra damage.
+- **Boss music precisa de loop runtime** em `_swap_to_boss_music`.
+- **Cinematic do boss congela TUDO** via PROCESS_MODE_DISABLED.
+- **Tower vs Woodwarden colisão de flecha**: tower em structure+ally (PARA), woodwarden em structure+ally+tank_ally+insect_immune (PASSA).
+- **Web export config:** thread_support=true + PWA enabled + cross_origin_isolation_headers=true em export_presets.cfg.
+- **PWA service worker cacheia agressivo** — testar versão fresca em aba anônima.
 
 ## Pendências conhecidas
 
-- [ ] Confirmar visualmente: stone cube agora toma dano da Q de raio (bug recém-corrigido)
-- [ ] Confirmar visualmente: HP bar do boss não encolhe mais no 1º hit
-- [ ] Playtest da wave 14 com escalas novas + electric mage — pode estar muito brutal
-- [ ] Eletric mage não tem comportamento curse-ally testado a fundo (`is_enemy_source` flip no spawn_bolt)
-- [ ] Skin "Linked" oculta — testar caminho de unlock (200 macacos convertidos via curse arrow lv2+)
-- [ ] Boss redux drops 3.5× pode estar muito generoso — re-tunar se feedback achar
-- [ ] Cinematic intro (~14.6s) — verificar se não é tedioso após primeiro replay (talvez skippable na 2ª vez?)
-- [ ] **Restrição "uma categoria elemental por jogo"** (pendência antiga) — fogo/curse mutuamente exclusivos mas chain lightning agora é skill ativa independente. Confirmar interação.
-- [ ] **Archer enemy** não suporta conversão por Maldição (pendência antiga ainda válida)
+- [ ] **Playtest Esquivando** — buff de 50% move + rastro branco pode estar muito strong, ou cd 15s/10s muito longo
+- [ ] **Validar dodge** (lv1-2: 2%, lv3+: 5%) — visual feedback (modulate ou flash) seria útil pra player perceber que dodgeou
+- [ ] **Restrição "uma categoria elemental por jogo"** (pendência antiga) — chain agora é skill ativa, confirmar
+- [ ] **Archer enemy** não suporta conversão por Maldição (pendência antiga)
+- [ ] **Skin "Linked"** — testar caminho de unlock (200 macacos convertidos via curse arrow lv2+)
+- [ ] **Cinematic intro (~14.6s)** — verificar se não é tedioso após primeiro replay (skippable?)
+- [ ] **Boss redux drops** — wave 14 boss agora dropa 56-105 gold com pivot 80, validar se está ok
+- [ ] Confirmar visualmente: stone cube toma dano da Q de raio (bug fix antigo)
+- [ ] Confirmar visualmente: HP bar do boss não encolhe no 1º hit (bug fix antigo)
 
-## Arquivos / locais relevantes
+## Arquivos / locais relevantes (mudanças desta sessão)
 
-- [scripts/enemies/mage_monkey.gd](scripts/enemies/mage_monkey.gd) — boss completo: cast delay, summon pool 5 tipos, mushroom cleanup, +80% dmg em allies via projectile/beam
-- [scripts/enemies/mage_projectile.gd](scripts/enemies/mage_projectile.gd) — `pierce_allies` + `BOSS_ALLY_DMG_MULT 1.8`
-- [scripts/enemies/electric_mage.gd](scripts/enemies/electric_mage.gd) — dispara 2 raios simultâneos (pos atual + pos prevista com lead 0.8s)
-- [scripts/skills/lightning_bolt.gd](scripts/skills/lightning_bolt.gd) — strike+idle+strike+fade, sombra 2-camadas iso, sem cc_immune filter
-- [scripts/skills/ice_slow_area.gd](scripts/skills/ice_slow_area.gd) — 13 tiles, refresh por frame, walk audio
-- [scripts/skills/curse_ally_helper.gd](scripts/skills/curse_ally_helper.gd) — `BOSS_WAVE_CONVERT_PENALTY = 0.5` em waves de boss
-- [scripts/skills/curse_beam.gd](scripts/skills/curse_beam.gd) — `BOSS_ALLY_DMG_MULT 1.8` quando is_enemy_source
-- [scripts/enemies/woodwarden.gd](scripts/enemies/woodwarden.gd) — prioriza boss vulnerável + `WOODWARDEN_BOSS_DMG_MULT 0.75`
-- [scripts/systems/wave_manager.gd](scripts/systems/wave_manager.gd) — config 7+14, boss intro cinematic orquestração, music swap, BOSS_REDUX_GOLD_MULT 3.5, BOSS_INTRO_HOLD_ON_BOSS 2.5, BOSS_INTRO_PAN_DURATION 2.0
-- [scripts/ui/hud.gd](scripts/ui/hud.gd) `play_boss_intro` — cinematic overlay + cinematic sprite (16 frames @ 2 fps)
-- [scripts/ui/hp_bar.gd](scripts/ui/hp_bar.gd) — `_base_scale` preservado no squash
-- [scripts/player/camera_follow.gd](scripts/player/camera_follow.gd) — `cinematic_mode` + `pan_to(pos, duration)`
-- [scripts/systems/skin_loadout.gd](scripts/systems/skin_loadout.gd) — `SKIN_QUESTS` com 5 skins (Red_Velvet, Gingerale, Bluey, Linked HIDDEN, Hawk)
-- [assets/enemies/mage/electric_power/](assets/enemies/mage/electric_power/) — pasta com sheet eletric + nuvem
-- [audios/musics/monkey mage wave.mp3](audios/musics/monkey mage wave.mp3) — música boss
+- [scripts/player/player.gd](scripts/player/player.gd) — Esquivando completo (state, helpers, hit/coin notify, dodge in take_damage, spacebar handler, trail spawn), armor slow_resistance_pct, mutex bidirecional dash↔esquivando
+- [scripts/skills/arrow.gd](scripts/skills/arrow.gd) — `volley_id` + `gave_esquivando_stack` + chamada `source.notify_esquivando_hit(self)` após take_damage
+- [scripts/skills/burn_dot.gd](scripts/skills/burn_dot.gd) — `_apply_splash` 50% do tick_dmg nos 2 inimigos vivos mais próximos (raio 70px)
+- [scripts/skills/curse_beam.gd](scripts/skills/curse_beam.gd) — `return` no fade phase (sem dano), hit_radius default 33 (boss override pra 17)
+- [scripts/pickups/heart.gd](scripts/pickups/heart.gd) — `MAGNET_RADIUS_L3=110`, `MAGNET_RADIUS_L4=220` (NOVO), `MAGNET_END_WAVE_RADIUS=260` (NOVO), `MAGNET_PULL_SPEED=75`, `MAGNET_END_WAVE_SPEED=55`, `_end_wave_magnet` flag, `_magnet_chase_player(delta, speed)`
+- [scripts/pickups/heart_drop.gd](scripts/pickups/heart_drop.gd) — `HEAL_PCT_PER_STACK=0.05` (L4 cap 35% heal), `BOSS_CONTEXT_CHANCE_PENALTY=0.05` (boss/boss_minion -5% drop chance), `try_drop(world, scene, pos, source)` signature nova
+- [scripts/pickups/gold.gd](scripts/pickups/gold.gd) — chama `notify_esquivando_coin_pickup` no body_entered E magnet_finalize
+- [scripts/enemies/mage_enemy.gd](scripts/enemies/mage_enemy.gd), [monkey_enemy.gd](scripts/enemies/monkey_enemy.gd), [stone_cube_enemy.gd](scripts/enemies/stone_cube_enemy.gd) — gold drop fora do `if not is_curse_ally:`; passa `self` pro HeartDrop.try_drop
+- [scripts/enemies/mage_monkey.gd](scripts/enemies/mage_monkey.gd) — gold range 16-30 + pivot 23 + pivot_chance 0.80 + ponderada no _on_death; beam hit_radius = 17.0
+- [scripts/enemies/electric_mage.gd](scripts/enemies/electric_mage.gd) + [scenes/enemies/electric_mage.tscn](scenes/enemies/electric_mage.tscn) — bolt_damage 12.75, shoot_interval 6.25s, preferred_distance 210, detection_range 325 (nerf)
+- [scripts/enemies/insect_projectile.gd](scripts/enemies/insect_projectile.gd) — damage 6, poison_damage_total 13.5 (-25%)
+- [scripts/systems/wave_manager.gd](scripts/systems/wave_manager.gd) — `_magnet_next_heart_sequential` sequencial via tree_exited, end-of-wave radius filter, double_arrows/esquivando no FREE_UPGRADE_POOL com exclusão, gold_drop_pivot scaling no boss_redux_wave
+- [scripts/ui/wave_shop.gd](scripts/ui/wave_shop.gd) — esquivando no UPGRADE_POOL + EXCLUSIVE_PAIRS `["dash", "esquivando"]` + ESQUIVANDO_DESCS + icon path reusa `deslizando.png` + augment_title_for + UPGRADE_DESC_COLORS
+- [scripts/ui/hud.gd](scripts/ui/hud.gd) — `esquivando_skill_icon` + `esquivando_stack_label` + `_update_esquivando_icon_position` + reposicionamento via signals de fire/chain/curse + glow ciano via `esquivando_ability_active_changed`
+- [scripts/ui/dev_panel.gd](scripts/ui/dev_panel.gd) + [scenes/ui/dev_panel.tscn](scenes/ui/dev_panel.tscn) — botão `+1 Esquivando`
+- [scenes/ui/hud.tscn](scenes/ui/hud.tscn) — `EsquivandoSkillIcon` Control com Bg/FrameRing/Inner/Sprite/StackLabel (frame verde, posição inicial 330,160 — overridden dinamicamente)
+- [assets/Hud/skillsIcons/esquivando.png](assets/Hud/skillsIcons/esquivando.png) — arte do upgrade (novo asset)
+- [assets/i18n/translations.csv](assets/i18n/translations.csv) — SHOP_UPG_ESQUIVANDO + SHOP_ESQUIVANDO_DESC_1-4 (PT/EN/ES/FR), SHOP_ARMOR_8/12/16/20/3 reformatadas com slow res, SHOP_ARMOR_DESC_1-5 reformatadas
 
 ## Comandos úteis
 
@@ -111,34 +126,38 @@ gh run view --log
 # Testar build atual (anônima evita cache PWA)
 # https://rafa-mesquita.github.io/Twilight-Quiver/
 
-# Bump version pre-deploy
+# Bump version pre-deploy (Henrique avisa quando vai sair release)
 # Editar application/config/version em project.godot pra pre-alpha-X.Y.Z
 ```
 
 ## Decisões tomadas nesta sessão
 
-- **Boss invoca os 5 tipos elementais** com 30% mage normal + 17.5% cada (summ/fire/ice/electric). Antes só 60/15/25 sem ice/electric.
-- **Cinematic do boss** tem hold de 2.5s focado no boss antes do pan, duração total ~14.6s. Drama > velocidade.
-- **Animação do surgimento a 2 fps** (16 frames = 8s) — explicitamente lenta a pedido do user pra dar peso visual.
-- **Boss redux gold = 3.5×** separado do scaling extra (1.75×) — compensa minions sem drop, com folga.
-- **Magos roubados em wave de boss saem 50% mais fracos** (HP + damage_mult × 0.5) pra build de Maldição não trivializar.
-- **Woodwarden bate -25% no boss** + ignora distância do player quando boss vulnerável.
-- **Mushrooms da Capivara Joe somem no início da boss wave** — fight focada sem buff/dano residual.
-- **`cc_immune` é exclusivamente pra CC (stun/slow/knockback)**, não pra damage. Não filtrar em skills puramente de dano (chain Q raio, etc).
-- **Assets do electric_power organizados em subpasta** `assets/enemies/mage/electric_power/` (sheet único + nuvem.png).
-- **Elementais wave 8+ buffed** (2/3 → cap 4/6, era 1/1 → cap 3/5) e mages normais × 0.6 — slot de mage cedido pros elementais.
+- **Life Steal nerf**: HEAL_PCT_PER_STACK 0.10 → 0.05 (L4 cap 35% heal em vez de 50%). Chance preservada (12-27%).
+- **Heart magnet sequencial no fim de wave** + speed baixa (55px/s) — sem fountain instantâneo.
+- **Heart magnet L4 com raio 220px** (não mais mapa todo). End-of-wave radius 260px, hearts mais longe vanish.
+- **Boss/boss_minion -5% heart drop chance** em todos os níveis de Life Steal (`BOSS_CONTEXT_CHANCE_PENALTY`).
+- **Boss gold 16-30 com pool ponderada 80/20** (16-23 comum, 24-30 raro). Pivot escala junto no wave 14 (×3.5).
+- **Curse beam hitbox boss = 17** (alinhado ao sprite ±16, era 31). Sem dano durante fade phase.
+- **Armor agora dá slow reduction** = metade da % de redução de dano. Stat panel mostra `dmg% / slow%`.
+- **Insect dmg -25%** (impacto 8→6, veneno 18→13.5, total 26→19.5).
+- **Electric mage nerf**: dmg 15→12.75 (-15%), atk speed 5s→6.25s (-25%), range -10%.
+- **Fogo splash**: 50% do tick DoT nos 2 inimigos vivos mais próximos (raio 70px), todos os níveis.
+- **Esquivando**: novo upgrade movimentação mutex com Dash, 4 níveis com escalas 5%/8%/8%/10%, dodge 2%/2%/5%/5%, cap 3/3/3/4, skill espaço +50% move 3s cd 15s→10s.
+- **Esquivando ícone reposiciona** — slot esquerdo (150) sem elemental, direito (330) com elemental.
+- **Esquivando feedback visual** — glow ciano no ícone + rastro branco no player durante skill ativa.
+- **Curse_ally agora dropa gold** com a mesma % do inimigo original (insect/boss_minion seguem sem dropar via gold_drop_chance=0).
+- **Double Arrows** adicionado ao pool de boas-vindas com exclusão mútua vs Multi Arrow.
+- **Bug pré-existente corrigido**: arrow.source/volley_id estavam aninhados dentro do `if is_graviton:` em _spawn_arrow.
+- **Versão**: 0.3.1 → 0.3.2 (download Henrique) → 0.3.3 (atual, ainda não deployed).
 
-## Histórico de commits da sessão (últimos 10)
+## Histórico de commits da sessão (últimos)
 
 ```
+07f4c7b Bump pre-alpha-0.3.3
+99f4e68 Novo upgrade Esquivando + ajustes de heart magnet e curse ally
+3ccf720 Curse beam Y align + telemetria de mago types + killed_by (Henrique)
+4442c83 Bump pre-alpha-0.3.2: balance pass + boss beam hitbox fix
+21df1c3 Atualiza NEXT-SESSION.md com estado da sessao 2026-05-11 (Henrique)
+13ad87c Bump pre-alpha-0.3.1: hotfix de boss balance + bugfixes (Henrique)
 ad86fe8 Boss balance + bugfixes: ice/electric summon + hp bar + chain Q
-683981c Fix: preview de skin em branco em build exportado (Henrique)
-22a2125 Release modal + bump pre-alpha-0.3.0 (Henrique)
-eb72bb6 Mage Monkey: cinematic intro + boss music
-063a380 Telemetria + Flechas Duplas + Cadeia skill ativa + free tower + skins (Henrique)
-9f8dab8 Mage Monkey buff: HP 1600 + cast 2s + boss wave anti-curse-build
-2c7d877 Electric Mage: poder do raio (2 strikes com nuvem idle + fade)
-17e3927 Electric Mage (esqueleto) + slow do Ice Mage 37%
-0095db4 Ice Mage + summon effect verde + fixes
-9e4c96c Shop redesign (Henrique)
 ```
