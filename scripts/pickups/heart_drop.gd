@@ -21,6 +21,30 @@ const MIN_PICKUP_SEPARATION: float = 16.0
 const PLACEMENT_ATTEMPTS: int = 12
 
 
+# Bosses: chama isto em vez de try_drop pra spawn garantido de N corações
+# (sem random / penalty). Quantidade vinda do life_steal_level — recompensa
+# proporcional ao investimento do player.
+static func drop_guaranteed(world: Node, scene: PackedScene, drop_position: Vector2,
+		count: int) -> void:
+	if scene == null or world == null or count <= 0:
+		return
+	var player := world.get_tree().get_first_node_in_group("player")
+	if player == null:
+		return
+	var level: int = 0
+	if player.has_method("get_upgrade_count"):
+		level = player.get_upgrade_count("life_steal")
+	if level <= 0:
+		return
+	var heal_pct: float = BASE_HEAL_PCT + HEAL_PCT_PER_STACK * float(level - 1)
+	for i in count:
+		var heart: Node2D = scene.instantiate()
+		if "heal_pct" in heart:
+			heart.heal_pct = heal_pct
+		world.add_child(heart)
+		heart.global_position = _find_non_overlapping_position(world, drop_position)
+
+
 static func try_drop(world: Node, scene: PackedScene, drop_position: Vector2,
 		source: Node = null) -> void:
 	if scene == null or world == null:

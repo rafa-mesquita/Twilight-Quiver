@@ -185,31 +185,31 @@ SHOP_HP_DESC_1,+18 HP maximo,+18 max HP,+18 HP máximo,+18 PV max
 SHOP_HP_DESC_2,+20 HP maximo,+20 max HP,+20 HP máximo,+20 PV max
 SHOP_HP_DESC_3,+22 HP maximo,+22 max HP,+22 HP máximo,+22 PV max
 SHOP_HP_DESC_4,+25 HP maximo,+25 max HP,+25 HP máximo,+25 PV max
-SHOP_ARMOR_DESC_1,"8% de dano e 4%
-de lentidão reduzidos","8% damage and 4%
-slow reduced","8% de daño y 4%
-de lentitud reducidos","8% de dégâts et 4%
-de ralentissement réduits"
-SHOP_ARMOR_DESC_2,"12% de dano e 6%
-de lentidão reduzidos","12% damage and 6%
-slow reduced","12% de daño y 6%
-de lentitud reducidos","12% de dégâts et 6%
-de ralentissement réduits"
-SHOP_ARMOR_DESC_3,"16% de dano e 8%
-de lentidão reduzidos","16% damage and 8%
-slow reduced","16% de daño y 8%
-de lentitud reducidos","16% de dégâts et 8%
-de ralentissement réduits"
-SHOP_ARMOR_DESC_4,"20% de dano e 10%
-de lentidão reduzidos","20% damage and 10%
-slow reduced","20% de daño y 10%
-de lentitud reducidos","20% de dégâts et 10%
-de ralentissement réduits"
-SHOP_ARMOR_DESC_5,"+3% dano e +1.5% lentidão
-reduzidos por compra","+3% damage and +1.5% slow
-reduced per purchase","+3% daño y +1.5% lentitud
-reducidos por compra","+3% dégâts et +1.5% ralentissement
-réduits par achat"
+SHOP_ARMOR_DESC_1,"-8% dano
+-4% slow","-8% damage
+-4% slow","-8% daño
+-4% slow","-8% dégâts
+-4% slow"
+SHOP_ARMOR_DESC_2,"-12% dano
+-6% slow","-12% damage
+-6% slow","-12% daño
+-6% slow","-12% dégâts
+-6% slow"
+SHOP_ARMOR_DESC_3,"-16% dano
+-8% slow","-16% damage
+-8% slow","-16% daño
+-8% slow","-16% dégâts
+-8% slow"
+SHOP_ARMOR_DESC_4,"-20% dano
+-10% slow","-20% damage
+-10% slow","-20% daño
+-10% slow","-20% dégâts
+-10% slow"
+SHOP_ARMOR_DESC_5,"-3% dano / -1.5% slow
+por compra","-3% damage / -1.5% slow
+per purchase","-3% daño / -1.5% slow
+por compra","-3% dégâts / -1.5% slow
+par achat"
 SHOP_DAMAGE_DESC,+20% dano da flecha,+20% arrow damage,+20% daño de flecha,+20% dégâts de flèche
 SHOP_PERFURACAO_DESC_1,"A cada 3 ataques flecha
 atravessa, +30% dano","Every 3 attacks arrow

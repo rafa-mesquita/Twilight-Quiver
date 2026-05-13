@@ -632,8 +632,15 @@ func _die() -> void:
 			amount = randi_range(pivot + 1, gold_drop_max)
 		GoldDrop.try_drop(_get_world(), gold_scene, global_position,
 			gold_drop_chance, amount, amount)
+	# Boss drop garantido de hearts (1 por stack de Mestre da Cura), sem
+	# random/penalty — recompensa proporcional ao investimento. try_drop
+	# normal seria 7-22% e single — usuário esperava drop confiável aqui.
 	if heart_scene != null:
-		HeartDrop.try_drop(_get_world(), heart_scene, global_position, self)
+		var player_for_hearts := get_tree().get_first_node_in_group("player")
+		var ls_lvl: int = 0
+		if player_for_hearts != null and player_for_hearts.has_method("get_upgrade_count"):
+			ls_lvl = int(player_for_hearts.get_upgrade_count("life_steal"))
+		HeartDrop.drop_guaranteed(_get_world(), heart_scene, global_position, ls_lvl)
 	var p := get_tree().get_first_node_in_group("player")
 	if p != null and p.has_method("notify_enemy_killed"):
 		p.notify_enemy_killed()

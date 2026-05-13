@@ -159,7 +159,7 @@ var has_gold_magnet: bool = false  # legacy flag (lv4 da Chuva de Coins)
 # Lv1: dash básico (5s cd). Lv2: rastro de fogo (4.5s). Lv3: auto-attack (4s).
 # Lv4: 2 flechas (3.5s).
 const DASH_LEVEL_MAX: int = 4
-const DASH_COOLDOWNS_BY_LEVEL: Array[float] = [5.5, 4.5, 4.0, 3.5]
+const DASH_COOLDOWNS_BY_LEVEL: Array[float] = [6.3, 5.3, 4.8, 4.3]
 var dash_level: int = 0
 var has_dash: bool = false
 var dash_distance: float = 45.0

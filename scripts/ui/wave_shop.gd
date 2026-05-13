@@ -19,7 +19,7 @@ const TOWER_PRICE: int = 7
 const WOODWARDEN_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 const LENO_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 const CAPIVARA_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
-const TING_PRICE_TABLE: Array[int] = [10, 16, 22, 44]
+const TING_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 # Pool de aliados pra rolagem na shop. 3 cards exibidos por wave; sorteia 3
 # dos N possíveis (priorizando pets já owned pro player poder upgradar).
 const _ALL_ALLY_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe", "ting"]
