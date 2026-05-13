@@ -67,9 +67,14 @@ func _physics_process(delta: float) -> void:
 	_locked_target = target
 	_is_attacking = true
 	_attack_cd_remaining = _current_cooldown()
-	# Flip pra mirar o alvo (sprite default olha pra direita).
+	# Flip pra mirar o alvo (sprite default olha pra direita). O Muzzle tem
+	# posição local fixa no lado da boca; quando o sprite flipa, precisa
+	# espelhar o X dele também — senão o tiro sai do lado errado (bunda).
 	if sprite != null:
-		sprite.flip_h = (target.global_position.x - global_position.x) < 0.0
+		var facing_left: bool = (target.global_position.x - global_position.x) < 0.0
+		sprite.flip_h = facing_left
+		if muzzle != null:
+			muzzle.position.x = -absf(muzzle.position.x) if facing_left else absf(muzzle.position.x)
 	if sprite != null and sprite.sprite_frames != null and sprite.sprite_frames.has_animation("shoot"):
 		sprite.play("shoot")
 	else:
@@ -92,9 +97,11 @@ func _fire() -> void:
 		aim_target = _pick_target()
 	if aim_target == null:
 		return
-	var spawn_pos: Vector2 = muzzle.global_position if muzzle != null else global_position
-	var aim_pos: Vector2 = aim_target.global_position + Vector2(0, -12)
-	var dir: Vector2 = (aim_pos - spawn_pos).normalized()
+	# Posição visual de onde o tiro deve sair (= muzzle, "boca" da torreta).
+	var muzzle_visual_pos: Vector2 = muzzle.global_position if muzzle != null else global_position
+	# Mira visual no peito do inimigo (consistente com mage projectile).
+	var aim_visual_pos: Vector2 = aim_target.global_position + Vector2(0, -12)
+	var dir: Vector2 = (aim_visual_pos - muzzle_visual_pos).normalized()
 	if dir.length_squared() < 0.001:
 		return
 	var proj: Node2D = projectile_scene.instantiate()
@@ -110,7 +117,10 @@ func _fire() -> void:
 	if world == null:
 		world = get_tree().current_scene
 	world.add_child(proj)
-	proj.global_position = spawn_pos
+	# Compensa o VISUAL_OFFSET (0,-24) do projétil: o NÓ vai 24px abaixo do
+	# muzzle pra o sprite (renderizado 24px acima do nó) sair exatamente da
+	# "boca" onde o user posicionou o Muzzle.
+	proj.global_position = muzzle_visual_pos + Vector2(0, 24)
 	if proj.has_method("set_target"):
 		proj.set_target(aim_target, dir)
 	_play_attack_sound()

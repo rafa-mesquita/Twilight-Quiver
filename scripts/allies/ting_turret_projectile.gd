@@ -13,8 +13,12 @@ extends Area2D
 @export var aoe_damage_pct: float = 0.0
 @export var hit_effect_scene: PackedScene
 
+# Origem do nó fica no chão (pra Y-sort certo); visual renderizado 24px acima.
 const VISUAL_OFFSET: Vector2 = Vector2(0, -24)
-const ENEMY_AIM_OFFSET: Vector2 = Vector2(0, -12)
+# Offset do alvo (peito do inimigo) no espaço do NÓ: visual mira em
+# enemy.y - 12, então o nó mira em enemy.y - 12 - VISUAL_OFFSET.y = +12.
+# Sinal positivo é intencional — mesmo padrão do mage_projectile.
+const ENEMY_AIM_OFFSET: Vector2 = Vector2(0, 12)
 const REDIRECT_HALFWAY: float = 0.55
 const REDIRECT_FINAL: float = 0.95
 const REDIRECT_FINAL_DISTANCE: float = 8.0

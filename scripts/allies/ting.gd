@@ -66,9 +66,10 @@ func _physics_process(delta: float) -> void:
 
 
 func _pick_new_waypoint() -> void:
-	# Spot "estratégico": ponto médio dos 3 enemies mais próximos do ting.
-	# Sem enemies por perto, sorteia ponto random dentro do wander_bounds.
-	var spot: Vector2 = _find_strategic_spot()
+	# Ting é frágil — fica numa "área segura", longe dos inimigos. Sorteia
+	# vários samples random no wander_bounds e escolhe o que MAXIMIZA a
+	# distância ao inimigo mais próximo. Sem inimigos no campo: random puro.
+	var spot: Vector2 = _find_safe_spot()
 	if spot.x == INF:
 		spot = Vector2(
 			randf_range(wander_bounds.position.x, wander_bounds.position.x + wander_bounds.size.x),
@@ -77,21 +78,34 @@ func _pick_new_waypoint() -> void:
 	_waypoint = _clamp_to_bounds(spot)
 
 
-func _find_strategic_spot() -> Vector2:
+# Quantos samples random rolar pra escolher o spot mais distante dos enemies.
+# Maior = melhor "safety" mas mais CPU. 8 dá um equilíbrio bom.
+const _SAFE_SPOT_SAMPLES: int = 8
+
+
+func _find_safe_spot() -> Vector2:
 	var enemies: Array[Node2D] = []
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if is_instance_valid(e) and e is Node2D and not e.is_queued_for_deletion():
 			enemies.append(e)
 	if enemies.is_empty():
 		return Vector2(INF, INF)
-	enemies.sort_custom(func(a: Node2D, b: Node2D) -> bool:
-		return a.global_position.distance_to(global_position) < b.global_position.distance_to(global_position)
-	)
-	var sum: Vector2 = Vector2.ZERO
-	var n: int = mini(3, enemies.size())
-	for i in n:
-		sum += enemies[i].global_position
-	return sum / float(n)
+	var best_pos: Vector2 = Vector2(INF, INF)
+	var best_min_dist: float = -1.0
+	for i in _SAFE_SPOT_SAMPLES:
+		var sample: Vector2 = Vector2(
+			randf_range(wander_bounds.position.x, wander_bounds.position.x + wander_bounds.size.x),
+			randf_range(wander_bounds.position.y, wander_bounds.position.y + wander_bounds.size.y)
+		)
+		var nearest: float = INF
+		for e in enemies:
+			var d: float = sample.distance_to(e.global_position)
+			if d < nearest:
+				nearest = d
+		if nearest > best_min_dist:
+			best_min_dist = nearest
+			best_pos = sample
+	return best_pos
 
 
 func _clamp_to_bounds(p: Vector2) -> Vector2:
