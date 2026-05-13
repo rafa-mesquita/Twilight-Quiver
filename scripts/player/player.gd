@@ -7,14 +7,14 @@ signal died
 # durante o cooldown (HUD atualiza progress).
 signal dash_unlocked
 signal dash_cooldown_changed(remaining: float, total: float)
-# Esquivando (compartilha slot/arte do dash — mutuamente exclusivos). Lv3+ ganha
+# Esquivando (compartilha slot/arte do dash — mutuamente exclusivos). Lv2+ ganha
 # uma skill no espaço (+30% move speed). HUD reusa a mesma barra do dash.
 signal esquivando_unlocked
 signal esquivando_cooldown_changed(remaining: float, total: float)
 # Stack count + cap atual (cap varia por nível: 3 nos lv1-3, 4 no lv4). HUD
 # escuta pra atualizar o ícone perto dos outros skill icons.
 signal esquivando_stacks_changed(stacks: int, cap: int)
-# Ability ativa/inativa (skill do espaço lv3+, +50% move por 3s). HUD muda o
+# Ability ativa/inativa (skill do espaço lv2+, +50% move por 3s). HUD muda o
 # modulate do ícone enquanto tá ativo pra dar feedback visual claro.
 signal esquivando_ability_active_changed(active: bool)
 # Fire Skill (lv3 do elemental Fogo): emitido ao chegar no lv3 (HUD mostra ícone)
@@ -26,6 +26,9 @@ signal chain_lightning_skill_cooldown_changed(remaining: float, total: float)
 # Curse Skill (lv4 do elemental Maldição): raio roxo em linha reta, cd 3s.
 signal curse_skill_unlocked
 signal curse_skill_cooldown_changed(remaining: float, total: float)
+# Perfuração: HUD mostra contador 1/2/3 (próximo tiro perfurante a cada 3 ataques
+# nos lv1-3; sempre ativo no lv4). Emitido em cada release_arrow e no apply_upgrade.
+signal perfuracao_counter_changed(counter: int, level: int)
 # Disparado a cada compra/aquisição de upgrade. HUD escuta pra atualizar a
 # coluna de upgrades adquiridos.
 signal upgrade_applied(id: String, level: int)
@@ -188,13 +191,13 @@ var has_dash_double_arrow: bool = false
 #   stacka (pierce/ricochet/multi-arrow individual).
 const ESQUIVANDO_LEVEL_MAX: int = 4
 const ESQUIVANDO_STACK_DURATION: float = 2.0
-const ESQUIVANDO_STACK_PCT_BY_LEVEL: Array[float] = [0.05, 0.08, 0.08, 0.10]
-const ESQUIVANDO_MAX_STACKS_BY_LEVEL: Array[int] = [3, 3, 3, 4]
+const ESQUIVANDO_STACK_PCT_BY_LEVEL: Array[float] = [0.05, 0.06, 0.09, 0.11]
+const ESQUIVANDO_MAX_STACKS_BY_LEVEL: Array[int] = [3, 3, 4, 5]
 const ESQUIVANDO_DODGE_BY_LEVEL: Array[float] = [0.02, 0.02, 0.05, 0.05]
-const ESQUIVANDO_ABILITY_MIN_LEVEL: int = 3
+const ESQUIVANDO_ABILITY_MIN_LEVEL: int = 2
 const ESQUIVANDO_ABILITY_BUFF: float = 0.50
 const ESQUIVANDO_ABILITY_DURATION: float = 3.0
-const ESQUIVANDO_ABILITY_CD_BY_LEVEL: Array[float] = [15.0, 15.0, 15.0, 10.0]
+const ESQUIVANDO_ABILITY_CD_BY_LEVEL: Array[float] = [15.0, 15.0, 12.5, 10.0]
 var esquivando_level: int = 0
 var has_esquivando: bool = false
 var _esquivando_stacks: int = 0
@@ -514,6 +517,8 @@ func _release_arrow() -> void:
 		_perf_shot_counter = 0
 	else:
 		_perf_shot_counter += 1
+	if perfuracao_level > 0:
+		perfuracao_counter_changed.emit(_perf_shot_counter, perfuracao_level)
 	# Ricochete: mesma regra (1× por ataque, toda volley compartilha).
 	var is_ricochet: bool = _is_ricochet_shot()
 	if is_ricochet:
@@ -1470,6 +1475,7 @@ func apply_upgrade(upgrade_id: String) -> void:
 			arrow_damage_multiplier += 0.20
 		"perfuracao":
 			perfuracao_level = mini(perfuracao_level + 1, 4)
+			perfuracao_counter_changed.emit(_perf_shot_counter, perfuracao_level)
 		"attack_speed":
 			attack_speed_level += 1
 			# +27% por stack (aditivo). Aplica imediatamente — próximo ataque

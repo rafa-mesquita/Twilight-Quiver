@@ -160,11 +160,11 @@ SHOP_HP_PLUS_25,+25 HP,+25 HP,+25 HP,+25 PV
 SHOP_DAMAGE,+20% dano,+20% dmg,+20% daño,+20% dégâts
 SHOP_ATTACK_SPEED,+27% atk speed,+27% atk speed,+27% vel. ataque,+27% vit. attaque
 SHOP_MOVE_SPEED,+10% move speed,+10% move speed,+10% vel. movimiento,+10% vit. déplacement
-SHOP_ARMOR_8,+8% dano / +4% lentidão reduzidos,+8% dmg / +4% slow reduced,+8% daño / +4% lentitud reducidos,+8% dégâts / +4% ralentissement réduits
-SHOP_ARMOR_12,+12% dano / +6% lentidão reduzidos,+12% dmg / +6% slow reduced,+12% daño / +6% lentitud reducidos,+12% dégâts / +6% ralentissement réduits
-SHOP_ARMOR_16,+16% dano / +8% lentidão reduzidos,+16% dmg / +8% slow reduced,+16% daño / +8% lentitud reducidos,+16% dégâts / +8% ralentissement réduits
-SHOP_ARMOR_20,+20% dano / +10% lentidão reduzidos,+20% dmg / +10% slow reduced,+20% daño / +10% lentitud reducidos,+20% dégâts / +10% ralentissement réduits
-SHOP_ARMOR_3,+3% dano / +1.5% lentidão reduzidos,+3% dmg / +1.5% slow reduced,+3% daño / +1.5% lentitud reducidos,+3% dégâts / +1.5% ralentissement réduits
+SHOP_ARMOR_8,(8%- dano e 4% tenc.),(8%- dmg & 4% tena.),(8%- daño y 4% tena.),(8%- dégâts & 4% ténac.)
+SHOP_ARMOR_12,(12%- dano e 6% tenc.),(12%- dmg & 6% tena.),(12%- daño y 6% tena.),(12%- dégâts & 6% ténac.)
+SHOP_ARMOR_16,(16%- dano e 8% tenc.),(16%- dmg & 8% tena.),(16%- daño y 8% tena.),(16%- dégâts & 8% ténac.)
+SHOP_ARMOR_20,(20%- dano e 10% tenc.),(20%- dmg & 10% tena.),(20%- daño y 10% tena.),(20%- dégâts & 10% ténac.)
+SHOP_ARMOR_3,(3%- dano e 1.5% tenc.),(3%- dmg & 1.5% tena.),(3%- daño y 1.5% tena.),(3%- dégâts & 1.5% ténac.)
 SHOP_UPG_PERFURACAO,Perfuracao,Piercing,Perforación,Perforation
 SHOP_UPG_MULTI_ARROW,Multiplas Flechas,Multiple Arrows,Flechas Múltiples,Flèches Multiples
 SHOP_UPG_DOUBLE_ARROWS,Flechas Duplas,Double Arrows,Flechas Dobles,Flèches Doubles
@@ -342,39 +342,43 @@ máx 3 stacks
 +5% atk/mov 2s
 max 3 stacks
 2% esquive"
-SHOP_ESQUIVANDO_DESC_2,"+8% por stack
+SHOP_ESQUIVANDO_DESC_2,"+6% por stack
 moeda = stack
-max 3 stacks
-2% esquiva","+8% per stack
-coin = stack
-max 3 stacks
-2% dodge","+8% por stack
-moneda = stack
-máx 3 stacks
-2% esquiva","+8% par stack
-pièce = stack
-max 3 stacks
-2% esquive"
-SHOP_ESQUIVANDO_DESC_3,"5% esquiva
 Espaço: +30% move
-3s, cd 15s","5% dodge
+3s, cd 15s","+6% per stack
+coin = stack
 Space: +30% move
-3s, cd 15s","5% esquiva
+3s, cd 15s","+6% por stack
+moneda = stack
 Espacio: +30% mov
-3s, cd 15s","5% esquive
+3s, cd 15s","+6% par stack
+pièce = stack
 Espace: +30% mov
 3s, cd 15s"
-SHOP_ESQUIVANDO_DESC_4,"+10% por stack
+SHOP_ESQUIVANDO_DESC_3,"+9% por stack
 max 4 stacks
-todo hit stacka
-cd habilidade 10s","+10% per stack
+5% esquiva
+cd habilidade 12.5s","+9% per stack
 max 4 stacks
-every hit stacks
-ability cd 10s","+10% por stack
+5% dodge
+ability cd 12.5s","+9% por stack
 máx 4 stacks
-todo hit stack
-cd hab. 10s","+10% par stack
+5% esquiva
+cd hab. 12.5s","+9% par stack
 max 4 stacks
+5% esquive
+cd capa 12.5s"
+SHOP_ESQUIVANDO_DESC_4,"+11% por stack
+max 5 stacks
+todo hit stacka
+cd habilidade 10s","+11% per stack
+max 5 stacks
+every hit stacks
+ability cd 10s","+11% por stack
+máx 5 stacks
+todo hit stack
+cd hab. 10s","+11% par stack
+max 5 stacks
 chaque hit stack
 cd capa 10s"
 SHOP_LIFE_STEAL_DESC_1,"10% drop coracao

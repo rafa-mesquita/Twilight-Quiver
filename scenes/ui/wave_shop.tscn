@@ -8,8 +8,8 @@
 [ext_resource type="Texture2D" uid="uid://du8vqcoebjapl" path="res://assets/Hud/shop/aliado/placeholder.png" id="7_ali_ph"]
 [ext_resource type="Texture2D" uid="uid://43kh6plt35ba" path="res://assets/obecjts map/coins.png" id="8_coin"]
 [ext_resource type="PackedScene" uid="uid://b8tw1gv0vqlbl" path="res://scenes/ui/version_label.tscn" id="9_version"]
-[ext_resource type="Script" path="res://scripts/ui/shop_player_face.gd" id="10_pface_script"]
-[ext_resource type="Texture2D" path="res://assets/Hud/playerHud/border.png" id="11_pface_border"]
+[ext_resource type="Script" uid="uid://d4mqu1a2m3a0v" path="res://scripts/ui/shop_player_face.gd" id="10_pface_script"]
+[ext_resource type="Texture2D" uid="uid://b8o6bfs2v2rmo" path="res://assets/Hud/playerHud/border.png" id="11_pface_border"]
 
 [sub_resource type="AtlasTexture" id="ATX_coin"]
 atlas = ExtResource("8_coin")
@@ -56,16 +56,16 @@ atlas = ExtResource("5_reroll")
 region = Rect2(17, 0, 17, 16)
 
 [sub_resource type="StyleBoxFlat" id="SBF_stats_box"]
-bg_color = Color(0.10, 0.07, 0.14, 0.85)
-border_color = Color(0.55, 0.40, 0.70, 1)
+bg_color = Color(0.1, 0.07, 0.14, 0.85)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
+border_color = Color(0.55, 0.4, 0.7, 1)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
-corner_radius_bottom_left = 4
 corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="AtlasTexture" id="ATX_border_back"]
 atlas = ExtResource("11_pface_border")
@@ -397,11 +397,11 @@ vertical_alignment = 1
 
 [node name="AliadoRow" type="Control" parent="Root" unique_id=38431779]
 anchors_preset = 0
-scale = Vector2(0.85, 0.85)
 offset_left = 600.0
 offset_top = 510.0
 offset_right = 1572.0
 offset_bottom = 966.0
+scale = Vector2(0.85, 0.85)
 
 [node name="AliadoCard1" type="Control" parent="Root/AliadoRow" unique_id=488023799]
 anchors_preset = 0
@@ -432,9 +432,9 @@ autowrap_mode = 2
 
 [node name="DescLabel" type="Label" parent="Root/AliadoRow/AliadoCard1" unique_id=756299876]
 layout_mode = 0
-offset_left = -2.0
+offset_left = 29.76471
 offset_top = 107.0
-offset_right = 323.0
+offset_right = 274.7647
 offset_bottom = 257.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -512,9 +512,9 @@ autowrap_mode = 2
 
 [node name="DescLabel" type="Label" parent="Root/AliadoRow/AliadoCard2" unique_id=82308045]
 layout_mode = 0
-offset_left = 12.0
+offset_left = 26.470581
 offset_top = 87.0
-offset_right = 294.0
+offset_right = 274.82336
 offset_bottom = 256.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -589,9 +589,9 @@ autowrap_mode = 2
 
 [node name="DescLabel" type="Label" parent="Root/AliadoRow/AliadoCard3" unique_id=1406948037]
 layout_mode = 0
-offset_left = 12.0
+offset_left = 28.470581
 offset_top = 87.0
-offset_right = 294.0
+offset_right = 277.52942
 offset_bottom = 256.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -650,11 +650,11 @@ vertical_alignment = 1
 
 [node name="UpgRow" type="Control" parent="Root" unique_id=2130246383]
 anchors_preset = 0
-scale = Vector2(0.85, 0.85)
 offset_left = 600.0
 offset_top = 140.0
 offset_right = 1572.0
 offset_bottom = 516.0
+scale = Vector2(0.85, 0.85)
 
 [node name="UpgCard1" type="Control" parent="Root/UpgRow" unique_id=1672974987]
 anchors_preset = 0
@@ -685,9 +685,9 @@ autowrap_mode = 2
 
 [node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard1" unique_id=189410968]
 layout_mode = 0
-offset_left = 12.0
+offset_left = 30.705872
 offset_top = 111.0
-offset_right = 294.0
+offset_right = 275.29413
 offset_bottom = 280.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -762,9 +762,9 @@ autowrap_mode = 2
 
 [node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard2" unique_id=153398373]
 layout_mode = 0
-offset_left = 12.0
+offset_left = 31.176514
 offset_top = 111.0
-offset_right = 294.0
+offset_right = 274.8235
 offset_bottom = 280.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -842,9 +842,9 @@ autowrap_mode = 2
 
 [node name="DescLabel" type="Label" parent="Root/UpgRow/UpgCard3" unique_id=951410516]
 layout_mode = 0
-offset_left = 12.0
+offset_left = 30.470581
 offset_top = 111.0
-offset_right = 294.0
+offset_right = 275.52942
 offset_bottom = 280.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -904,11 +904,11 @@ text = "SHOP_NEXT_WAVE"
 
 [node name="GlobalReroll" type="Control" parent="Root" unique_id=707134856]
 anchors_preset = 0
-scale = Vector2(0.7, 0.7)
 offset_left = 240.0
 offset_top = 830.0
 offset_right = 460.0
 offset_bottom = 1010.0
+scale = Vector2(0.7, 0.7)
 
 [node name="Btn" type="TextureButton" parent="Root/GlobalReroll" unique_id=2071134746]
 texture_filter = 1
@@ -947,46 +947,46 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="StatsCard" type="Control" parent="Root" unique_id=305011001]
-layout_mode = 0
+anchors_preset = 0
 offset_left = 1440.0
 offset_top = 80.0
 offset_right = 1900.0
 offset_bottom = 970.0
 
-[node name="Bg" type="Panel" parent="Root/StatsCard"]
+[node name="Bg" type="Panel" parent="Root/StatsCard" unique_id=971991615]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("SBF_stats_box")
 
-[node name="PlayerFace" type="Node2D" parent="Root/StatsCard"]
+[node name="PlayerFace" type="Node2D" parent="Root/StatsCard" unique_id=1377873339]
 texture_filter = 1
 position = Vector2(230, 200)
 scale = Vector2(4.6, 4.6)
 script = ExtResource("10_pface_script")
 
-[node name="BorderBack" type="Sprite2D" parent="Root/StatsCard/PlayerFace"]
+[node name="BorderBack" type="Sprite2D" parent="Root/StatsCard/PlayerFace" unique_id=486496837]
 texture_filter = 1
 texture = SubResource("ATX_border_back")
 
-[node name="Cape" type="AnimatedSprite2D" parent="Root/StatsCard/PlayerFace"]
+[node name="Cape" type="AnimatedSprite2D" parent="Root/StatsCard/PlayerFace" unique_id=1923971279]
 texture_filter = 1
 
-[node name="Head" type="AnimatedSprite2D" parent="Root/StatsCard/PlayerFace"]
+[node name="Head" type="AnimatedSprite2D" parent="Root/StatsCard/PlayerFace" unique_id=1821095773]
 texture_filter = 1
 
-[node name="Shirt" type="AnimatedSprite2D" parent="Root/StatsCard/PlayerFace"]
+[node name="Shirt" type="AnimatedSprite2D" parent="Root/StatsCard/PlayerFace" unique_id=580506115]
 texture_filter = 1
 
-[node name="Hair" type="AnimatedSprite2D" parent="Root/StatsCard/PlayerFace"]
+[node name="Hair" type="AnimatedSprite2D" parent="Root/StatsCard/PlayerFace" unique_id=1436986626]
 texture_filter = 1
 
-[node name="BorderFront" type="Sprite2D" parent="Root/StatsCard/PlayerFace"]
+[node name="BorderFront" type="Sprite2D" parent="Root/StatsCard/PlayerFace" unique_id=2036062468]
 texture_filter = 1
 texture = SubResource("ATX_border_front")
 
-[node name="StatsBox" type="VBoxContainer" parent="Root/StatsCard"]
+[node name="StatsBox" type="VBoxContainer" parent="Root/StatsCard" unique_id=643507958]
 layout_mode = 0
 offset_left = 28.0
 offset_top = 380.0
@@ -994,9 +994,8 @@ offset_right = 432.0
 offset_bottom = 540.0
 theme_override_constants/separation = 6
 
-[node name="UpgradesHeader" type="Label" parent="Root/StatsCard"]
+[node name="UpgradesHeader" type="Label" parent="Root/StatsCard" unique_id=569481652]
 layout_mode = 0
-offset_left = 0.0
 offset_top = 560.0
 offset_right = 460.0
 offset_bottom = 600.0
@@ -1006,7 +1005,7 @@ theme_override_font_sizes/font_size = 26
 text = "SHOP_HEADER_UPGRADES"
 horizontal_alignment = 1
 
-[node name="SlotsBox" type="GridContainer" parent="Root/StatsCard"]
+[node name="SlotsBox" type="GridContainer" parent="Root/StatsCard" unique_id=794869086]
 layout_mode = 0
 offset_left = 28.0
 offset_top = 620.0
@@ -1016,7 +1015,7 @@ theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8
 columns = 6
 
-[node name="PetsHeader" type="Label" parent="Root/StatsCard"]
+[node name="PetsHeader" type="Label" parent="Root/StatsCard" unique_id=401053701]
 layout_mode = 0
 offset_left = 16.0
 offset_top = 720.0
@@ -1028,7 +1027,7 @@ theme_override_font_sizes/font_size = 22
 text = "SHOP_HEADER_ALLIES"
 horizontal_alignment = 1
 
-[node name="StructuresHeader" type="Label" parent="Root/StatsCard"]
+[node name="StructuresHeader" type="Label" parent="Root/StatsCard" unique_id=95004346]
 layout_mode = 0
 offset_left = 234.0
 offset_top = 720.0
@@ -1040,7 +1039,7 @@ theme_override_font_sizes/font_size = 22
 text = "SHOP_HEADER_STRUCTURES"
 horizontal_alignment = 1
 
-[node name="PetsBox" type="HBoxContainer" parent="Root/StatsCard"]
+[node name="PetsBox" type="HBoxContainer" parent="Root/StatsCard" unique_id=1775917895]
 layout_mode = 0
 offset_left = 16.0
 offset_top = 764.0
@@ -1049,7 +1048,7 @@ offset_bottom = 830.0
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="StructuresBox" type="HBoxContainer" parent="Root/StatsCard"]
+[node name="StructuresBox" type="HBoxContainer" parent="Root/StatsCard" unique_id=1439552136]
 layout_mode = 0
 offset_left = 234.0
 offset_top = 764.0

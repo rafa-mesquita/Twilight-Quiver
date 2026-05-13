@@ -6,15 +6,17 @@ extends RefCounted
 # - Stack 1: 12% chance, 20% heal
 # - Stack 4: 27% chance, 35% heal
 # Inseto NÃO chama (anti-exploit summoner farm), igual ao gold.
-# Inimigos do contexto boss (grupo "boss" ou "boss_minion") têm -5% chance
-# em todos os níveis pra evitar fountain durante a boss fight.
+# Inimigos do contexto boss (grupo "boss" ou "boss_minion") têm chance × 0.75
+# (25% mais raro) pra não virar fountain durante a boss fight. O mesmo
+# multiplier é aplicado por coração no `drop_guaranteed` do boss.
 
 const PICKUP_SPREAD: float = 14.0
 const BASE_CHANCE: float = 0.12
 const CHANCE_PER_STACK: float = 0.05
 const BASE_HEAL_PCT: float = 0.20
 const HEAL_PCT_PER_STACK: float = 0.05
-const BOSS_CONTEXT_CHANCE_PENALTY: float = 0.05
+# Multiplier global pra drops em contexto boss (boss + minions). 0.75 = 25% mais raro.
+const BOSS_CONTEXT_DROP_MULTIPLIER: float = 0.75
 # Distância mínima de gold/coração já existente — evita pickups sobrepostos
 # quando ambos dropam do mesmo inimigo.
 const MIN_PICKUP_SEPARATION: float = 16.0
@@ -38,6 +40,9 @@ static func drop_guaranteed(world: Node, scene: PackedScene, drop_position: Vect
 		return
 	var heal_pct: float = BASE_HEAL_PCT + HEAL_PCT_PER_STACK * float(level - 1)
 	for i in count:
+		# Boss = drop 25% mais raro: cada coração tem 75% de chance.
+		if randf() > BOSS_CONTEXT_DROP_MULTIPLIER:
+			continue
 		var heart: Node2D = scene.instantiate()
 		if "heal_pct" in heart:
 			heart.heal_pct = heal_pct
@@ -59,7 +64,7 @@ static func try_drop(world: Node, scene: PackedScene, drop_position: Vector2,
 		return
 	var chance: float = BASE_CHANCE + CHANCE_PER_STACK * float(level - 1)
 	if source != null and (source.is_in_group("boss") or source.is_in_group("boss_minion")):
-		chance = max(0.0, chance - BOSS_CONTEXT_CHANCE_PENALTY)
+		chance *= BOSS_CONTEXT_DROP_MULTIPLIER
 	if randf() > chance:
 		return
 	var heal_pct: float = BASE_HEAL_PCT + HEAL_PCT_PER_STACK * float(level - 1)

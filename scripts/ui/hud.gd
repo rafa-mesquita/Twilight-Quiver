@@ -66,6 +66,10 @@ const HUD_RUNTIME_SCALE: Vector2 = Vector2(3, 3)
 @onready var curse_skill_cd_label: Label = $CurseSkillIcon/CdLabel
 @onready var esquivando_skill_icon: Control = $EsquivandoSkillIcon
 @onready var esquivando_stack_label: Label = $EsquivandoSkillIcon/StackLabel
+@onready var perfurante_counter_icon: Control = $PerfuranteCounterIcon
+@onready var perfurante_count_label: Label = $PerfuranteCounterIcon/CountLabel
+@onready var perfurante_frame_ring: ColorRect = $PerfuranteCounterIcon/FrameRing
+@onready var perfurante_inner: ColorRect = $PerfuranteCounterIcon/Inner
 # Glow ativo (skill do espaço): durante esse período, modulate do ícone é
 # sobrescrito pelo "active color" e ignora o estado de stacks.
 var _esquivando_ability_glow_active: bool = false
@@ -93,7 +97,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 	"hp", "armor", "damage", "attack_speed", "move_speed",
 	# Upgrades de gameplay
 	"perfuracao", "ricochet_arrow", "multi_arrow", "double_arrows", "chain_lightning",
-	"fire_arrow", "curse_arrow", "graviton", "life_steal", "dash",
+	"fire_arrow", "curse_arrow", "graviton", "life_steal", "dash", "esquivando",
 	"gold_magnet",
 	# Aliados
 	"woodwarden", "leno", "capivara_joe",
@@ -102,7 +106,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 const _UPG_CAPS: Dictionary = {
 	"perfuracao": 4, "ricochet_arrow": 4, "multi_arrow": 4, "double_arrows": 4, "chain_lightning": 4,
 	"fire_arrow": 4, "curse_arrow": 4, "graviton": 4, "life_steal": 4,
-	"dash": 4, "gold_magnet": 4,
+	"dash": 4, "esquivando": 4, "gold_magnet": 4,
 	"woodwarden": 4, "leno": 4, "capivara_joe": 4,
 }
 const _UPG_STATUS_COMBINED_PATH: String = "res://assets/Hud/shop/status/HP - atck speed - Move speed - Atck Dmg.png"
@@ -122,6 +126,7 @@ const _UPG_PATHS: Dictionary = {
 	"gold_magnet": "res://assets/Hud/shop/upgrade/coin master.png",
 	"life_steal": "res://assets/Hud/shop/upgrade/life steal.png",
 	"dash": "res://assets/Hud/shop/upgrade/deslizando.png",
+	"esquivando": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"leno": "res://assets/Hud/shop/aliado/Leno/Leno Card.png",
 	"woodwarden": "res://assets/Hud/shop/aliado/woodwarden/woodwarden card.png",
 }
@@ -198,7 +203,7 @@ func _ready() -> void:
 	# (separados, não tocados aqui).
 	for control_path in [
 		"HudFrame", "HpBar", "DashCdBar", "FireSkillIcon", "ChainLightningSkillIcon", "CurseSkillIcon",
-		"GoldDisplay", "TowerAlertIndicator",
+		"EsquivandoSkillIcon", "PerfuranteCounterIcon", "GoldDisplay", "TowerAlertIndicator",
 	]:
 		var n := get_node_or_null(control_path)
 		if n != null:
@@ -251,7 +256,7 @@ func _connect_player_signals() -> void:
 		player.esquivando_ability_active_changed.connect(_on_esquivando_ability_active_changed)
 	if "esquivando_level" in player and int(player.esquivando_level) >= 1:
 		_on_esquivando_unlocked()
-	if "esquivando_level" in player and int(player.esquivando_level) >= 3:
+	if "esquivando_level" in player and int(player.esquivando_level) >= 2:
 		dash_cd_bar.visible = true
 	# Fire skill icon — só aparece quando player chega no Fogo lv3.
 	if player.has_signal("fire_skill_unlocked") and not player.fire_skill_unlocked.is_connected(_on_fire_skill_unlocked):
@@ -274,6 +279,12 @@ func _connect_player_signals() -> void:
 		player.curse_skill_cooldown_changed.connect(_on_curse_skill_cooldown_changed)
 	if "curse_arrow_level" in player and int(player.curse_arrow_level) >= 4:
 		_on_curse_skill_unlocked()
+	# Contador da flecha perfurante — visível a partir do lv1.
+	if player.has_signal("perfuracao_counter_changed") and not player.perfuracao_counter_changed.is_connected(_on_perfuracao_counter_changed):
+		player.perfuracao_counter_changed.connect(_on_perfuracao_counter_changed)
+	if "perfuracao_level" in player and int(player.perfuracao_level) >= 1:
+		var ctr: int = int(player.get("_perf_shot_counter")) if "_perf_shot_counter" in player else 0
+		_on_perfuracao_counter_changed(ctr, int(player.perfuracao_level))
 	# Coluna de upgrades adquiridos: rebuild on signal.
 	if player.has_signal("upgrade_applied") and not player.upgrade_applied.is_connected(_on_upgrade_applied):
 		player.upgrade_applied.connect(_on_upgrade_applied)
@@ -422,7 +433,7 @@ func _on_dash_unlocked() -> void:
 	dash_cd_bar.visible = true
 
 
-# Esquivando: lv1+ mostra o ícone de stacks. Lv3+ também mostra a barra do
+# Esquivando: lv1+ mostra o ícone de stacks. Lv2+ também mostra a barra do
 # espaço (reusada do dash, mutuamente exclusivos).
 func _on_esquivando_unlocked() -> void:
 	var player := get_tree().get_first_node_in_group("player")
@@ -437,7 +448,7 @@ func _on_esquivando_unlocked() -> void:
 		if player.has_method("_esquivando_max_stacks"):
 			cap = int(player._esquivando_max_stacks())
 		_on_esquivando_stacks_changed(stacks, cap)
-	if "esquivando_level" in player and int(player.esquivando_level) >= 3:
+	if "esquivando_level" in player and int(player.esquivando_level) >= 2:
 		dash_cd_bar.visible = true
 
 
@@ -532,6 +543,28 @@ func _on_chain_lightning_skill_cooldown_changed(remaining: float, _total: float)
 	else:
 		chain_lightning_skill_cd_label.text = "%d" % int(ceilf(remaining))
 		chain_lightning_skill_icon.modulate = Color(0.55, 0.6, 0.7, 1.0)
+
+
+# Contador da Flecha Perfurante: a cada 3 ataques nos lv1-3 (próximo tiro
+# perfurante). Lv4: todo tiro é perfurante → ícone sempre em destaque.
+# Label mostra "1/2/3" como número do próximo ataque na sequência; quando vai
+# pra 3 (counter interno == 2), highlight mostra que o próximo tiro perfura.
+func _on_perfuracao_counter_changed(counter: int, level: int) -> void:
+	if level <= 0:
+		perfurante_counter_icon.visible = false
+		return
+	perfurante_counter_icon.visible = true
+	var is_pierce_imminent: bool = level >= 4 or counter >= 2
+	if level >= 4:
+		perfurante_count_label.text = "★"
+	else:
+		perfurante_count_label.text = "%d" % (counter + 1)
+	if is_pierce_imminent:
+		perfurante_counter_icon.modulate = Color.WHITE
+		perfurante_count_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.45, 1.0))
+	else:
+		perfurante_counter_icon.modulate = Color(0.55, 0.62, 0.7, 1.0)
+		perfurante_count_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 
 
 func _on_curse_skill_unlocked() -> void:

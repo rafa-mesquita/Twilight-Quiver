@@ -547,12 +547,12 @@ func _do_summon_horde() -> void:
 			minion.max_hp = float(minion.max_hp) * hp_mult * horde_hp_mult
 		if "damage_mult" in minion:
 			minion.damage_mult = damage_mult * horde_dmg_mult
-		# Minions invocados pelo boss não dropam gold/heart — único drop da
-		# wave 7 vem do próprio boss ao morrer.
+		# Minions invocados pelo boss não dropam gold (anti-fountain de currency).
+		# Coração eles ainda dropam pra Mestre da Cura ter efeito na boss fight —
+		# HeartDrop aplica BOSS_CONTEXT_DROP_MULTIPLIER (0.75) via grupo
+		# "boss_minion" pra reduzir 25%.
 		if "gold_drop_chance" in minion:
 			minion.gold_drop_chance = 0.0
-		if "heart_scene" in minion:
-			minion.heart_scene = null
 		_get_world().add_child(minion)
 		minion.global_position = pos
 		# Marca como minion do boss pra _update_state contar.
