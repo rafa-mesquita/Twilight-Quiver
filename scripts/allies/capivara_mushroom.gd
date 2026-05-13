@@ -11,7 +11,7 @@ extends Area2D
 @export var aoe_scene: PackedScene
 # Buff de speed (variante buff): adiciona +X ao move_speed_multiplier do player
 # por buff_duration segundos. (X é grande pra ser "forte" como pediu o design.)
-@export var buff_speed_amount: float = 0.80  # +80% durante o buff
+@export var buff_speed_amount: float = 0.70  # +70% durante o buff (-10pp do antigo 0.80)
 @export var buff_duration: float = 1.3
 # L3+: atk speed também (mesma duração).
 @export var l3_atk_speed_amount: float = 0.50  # +50%

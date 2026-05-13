@@ -328,6 +328,7 @@ func _start_next_wave() -> void:
 	if stopped:
 		return
 	wave_active = true
+	_spawn_capivara_starter_mushrooms()
 	_emit_progress()
 
 
@@ -770,28 +771,54 @@ func _top_up_wave1_coins() -> void:
 		coin.global_position = center + off
 
 
-const CAPIVARA_MUSHROOM_KEEP_MAX: int = 7
+const CAPIVARA_MUSHROOM_SCENE: PackedScene = preload("res://scenes/allies/capivara_mushroom.tscn")
+const CAPIVARA_STARTER_BUFF_COUNT: int = 3
+const CAPIVARA_STARTER_DAMAGE_COUNT: int = 2
+# Bounds onde os cogumelos starter podem nascer (mesmo retângulo de wander da
+# Capivara Joe — mantém o espalhamento dentro do mapa jogável).
+const CAPIVARA_STARTER_BOUNDS: Rect2 = Rect2(5, 8, 510, 284)
 
 
 func _cleanup_capivara_mushrooms() -> void:
-	# Damage variants somem sempre. Buff variants persistem entre raids, mas com
-	# cap de CAPIVARA_MUSHROOM_KEEP_MAX (sorteio aleatório se passar).
-	var buffs: Array[Node] = []
+	# Limpa TODOS os cogumelos no fim do round (buff e damage variants). Não
+	# persistem entre raids — o início da próxima wave gera um set novo via
+	# _spawn_capivara_starter_mushrooms.
 	for m in get_tree().get_nodes_in_group("capivara_mushroom"):
-		if not is_instance_valid(m):
-			continue
-		var is_dmg: bool = false
-		if "is_damage_variant" in m:
-			is_dmg = bool(m.is_damage_variant)
-		if is_dmg:
+		if is_instance_valid(m):
 			m.queue_free()
-		else:
-			buffs.append(m)
-	if buffs.size() <= CAPIVARA_MUSHROOM_KEEP_MAX:
+
+
+func _spawn_capivara_starter_mushrooms() -> void:
+	# Se o player tem Capivara Joe, gera o set inicial da wave: 3 buff sempre +
+	# 2 damage se a Capivara já tiver liberado a variante de dano (L2+).
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not player.has_method("get_upgrade_count"):
 		return
-	buffs.shuffle()
-	for i in range(CAPIVARA_MUSHROOM_KEEP_MAX, buffs.size()):
-		buffs[i].queue_free()
+	var lvl: int = int(player.get_upgrade_count("capivara_joe"))
+	if lvl < 1:
+		return
+	var world: Node = get_tree().get_first_node_in_group("world")
+	if world == null:
+		world = get_tree().current_scene
+	if world == null:
+		return
+	for i in CAPIVARA_STARTER_BUFF_COUNT:
+		_spawn_starter_mushroom(world, false)
+	if lvl >= 2:
+		for i in CAPIVARA_STARTER_DAMAGE_COUNT:
+			_spawn_starter_mushroom(world, true)
+
+
+func _spawn_starter_mushroom(world: Node, is_damage: bool) -> void:
+	var mush: Node2D = CAPIVARA_MUSHROOM_SCENE.instantiate()
+	if "is_damage_variant" in mush:
+		mush.is_damage_variant = is_damage
+	world.add_child(mush)
+	var b: Rect2 = CAPIVARA_STARTER_BOUNDS
+	mush.global_position = Vector2(
+		randf_range(b.position.x, b.position.x + b.size.x),
+		randf_range(b.position.y, b.position.y + b.size.y)
+	)
 
 
 func _cleanup_curse_allies() -> void:

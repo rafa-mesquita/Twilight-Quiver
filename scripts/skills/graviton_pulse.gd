@@ -25,6 +25,11 @@ const WAVE_EXPAND_DURATION: float = 1.10
 const WHITE_FLASH_INTERVAL: float = 0.35
 const WHITE_FLASH_FADE: float = 0.45
 const WHITE_FLASH_COLOR: Color = Color(1.0, 1.0, 1.0, 0.35)
+# Throttle global por inimigo: cada enemy só pode levar dano de explosão
+# graviton uma vez a cada DAMAGE_THROTTLE_SECONDS, independente de quantos
+# pulsos sobrepostos terminem em cima dele (volley/ataques em sequência).
+const DAMAGE_THROTTLE_META: StringName = &"graviton_dmg_cd_until"
+const DAMAGE_THROTTLE_SECONDS: float = 3.0
 
 var _elapsed: float = 0.0
 var _affected: Dictionary = {}  # enemy → SlowDebuff (pra refresh)
@@ -72,8 +77,9 @@ func _process(delta: float) -> void:
 
 
 func _spawn_wave() -> void:
-	# Ring que parte do centro e expande até o raio do campo. Várias ondas
-	# acumulam pra dar a sensação de propagação contínua.
+	# Ring que parte da borda do campo e CONVERGE pro centro — visual de "sucção"
+	# coerente com o pull gravitacional. Várias ondas acumulam pra dar sensação
+	# de propagação contínua.
 	var ring := Line2D.new()
 	ring.width = 1.8
 	ring.default_color = WAVE_COLOR
@@ -81,11 +87,12 @@ func _spawn_wave() -> void:
 	var segs: int = 28
 	for i in segs:
 		var ang: float = TAU * float(i) / float(segs)
-		ring.add_point(Vector2(cos(ang), sin(ang)) * 8.0)
+		ring.add_point(Vector2(cos(ang), sin(ang)) * radius)
 	ring.z_as_relative = false
 	ring.z_index = 0
 	add_child(ring)
-	var target_scale := Vector2(radius / 8.0, radius / 8.0)
+	# Começa no raio cheio (scale 1) e encolhe quase ao centro (scale ~0.05).
+	var target_scale := Vector2(0.05, 0.05)
 	var tw := ring.create_tween().set_parallel(true)
 	tw.tween_property(ring, "scale", target_scale, WAVE_EXPAND_DURATION)\
 		.set_trans(Tween.TRANS_LINEAR)
@@ -205,6 +212,7 @@ func _finish() -> void:
 
 
 func _explode() -> void:
+	var now: float = Time.get_ticks_msec() / 1000.0
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e) or not (e is Node2D):
 			continue
@@ -214,6 +222,11 @@ func _explode() -> void:
 			continue
 		if (e as Node2D).global_position.distance_to(global_position) > radius:
 			continue
+		# Throttle por inimigo: skip se ainda em cooldown da última explosão.
+		var cd_until: float = float(e.get_meta(DAMAGE_THROTTLE_META, 0.0))
+		if now < cd_until:
+			continue
+		e.set_meta(DAMAGE_THROTTLE_META, now + DAMAGE_THROTTLE_SECONDS)
 		var was_alive_gv: bool = (not ("hp" in e)) or float(e.hp) > 0.0
 		e.take_damage(explosion_damage)
 		if source != null and source.has_method("notify_damage_dealt"):

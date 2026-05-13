@@ -756,35 +756,35 @@ func _is_graviton_shot() -> bool:
 
 
 func _graviton_radius() -> float:
-	# Range do pulso. Tunado pra ficar contido — L4 cresce mas não absurdo.
+	# L1-L2 = 45, L3-L4 = 50. Raio compacto pra ficar bem contido no chão.
 	match graviton_level:
 		1: return 45.0
-		2: return 60.0
-		3: return 60.0
-		4: return 75.0
+		2: return 45.0
+		3: return 50.0
+		4: return 50.0
 	return 45.0
 
 
 func _graviton_lifetime() -> float:
-	# L1 nerf: dura menos pra não dominar (pulso ficava muito mais útil que custo).
-	# L2+ mantém os 3s da spec.
+	# L1 mais curto (1.3s) pra equilibrar o slow leve. L2+ mantém 3s.
 	if graviton_level == 1:
-		return 1.8
+		return 1.3
 	return 3.0
 
 
 func _graviton_slow_factor() -> float:
-	# Slow no campo. L1-L3 = 30% slow (factor 0.7). L4 = 45% (factor 0.55).
-	if graviton_level >= 4:
-		return 0.55
+	# L1 = 20% slow (factor 0.8). L2+ = 30% slow (factor 0.7).
+	if graviton_level == 1:
+		return 0.8
 	return 0.7
 
 
 func _graviton_explosion_damage() -> float:
-	# L3+ o pulso explode no fim. L3=30, L4=50 (área e dano aumentados).
-	match graviton_level:
-		3: return 30.0
-		4: return 50.0
+	# Só L4 dá dano AoE no fim (20). L1-L3 são puro CC/slow.
+	# O throttle de 3s/inimigo é aplicado no graviton_pulse pra evitar que
+	# múltiplos pulsos (volley/ataques em sequência) empilhem dano no mesmo alvo.
+	if graviton_level >= 4:
+		return 20.0
 	return 0.0
 
 
@@ -807,7 +807,7 @@ func _fire_burn_dps() -> float:
 		2: base = 7.0
 		3: base = 9.0
 		4: base = 12.0
-	return base * _fire_burn_multiplier()
+	return _apply_dmg_pct_to_dps(base * _fire_burn_multiplier())
 
 
 func _fire_burn_duration() -> float:
@@ -823,7 +823,7 @@ func _fire_trail_dps() -> float:
 		2: base = 4.0
 		3: base = 5.0
 		4: base = 7.0
-	return base * _fire_burn_multiplier()
+	return _apply_dmg_pct_to_dps(base * _fire_burn_multiplier())
 
 
 func _curse_dps() -> float:
@@ -832,12 +832,25 @@ func _curse_dps() -> float:
 	# Lv1 = 3 dps × 4s = 12 total dmg. Mesmo gate do fogo: sem dano, arrow(25)
 	# + DoT(12) = 37 não mata macaco wave 1 (40 HP); com dano, arrow(30) +
 	# DoT(12) = 42 mata via DoT.
+	var base: float = 0.0
 	match curse_arrow_level:
-		1: return 3.0
-		2: return 4.0
-		3: return 6.0
-		4: return 8.0
-	return 0.0
+		1: base = 3.0
+		2: base = 4.0
+		3: base = 6.0
+		4: base = 8.0
+	return _apply_dmg_pct_to_dps(base)
+
+
+func _apply_dmg_pct_to_dps(base: float) -> float:
+	# Aplica o arrow_damage_multiplier (stat "Dano") no dps de DoT.
+	# Garante incremento mínimo de +1 quando há % de dano ativo — DoTs de base
+	# baixa (ex: curse lv1 = 3 dps × 1.20 = 3.6) sentiriam pouco do stat sem isso.
+	if base <= 0.0 or arrow_damage_multiplier <= 1.0:
+		return base
+	var scaled: float = base * arrow_damage_multiplier
+	if scaled - base < 1.0:
+		scaled = base + 1.0
+	return scaled
 
 
 func _curse_duration() -> float:
@@ -1648,9 +1661,10 @@ func _leno_target_count() -> int:
 
 
 func _refresh_capivaras() -> void:
-	# L1-L3: 1 capivara. L4: 2. Drop interval: L1=17.5s, L2+=8.75s.
+	# L1-L3: 1 capivara. L4: 2. Drop interval: L1=19.5s, L2+=10.75s
+	# (+2s em todos os níveis pra balancear o uptime de buff).
 	var target_count: int = 2 if capivara_joe_level >= 4 else (1 if capivara_joe_level >= 1 else 0)
-	var interval: float = 8.75 if capivara_joe_level >= 2 else 17.5
+	var interval: float = 10.75 if capivara_joe_level >= 2 else 19.5
 	# Limpa entries inválidos.
 	var alive: Array[Node2D] = []
 	for c in _capivaras:
@@ -1717,7 +1731,8 @@ func _tick_capivara_buffs(delta: float) -> void:
 func _refresh_woodwardens() -> void:
 	# Spawna woodwardens faltantes pra match o level. Atualiza stats em todos
 	# os vivos. Spawn em volta do player (offset random pra não empilhar).
-	var target_count: int = woodwarden_level
+	# L1-L2 = 1 warden, L3+ = 2 wardens (foco tank/utilidade).
+	var target_count: int = _woodwarden_target_count()
 	# Limpa entries totalmente sem instance + sem timer (raro — só edge case
 	# em que ainda não foi spawnado).
 	while _woodwardens.size() < target_count:
@@ -1737,21 +1752,40 @@ func _refresh_woodwardens() -> void:
 
 
 func _apply_woodwarden_stats(ww: Node) -> void:
-	# Scaling por level: +25 HP e +5 dmg por nível acima de 1 (mesma curva
-	# que o wave_manager._apply_woodwarden_scaling_if_applicable usava).
+	# Foco em tank/utilidade:
+	# - L1-L3: base_hp +20% (=384), damage=0, cooldown 3.5s (ataque só stuna em área).
+	# - L4: +150 hp (=534), damage=100, cooldown 3.0s (passa a dar dano).
+	# Heal pro player no ataque é decidido em woodwarden._apply_hit via get_upgrade_count.
 	if not ("max_hp" in ww and "damage" in ww):
 		return
 	var lvl: int = woodwarden_level
-	if lvl <= 1:
+	if lvl <= 0:
 		return
-	ww.max_hp = ww.max_hp + 25.0 * float(lvl - 1)
-	ww.damage = ww.damage + 5.0 * float(lvl - 1)
+	var base_hp: float = 384.0  # 320 × 1.20
+	var extra_hp: float = 150.0 if lvl >= 4 else 0.0
+	ww.max_hp = base_hp + extra_hp
+	if lvl >= 4:
+		ww.damage = 100.0
+		if "attack_cooldown" in ww:
+			ww.attack_cooldown = 4.5
+	else:
+		ww.damage = 0.0
+		if "attack_cooldown" in ww:
+			ww.attack_cooldown = 5.0
 	if "hp" in ww:
 		ww.hp = ww.max_hp
 	if ww.has_node("HpBar"):
 		var bar: Node = ww.get_node("HpBar")
 		if bar.has_method("set_ratio"):
 			bar.set_ratio(1.0)
+
+
+func _woodwarden_target_count() -> int:
+	if woodwarden_level <= 0:
+		return 0
+	if woodwarden_level <= 2:
+		return 1
+	return 2
 
 
 func _check_woodwarden_respawns(delta: float) -> void:
@@ -2067,21 +2101,6 @@ func notify_monkey_cursed() -> void:
 func notify_damage_dealt(amount: float) -> void:
 	if amount > 0.0:
 		stats_damage_dealt += amount
-		_heal_woodwardens_from_damage(amount)
-
-
-const WOODWARDEN_HEAL_FROM_DAMAGE: float = 0.20  # 20% do dano vira cura
-
-func _heal_woodwardens_from_damage(amount: float) -> void:
-	# Cada woodwarden vivo cura por % do dano causado pelo player.
-	# Identifica via grupo "tank_ally" (woodwarden é o único nesse grupo hoje).
-	var heal_amount: float = amount * WOODWARDEN_HEAL_FROM_DAMAGE
-	if heal_amount <= 0.0:
-		return
-	for ally in get_tree().get_nodes_in_group("tank_ally"):
-		if not is_instance_valid(ally) or not ally.has_method("heal"):
-			continue
-		ally.heal(heal_amount)
 
 
 func notify_damage_dealt_by_source(amount: float, source_id: String) -> void:

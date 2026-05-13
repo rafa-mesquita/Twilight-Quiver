@@ -12,11 +12,13 @@ extends CharacterBody2D
 
 signal died(woodwarden: Node)
 
-@export var max_hp: float = 320.0
-@export var damage: float = 50.0
-@export var stun_duration: float = 1.2
-@export var attack_cooldown: float = 1.6  # 1 ataque a cada 1.6s (era 2.4)
+@export var max_hp: float = 384.0
+@export var damage: float = 0.0
+@export var stun_duration: float = 1.5
+@export var attack_cooldown: float = 5.0  # base L1-L3 (foco utilidade); L4 cai pra 4.5
 @export var attack_range: float = 16.0
+# Raio do stun em área aplicado em todo ataque (lv1+). Centrado no alvo principal.
+@export var aoe_stun_radius: float = 50.0
 @export var aggro_range: float = 140.0
 # Foco do Woodwarden é DEFENDER o player — só persegue inimigos que estão
 # dentro deste raio em volta do PLAYER (não do warden). Evita correr pra
@@ -42,10 +44,11 @@ signal died(woodwarden: Node)
 @export var kill_effect_scene: PackedScene
 @export var death_silhouette_duration: float = 1.0
 @export var attack_sound: AudioStream
-@export var attack_sound_volume_db: float = -12.0
+@export var attack_sound_volume_db: float = -16.0
 const ATTACK_SOUND_DURATION: float = 1.0  # tocar só 1s do mp3
 
 const SILHOUETTE_SHADER: Shader = preload("res://shaders/silhouette.gdshader")
+const STUN_VISUAL_SCRIPT: GDScript = preload("res://scripts/effects/stun_visual.gd")
 # Frame do dano: 1 = ~0.167s na anim @ 6fps (cedo o suficiente pra inimigo
 # não escapar do alcance durante a anim de 0.667s).
 const HIT_FRAME: int = 1
@@ -258,7 +261,9 @@ func _apply_hit() -> void:
 	# slow (0.667s) dá tempo do alvo se afastar ~13px naturalmente.
 	if dist > attack_range + 14.0:
 		return  # alvo escapou
-	if current_target.has_method("take_damage"):
+	# Dano só com damage > 0 (L4+). L1-L3 são puro tank/utilidade: stun em área
+	# + cura do player, sem causar dano.
+	if damage > 0.0 and current_target.has_method("take_damage"):
 		# Curse ANTES do take_damage pra contar na conversão se o hit matar.
 		CurseAllyHelper.apply_ally_curse_on_damage(current_target, self)
 		var was_alive_ww: bool = (not ("hp" in current_target)) or float(current_target.hp) > 0.0
@@ -269,35 +274,50 @@ func _apply_hit() -> void:
 			dmg *= WOODWARDEN_BOSS_DMG_MULT
 		current_target.take_damage(dmg)
 		_notify_player_dmg_kill(dmg, "woodwarden", was_alive_ww, current_target)
-	if current_target.has_method("apply_stun"):
-		current_target.apply_stun(stun_duration)
+	# Stun em área: todos os inimigos no aoe_stun_radius em volta do alvo
+	# principal sofrem stun. cc_immune (boss/stone) ignoram via apply_stun próprio.
+	var aoe_origin: Vector2 = current_target.global_position
+	var r_sq: float = aoe_stun_radius * aoe_stun_radius
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not is_instance_valid(e) or not (e is Node2D):
+			continue
+		if (e as Node2D).global_position.distance_squared_to(aoe_origin) > r_sq:
+			continue
+		if e.has_method("apply_stun"):
+			e.apply_stun(stun_duration)
+			_ensure_stun_visual(e)
 	if current_target.has_method("apply_knockback"):
 		var dir: Vector2 = (current_target.global_position - global_position).normalized()
 		current_target.apply_knockback(dir, 60.0)
-	# Lv2+ do Woodwarden: ataques curam todos os aliados (e player) em 25% do dano.
+	# Cura do player no ataque: L2 = 25hp, L3+ = 30hp (carrega pro L4).
 	var p := get_tree().get_first_node_in_group("player")
-	if p != null and p.has_method("get_upgrade_count"):
-		if int(p.get_upgrade_count("woodwarden")) >= 2:
-			_heal_all_allies(damage * 0.25)
+	if p != null and p.has_method("get_upgrade_count") and p.has_method("heal"):
+		var ww_lvl: int = int(p.get_upgrade_count("woodwarden"))
+		var heal_amount: float = 0.0
+		if ww_lvl == 2:
+			heal_amount = 25.0
+		elif ww_lvl >= 3:
+			heal_amount = 30.0
+		if heal_amount > 0.0:
+			p.heal(heal_amount)
+			if p is Node2D:
+				_spawn_heal_flash(p as Node2D)
 
 
-func _heal_all_allies(amount: float) -> void:
-	if amount <= 0.0:
+func _ensure_stun_visual(target: Node) -> void:
+	# Adiciona ícone de stun (anim do stun.png) sobre a cabeça do alvo.
+	# Auto-destroi quando `_stun_remaining` zera. Skip se já tem um ativo.
+	# Usa preload do script (sem depender de class_name) pra evitar erro de
+	# cache do editor.
+	if not is_instance_valid(target):
 		return
-	# Cura todos os entities no group "ally" (woodwardens, towers, etc.) e o player.
-	# Spawna flash verde sobre cada um que efetivamente recebeu heal pra feedback.
-	for ally in get_tree().get_nodes_in_group("ally"):
-		if not is_instance_valid(ally):
-			continue
-		if ally.has_method("heal"):
-			ally.heal(amount)
-			if ally is Node2D:
-				_spawn_heal_flash(ally as Node2D)
-	var p := get_tree().get_first_node_in_group("player")
-	if p != null and p != self and p.has_method("heal"):
-		p.heal(amount)
-		if p is Node2D:
-			_spawn_heal_flash(p as Node2D)
+	if not ("_stun_remaining" in target) or float(target._stun_remaining) <= 0.0:
+		return
+	for c in target.get_children():
+		if c is Node and (c as Node).is_in_group("stun_visual"):
+			return
+	var v: Node = STUN_VISUAL_SCRIPT.new()
+	target.add_child(v)
 
 
 func _spawn_heal_flash(target: Node2D) -> void:

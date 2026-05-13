@@ -505,26 +505,26 @@ Q: purple beam cd 20s","50% chance
 Q: rayo púrpura cd 20s","50% chance
 Q : rayon violet cd 20s"
 SHOP_WW_MAX,Max (4/4) atingido,Max (4/4) reached,Máx (4/4) alcanzado,Max (4/4) atteint
-SHOP_WW_DESC_1,"Aliado tank: 200hp
-50dmg+stun","Tank ally: 200hp
-50dmg+stun","Aliado tanque: 200hp
-50dmg+aturde","Allié tank : 200pv
-50dmg+étourd."
-SHOP_WW_DESC_2,"Lv2: +1 aliado, ataques
-curam aliados 25%","Lv2: +1 ally, attacks
-heal allies 25%","Lv2: +1 aliado, ataques
-curan aliados 25%","Lv2 : +1 allié, attaques
-soignent alliés 25%"
-SHOP_WW_DESC_3,"Lv3: +1 aliado, +25hp
-+5 dano em todos","Lv3: +1 ally, +25hp
-+5 damage on all","Lv3: +1 aliado, +25hp
-+5 daño en todos","Lv3 : +1 allié, +25pv
-+5 dégâts à tous"
-SHOP_WW_DESC_4,"Lv4 max: +1 aliado
-+25hp +5 dano","Lv4 max: +1 ally
-+25hp +5 damage","Lv4 máx: +1 aliado
-+25hp +5 daño","Lv4 max : +1 allié
-+25pv +5 dégâts"
+SHOP_WW_DESC_1,"Aliado tank: +20% HP
+stun em área, sem dano","Tank ally: +20% HP
+area stun, no damage","Aliado tanque: +20% HP
+aturde en área, sin daño","Allié tank : +20% PV
+étourdit en zone, 0 dégât"
+SHOP_WW_DESC_2,"Lv2: cada ataque
+cura player +25hp","Lv2: each attack
+heals player +25hp","Lv2: cada ataque
+cura jugador +25hp","Lv2 : chaque attaque
+soigne joueur +25pv"
+SHOP_WW_DESC_3,"Lv3: +1 aliado
+ataque cura +30hp","Lv3: +1 ally
+attack heals +30hp","Lv3: +1 aliado
+ataque cura +30hp","Lv3 : +1 allié
+attaque soigne +30pv"
+SHOP_WW_DESC_4,"Lv4 max: +150 HP
+100 dano, cd 4.5s","Lv4 max: +150 HP
+100 damage, cd 4.5s","Lv4 máx: +150 HP
+100 daño, cd 4.5s","Lv4 max : +150 PV
+100 dégâts, cd 4.5s"
 HUD_FREE_UPGRADE_TITLE,BONUS DE BOAS-VINDAS,WELCOME BONUS,BONUS DE BIENVENIDA,BONUS DE BIENVENUE
 SHOP_UPG_DAMAGE,Dano,Damage,Daño,Dégâts
 SHOP_UPG_ATTACK_SPEED,Velocidade de Ataque,Attack Speed,Velocidad de Ataque,Vitesse d'Attaque
