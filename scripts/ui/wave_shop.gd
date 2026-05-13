@@ -19,6 +19,10 @@ const TOWER_PRICE: int = 7
 const WOODWARDEN_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 const LENO_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 const CAPIVARA_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
+const TING_PRICE_TABLE: Array[int] = [10, 16, 22, 44]
+# Pool de aliados pra rolagem na shop. 3 cards exibidos por wave; sorteia 3
+# dos N possíveis (priorizando pets já owned pro player poder upgradar).
+const _ALL_ALLY_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe", "ting"]
 const STRUCTURE_SURCHARGE_PER_OWNED: int = 3
 # Aliado: primeira loja (wave 3) o pet é DADO de graça aleatório (não vai pra
 # loja). Depois aparece pra venda nas waves 5, 7, 9, 11...
@@ -176,6 +180,12 @@ const CAPIVARA_JOE_DESCS: Array[String] = [
 	"SHOP_CAPIVARA_DESC_3",
 	"SHOP_CAPIVARA_DESC_4",
 ]
+const TING_DESCS: Array[String] = [
+	"SHOP_TING_DESC_1",
+	"SHOP_TING_DESC_2",
+	"SHOP_TING_DESC_3",
+	"SHOP_TING_DESC_4",
+]
 const FIRE_ARROW_DESCS: Array[String] = [
 	"SHOP_FIRE_ARROW_DESC_1",
 	"SHOP_FIRE_ARROW_DESC_2",
@@ -247,7 +257,7 @@ const _AUGMENT_SLOT_SIZE: Vector2 = Vector2(60, 60)
 @onready var structures_box: HBoxContainer = $Root/StatsCard/StructuresBox
 
 # Aliados (pets) que aparecem no card do player. Ordem fixa.
-const _PETS_ROW_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe"]
+const _PETS_ROW_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe", "ting"]
 # Estruturas conhecidas. Mapeia o scene_path em owned_structures pra um id
 # usado no chip. Por enquanto só arrow_tower.
 const _STRUCTURES_ROW: Array[Dictionary] = [
@@ -354,8 +364,10 @@ func _grant_free_random_pet() -> void:
 			pets.append("leno")
 		if p.get_upgrade_count("capivara_joe") < 4:
 			pets.append("capivara_joe")
+		if p.get_upgrade_count("ting") < 4:
+			pets.append("ting")
 	else:
-		pets = ["woodwarden", "leno", "capivara_joe"]
+		pets = ["woodwarden", "leno", "capivara_joe", "ting"]
 	if pets.is_empty():
 		return
 	var pick: String = pets[randi() % pets.size()]
@@ -551,86 +563,76 @@ func _roll_aliado_slots() -> void:
 		for i in 3:
 			aliado_slots.append({"id": "locked", "name": "SHOP_BLOCKED", "desc": lock_desc, "price": 0, "available": false})
 		return
-	var ww_lvl: int = 0
 	var p := _get_player()
-	if p != null and p.has_method("get_upgrade_count"):
-		ww_lvl = p.get_upgrade_count("woodwarden")
-	var ww_maxed: bool = ww_lvl >= 4
-	# Woodwarden virou aliado (sem surcharge de estruturas).
-	var ww_price: int = WOODWARDEN_PRICE_TABLE[mini(ww_lvl, WOODWARDEN_PRICE_TABLE.size() - 1)]
-	# Cap de aliados: se o player já tem MAX_DISTINCT_PETS tipos diferentes
-	# (lvl > 0) e este aliado ainda é lvl 0, bloqueia a compra. Pra desbloquear,
-	# right-click num pet equipado no StatsCard pra vender (refund de 50%).
+	# Pool dinâmico: 3 cards selecionados de _ALL_ALLY_IDS (= 4 pets disponíveis).
+	# Owned pets (lvl > 0) sempre aparecem pro player poder upgradar; o resto
+	# é preenchido com unowned random até bater 3 slots.
+	var owned_ids: Array[String] = []
+	var unowned_ids: Array[String] = []
+	for ally_id in _ALL_ALLY_IDS:
+		var lvl: int = 0
+		if p != null and p.has_method("get_upgrade_count"):
+			lvl = int(p.get_upgrade_count(ally_id))
+		if lvl > 0:
+			owned_ids.append(ally_id)
+		else:
+			unowned_ids.append(ally_id)
+	var picked: Array[String] = owned_ids.duplicate()
+	if picked.size() > 3:
+		picked = picked.slice(0, 3)
+	unowned_ids.shuffle()
+	while picked.size() < 3 and not unowned_ids.is_empty():
+		picked.append(unowned_ids.pop_back())
 	var distinct_owned: int = _distinct_pets_owned(p)
-	var ww_pet_capped: bool = ww_lvl == 0 and distinct_owned >= MAX_DISTINCT_PETS
-	var ww_desc: String
-	if ww_maxed:
-		ww_desc = "SHOP_MAX_REACHED"
-	elif ww_pet_capped:
-		ww_desc = "SHOP_PET_LIMIT_REACHED"
-	else:
-		match ww_lvl:
-			0: ww_desc = "SHOP_WW_DESC_1"
-			1: ww_desc = "SHOP_WW_DESC_2"
-			2: ww_desc = "SHOP_WW_DESC_3"
-			3: ww_desc = "SHOP_WW_DESC_4"
-			_: ww_desc = ""
-	aliado_slots.append({
-		"id": "woodwarden",
-		"name": "SHOP_ALLY_WOODWARDEN",
-		"desc": ww_desc,
-		"price": ww_price,
-		"available": not ww_maxed and not ww_pet_capped,
-		"is_ally": true,
-		"auto_spawn": true,
-	})
-	# Leno: auto-spawn (sem placement). apply_upgrade no commit cuida do spawn
-	# via player._refresh_lenos(). Compartilha o slot 2 dos aliados.
-	var leno_lvl: int = 0
+	for ally_id in picked:
+		var slot: Dictionary = _build_ally_slot(ally_id, p, distinct_owned)
+		if not slot.is_empty():
+			aliado_slots.append(slot)
+	# Defensivo: se o pool foi menor que 3 (não deveria acontecer), padding.
+	while aliado_slots.size() < 3:
+		aliado_slots.append({"id": "none", "name": "—", "desc": "—", "price": 0, "available": false})
+
+
+func _build_ally_slot(ally_id: String, p: Node, distinct_owned: int) -> Dictionary:
+	var lvl: int = 0
 	if p != null and p.has_method("get_upgrade_count"):
-		leno_lvl = p.get_upgrade_count("leno")
-	var leno_maxed: bool = leno_lvl >= 4
-	var leno_pet_capped: bool = leno_lvl == 0 and distinct_owned >= MAX_DISTINCT_PETS
-	var leno_price: int = LENO_PRICE_TABLE[mini(leno_lvl, LENO_PRICE_TABLE.size() - 1)]
-	var leno_desc: String
-	if leno_maxed:
-		leno_desc = "SHOP_MAX_REACHED"
-	elif leno_pet_capped:
-		leno_desc = "SHOP_PET_LIMIT_REACHED"
+		lvl = int(p.get_upgrade_count(ally_id))
+	var maxed: bool = lvl >= 4
+	var pet_capped: bool = lvl == 0 and distinct_owned >= MAX_DISTINCT_PETS
+	var price_table: Array = _pet_price_table_for(ally_id)
+	var price: int = 0
+	if not price_table.is_empty():
+		price = int(price_table[mini(lvl, price_table.size() - 1)])
+	var desc: String = ""
+	if maxed:
+		desc = "SHOP_MAX_REACHED"
+	elif pet_capped:
+		desc = "SHOP_PET_LIMIT_REACHED"
+	elif ally_id == "woodwarden":
+		# Woodwarden mantém as descs custom-WW_DESC_X (não passa por _get_upgrade_desc).
+		match lvl:
+			0: desc = "SHOP_WW_DESC_1"
+			1: desc = "SHOP_WW_DESC_2"
+			2: desc = "SHOP_WW_DESC_3"
+			3: desc = "SHOP_WW_DESC_4"
+			_: desc = ""
 	else:
-		leno_desc = _get_upgrade_desc("leno", leno_lvl + 1)
-	aliado_slots.append({
-		"id": "leno",
-		"name": "SHOP_ALLY_LENO",
-		"desc": leno_desc,
-		"price": leno_price,
-		"available": not leno_maxed and not leno_pet_capped,
+		desc = _get_upgrade_desc(ally_id, lvl + 1)
+	var name_key: String = ""
+	match ally_id:
+		"woodwarden": name_key = "SHOP_ALLY_WOODWARDEN"
+		"leno": name_key = "SHOP_ALLY_LENO"
+		"capivara_joe": name_key = "SHOP_ALLY_CAPIVARA"
+		"ting": name_key = "SHOP_ALLY_TING"
+	return {
+		"id": ally_id,
+		"name": name_key,
+		"desc": desc,
+		"price": price,
+		"available": not maxed and not pet_capped,
 		"is_ally": true,
 		"auto_spawn": true,
-	})
-	# Capivara Joe: aliado vagabundo, auto-spawn (sem placement).
-	var capi_lvl: int = 0
-	if p != null and p.has_method("get_upgrade_count"):
-		capi_lvl = p.get_upgrade_count("capivara_joe")
-	var capi_maxed: bool = capi_lvl >= 4
-	var capi_pet_capped: bool = capi_lvl == 0 and distinct_owned >= MAX_DISTINCT_PETS
-	var capi_price: int = CAPIVARA_PRICE_TABLE[mini(capi_lvl, CAPIVARA_PRICE_TABLE.size() - 1)]
-	var capi_desc: String
-	if capi_maxed:
-		capi_desc = "SHOP_MAX_REACHED"
-	elif capi_pet_capped:
-		capi_desc = "SHOP_PET_LIMIT_REACHED"
-	else:
-		capi_desc = _get_upgrade_desc("capivara_joe", capi_lvl + 1)
-	aliado_slots.append({
-		"id": "capivara_joe",
-		"name": "SHOP_ALLY_CAPIVARA",
-		"desc": capi_desc,
-		"price": capi_price,
-		"available": not capi_maxed and not capi_pet_capped,
-		"is_ally": true,
-		"auto_spawn": true,
-	})
+	}
 
 
 # Quantos tipos distintos de pet o player tem (lvl > 0). Usado pelo cap
@@ -663,6 +665,7 @@ func _pet_price_table_for(id: String) -> Array:
 		"woodwarden": return WOODWARDEN_PRICE_TABLE
 		"leno": return LENO_PRICE_TABLE
 		"capivara_joe": return CAPIVARA_PRICE_TABLE
+		"ting": return TING_PRICE_TABLE
 	return []
 
 
@@ -938,6 +941,7 @@ func _get_upgrade_descs_array(id: String) -> Array:
 		"graviton": return GRAVITON_DESCS
 		"leno": return LENO_DESCS
 		"capivara_joe": return CAPIVARA_JOE_DESCS
+		"ting": return TING_DESCS
 	return []
 
 
@@ -1129,6 +1133,8 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 	"curse_arrow": Color(0x45 / 255.0, 0x14 / 255.0, 0x58 / 255.0),  # #451458
 	"leno": Color(0xfc / 255.0, 0xb4 / 255.0, 0xcc / 255.0),  # #fcb4cc
 	"woodwarden": Color(0x5d / 255.0, 0x80 / 255.0, 0x5a / 255.0),  # #5d805a
+	"ting": Color.WHITE,  # branco — alto contraste no fundo laranja
+	"capivara_joe": Color.WHITE,  # branco — alto contraste no fundo vermelho
 	"graviton": Color.WHITE,
 	"perfuracao": Color.WHITE,
 	"ricochet_arrow": Color.WHITE,
@@ -1143,6 +1149,8 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 const UPGRADE_DESC_COLORS: Dictionary = {
 	"leno": Color(0xab / 255.0, 0x54 / 255.0, 0x82 / 255.0),  # #ab5482
 	"woodwarden": Color(0x2d / 255.0, 0x3e / 255.0, 0x2b / 255.0),  # #2d3e2b
+	"ting": Color.WHITE,  # mesmo do título — branco em todo o texto
+	"capivara_joe": Color.WHITE,  # mesmo do título — branco em todo o texto
 	"graviton": Color(0x61 / 255.0, 0x61 / 255.0, 0x61 / 255.0),  # #616161
 	"chain_lightning": Color(0xa7 / 255.0, 0x8f / 255.0, 0x24 / 255.0),  # #a78f24
 }
@@ -1151,6 +1159,8 @@ const UPGRADE_DESC_COLORS: Dictionary = {
 const CARD_PATH_OVERRIDES: Dictionary = {
 	"leno": "res://assets/Hud/shop/aliado/Leno/Leno Card.png",
 	"woodwarden": "res://assets/Hud/shop/aliado/woodwarden/woodwarden card.png",
+	"ting": "res://assets/Hud/shop/aliado/ting/ting card.png",
+	"capivara_joe": "res://assets/Hud/shop/aliado/capivara joe/capivara joe card.png",
 	"graviton": "res://assets/Hud/shop/upgrade/graviton/graviton card-Sheet.png",
 	# id é "ricochet_arrow" mas o arquivo é "ricochete.png" (PT). Override pra
 	# o loader achar a arte certa.
@@ -2450,6 +2460,7 @@ func _augment_title_for(id: String) -> String:
 		"woodwarden": return "SHOP_ALLY_WOODWARDEN"
 		"leno": return "SHOP_ALLY_LENO"
 		"capivara_joe": return "SHOP_ALLY_CAPIVARA"
+		"ting": return "SHOP_ALLY_TING"
 	return id
 
 

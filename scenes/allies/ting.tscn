@@ -1,0 +1,99 @@
+[gd_scene format=3 uid="uid://cftqujfo13luw"]
+
+[ext_resource type="Script" uid="uid://chm0njlolu18a" path="res://scripts/allies/ting.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://bqnewgferne0o" path="res://assets/aliados/Mecanico Ting/mecanico-ting-Sheet.png" id="2_sheet"]
+[ext_resource type="PackedScene" path="res://scenes/allies/ting_turret.tscn" id="3_turret"]
+
+[sub_resource type="AtlasTexture" id="A_build_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_build_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_idle_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_idle_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_walk_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_walk_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ting"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_build_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_build_1")
+}],
+"loop": false,
+"name": &"build",
+"speed": 3.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_idle_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_1")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 4.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_walk_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_walk_1")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 6.0
+}]
+
+[sub_resource type="CircleShape2D" id="C_body"]
+radius = 6.0
+
+[node name="Ting" type="CharacterBody2D" unique_id=380567302]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_script")
+turret_scene = ExtResource("3_turret")
+
+[node name="Shadow" type="Polygon2D" parent="." unique_id=288580609]
+position = Vector2(1, 0.25)
+scale = Vector2(1.1428572, 0.875)
+color = Color(0, 0, 0, 0.24)
+polygon = PackedVector2Array(7, 0, 6, 1, 4, 2, 0, 2, -4, 2, -6, 1, -7, 0, -6, -1, -4, -2, 0, -2, 4, -2, 6, -1)
+
+[node name="Shadow" type="Polygon2D" parent="Shadow" unique_id=847917977]
+position = Vector2(3.5762787e-07, -0.2857142)
+scale = Vector2(1.1874999, 1.1607144)
+color = Color(0, 0, 0, 0.24)
+polygon = PackedVector2Array(7, 0, 6, 1, 4, 2, 0, 2, -4, 2, -6, 1, -7, 0, -6, -1, -4, -2, 0, -2, 4, -2, 6, -1)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1260504090]
+texture_filter = 1
+position = Vector2(0, 2)
+scale = Vector2(0.7, 0.7)
+sprite_frames = SubResource("SpriteFrames_ting")
+animation = &"walk"
+autoplay = "walk"
+offset = Vector2(0, -16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2089641480]
+position = Vector2(0, -7)
+shape = SubResource("C_body")

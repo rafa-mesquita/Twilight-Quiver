@@ -1,0 +1,92 @@
+[gd_scene load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://scripts/allies/ting_turret_projectile.gd" id="1_proj"]
+[ext_resource type="Texture2D" uid="uid://b7vmwomsoef1y" path="res://assets/enemies/mage/projetil.png" id="2_tex"]
+[ext_resource type="AudioStream" uid="uid://b5q4rvhdiwqup" path="res://audios/effects/mage/mage projetil.mp3" id="3_sfx"]
+[ext_resource type="PackedScene" path="res://scenes/skills/arrow_hit.tscn" id="4_hit"]
+
+[sub_resource type="AtlasTexture" id="A_proj_0"]
+atlas = ExtResource("2_tex")
+region = Rect2(0, 0, 8, 8)
+
+[sub_resource type="AtlasTexture" id="A_proj_1"]
+atlas = ExtResource("2_tex")
+region = Rect2(8, 0, 8, 8)
+
+[sub_resource type="AtlasTexture" id="A_proj_2"]
+atlas = ExtResource("2_tex")
+region = Rect2(16, 0, 8, 8)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_proj"]
+animations = [{
+"frames": [{"duration": 1.0, "texture": SubResource("A_proj_0")},
+{"duration": 1.0, "texture": SubResource("A_proj_1")},
+{"duration": 1.0, "texture": SubResource("A_proj_2")}],
+"loop": true,
+"name": &"default",
+"speed": 12.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_proj"]
+radius = 3.0
+
+[sub_resource type="Gradient" id="Gradient_trail"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(0.55, 0.85, 1.0, 0, 0.55, 0.85, 1.0, 0.7)
+
+[sub_resource type="CanvasItemMaterial" id="CIM_glow"]
+blend_mode = 1
+
+[sub_resource type="Gradient" id="Grad_glow"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(1, 1, 1, 1, 0.7, 0.85, 1, 0.6, 0.55, 0.78, 0.95, 0)
+
+[sub_resource type="GradientTexture2D" id="GradTex_glow"]
+gradient = SubResource("Grad_glow")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[node name="TingTurretProjectile" type="Area2D"]
+collision_layer = 0
+collision_mask = 4
+script = ExtResource("1_proj")
+hit_effect_scene = ExtResource("4_hit")
+
+[node name="Trail" type="Line2D" parent="."]
+top_level = true
+material = SubResource("CIM_glow")
+z_index = -1
+width = 2.0
+default_color = Color(0.7, 0.85, 1, 1)
+gradient = SubResource("Gradient_trail")
+joint_mode = 2
+begin_cap_mode = 2
+end_cap_mode = 2
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+material = SubResource("CIM_glow")
+position = Vector2(0, -24)
+sprite_frames = SubResource("SpriteFrames_proj")
+animation = &"default"
+autoplay = "default"
+modulate = Color(0.7, 0.85, 1, 1)
+
+[node name="GlowLight" type="PointLight2D" parent="."]
+position = Vector2(0, -24)
+color = Color(0.55, 0.78, 0.95, 1)
+energy = 1.1
+texture = SubResource("GradTex_glow")
+texture_scale = 0.25
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -24)
+shape = SubResource("CircleShape2D_proj")
+
+[node name="ShootSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("3_sfx")
+volume_db = -22.0
+bus = &"SFX"

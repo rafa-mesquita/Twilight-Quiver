@@ -1,0 +1,65 @@
+[gd_scene format=3 uid="uid://c6l4xk64vc4ht"]
+
+[ext_resource type="Script" uid="uid://cckmxqwil5f6r" path="res://scripts/allies/ting_turret.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://bqnewgferne0o" path="res://assets/aliados/Mecanico Ting/mecanico-ting-Sheet.png" id="2_sheet"]
+[ext_resource type="PackedScene" path="res://scenes/allies/ting_turret_projectile.tscn" id="3_proj"]
+[ext_resource type="AudioStream" uid="uid://b5q4rvhdiwqup" path="res://audios/effects/mage/mage projetil.mp3" id="4_atk_sfx"]
+
+[sub_resource type="AtlasTexture" id="A_t_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 96, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_t_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 96, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_turret"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_t_0")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_t_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_t_1")
+}],
+"loop": false,
+"name": &"shoot",
+"speed": 8.0
+}]
+
+[node name="TingTurret" type="Node2D" unique_id=664836724]
+script = ExtResource("1_script")
+projectile_scene = ExtResource("3_proj")
+attack_sound = ExtResource("4_atk_sfx")
+
+[node name="Shadow" type="Polygon2D" parent="." unique_id=789550436]
+position = Vector2(0.49999997, 1)
+scale = Vector2(1.7857144, 1)
+color = Color(0, 0, 0, 0.22)
+polygon = PackedVector2Array(6.9999995, 0, 6, 1, 4, 2, 0, 2, -4, 2, -6, 1, -7, 0, -6, -1, -4, -2, 0, -2, 4, -2, 6, -1)
+
+[node name="Shadow" type="Polygon2D" parent="Shadow" unique_id=838486332]
+position = Vector2(0.14999962, -0.24999994)
+scale = Vector2(0.73857135, 0.625)
+color = Color(0, 0, 0, 0.22)
+polygon = PackedVector2Array(6.9999995, 0, 6, 1, 4, 2, 0, 2, -4, 2, -6, 1, -7, 0, -6, -1, -4, -2, 0, -2, 4, -2, 6, -1)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1524134588]
+texture_filter = 1
+position = Vector2(0, 3.9999998)
+scale = Vector2(0.8, 0.8)
+sprite_frames = SubResource("SpriteFrames_turret")
+animation = &"idle"
+autoplay = "idle"
+offset = Vector2(0, -16)
+
+[node name="Muzzle" type="Marker2D" parent="." unique_id=613482661]
+position = Vector2(7, -8)

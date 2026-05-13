@@ -180,6 +180,7 @@ SHOP_UPG_CURSE_ARROW,Disparo Profano,Profane Shot,Disparo Profano,Tir Profane
 SHOP_ALLY_WOODWARDEN,Woodwarden,Woodwarden,Woodwarden,Woodwarden
 SHOP_ALLY_LENO,Amigo Leno,Friend Leno,Amigo Leno,Ami Leno
 SHOP_ALLY_CAPIVARA,Capivara Joe,Capybara Joe,Capibara Joe,Capybara Joe
+SHOP_ALLY_TING,Mecânico Ting,Ting the Mechanic,Ting el Mecánico,Ting le Mécanicien
 SHOP_HP_DESC_1,+18 HP maximo,+18 max HP,+18 HP máximo,+18 PV max
 SHOP_HP_DESC_2,+20 HP maximo,+20 max HP,+20 HP máximo,+20 PV max
 SHOP_HP_DESC_3,+22 HP maximo,+22 max HP,+22 HP máximo,+22 PV max
@@ -463,6 +464,26 @@ SHOP_CAPIVARA_DESC_4,"+1 Capivara
 (total 2)","+1 Capybara
 (total 2)","+1 Capibara
 (total 2)","+1 Capybara
+(total 2)"
+SHOP_TING_DESC_1,"Torreta a cada 15s
+dura 8s, atira 2s","Turret every 15s
+lasts 8s, fires 2s","Torreta cada 15s
+dura 8s, dispara 2s","Tourelle toutes les 15s
+dure 8s, tire 2s"
+SHOP_TING_DESC_2,"Torreta +10% dano
+em área, dura 9s","Turret +10% area
+damage, lasts 9s","Torreta +10% daño
+en área, dura 9s","Tourelle +10% dégâts
+de zone, dure 9s"
+SHOP_TING_DESC_3,"Deploy a cada 13s
+torreta atira 1,7s","Deploy every 13s
+turret fires 1.7s","Despliegue cada 13s
+torreta dispara 1.7s","Déploi toutes les 13s
+tourelle tire 1.7s"
+SHOP_TING_DESC_4,"+1 Mecânico Ting
+(total 2)","+1 Ting the Mechanic
+(total 2)","+1 Ting el Mecánico
+(total 2)","+1 Ting le Mécanicien
 (total 2)"
 SHOP_FIRE_ARROW_DESC_1,"Queima inimigo
 4 dmg/s por 3s","Burns enemy

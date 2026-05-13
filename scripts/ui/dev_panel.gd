@@ -32,6 +32,7 @@ const UPGRADE_BTNS: Array = [
 	{"id": "graviton", "node": "UpgGravitonBtn", "max": 4, "base_text": "+1 Graviton"},
 	{"id": "leno", "node": "UpgLenoBtn", "max": 4, "base_text": "+1 Leno"},
 	{"id": "capivara_joe", "node": "UpgCapivaraBtn", "max": 4, "base_text": "+1 Capivara Joe"},
+	{"id": "ting", "node": "UpgTingBtn", "max": 4, "base_text": "+1 Mecânico Ting"},
 	{"id": "dash", "node": "UpgDashBtn", "max": 4, "base_text": "+1 Deslizando"},
 	{"id": "esquivando", "node": "UpgEsquivandoBtn", "max": 4, "base_text": "+1 Esquivando"},
 ]

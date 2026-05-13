@@ -304,6 +304,10 @@ func _start_next_wave() -> void:
 			player.reset_perf_counter()
 		if player.has_method("reset_woodwardens_hp"):
 			player.reset_woodwardens_hp()
+		# Zera contador de magos mortos da wave — base do scaling de atk speed
+		# da torreta do Ting (+1% por mago morto). Cada turno começa do zero.
+		if player.has_method("reset_mages_killed_this_wave"):
+			player.reset_mages_killed_this_wave()
 	# Snapshot do gold do player no início da wave — pity pega gold REAL ganho
 	# (já coletado + ainda no chão), não conta em "coin entries" do drop.
 	if player != null and "gold" in player:
@@ -718,6 +722,9 @@ func _finish_wave() -> void:
 	# Cogumelos da Capivara Joe não persistem entre raids — limpa o que ficou no
 	# chão (buff e damage variants).
 	_cleanup_capivara_mushrooms()
+	# Torretas do Mecânico Ting também duram só o round — limpa as ativas no fim
+	# da wave pra cada raid começar limpo (o Ting volta a buildar normal).
+	_cleanup_ting_turrets()
 	# Wave 1 pity: se RNG não dropou as N mínimas, completa AGORA (antes do
 	# magnet sugar pro player). Wave 2+ não tem pity, RNG normal.
 	_top_up_wave1_coins()
@@ -786,6 +793,15 @@ func _cleanup_capivara_mushrooms() -> void:
 	for m in get_tree().get_nodes_in_group("capivara_mushroom"):
 		if is_instance_valid(m):
 			m.queue_free()
+
+
+func _cleanup_ting_turrets() -> void:
+	# Torretas dropadas pelo Ting expiram no próprio lifetime, mas se o turno
+	# acaba antes (ex: matar o boss/inimigo final rápido) sobram torretas
+	# atirando no vazio entre waves. Mata todas pra cada raid começar limpo.
+	for t in get_tree().get_nodes_in_group("ting_turret"):
+		if is_instance_valid(t):
+			t.queue_free()
 
 
 func _spawn_capivara_starter_mushrooms() -> void:
@@ -1056,6 +1072,7 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	{"id": "woodwarden", "name": "SHOP_ALLY_WOODWARDEN"},
 	{"id": "leno", "name": "SHOP_ALLY_LENO"},
 	{"id": "capivara_joe", "name": "SHOP_ALLY_CAPIVARA"},
+	{"id": "ting", "name": "SHOP_ALLY_TING"},
 ]
 
 

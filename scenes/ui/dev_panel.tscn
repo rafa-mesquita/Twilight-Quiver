@@ -328,6 +328,12 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 20
 text = "+1 Capivara Joe"
 
+[node name="UpgTingBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
+custom_minimum_size = Vector2(0, 36)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "+1 Mecânico Ting"
+
 [node name="StatsSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
 theme_override_constants/separation = 4
 

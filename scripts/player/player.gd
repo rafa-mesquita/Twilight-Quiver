@@ -97,6 +97,15 @@ var _capivara_speed_buff_amount: float = 0.0
 var _capivara_speed_buff_remaining: float = 0.0
 var _capivara_atk_speed_buff_amount: float = 0.0
 var _capivara_atk_speed_buff_remaining: float = 0.0
+# Mecânico Ting (esquilo aliado, 4 níveis). Sem HP, vagueia e constroi torretas.
+# L1: 1 ting, deploy a cada 15s, torreta dura 8s, atk 2s.
+# L2: torreta dá 10% AoE + dura 9s. L3: deploy a cada 13s, atk 1.7s. L4: 2 tings.
+const TING_SCENE: PackedScene = preload("res://scenes/allies/ting.tscn")
+var ting_level: int = 0
+var _tings: Array[Node2D] = []
+# Contador de magos mortos na wave atual — torreta do Ting ganha +1% atk speed
+# por mago morto. Reset no _ready de cada wave pelo wave_manager.
+var _mages_killed_this_wave: int = 0
 # Fire skill (botão direito a partir do lv3 do Fogo).
 const FIRE_SKILL_COOLDOWN: float = 7.0
 const FIRE_SKILL_RANGE: float = 140.0
@@ -1510,6 +1519,9 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"capivara_joe":
 			capivara_joe_level = mini(capivara_joe_level + 1, 4)
 			_refresh_capivaras()
+		"ting":
+			ting_level = mini(ting_level + 1, 4)
+			_refresh_tings()
 		"woodwarden":
 			# Cada compra: +1 level (max 4). Sobe stats em todos os existentes
 			# e spawna 1 novo woodwarden no player se ainda não tem todos.
@@ -1594,6 +1606,7 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"woodwarden": return woodwarden_level
 		"leno": return leno_level
 		"capivara_joe": return capivara_joe_level
+		"ting": return ting_level
 		"gold_magnet": return gold_magnet_level
 		"dash": return dash_level
 		"esquivando": return esquivando_level
@@ -1698,6 +1711,71 @@ func _cleanup_capivaras() -> void:
 		if is_instance_valid(c):
 			c.queue_free()
 	_capivaras.clear()
+
+
+func _refresh_tings() -> void:
+	# L1-L3 = 1 ting, L4 = 2. Stats da torreta variam por nível:
+	#   L1: deploy 15s, turret lifetime 8s, atk cd 2.0s, aoe 0%
+	#   L2: deploy 15s, turret lifetime 9s, atk cd 2.0s, aoe 10%
+	#   L3+: deploy 13s, turret lifetime 9s, atk cd 1.7s, aoe 10%
+	var target_count: int = 2 if ting_level >= 4 else (1 if ting_level >= 1 else 0)
+	var deploy_interval: float = 13.0 if ting_level >= 3 else 15.0
+	var turret_lifetime: float = 8.0 if ting_level <= 1 else 9.0
+	var turret_atk_cd: float = 1.7 if ting_level >= 3 else 2.0
+	var turret_aoe_pct: float = 0.10 if ting_level >= 2 else 0.0
+	# Limpa entries inválidos.
+	var alive: Array[Node2D] = []
+	for t in _tings:
+		if is_instance_valid(t):
+			alive.append(t)
+	_tings = alive
+	while _tings.size() < target_count:
+		var ting: Node2D = TING_SCENE.instantiate()
+		_tings.append(ting)
+		_get_world().add_child(ting)
+		# Spawn random dentro do wander_bounds.
+		if "wander_bounds" in ting:
+			var b: Rect2 = ting.wander_bounds
+			ting.global_position = Vector2(
+				randf_range(b.position.x, b.position.x + b.size.x),
+				randf_range(b.position.y, b.position.y + b.size.y)
+			)
+	while _tings.size() > target_count:
+		var extra: Node2D = _tings.pop_back()
+		if is_instance_valid(extra):
+			extra.queue_free()
+	# Aplica stats em todas as instâncias (inclui as existentes — se subir de
+	# nível com o ting já no mapa, próximo deploy usa os novos números).
+	for t in _tings:
+		if "deploy_interval" in t:
+			t.deploy_interval = deploy_interval
+		if "turret_lifetime" in t:
+			t.turret_lifetime = turret_lifetime
+		if "turret_attack_cooldown" in t:
+			t.turret_attack_cooldown = turret_atk_cd
+		if "turret_aoe_pct" in t:
+			t.turret_aoe_pct = turret_aoe_pct
+
+
+func _cleanup_tings() -> void:
+	for t in _tings:
+		if is_instance_valid(t):
+			t.queue_free()
+	_tings.clear()
+
+
+func get_mages_killed_this_wave() -> int:
+	return _mages_killed_this_wave
+
+
+func notify_mage_killed() -> void:
+	_mages_killed_this_wave += 1
+
+
+func reset_mages_killed_this_wave() -> void:
+	# Chamado pelo wave_manager no início de cada wave — contador zera por turno
+	# pra escalada da torreta do Ting começar do zero a cada raid.
+	_mages_killed_this_wave = 0
 
 
 func apply_capivara_speed_buff(amount: float, duration: float) -> void:
@@ -1866,6 +1944,9 @@ func reset_pet(id: String) -> void:
 		"capivara_joe":
 			capivara_joe_level = 0
 			_cleanup_capivaras()
+		"ting":
+			ting_level = 0
+			_cleanup_tings()
 
 
 func _compute_damage_reduction(level: int) -> float:
@@ -1926,6 +2007,7 @@ func _die() -> void:
 	_cleanup_lenos()
 	_cleanup_woodwardens()
 	_cleanup_capivaras()
+	_cleanup_tings()
 	_stop_world_audio()
 	# Som de morte tem que vir DEPOIS do _stop_world_audio pra não ser cortado.
 	# Anexa no scene root (fora do "world") pra sobreviver à animação de morte.

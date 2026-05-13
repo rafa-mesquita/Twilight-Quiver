@@ -324,6 +324,11 @@ func take_damage(amount: float) -> void:
 			var p2 := get_tree().get_first_node_in_group("player")
 			if p2 != null and p2.has_method("notify_enemy_killed"):
 				p2.notify_enemy_killed()
+			# Conta morte de mago pra escalada de atk speed da torreta do Ting
+			# (+1% por mago morto na wave). Inclui fire/ice/electric/summoner —
+			# todos extendem este MageEnemy e passam por este take_damage.
+			if p2 != null and p2.has_method("notify_mage_killed"):
+				p2.notify_mage_killed()
 		# Gold dropa em ambos: morte de inimigo normal E morte de aliado convertido
 		# pela Maldição. Coerente com a expectativa do jogador — o macaco/mago que
 		# ele "transformou" deveria valer gold quando morre lutando.
