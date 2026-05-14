@@ -221,6 +221,58 @@ var _ricochet_shot_counter: int = 0
 # Counter idem ricochete: L1 cada 3 ataques, L2+ cada 2. Volley compartilha.
 var graviton_level: int = 0
 var _graviton_shot_counter: int = 0
+# Boomerang (skill passiva, 4 níveis). Cast automático no inimigo mais próximo
+# a cada CD do nível. L3 = 2 boomerangs (alvo + oposto). L4 = 4 boomerangs
+# (alvo + oposto + 2 perpendiculares).
+const BOOMERANG_SCENE: PackedScene = preload("res://scenes/skills/boomerang.tscn")
+const BOOMERANG_CD_BY_LEVEL: Array[float] = [5.0, 4.0, 4.0, 4.0]
+const BOOMERANG_DAMAGE_BY_LEVEL: Array[float] = [15.0, 20.0, 25.0, 30.0]
+const BOOMERANG_RANGE_BY_LEVEL: Array[float] = [140.0, 140.0, 140.0, 140.0]
+var boomerang_level: int = 0
+var _boomerang_cd_remaining: float = 0.0
+# Flecha Crítica (4 níveis). Aplica em flechas + skills (skill Q de fogo, chain
+# lightning skill, curse beam, boomerang). Não aplica em DoTs (burn/curse tick)
+# nem em dano de aliados/torres.
+# L1: 30% chance, +50% dano + knockback bonus em flechas
+# L2: 50% chance, +50% dano
+# L3: 70% chance, +60% dano
+# L4: 100% chance, +65% dano
+const CRIT_CHANCE_BY_LEVEL: Array[float] = [0.30, 0.50, 0.70, 1.00]
+const CRIT_DAMAGE_BONUS_BY_LEVEL: Array[float] = [0.50, 0.50, 0.60, 0.65]
+const CRIT_KNOCKBACK_MULT: float = 2.0  # arrows on crit recebem 2× knockback
+var critical_chance_level: int = 0
+
+
+func roll_crit() -> Dictionary:
+	# Helper público: cada damage site chama isso pra decidir se o hit é crit.
+	# Retorna {"crit": bool, "mult": float}. mult=1.0 quando não crita.
+	if critical_chance_level <= 0:
+		return {"crit": false, "mult": 1.0}
+	var lvl: int = mini(critical_chance_level - 1, 3)
+	if randf() < CRIT_CHANCE_BY_LEVEL[lvl]:
+		return {"crit": true, "mult": 1.0 + CRIT_DAMAGE_BONUS_BY_LEVEL[lvl]}
+	return {"crit": false, "mult": 1.0}
+
+
+func crit_knockback_mult() -> float:
+	# Bonus de knockback em flechas quando crit. Ler em arrow.gd antes de
+	# apply_knockback (não global — só flechas, não skills).
+	return CRIT_KNOCKBACK_MULT
+
+
+func roll_crit_dot(base_dmg: float) -> Dictionary:
+	# Versão pra DoTs: garante bônus MÍNIMO de +1 dano quando crita (sem isso
+	# DoTs pequenos com bônus % < 1 ficariam invisíveis no crit). Retorna
+	# {"crit": bool, "dmg": float} (dmg final pronto pra aplicar).
+	if critical_chance_level <= 0 or base_dmg <= 0.0:
+		return {"crit": false, "dmg": base_dmg}
+	var lvl: int = mini(critical_chance_level - 1, 3)
+	if randf() < CRIT_CHANCE_BY_LEVEL[lvl]:
+		var bonus: float = base_dmg * CRIT_DAMAGE_BONUS_BY_LEVEL[lvl]
+		if bonus < 1.0:
+			bonus = 1.0
+		return {"crit": true, "dmg": base_dmg + bonus}
+	return {"crit": false, "dmg": base_dmg}
 # Trilha de poder do dash: spawna um segmento a cada N px percorridos durante
 # o dash. Cada segmento dura 3s e dá DPS roxo em inimigos na área.
 # DPS escala com dash_level: lv2+ ativa o trail, lv3 e lv4 aumentam dano.
@@ -312,6 +364,7 @@ func _physics_process(delta: float) -> void:
 	_update_esquivando(delta)
 	_update_fire_skill(delta)
 	_update_chain_lightning_skill(delta)
+	_update_boomerang(delta)
 	_update_curse_skill(delta)
 	_update_player_fire_trail()
 	_check_woodwarden_respawns(delta)
@@ -1031,6 +1084,56 @@ func _update_chain_lightning_skill(delta: float) -> void:
 		chain_lightning_skill_cooldown_changed.emit(_chain_lightning_skill_cd_remaining, CHAIN_LIGHTNING_SKILL_COOLDOWN)
 
 
+# ---------- Boomerang (skill passiva auto-cast) ----------
+
+func _update_boomerang(delta: float) -> void:
+	if boomerang_level <= 0 or is_dead:
+		return
+	if _boomerang_cd_remaining > 0.0:
+		_boomerang_cd_remaining = maxf(_boomerang_cd_remaining - delta, 0.0)
+		return
+	# Tenta castar. Se não tem inimigo, mantém cd zerado e tenta de novo no
+	# próximo frame até aparecer alvo.
+	if _try_cast_boomerang():
+		_boomerang_cd_remaining = BOOMERANG_CD_BY_LEVEL[mini(boomerang_level - 1, 3)]
+
+
+func _try_cast_boomerang() -> bool:
+	# Encontra inimigo mais próximo. Sem alvo = sem cast (cd não dispara).
+	var nearest: Node2D = _find_nearest_enemy()
+	if nearest == null:
+		return false
+	var rng: float = BOOMERANG_RANGE_BY_LEVEL[mini(boomerang_level - 1, 3)]
+	# Skipa o cast se o inimigo mais próximo tá além do range — boomerang nunca
+	# alcançaria. CD não dispara, tenta de novo nos próximos frames quando algum
+	# inimigo entrar no raio.
+	if nearest.global_position.distance_squared_to(global_position) > rng * rng:
+		return false
+	var primary_dir: Vector2 = (nearest.global_position - global_position).normalized()
+	if primary_dir.length_squared() < 0.001:
+		primary_dir = Vector2.RIGHT
+	var dmg: float = BOOMERANG_DAMAGE_BY_LEVEL[mini(boomerang_level - 1, 3)]
+	# L1-L2: 1 boomerang. L3: 2 (alvo + 180°). L4: 4 (alvo + 180° + 90° + 270°).
+	_spawn_boomerang(primary_dir, dmg, rng)
+	if boomerang_level >= 3:
+		_spawn_boomerang(-primary_dir, dmg, rng)
+	if boomerang_level >= 4:
+		_spawn_boomerang(primary_dir.rotated(PI / 2.0), dmg, rng)
+		_spawn_boomerang(primary_dir.rotated(-PI / 2.0), dmg, rng)
+	return true
+
+
+func _spawn_boomerang(dir: Vector2, dmg: float, rng: float) -> void:
+	var boom: Node = BOOMERANG_SCENE.instantiate()
+	if "damage" in boom:
+		boom.damage = dmg
+	if "travel_distance" in boom:
+		boom.travel_distance = rng
+	_get_world().add_child(boom)
+	if boom.has_method("setup"):
+		boom.setup(global_position, dir, self)
+
+
 func _cast_curse_beam() -> void:
 	# Lv4: raio roxo sustentado por CURSE_SKILL_DURATION segundos. Direção
 	# travada no momento do cast (mouse). Aplica damage + CurseDebuff por tick.
@@ -1316,14 +1419,21 @@ func _spawn_dash_trail_segment() -> void:
 
 func _find_nearest_enemy() -> Node2D:
 	var nearest: Node2D = null
-	var best_dist: float = INF
+	var best_dist_sq: float = INF
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e) or not (e is Node2D):
 			continue
-		var d: float = (e as Node2D).global_position.distance_to(global_position)
-		if d < best_dist:
+		if e.is_queued_for_deletion():
+			continue
+		if "hp" in e and float(e.hp) <= 0.0:
+			continue
+		# Boss shieldado não toma dano — pular pra não desperdiçar cast/aim.
+		if (e as Node).is_in_group("boss_shielded"):
+			continue
+		var d: float = (e as Node2D).global_position.distance_squared_to(global_position)
+		if d < best_dist_sq:
 			nearest = e
-			best_dist = d
+			best_dist_sq = d
 	return nearest
 
 
@@ -1435,16 +1545,18 @@ func apply_upgrade(upgrade_id: String) -> void:
 			slow_resistance_pct = damage_reduction_pct * 0.5
 		"damage":
 			damage_upgrades += 1
-			# +20% no dano da flecha por stack
-			arrow_damage_multiplier += 0.20
+			# +24% no dano da flecha por stack (equalizado com atk_speed pra DPS
+			# idêntico por nível — ambos somam 0.24 ao multiplier).
+			arrow_damage_multiplier += 0.24
 		"perfuracao":
 			perfuracao_level = mini(perfuracao_level + 1, 4)
 			perfuracao_counter_changed.emit(_perf_shot_counter, perfuracao_level)
 		"attack_speed":
 			attack_speed_level += 1
-			# +27% por stack (aditivo). Aplica imediatamente — próximo ataque
+			# +24% por stack (aditivo). Aplica imediatamente — próximo ataque
 			# já usa o novo wait_time/speed_scale via _start_attack.
-			attack_speed_multiplier += 0.27
+			# Equalizado com damage pra DPS idêntico por nível.
+			attack_speed_multiplier += 0.24
 		"multi_arrow":
 			multi_arrow_level = mini(multi_arrow_level + 1, 4)
 		"double_arrows":
@@ -1532,6 +1644,16 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# L1: cada 3 ataques cria pulso ao bater. L2: cada 2 + range maior.
 			# L3: pulso explode no fim (30 dano). L4: área e dano aumentados.
 			graviton_level = mini(graviton_level + 1, 4)
+		"boomerang":
+			# Lv1-4. Skill passiva auto-cast — mecânica em boomerang.gd.
+			# L1: 1 boomerang cd 5s. L2: range +50. L3: 2 boomerangs (alvo + 180°).
+			# L4: 4 boomerangs (alvo + 3 direções) cd 3s.
+			boomerang_level = mini(boomerang_level + 1, 4)
+			_boomerang_cd_remaining = 0.0  # próximo cast imediato
+		"critical_chance":
+			# Lv1-4. Chance % de crit em flechas + skills. Aplica multiplicador
+			# de dano + visual amarelo (damage number + flash do enemy).
+			critical_chance_level = mini(critical_chance_level + 1, 4)
 		"esquivando":
 			# Lv1-4. Mutuamente exclusivo com dash (mesma categoria movimentação)
 			# — shop e welcome pool já filtram, defensivo aqui contra dev panel.
@@ -1582,6 +1704,8 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"esquivando": return esquivando_level
 		"ricochet_arrow": return ricochet_arrow_level
 		"graviton": return graviton_level
+		"boomerang": return boomerang_level
+		"critical_chance": return critical_chance_level
 	return 0
 
 

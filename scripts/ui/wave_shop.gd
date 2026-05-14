@@ -63,6 +63,8 @@ const UPGRADE_POOL: Array = [
 	{"id": "graviton", "name": "SHOP_UPG_GRAVITON", "max_level": 4},
 	{"id": "fire_arrow", "name": "SHOP_UPG_FIRE_ARROW", "max_level": 4},
 	{"id": "curse_arrow", "name": "SHOP_UPG_CURSE_ARROW", "max_level": 4},
+	{"id": "boomerang", "name": "SHOP_UPG_BOOMERANG", "max_level": 4},
+	{"id": "critical_chance", "name": "SHOP_UPG_CRITICAL_CHANCE", "max_level": 4},
 ]
 
 const UPGRADE_PRICE_OVERRIDES: Dictionary = {}
@@ -197,6 +199,18 @@ const CURSE_ARROW_DESCS: Array[String] = [
 	"SHOP_CURSE_ARROW_DESC_2",
 	"SHOP_CURSE_ARROW_DESC_3",
 	"SHOP_CURSE_ARROW_DESC_4",
+]
+const BOOMERANG_DESCS: Array[String] = [
+	"SHOP_BOOMERANG_DESC_1",
+	"SHOP_BOOMERANG_DESC_2",
+	"SHOP_BOOMERANG_DESC_3",
+	"SHOP_BOOMERANG_DESC_4",
+]
+const CRITICAL_CHANCE_DESCS: Array[String] = [
+	"SHOP_CRITICAL_CHANCE_DESC_1",
+	"SHOP_CRITICAL_CHANCE_DESC_2",
+	"SHOP_CRITICAL_CHANCE_DESC_3",
+	"SHOP_CRITICAL_CHANCE_DESC_4",
 ]
 
 @onready var gold_label: Label = $Root/GoldLabel
@@ -940,6 +954,8 @@ func _get_upgrade_descs_array(id: String) -> Array:
 		"life_steal": return LIFE_STEAL_DESCS
 		"fire_arrow": return FIRE_ARROW_DESCS
 		"curse_arrow": return CURSE_ARROW_DESCS
+		"boomerang": return BOOMERANG_DESCS
+		"critical_chance": return CRITICAL_CHANCE_DESCS
 		"ricochet_arrow": return RICOCHET_ARROW_DESCS
 		"graviton": return GRAVITON_DESCS
 		"leno": return LENO_DESCS
@@ -1145,6 +1161,8 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 	"life_steal": Color(0x58 / 255.0, 0x14 / 255.0, 0x1f / 255.0),  # #58141f
 	"dash": Color(0x3d / 255.0, 0x28 / 255.0, 0x18 / 255.0),  # #3d2818 (marrom escuro contrasta com cream)
 	"esquivando": Color(0x3d / 255.0, 0x28 / 255.0, 0x18 / 255.0),  # mesmo do dash — compartilham arte
+	"boomerang": Color(0xfb / 255.0, 0xe3 / 255.0, 0xc6 / 255.0),  # creme claro (fundo marrom da carta)
+	"critical_chance": Color(0xcb / 255.0, 0x49 / 255.0, 0x0d / 255.0),  # #cb490d (laranja-vermelho)
 }
 # Cor secundária (DescLabel + PriceLabel) por upgrade. Quando definido,
 # sobrescreve a cor do título nesses dois labels — útil pra cards onde título
@@ -1174,6 +1192,8 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	"life_steal": "res://assets/Hud/shop/upgrade/life steal.png",
 	# fire_arrow2.png é a arte nova; fire_arrow.png antigo foi removido.
 	"fire_arrow": "res://assets/Hud/shop/upgrade/fire_arrow2.png",
+	"boomerang": "res://assets/Hud/shop/upgrade/boomerang/boomerang card design.png",
+	"critical_chance": "res://assets/Hud/shop/upgrade/flechas criticas/felchas criticas card design.png",
 	# id "dash" mas arquivo é "deslizando.png" (nome PT do upgrade).
 	"dash": "res://assets/Hud/shop/upgrade/deslizando.png",
 	# Esquivando compartilha a arte do dash (mesma categoria movimentação,
@@ -2455,6 +2475,8 @@ func _augment_title_for(id: String) -> String:
 		"chain_lightning": return "SHOP_UPG_CHAIN_LIGHTNING"
 		"fire_arrow": return "SHOP_UPG_FIRE_ARROW"
 		"curse_arrow": return "SHOP_UPG_CURSE_ARROW"
+		"boomerang": return "SHOP_UPG_BOOMERANG"
+		"critical_chance": return "SHOP_UPG_CRITICAL_CHANCE"
 		"graviton": return "SHOP_UPG_GRAVITON"
 		"life_steal": return "SHOP_UPG_LIFE_STEAL"
 		"dash": return "SHOP_UPG_DASH"

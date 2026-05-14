@@ -272,6 +272,13 @@ func _apply_hit() -> void:
 		var dmg: float = damage
 		if current_target.is_in_group("mage_monkey"):
 			dmg *= WOODWARDEN_BOSS_DMG_MULT
+		# Crit roll (Flechas Críticas aplica em pets também).
+		var p_for_crit := get_tree().get_first_node_in_group("player")
+		if p_for_crit != null and p_for_crit.has_method("roll_crit"):
+			var crit_ww: Dictionary = p_for_crit.roll_crit()
+			if bool(crit_ww.get("crit", false)):
+				dmg *= float(crit_ww.get("mult", 1.0))
+				CritFeedback.mark_next_hit_crit(current_target)
 		current_target.take_damage(dmg)
 		_notify_player_dmg_kill(dmg, "woodwarden", was_alive_ww, current_target)
 	# Stun em área: todos os inimigos no aoe_stun_radius em volta do alvo

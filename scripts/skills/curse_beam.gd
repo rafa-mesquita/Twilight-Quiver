@@ -174,9 +174,18 @@ func _apply_tick() -> void:
 			e.take_damage(tick_dmg, "mage_monkey_beam")
 		else:
 			var was_alive_cb: bool = (not ("hp" in e)) or float(e.hp) > 0.0
-			e.take_damage(tick_dmg)
+			var dmg_cb: float = tick_dmg
+			# Crit roll por tick (só pra fonte player — beam do boss não crita).
 			if not is_enemy_source:
-				_notify_player_dmg_kill(tick_dmg, "curse_skill", was_alive_cb, e)
+				var p_cb := get_tree().get_first_node_in_group("player")
+				if p_cb != null and p_cb.has_method("roll_crit_dot"):
+					var crit_cb: Dictionary = p_cb.roll_crit_dot(dmg_cb)
+					dmg_cb = float(crit_cb.get("dmg", dmg_cb))
+					if bool(crit_cb.get("crit", false)):
+						CritFeedback.mark_next_hit_crit(e)
+			e.take_damage(dmg_cb)
+			if not is_enemy_source:
+				_notify_player_dmg_kill(dmg_cb, "curse_skill", was_alive_cb, e)
 
 
 func _apply_curse_to(target: Node) -> void:

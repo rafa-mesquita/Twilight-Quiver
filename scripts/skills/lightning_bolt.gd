@@ -197,15 +197,24 @@ func _apply_damage() -> void:
 			var dist: float = (b2d.global_position - global_position).length()
 			if dist <= damage_radius and body.has_method("take_damage"):
 				var was_alive_lb: bool = (not ("hp" in body)) or float(body.hp) > 0.0
+				var dmg_final: float = damage
+				# Crit roll só pra player-source (não pra raio do mago elétrico).
+				if not is_enemy_source:
+					var p_for_crit := get_tree().get_first_node_in_group("player")
+					if p_for_crit != null and p_for_crit.has_method("roll_crit"):
+						var crit_lb: Dictionary = p_for_crit.roll_crit()
+						if bool(crit_lb.get("crit", false)):
+							dmg_final *= float(crit_lb.get("mult", 1.0))
+							CritFeedback.mark_next_hit_crit(body)
 				# Enemy-source + target player: passa source_id pro player tracking.
 				# Outros casos (enemy hits ally/structure, ou player-source hits enemy)
 				# usam signature 1-arg que cada take_damage suporta.
 				if is_enemy_source and body.is_in_group("player"):
-					body.take_damage(damage, enemy_source_id)
+					body.take_damage(dmg_final, enemy_source_id)
 				else:
-					body.take_damage(damage)
+					body.take_damage(dmg_final)
 				if not is_enemy_source:
-					_notify_player_dmg_kill(damage, "chain_lightning_skill", was_alive_lb, body)
+					_notify_player_dmg_kill(dmg_final, "chain_lightning_skill", was_alive_lb, body)
 
 
 func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, target: Node) -> void:

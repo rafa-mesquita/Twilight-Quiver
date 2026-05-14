@@ -54,6 +54,13 @@ func _apply_tick() -> void:
 	if "hp" in parent and float(parent.hp) <= 0.0:
 		return
 	var tick_dmg: float = dps * tick_interval
+	# Crit roll por tick (bônus mín +1 em DoTs pequenos).
+	var p_for_crit := get_tree().get_first_node_in_group("player")
+	if p_for_crit != null and p_for_crit.has_method("roll_crit_dot"):
+		var crit_d: Dictionary = p_for_crit.roll_crit_dot(tick_dmg)
+		tick_dmg = float(crit_d.get("dmg", tick_dmg))
+		if bool(crit_d.get("crit", false)):
+			CritFeedback.mark_next_hit_crit(parent)
 	var was_alive: bool = (not ("hp" in parent)) or float(parent.hp) > 0.0
 	parent.take_damage(tick_dmg)
 	_notify_player_dmg_kill(tick_dmg, "fire_arrow", was_alive, parent)
@@ -95,8 +102,16 @@ func _apply_splash(source: Node2D, tick_dmg: float) -> void:
 		if not is_instance_valid(target):
 			continue
 		var t_alive: bool = (not ("hp" in target)) or float(target.hp) > 0.0
-		target.take_damage(splash_dmg)
-		_notify_player_dmg_kill(splash_dmg, "fire_arrow", t_alive, target)
+		# Crit roll por splash (mesma lógica DoT).
+		var sdmg: float = splash_dmg
+		var p_splash := get_tree().get_first_node_in_group("player")
+		if p_splash != null and p_splash.has_method("roll_crit_dot"):
+			var crit_s: Dictionary = p_splash.roll_crit_dot(sdmg)
+			sdmg = float(crit_s.get("dmg", sdmg))
+			if bool(crit_s.get("crit", false)):
+				CritFeedback.mark_next_hit_crit(target)
+		target.take_damage(sdmg)
+		_notify_player_dmg_kill(sdmg, "fire_arrow", t_alive, target)
 
 
 # Refresca duração se nova flecha de fogo bate no mesmo alvo.

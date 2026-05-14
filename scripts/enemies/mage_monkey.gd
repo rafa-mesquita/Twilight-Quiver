@@ -129,6 +129,7 @@ var _horde_count: int = 0
 @export var horde_damage_growth: float = 0.15  # +15% damage
 # Stun/CC: boss é imune (igual stone cube), mas mantemos as funções pra arrow.gd não crashar.
 var _flash_tween: Tween
+var _crit_pending: bool = false
 
 
 func _ready() -> void:
@@ -676,7 +677,8 @@ func _flash_damage() -> void:
 		return
 	if _flash_tween != null and _flash_tween.is_valid():
 		_flash_tween.kill()
-	sprite.modulate = Color(1.6, 0.3, 0.3, 1.0)
+	var flash_color: Color = CritFeedback.CRIT_FLASH_COLOR if _crit_pending else Color(1.6, 0.3, 0.3, 1.0)
+	sprite.modulate = flash_color
 	_flash_tween = create_tween()
 	_flash_tween.tween_property(sprite, "modulate", Color.WHITE, 0.22)
 
@@ -702,12 +704,16 @@ func _spawn_damage_effect() -> void:
 
 func _spawn_damage_number(amount: float) -> void:
 	if damage_number_scene == null:
+		_crit_pending = false
 		return
 	var num := damage_number_scene.instantiate()
 	if "amount" in num:
 		num.amount = int(round(amount))
+	if _crit_pending and "color_override" in num:
+		num.color_override = CritFeedback.CRIT_NUMBER_COLOR
 	num.position = global_position + Vector2(0, -56)
 	get_tree().current_scene.add_child(num)
+	_crit_pending = false
 
 
 func _play_damage_sound() -> void:

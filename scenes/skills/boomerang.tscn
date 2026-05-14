@@ -1,0 +1,32 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/skills/boomerang.gd" id="1_boomerang"]
+[ext_resource type="Texture2D" path="res://assets/projectiles/boomerang.png" id="2_boomerang_tex"]
+[ext_resource type="AudioStream" path="res://audios/upgrades/boomerang/boomerang.mp3" id="3_fly_sfx"]
+[ext_resource type="AudioStream" path="res://audios/upgrades/boomerang/boomerang hit effect 2.mp3" id="4_impact_sfx"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_boom"]
+radius = 6.0
+
+[node name="Boomerang" type="Area2D"]
+scale = Vector2(0.8, 0.8)
+collision_layer = 0
+collision_mask = 14
+script = ExtResource("1_boomerang")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+texture = ExtResource("2_boomerang_tex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_boom")
+
+[node name="FlySound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("3_fly_sfx")
+volume_db = -30.0
+bus = &"SFX"
+
+[node name="ImpactSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("4_impact_sfx")
+volume_db = -22.0
+bus = &"SFX"

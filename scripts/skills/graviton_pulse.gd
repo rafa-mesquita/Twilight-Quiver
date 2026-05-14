@@ -227,12 +227,19 @@ func _explode() -> void:
 		if now < cd_until:
 			continue
 		e.set_meta(DAMAGE_THROTTLE_META, now + DAMAGE_THROTTLE_SECONDS)
+		var dmg_gv: float = explosion_damage
+		# Crit roll por inimigo da explosão.
+		if source != null and source.has_method("roll_crit"):
+			var crit_gv: Dictionary = source.roll_crit()
+			if bool(crit_gv.get("crit", false)):
+				dmg_gv *= float(crit_gv.get("mult", 1.0))
+				CritFeedback.mark_next_hit_crit(e)
 		var was_alive_gv: bool = (not ("hp" in e)) or float(e.hp) > 0.0
-		e.take_damage(explosion_damage)
+		e.take_damage(dmg_gv)
 		if source != null and source.has_method("notify_damage_dealt"):
-			source.notify_damage_dealt(explosion_damage)
+			source.notify_damage_dealt(dmg_gv)
 		if source != null and source.has_method("notify_damage_dealt_by_source"):
-			source.notify_damage_dealt_by_source(explosion_damage, "graviton")
+			source.notify_damage_dealt_by_source(dmg_gv, "graviton")
 		if was_alive_gv and source != null and source.has_method("notify_kill_by_source"):
 			var killed_gv: bool = ("hp" in e) and float(e.hp) <= 0.0
 			if killed_gv:

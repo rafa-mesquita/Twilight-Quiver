@@ -58,14 +58,22 @@ func _process(delta: float) -> void:
 
 func _apply_tick() -> void:
 	var amount: float = damage_per_second * TICK_INTERVAL
+	var p_for_crit := get_tree().get_first_node_in_group("player")
 	for enemy in _enemies_inside.duplicate():
 		if not is_instance_valid(enemy):
 			_enemies_inside.erase(enemy)
 			continue
 		if enemy.has_method("take_damage"):
 			var was_alive_ft: bool = (not ("hp" in enemy)) or float(enemy.hp) > 0.0
-			enemy.take_damage(amount)
-			_notify_player_dmg_kill(amount, "fire_arrow", was_alive_ft, enemy)
+			var dmg_ft: float = amount
+			# Crit roll por tick (DoT, mín +1 bônus).
+			if p_for_crit != null and p_for_crit.has_method("roll_crit_dot"):
+				var crit_ft: Dictionary = p_for_crit.roll_crit_dot(dmg_ft)
+				dmg_ft = float(crit_ft.get("dmg", dmg_ft))
+				if bool(crit_ft.get("crit", false)):
+					CritFeedback.mark_next_hit_crit(enemy)
+			enemy.take_damage(dmg_ft)
+			_notify_player_dmg_kill(dmg_ft, "fire_arrow", was_alive_ft, enemy)
 
 
 func _on_body_entered(body: Node) -> void:

@@ -347,6 +347,15 @@ func _on_hit(body: Node) -> void:
 		# Ticks/aliados/estruturas não setam o flag e não cancelam.
 		if target.is_in_group("stone_cube"):
 			target._arrow_hit_flag = true
+		# Crit roll: aplica multiplier de dano + knockback bonus + visual amarelo.
+		# Player lookup via group pra cobrir flechas da torre (source = torre).
+		var crit_info: Dictionary = {"crit": false, "mult": 1.0}
+		var p_arrow_crit := get_tree().get_first_node_in_group("player")
+		if p_arrow_crit != null and p_arrow_crit.has_method("roll_crit"):
+			crit_info = p_arrow_crit.roll_crit()
+		if bool(crit_info.get("crit", false)):
+			dmg_to_apply *= float(crit_info.get("mult", 1.0))
+			CritFeedback.mark_next_hit_crit(target)
 		var _was_alive_arrow: bool = (not ("hp" in target)) or float(target.hp) > 0.0
 		target.take_damage(dmg_to_apply)
 		_notify_player_dmg_kill(dmg_to_apply, _resolve_dmg_source_id(), _was_alive_arrow, target)
@@ -356,7 +365,11 @@ func _on_hit(body: Node) -> void:
 		if source != null and is_instance_valid(source) and source.has_method("notify_esquivando_hit"):
 			source.notify_esquivando_hit(self)
 		if target.has_method("apply_knockback"):
-			target.apply_knockback(direction, knockback_strength)
+			# Crit: 2× knockback nas flechas (não nas skills — só flechas têm esse bonus).
+			var knock: float = knockback_strength
+			if bool(crit_info.get("crit", false)) and p_arrow_crit != null and p_arrow_crit.has_method("crit_knockback_mult"):
+				knock *= float(p_arrow_crit.crit_knockback_mult())
+			target.apply_knockback(direction, knock)
 		_play_oneshot(impact_sound, global_position, sound_volume_db, 0.7)
 		_proc_chain_lightning(target)
 		if is_fire and is_instance_valid(target):
@@ -736,6 +749,10 @@ func _proc_chain_lightning(origin: Node) -> void:
 		return
 	if not (origin is Node2D):
 		return
+	# Origin shieldado (boss na fase escudada) não recebeu dano — não desencadeia.
+	# Sem isso, atacar boss com escudo passava o raio livremente pros minions.
+	if (origin as Node).is_in_group("boss_shielded"):
+		return
 	var origin2d: Node2D = origin
 	var origin_pos: Vector2 = origin2d.global_position
 	var candidates: Array = []
@@ -762,9 +779,17 @@ func _proc_chain_lightning(origin: Node) -> void:
 		# Curse ANTES do take_damage — pra try_convert_on_death enxergar o debuff.
 		if is_curse:
 			_apply_curse_to(enemy)
+		# Crit roll por alvo encadeado (cada cadeia rola independente).
+		var chain_crit: Dictionary = {"crit": false, "mult": 1.0}
+		var p_chain_crit := get_tree().get_first_node_in_group("player")
+		if p_chain_crit != null and p_chain_crit.has_method("roll_crit"):
+			chain_crit = p_chain_crit.roll_crit()
+		var chain_dmg_final: float = chain_dmg * float(chain_crit.get("mult", 1.0))
+		if bool(chain_crit.get("crit", false)):
+			CritFeedback.mark_next_hit_crit(enemy)
 		var _was_alive_chain: bool = (not ("hp" in enemy)) or float(enemy.hp) > 0.0
-		enemy.take_damage(chain_dmg)
-		_notify_player_dmg_kill(chain_dmg, "chain_lightning", _was_alive_chain, enemy)
+		enemy.take_damage(chain_dmg_final)
+		_notify_player_dmg_kill(chain_dmg_final, "chain_lightning", _was_alive_chain, enemy)
 		if is_fire:
 			_apply_burn_to(enemy)
 		_spawn_lightning_visual(origin_pos, (enemy as Node2D).global_position)

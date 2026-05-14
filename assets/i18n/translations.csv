@@ -213,6 +213,61 @@ SHOP_UPG_RICOCHET,Flecha Ricochete,Ricochet Arrow,Flecha Rebotadora,Flèche Rico
 SHOP_UPG_GRAVITON,Graviton,Graviton,Gravitón,Graviton
 SHOP_UPG_FIRE_ARROW,Flecha de Fogo,Fire Arrow,Flecha de Fuego,Flèche de Feu
 SHOP_UPG_CURSE_ARROW,Disparo Profano,Profane Shot,Disparo Profano,Tir Profane
+SHOP_UPG_BOOMERANG,Bumerangue,Boomerang,Bumerán,Boomerang
+SHOP_UPG_CRITICAL_CHANCE,Flechas Criticas,Critical Arrows,Flechas Críticas,Flèches Critiques
+SHOP_CRITICAL_CHANCE_DESC_1,"30% chance critico
++50% dano + knockback","30% crit chance
++50% damage + knockback","30% chance crítica
++50% daño + knockback","30% chance critique
++50% dégâts + recul"
+SHOP_CRITICAL_CHANCE_DESC_2,"50% chance critico
++50% dano","50% crit chance
++50% damage","50% chance crítica
++50% daño","50% chance critique
++50% dégâts"
+SHOP_CRITICAL_CHANCE_DESC_3,"70% chance critico
++60% dano","70% crit chance
++60% damage","70% chance crítica
++60% daño","70% chance critique
++60% dégâts"
+SHOP_CRITICAL_CHANCE_DESC_4,"100% critico
++65% dano","100% crit
++65% damage","100% crítica
++65% daño","100% critique
++65% dégâts"
+DMG_PANEL_BOOMERANG,Bumerangue,Boomerang,Bumerán,Boomerang
+SHOP_BOOMERANG_DESC_1,"Cada 5s lanca no
+inimigo mais proximo
+15 dano, vai e volta","Every 5s throws at
+nearest enemy
+15 dmg, returns","Cada 5s lanza al
+enemigo más cercano
+15 daño, va y vuelve","Toutes les 5s lance vers
+l'ennemi le + proche
+15 dgt, va et revient"
+SHOP_BOOMERANG_DESC_2,"CD 4s
+20 dano","CD 4s
+20 dmg","CD 4s
+20 daño","CD 4s
+20 dgt"
+SHOP_BOOMERANG_DESC_3,"2 bumerangues
+(alvo + oposto)
+25 dano","2 boomerangs
+(target + opposite)
+25 dmg","2 bumeranes
+(objetivo + opuesto)
+25 daño","2 boomerangs
+(cible + opposé)
+25 dgt"
+SHOP_BOOMERANG_DESC_4,"4 bumerangues
+todas direcoes
+30 dano","4 boomerangs
+all directions
+30 dmg","4 bumeranes
+todas direcciones
+30 daño","4 boomerangs
+toutes directions
+30 dgt"
 SHOP_ALLY_WOODWARDEN,Woodwarden,Woodwarden,Woodwarden,Woodwarden
 SHOP_ALLY_LENO,Amigo Leno,Friend Leno,Amigo Leno,Ami Leno
 SHOP_ALLY_CAPIVARA,Capivara Joe,Capybara Joe,Capibara Joe,Capybara Joe
@@ -246,7 +301,7 @@ por compra","-3% damage / -1.5% slow
 per purchase","-3% daño / -1.5% slow
 por compra","-3% dégâts / -1.5% slow
 par achat"
-SHOP_DAMAGE_DESC,+20% dano da flecha,+20% arrow damage,+20% daño de flecha,+20% dégâts de flèche
+SHOP_DAMAGE_DESC,+24% dano da flecha,+24% arrow damage,+24% daño de flecha,+24% dégâts de flèche
 SHOP_PERFURACAO_DESC_1,"A cada 3 ataques flecha
 atravessa, +30% dano","Every 3 attacks arrow
 pierces, +30% damage","Cada 3 ataques flecha
@@ -255,10 +310,10 @@ perfore, +30% dégâts"
 SHOP_PERFURACAO_DESC_2,+60% dano + hitbox maior,+60% damage + bigger hitbox,+60% daño + hitbox mayor,+60% dégâts + hitbox plus grande
 SHOP_PERFURACAO_DESC_3,+90% dano,+90% damage,+90% daño,+90% dégâts
 SHOP_PERFURACAO_DESC_4,Todo ataque atravessa,Every attack pierces,Cada ataque perfora,Chaque attaque perfore
-SHOP_ATTACK_SPEED_DESC,"+27% velocidade de
-ataque","+27% attack
-speed","+27% velocidad de
-ataque","+27% vitesse
+SHOP_ATTACK_SPEED_DESC,"+24% velocidade de
+ataque","+24% attack
+speed","+24% velocidad de
+ataque","+24% vitesse
 d'attaque"
 SHOP_MULTI_ARROW_DESC_1,"+2 flechas a 30°
 (50% dano)","+2 arrows at 30°

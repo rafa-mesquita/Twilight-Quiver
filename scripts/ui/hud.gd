@@ -97,7 +97,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 	"hp", "armor", "damage", "attack_speed", "move_speed",
 	# Upgrades de gameplay
 	"perfuracao", "ricochet_arrow", "multi_arrow", "double_arrows", "chain_lightning",
-	"fire_arrow", "curse_arrow", "graviton", "life_steal", "dash", "esquivando",
+	"fire_arrow", "curse_arrow", "graviton", "boomerang", "critical_chance", "life_steal", "dash", "esquivando",
 	"gold_magnet",
 	# Aliados
 	"woodwarden", "leno", "capivara_joe", "ting",
@@ -105,7 +105,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 # Caps onde "MAX" substitui "Lx" no badge (status escala infinito → sem cap).
 const _UPG_CAPS: Dictionary = {
 	"perfuracao": 4, "ricochet_arrow": 4, "multi_arrow": 4, "double_arrows": 4, "chain_lightning": 4,
-	"fire_arrow": 4, "curse_arrow": 4, "graviton": 4, "life_steal": 4,
+	"fire_arrow": 4, "curse_arrow": 4, "graviton": 4, "boomerang": 4, "critical_chance": 4, "life_steal": 4,
 	"dash": 4, "esquivando": 4, "gold_magnet": 4,
 	"woodwarden": 4, "leno": 4, "capivara_joe": 4, "ting": 4,
 }
@@ -130,6 +130,9 @@ const _UPG_PATHS: Dictionary = {
 	"leno": "res://assets/Hud/shop/aliado/Leno/Leno Card.png",
 	"woodwarden": "res://assets/Hud/shop/aliado/woodwarden/woodwarden card.png",
 	"ting": "res://assets/Hud/shop/aliado/ting/ting card.png",
+	"capivara_joe": "res://assets/Hud/shop/aliado/capivara joe/capivara joe card.png",
+	"boomerang": "res://assets/Hud/shop/upgrade/boomerang/boomerang card design.png",
+	"critical_chance": "res://assets/Hud/shop/upgrade/flechas criticas/felchas criticas card design.png",
 }
 const _UPG_FALLBACK_UPGRADE: String = "res://assets/Hud/shop/upgrade/placeholder.png"
 const _UPG_FALLBACK_ALIADO: String = "res://assets/Hud/shop/aliado/placeholder.png"

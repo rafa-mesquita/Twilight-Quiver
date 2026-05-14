@@ -110,14 +110,21 @@ func _hit_primary(target: Node) -> void:
 	if not target.has_method("take_damage"):
 		return
 	var was_alive: bool = (not ("hp" in target)) or float(target.hp) > 0.0
-	target.take_damage(damage)
-	_notify_player(damage, was_alive, target)
+	var dmg_t: float = damage
+	# Crit roll (pets também critam).
+	if source != null and source.has_method("roll_crit"):
+		var crit_t: Dictionary = source.roll_crit()
+		if bool(crit_t.get("crit", false)):
+			dmg_t *= float(crit_t.get("mult", 1.0))
+			CritFeedback.mark_next_hit_crit(target)
+	target.take_damage(dmg_t)
+	_notify_player(dmg_t, was_alive, target)
 	if aoe_radius > 0.0 and aoe_damage_pct > 0.0:
-		_apply_aoe(target)
+		_apply_aoe(target, dmg_t)
 
 
-func _apply_aoe(skip: Node) -> void:
-	var splash: float = damage * aoe_damage_pct
+func _apply_aoe(skip: Node, primary_dmg: float) -> void:
+	var splash: float = primary_dmg * aoe_damage_pct
 	if splash <= 0.0:
 		return
 	for e in get_tree().get_nodes_in_group("enemy"):
@@ -130,6 +137,7 @@ func _apply_aoe(skip: Node) -> void:
 		if not e.has_method("take_damage"):
 			continue
 		var was_alive: bool = (not ("hp" in e)) or float(e.hp) > 0.0
+		# Splash herda crit do tiro primário (não rola separado pra não duplicar).
 		e.take_damage(splash)
 		_notify_player(splash, was_alive, e)
 

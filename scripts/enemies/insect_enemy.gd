@@ -37,6 +37,7 @@ var is_attacking: bool = false
 var locked_attack_dir: Vector2 = Vector2.RIGHT
 var knockback_velocity: Vector2 = Vector2.ZERO
 var _flash_tween: Tween
+var _crit_pending: bool = false
 var _spawning_in: bool = false
 # Maldição: convertido pra aliado (mira em enemies, projétil bate em enemies).
 var is_curse_ally: bool = false
@@ -262,7 +263,8 @@ func _flash_damage() -> void:
 		return
 	if _flash_tween != null and _flash_tween.is_valid():
 		_flash_tween.kill()
-	sprite.modulate = Color(1.5, 0.3, 0.3, 1.0)
+	var flash_color: Color = CritFeedback.CRIT_FLASH_COLOR if _crit_pending else Color(1.5, 0.3, 0.3, 1.0)
+	sprite.modulate = flash_color
 	_flash_tween = create_tween()
 	_flash_tween.tween_property(sprite, "modulate", Color.WHITE, 0.2)
 
@@ -277,11 +279,15 @@ func _spawn_damage_effect() -> void:
 
 func _spawn_damage_number(amount: float) -> void:
 	if damage_number_scene == null:
+		_crit_pending = false
 		return
 	var num := damage_number_scene.instantiate()
 	num.amount = int(round(amount))
+	if _crit_pending and "color_override" in num:
+		num.color_override = CritFeedback.CRIT_NUMBER_COLOR
 	num.position = global_position + Vector2(0, -32)
 	get_tree().current_scene.add_child(num)
+	_crit_pending = false
 
 
 func _get_world() -> Node:

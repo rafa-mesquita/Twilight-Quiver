@@ -6,12 +6,17 @@ extends Node2D
 
 var amount: int = 0
 var text_override: String = ""
+# Quando != Color(1,1,1,1) (branco default), sobrescreve a cor do label.
+# Usado pra crit (amarelo).
+var color_override: Color = Color.WHITE
 var start_y: float = 0.0
 var elapsed: float = 0.0
 
 
 func _ready() -> void:
 	$Label.text = text_override if text_override != "" else str(amount)
+	if color_override != Color.WHITE:
+		$Label.add_theme_color_override("font_color", color_override)
 	position.x += randf_range(-horizontal_jitter, horizontal_jitter)
 	start_y = position.y
 

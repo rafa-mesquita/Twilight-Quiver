@@ -35,13 +35,21 @@ func _apply_tick_damage() -> void:
 	# Dano por tick = total_damage / numero de ticks.
 	var ticks: float = duration / TICK_INTERVAL
 	var per_tick: float = total_damage / maxf(ticks, 1.0)
+	var p_for_crit := get_tree().get_first_node_in_group("player")
 	for body in get_overlapping_bodies():
 		if not body.is_in_group("enemy"):
 			continue
 		if body.has_method("take_damage"):
 			var was_alive_cap: bool = (not ("hp" in body)) or float(body.hp) > 0.0
-			body.take_damage(per_tick)
-			_notify_player_dmg_kill(per_tick, "capivara_joe", was_alive_cap, body)
+			var dmg_cap: float = per_tick
+			# Crit roll por tick (DoT, mín +1 dano no bônus).
+			if p_for_crit != null and p_for_crit.has_method("roll_crit_dot"):
+				var crit_cap: Dictionary = p_for_crit.roll_crit_dot(dmg_cap)
+				dmg_cap = float(crit_cap.get("dmg", dmg_cap))
+				if bool(crit_cap.get("crit", false)):
+					CritFeedback.mark_next_hit_crit(body)
+			body.take_damage(dmg_cap)
+			_notify_player_dmg_kill(dmg_cap, "capivara_joe", was_alive_cap, body)
 
 
 func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, target: Node) -> void:

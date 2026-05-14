@@ -862,7 +862,7 @@ func _cleanup_curse_allies() -> void:
 	if stopped:
 		return
 	# Bônus de boas-vindas: após a wave 1, presenteia um upgrade aleatório
-	# (do pool base, sem elementais nem sub-melhorias do dash).
+	# do pool completo (todos os 12 upgrades, todos os 4 pets, todos os 5 status).
 	if wave_number == 1:
 		await _grant_free_random_upgrade()
 		if stopped:
@@ -1058,10 +1058,10 @@ func _apply_woodwarden_scaling_if_applicable(inst: Node2D, scene_path: String) -
 # pra não bloquear o caminho que o player quer escolher, sem sub-dash que precisa
 # de pré-requisito).
 const FREE_UPGRADE_POOL: Array[Dictionary] = [
-	# HP saiu do pool aleatório — agora é compra dedicada na loja com preço
-	# escalonado (1G, 2G, 3G, ...). Free upgrade não pode "queimar" o slot
-	# barato do primeiro HP.
+	# Pool completo: todos os status, upgrades e pets podem cair como free
+	# (respeita pares exclusivos em runtime via _player_has_exclusive_counterpart).
 	# `name` aqui é uma translation key — _show_free_upgrade_popup chama tr() nela.
+	{"id": "hp", "name": "SHOP_HP_TITLE"},
 	{"id": "damage", "name": "SHOP_UPG_DAMAGE"},
 	{"id": "perfuracao", "name": "SHOP_UPG_PERFURACAO"},
 	{"id": "attack_speed", "name": "SHOP_UPG_ATTACK_SPEED"},
@@ -1076,6 +1076,10 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	{"id": "ricochet_arrow", "name": "SHOP_UPG_RICOCHET"},
 	{"id": "graviton", "name": "SHOP_UPG_GRAVITON"},
 	{"id": "armor", "name": "SHOP_UPG_ARMOR"},
+	{"id": "fire_arrow", "name": "SHOP_UPG_FIRE_ARROW"},
+	{"id": "curse_arrow", "name": "SHOP_UPG_CURSE_ARROW"},
+	{"id": "boomerang", "name": "SHOP_UPG_BOOMERANG"},
+	{"id": "critical_chance", "name": "SHOP_UPG_CRITICAL_CHANCE"},
 	{"id": "woodwarden", "name": "SHOP_ALLY_WOODWARDEN"},
 	{"id": "leno", "name": "SHOP_ALLY_LENO"},
 	{"id": "capivara_joe", "name": "SHOP_ALLY_CAPIVARA"},

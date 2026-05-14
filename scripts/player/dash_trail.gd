@@ -48,12 +48,20 @@ func _process(delta: float) -> void:
 func _apply_tick() -> void:
 	# DPS escalado pra fração do segundo coberta pelo tick.
 	var amount: float = damage_per_second * TICK_INTERVAL
+	var p_for_crit := get_tree().get_first_node_in_group("player")
 	for enemy in _enemies_inside.duplicate():
 		if not is_instance_valid(enemy):
 			_enemies_inside.erase(enemy)
 			continue
 		if enemy.has_method("take_damage"):
-			enemy.take_damage(amount)
+			var dmg_dt: float = amount
+			# Crit roll por tick (DoT, mín +1 bônus).
+			if p_for_crit != null and p_for_crit.has_method("roll_crit_dot"):
+				var crit_dt: Dictionary = p_for_crit.roll_crit_dot(dmg_dt)
+				dmg_dt = float(crit_dt.get("dmg", dmg_dt))
+				if bool(crit_dt.get("crit", false)):
+					CritFeedback.mark_next_hit_crit(enemy)
+			enemy.take_damage(dmg_dt)
 
 
 func _on_body_entered(body: Node) -> void:

@@ -67,8 +67,16 @@ func _on_hit(body: Node) -> void:
 	# Single-target damage no inimigo atingido.
 	if body.has_method("take_damage"):
 		var was_alive_ln: bool = (not ("hp" in body)) or float(body.hp) > 0.0
-		body.take_damage(damage)
-		_notify_player_dmg_kill(damage, "leno", was_alive_ln, body)
+		var dmg_ln: float = damage
+		# Crit roll (pets também critam).
+		var p_for_crit := get_tree().get_first_node_in_group("player")
+		if p_for_crit != null and p_for_crit.has_method("roll_crit"):
+			var crit_ln: Dictionary = p_for_crit.roll_crit()
+			if bool(crit_ln.get("crit", false)):
+				dmg_ln *= float(crit_ln.get("mult", 1.0))
+				CritFeedback.mark_next_hit_crit(body)
+		body.take_damage(dmg_ln)
+		_notify_player_dmg_kill(dmg_ln, "leno", was_alive_ln, body)
 	_play_hit_sound()
 	_spawn_hit_effect()
 	_spawn_slow_area()

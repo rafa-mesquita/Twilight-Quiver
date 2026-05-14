@@ -20,11 +20,21 @@ var _tick_accum: float = 0.0
 var _original_speed: float = -1.0
 var _purple_number_color: Color = Color(0.78, 0.45, 1.0, 1.0)
 var _purple_flash_color: Color = Color(0.7, 0.3, 1.0, 0.75)
+# Cached refs pra propagação: quando o parent morre, tree_exiting dispara e
+# get_tree()/is_inside_tree() podem retornar null/false. Cachear no _ready
+# (enquanto estamos garantidamente na árvore) garante acesso na propagação.
+var _cached_tree: SceneTree = null
+var _cached_player: Node = null
 
 
 func _ready() -> void:
 	_remaining = duration
 	_apply_slow()
+	# Cacheia tree + player aqui (no tree); usados na propagação após morte
+	# quando get_tree() pode falhar (parent saindo da árvore).
+	_cached_tree = get_tree()
+	if _cached_tree != null:
+		_cached_player = _cached_tree.get_first_node_in_group("player")
 	# Propagação na morte: quando o parent morre com o debuff ativo, a maldição
 	# pula pros N inimigos mais próximos (lv1-2 → 1 alvo, lv3-4 → 2).
 	var parent: Node = get_parent()
@@ -81,16 +91,26 @@ func _apply_tick() -> void:
 	if "hp" in parent and float(parent.hp) <= 0.0:
 		return
 	var amount: float = dps * tick_interval
+	# Crit roll por tick (bônus mín +1 em DoTs pequenos).
+	var is_crit: bool = false
+	var p_for_crit := get_tree().get_first_node_in_group("player")
+	if p_for_crit != null and p_for_crit.has_method("roll_crit_dot"):
+		var crit_d: Dictionary = p_for_crit.roll_crit_dot(amount)
+		amount = float(crit_d.get("dmg", amount))
+		is_crit = bool(crit_d.get("crit", false))
+		if is_crit:
+			CritFeedback.mark_next_hit_crit(parent)
 	var was_alive: bool = (not ("hp" in parent)) or float(parent.hp) > 0.0
 	parent.take_damage(amount)
 	_notify_player_dmg_kill(amount, "curse_arrow", was_alive, parent)
-	_spawn_curse_number(amount)
+	_spawn_curse_number(amount, is_crit)
 	if parent is Node2D and is_instance_valid(parent):
 		_spawn_curse_flash(parent as Node2D)
 
 
-func _spawn_curse_number(amount: float) -> void:
-	# Damage number roxo pra distinguir do dano normal/queimadura.
+func _spawn_curse_number(amount: float, is_crit: bool = false) -> void:
+	# Damage number roxo pra distinguir do dano normal/queimadura. Em crit,
+	# amarelo (cor de crit) sobrescreve o roxo pra feedback consistente.
 	var parent: Node = get_parent()
 	if parent == null or not (parent is Node2D):
 		return
@@ -101,7 +121,7 @@ func _spawn_curse_number(amount: float) -> void:
 	if "amount" in num:
 		num.amount = int(round(amount))
 	if num is CanvasItem:
-		(num as CanvasItem).modulate = _purple_number_color
+		(num as CanvasItem).modulate = CritFeedback.CRIT_NUMBER_COLOR if is_crit else _purple_number_color
 	if num is Node2D:
 		(num as Node2D).position = (parent as Node2D).global_position + Vector2(0, -28)
 	get_tree().current_scene.add_child(num)
@@ -168,25 +188,36 @@ func _on_parent_exiting() -> void:
 	# Não dispara em convert_to_ally (parent fica vivo + release() já foi chamado).
 	if _remaining <= 0.0:
 		return
+	# Usa cached tree/player — quando parent.tree_exiting fira, get_tree() já
+	# pode retornar null (timing interno do Godot).
+	var tree: SceneTree = _cached_tree
+	if tree == null:
+		tree = get_tree()
+	if tree == null:
+		return
 	var parent: Node = get_parent()
 	if parent == null or not (parent is Node2D):
 		return
-	var p := get_tree().get_first_node_in_group("player")
+	var p: Node = _cached_player if _cached_player != null and is_instance_valid(_cached_player) else tree.get_first_node_in_group("player")
 	if p == null or not ("curse_arrow_level" in p):
 		return
 	var lvl: int = int(p.curse_arrow_level)
 	if lvl <= 0:
 		return
 	var count: int = 2 if lvl >= 3 else 1
-	_propagate_to_nearest((parent as Node2D).global_position, parent, count)
+	_propagate_to_nearest((parent as Node2D).global_position, parent, count, tree)
 
 
-func _propagate_to_nearest(origin: Vector2, exclude: Node, count: int) -> void:
+func _propagate_to_nearest(origin: Vector2, exclude: Node, count: int, tree: SceneTree = null) -> void:
 	# Pega os `count` inimigos mais próximos vivos SEM debuff já ativo (excluindo
 	# o que morreu). Se um alvo próximo já tem curse, pula pro próximo limpo —
 	# evita "desperdício" da propagação refreshando algo já maldito.
+	if tree == null:
+		tree = _cached_tree if _cached_tree != null else get_tree()
+	if tree == null:
+		return
 	var candidates: Array = []
-	for e in get_tree().get_nodes_in_group("enemy"):
+	for e in tree.get_nodes_in_group("enemy"):
 		if not is_instance_valid(e) or not (e is Node2D):
 			continue
 		if e == exclude or e.is_queued_for_deletion():
@@ -222,6 +253,10 @@ func _apply_curse_to_target(target: Node) -> void:
 	deb.duration = duration
 	deb.slow_factor = slow_factor
 	target.add_child(deb)
+	# Feedback visual imediato — primeiro tick natural só viria em 0.5s. Sem
+	# isso a propagação fica "invisível" pro player.
+	if target is Node2D and is_instance_valid(target):
+		_spawn_curse_flash(target as Node2D)
 
 
 # Refresca duração se nova flecha amaldiçoada bate no mesmo alvo.

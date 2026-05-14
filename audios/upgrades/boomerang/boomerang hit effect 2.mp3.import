@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://ba2airrgb4xvp"
+path="res://.godot/imported/boomerang hit effect 2.mp3-55e989757898e57b268950b1ba9f3c0b.mp3str"
+
+[deps]
+
+source_file="res://audios/upgrades/boomerang/boomerang hit effect 2.mp3"
+dest_files=["res://.godot/imported/boomerang hit effect 2.mp3-55e989757898e57b268950b1ba9f3c0b.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

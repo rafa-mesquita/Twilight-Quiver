@@ -35,6 +35,7 @@ const SOURCE_LABELS: Dictionary = {
 	"chain_lightning": "DMG_PANEL_CHAIN",
 	"chain_lightning_skill": "DMG_PANEL_CHAIN_SKILL",
 	"graviton": "DMG_PANEL_GRAVITON",
+	"boomerang": "DMG_PANEL_BOOMERANG",
 	"arrow_tower": "DMG_PANEL_TOWER",
 	"ting_turret": "DMG_PANEL_TING",
 	"woodwarden": "DMG_PANEL_WOODWARDEN",
