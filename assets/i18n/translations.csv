@@ -346,25 +346,25 @@ from area","Atrae monedas
 del área","Attire les pièces
 de la zone"
 SHOP_DASH_DESC_1,"Espaco = dash
-cd 5.5s","Space = dash
-cd 5.5s","Espacio = dash
-cd 5.5s","Espace = esquive
-cd 5.5s"
-SHOP_DASH_DESC_2,"Rastro de fogo
-cd 4.5s","Fire trail
-cd 4.5s","Estela de fuego
-cd 4.5s","Traînée de feu
-cd 4.5s"
+cd 6.3s","Space = dash
+cd 6.3s","Espacio = dash
+cd 6.3s","Espace = esquive
+cd 6.3s"
+SHOP_DASH_DESC_2,"Rastro de veneno
+cd 5.3s","Poison trail
+cd 5.3s","Estela de veneno
+cd 5.3s","Traînée de poison
+cd 5.3s"
 SHOP_DASH_DESC_3,"Auto-attack
-cd 4s","Auto-attack
-cd 4s","Auto-ataque
-cd 4s","Auto-attaque
-cd 4s"
+cd 4.8s","Auto-attack
+cd 4.8s","Auto-ataque
+cd 4.8s","Auto-attaque
+cd 4.8s"
 SHOP_DASH_DESC_4,"+1 flecha
-cd 3.5s","+1 arrow
-cd 3.5s","+1 flecha
-cd 3.5s","+1 flèche
-cd 3.5s"
+cd 4.3s","+1 arrow
+cd 4.3s","+1 flecha
+cd 4.3s","+1 flèche
+cd 4.3s"
 SHOP_ESQUIVANDO_DESC_1,"1a flecha do hit
 +5% atk/move 2s
 max 3 stacks
@@ -381,16 +381,16 @@ max 3 stacks
 SHOP_ESQUIVANDO_DESC_2,"+6% por stack
 moeda = stack
 Espaço: +30% move
-3s, cd 15s","+6% per stack
+3s, 0.3s iframes, cd 15s","+6% per stack
 coin = stack
 Space: +30% move
-3s, cd 15s","+6% por stack
+3s, 0.3s iframes, cd 15s","+6% por stack
 moneda = stack
 Espacio: +30% mov
-3s, cd 15s","+6% par stack
+3s, 0.3s iframes, cd 15s","+6% par stack
 pièce = stack
 Espace: +30% mov
-3s, cd 15s"
+3s, 0.3s iframes, cd 15s"
 SHOP_ESQUIVANDO_DESC_3,"+9% por stack
 max 4 stacks
 5% esquiva
@@ -417,16 +417,16 @@ cd hab. 10s","+11% par stack
 max 5 stacks
 chaque hit stack
 cd capa 10s"
-SHOP_LIFE_STEAL_DESC_1,"10% drop coracao
-cura 20% HP","10% heart drop
-heals 20% HP","10% drop corazón
-cura 20% HP","10% drop cœur
+SHOP_LIFE_STEAL_DESC_1,"12% drop coracao
+cura 20% HP","12% heart drop
+heals 20% HP","12% drop corazón
+cura 20% HP","12% drop cœur
 soigne 20% PV"
 SHOP_LIFE_STEAL_DESC_2,"+5% drop
-+10% cura","+5% drop
-+10% heal","+5% drop
-+10% cura","+5% drop
-+10% soin"
++5% cura","+5% drop
++5% heal","+5% drop
++5% cura","+5% drop
++5% soin"
 SHOP_LIFE_STEAL_DESC_3,"+5% drop, +5% cura
 puxa em area","+5% drop, +5% heal
 pulls in area","+5% drop, +5% cura
@@ -530,15 +530,15 @@ SHOP_TING_DESC_4,"+1 Mecânico Ting
 (total 2)","+1 Ting le Mécanicien
 (total 2)"
 SHOP_FIRE_ARROW_DESC_1,"Queima inimigo
-4 dmg/s por 3s","Burns enemy
-4 dmg/s for 3s","Quema enemigo
-4 dmg/s por 3s","Brûle l'ennemi
-4 dmg/s pendant 3s"
-SHOP_FIRE_ARROW_DESC_2,"+1 dmg/s +
-rastro de fogo","+1 dmg/s +
-fire trail","+1 dmg/s +
-estela de fuego","+1 dmg/s +
-traînée de feu"
+6 dmg/s por 5s","Burns enemy
+6 dmg/s for 5s","Quema enemigo
+6 dmg/s por 5s","Brûle l'ennemi
+6 dmg/s pendant 5s"
+SHOP_FIRE_ARROW_DESC_2,"+1 dmg/s + rastro
+de fogo (4 dps)","+1 dmg/s + fire
+trail (4 dps)","+1 dmg/s + estela
+de fuego (4 dps)","+1 dmg/s + traînée
+de feu (4 dps)"
 SHOP_FIRE_ARROW_DESC_3,"Skill Q: chama
 area 12 dps 6s","Skill Q: flame
 area 12 dps 6s","Hab. Q: llama
@@ -549,25 +549,41 @@ SHOP_FIRE_ARROW_DESC_4,"Rastro do player
 +30% area burn","Estela del jugador
 +30% quema área","Traînée du joueur
 +30% brûle zone"
-SHOP_CURSE_ARROW_DESC_1,"Slow 35%
-+ 3 dps toxic","Slow 35%
-+ 3 dps toxic","Lentitud 35%
-+ 3 dps tóxico","Lenteur 35%
-+ 3 dps toxique"
-SHOP_CURSE_ARROW_DESC_2,"18% chance kill
-vira aliado","18% chance kill
-turns into ally","18% chance al matar
-se vuelve aliado","18% chance de tuer
+SHOP_CURSE_ARROW_DESC_1,"Slow 35% + 3 dps
+Morte propaga DoT
+pro alvo mais proximo","Slow 35% + 3 dps
+Death spreads DoT
+to nearest target","Lentitud 35% + 3 dps
+Muerte propaga DoT
+al objetivo cercano","Lenteur 35% + 3 dps
+Mort propage DoT
+à la cible la + proche"
+SHOP_CURSE_ARROW_DESC_2,"Slow 42% + 4 dps
+18% chance kill
+vira aliado","Slow 42% + 4 dps
+18% chance kill
+turns into ally","Lentitud 42% + 4 dps
+18% al matar
+se vuelve aliado","Lenteur 42% + 4 dps
+18% de tuer
 devient allié"
-SHOP_CURSE_ARROW_DESC_3,"33% chance + aliados
-aplicam DoT","33% chance + allies
-apply DoT","33% chance + aliados
-aplican DoT","33% chance + alliés
-appliquent DoT"
-SHOP_CURSE_ARROW_DESC_4,"50% chance
-Q: raio purpura cd 20s","50% chance
-Q: purple beam cd 20s","50% chance
-Q: rayo púrpura cd 20s","50% chance
+SHOP_CURSE_ARROW_DESC_3,"Slow 48% + 6 dps
+33% chance + aliados
+aplicam DoT, propaga p/ 2","Slow 48% + 6 dps
+33% chance + allies
+apply DoT, spreads to 2","Lentitud 48% + 6 dps
+33% + aliados aplican
+DoT, propaga a 2","Lenteur 48% + 6 dps
+33% + alliés appliquent
+DoT, propage à 2"
+SHOP_CURSE_ARROW_DESC_4,"Slow 55% + 8 dps
+50% chance kill
+Q: raio purpura cd 20s","Slow 55% + 8 dps
+50% chance kill
+Q: purple beam cd 20s","Lentitud 55% + 8 dps
+50% al matar
+Q: rayo púrpura cd 20s","Lenteur 55% + 8 dps
+50% de tuer
 Q : rayon violet cd 20s"
 SHOP_WW_MAX,Max (4/4) atingido,Max (4/4) reached,Máx (4/4) alcanzado,Max (4/4) atteint
 SHOP_WW_DESC_1,"Aliado tank: +20% HP

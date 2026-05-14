@@ -25,6 +25,11 @@ var _purple_flash_color: Color = Color(0.7, 0.3, 1.0, 0.75)
 func _ready() -> void:
 	_remaining = duration
 	_apply_slow()
+	# Propagação na morte: quando o parent morre com o debuff ativo, a maldição
+	# pula pros N inimigos mais próximos (lv1-2 → 1 alvo, lv3-4 → 2).
+	var parent: Node = get_parent()
+	if parent != null:
+		parent.tree_exiting.connect(_on_parent_exiting)
 
 
 func _process(delta: float) -> void:
@@ -156,6 +161,67 @@ func _find_sprite_in(node: Node) -> Node2D:
 func release() -> void:
 	_restore_speed()
 	queue_free()
+
+
+func _on_parent_exiting() -> void:
+	# Disparado quando o parent é removido da árvore (queue_free do enemy).
+	# Não dispara em convert_to_ally (parent fica vivo + release() já foi chamado).
+	if _remaining <= 0.0:
+		return
+	var parent: Node = get_parent()
+	if parent == null or not (parent is Node2D):
+		return
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null or not ("curse_arrow_level" in p):
+		return
+	var lvl: int = int(p.curse_arrow_level)
+	if lvl <= 0:
+		return
+	var count: int = 2 if lvl >= 3 else 1
+	_propagate_to_nearest((parent as Node2D).global_position, parent, count)
+
+
+func _propagate_to_nearest(origin: Vector2, exclude: Node, count: int) -> void:
+	# Pega os `count` inimigos mais próximos vivos SEM debuff já ativo (excluindo
+	# o que morreu). Se um alvo próximo já tem curse, pula pro próximo limpo —
+	# evita "desperdício" da propagação refreshando algo já maldito.
+	var candidates: Array = []
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not is_instance_valid(e) or not (e is Node2D):
+			continue
+		if e == exclude or e.is_queued_for_deletion():
+			continue
+		if "hp" in e and float(e.hp) <= 0.0:
+			continue
+		if _has_curse_debuff(e):
+			continue
+		var dist_sq: float = (e as Node2D).global_position.distance_squared_to(origin)
+		candidates.append({"node": e, "dist": dist_sq})
+	candidates.sort_custom(func(a, b): return a["dist"] < b["dist"])
+	var applied: int = 0
+	for entry in candidates:
+		if applied >= count:
+			break
+		_apply_curse_to_target(entry["node"])
+		applied += 1
+
+
+func _has_curse_debuff(node: Node) -> bool:
+	for child in node.get_children():
+		if child is CurseDebuff:
+			return true
+	return false
+
+
+func _apply_curse_to_target(target: Node) -> void:
+	# Cria novo CurseDebuff com duration RESETADA (usa o `duration` original do
+	# debuff que morreu, não o `_remaining`). Sem reset, propagações em cadeia
+	# ficariam com tempo curto demais pra fazer diferença.
+	var deb := CurseDebuff.new()
+	deb.dps = dps
+	deb.duration = duration
+	deb.slow_factor = slow_factor
+	target.add_child(deb)
 
 
 # Refresca duração se nova flecha amaldiçoada bate no mesmo alvo.
