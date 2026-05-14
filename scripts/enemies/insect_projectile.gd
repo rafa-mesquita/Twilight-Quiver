@@ -64,6 +64,11 @@ func _on_body_entered(body: Node) -> void:
 			_apply_ally_poison_slow(body)
 			if body.has_method("take_damage"):
 				body.take_damage(damage)
+				# Inseto convertido pela Maldição: dano vai pro breakdown "curse_ally"
+				# no painel TAB.
+				var p := get_tree().get_first_node_in_group("player")
+				if p != null and p.has_method("notify_damage_dealt_by_source"):
+					p.notify_damage_dealt_by_source(damage, "curse_ally")
 			_spawn_hit_effect()
 			_die()
 		return

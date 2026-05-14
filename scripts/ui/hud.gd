@@ -100,14 +100,14 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 	"fire_arrow", "curse_arrow", "graviton", "life_steal", "dash", "esquivando",
 	"gold_magnet",
 	# Aliados
-	"woodwarden", "leno", "capivara_joe",
+	"woodwarden", "leno", "capivara_joe", "ting",
 ]
 # Caps onde "MAX" substitui "Lx" no badge (status escala infinito → sem cap).
 const _UPG_CAPS: Dictionary = {
 	"perfuracao": 4, "ricochet_arrow": 4, "multi_arrow": 4, "double_arrows": 4, "chain_lightning": 4,
 	"fire_arrow": 4, "curse_arrow": 4, "graviton": 4, "life_steal": 4,
 	"dash": 4, "esquivando": 4, "gold_magnet": 4,
-	"woodwarden": 4, "leno": 4, "capivara_joe": 4,
+	"woodwarden": 4, "leno": 4, "capivara_joe": 4, "ting": 4,
 }
 const _UPG_STATUS_COMBINED_PATH: String = "res://assets/Hud/shop/status/HP - atck speed - Move speed - Atck Dmg.png"
 const _UPG_STATUS_COMBINED_ROWS: Dictionary = {"hp": 0, "attack_speed": 1, "move_speed": 2, "damage": 3}
@@ -129,6 +129,7 @@ const _UPG_PATHS: Dictionary = {
 	"esquivando": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"leno": "res://assets/Hud/shop/aliado/Leno/Leno Card.png",
 	"woodwarden": "res://assets/Hud/shop/aliado/woodwarden/woodwarden card.png",
+	"ting": "res://assets/Hud/shop/aliado/ting/ting card.png",
 }
 const _UPG_FALLBACK_UPGRADE: String = "res://assets/Hud/shop/upgrade/placeholder.png"
 const _UPG_FALLBACK_ALIADO: String = "res://assets/Hud/shop/aliado/placeholder.png"
@@ -137,7 +138,7 @@ const _UPG_FRAME_NORMAL: Vector2i = Vector2i(38, 47)  # upgrade/aliado
 const _UPG_FRAME_STATUS: Vector2i = Vector2i(65, 17)  # status/armor (faixa horizontal)
 # IDs por categoria (pra resolver fallback e tamanho de célula).
 const _UPG_STATUS_IDS: Array[String] = ["hp", "armor", "damage", "attack_speed", "move_speed"]
-const _UPG_ALIADO_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe"]
+const _UPG_ALIADO_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe", "ting"]
 # Largura/altura de cada chip na coluna. Status são wide (65×17), upgrade/aliado
 # são quase quadrados (38×47); chip único acomoda os dois com letterbox.
 const _UPG_CHIP_SIZE: Vector2 = Vector2(72, 44)
@@ -848,7 +849,11 @@ func _show_restart_button() -> void:
 	score_label.modulate.a = 0.0
 	score_label.visible = true
 
-	survival_label.text = "%s\n%s" % [tr("HUD_DEATH_SURVIVAL") % wave_num, _build_death_stats_block()]
+	var p := get_tree().get_first_node_in_group("player")
+	var killed_by_str: String = ""
+	if p != null and "stats_killed_by" in p:
+		killed_by_str = _format_killed_by(String(p.get("stats_killed_by")))
+	survival_label.text = "%s\n%s\n%s" % [tr("HUD_DEATH_SURVIVAL") % wave_num, killed_by_str, _build_death_stats_block()]
 	survival_label.modulate.a = 0.0
 	survival_label.visible = true
 
@@ -944,6 +949,33 @@ func _on_menu_pressed() -> void:
 
 
 # ---------- Death stats ----------
+
+# Mapeia source_id (passado em player.take_damage pelas criaturas) → translation
+# key da frase "Morto pelo X" exibida no death overlay. IDs ausentes caem em
+# HUD_DEATH_BY_UNKNOWN. Cada key contém a frase completa pra dar liberdade de
+# tradução por idioma (não tem nome de criatura + nome de skill separados).
+const _DEATH_SOURCE_LABELS: Dictionary = {
+	"melee": "HUD_DEATH_BY_MELEE",
+	"monkey": "HUD_DEATH_BY_MONKEY",
+	"stone_cube": "HUD_DEATH_BY_STONE_CUBE",
+	"insect": "HUD_DEATH_BY_INSECT",
+	"insect_poison": "HUD_DEATH_BY_INSECT_POISON",
+	"mage": "HUD_DEATH_BY_MAGE",
+	"summoner_mage": "HUD_DEATH_BY_SUMMONER_MAGE",
+	"fire_mage": "HUD_DEATH_BY_FIRE_MAGE",
+	"ice_mage": "HUD_DEATH_BY_ICE_MAGE",
+	"electric_mage": "HUD_DEATH_BY_ELECTRIC_MAGE",
+	"mage_monkey": "HUD_DEATH_BY_MAGE_MONKEY",
+	"mage_monkey_beam": "HUD_DEATH_BY_MAGE_MONKEY_BEAM",
+}
+
+
+func _format_killed_by(source_id: String) -> String:
+	if source_id.is_empty():
+		return tr("HUD_DEATH_BY_UNKNOWN")
+	var key: String = String(_DEATH_SOURCE_LABELS.get(source_id, "HUD_DEATH_BY_UNKNOWN"))
+	return tr(key)
+
 
 func _build_death_stats_block() -> String:
 	var p := get_tree().get_first_node_in_group("player")

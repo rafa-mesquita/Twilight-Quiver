@@ -18,9 +18,11 @@ const _KIT_SLOT: StringName = &"_kit"
 # Quantos slots distintos um display_name precisa ocupar pra ser considerado um "kit".
 const _KIT_MIN_SLOTS: int = 2
 # Ordem de empilhamento do thumbnail de kit (back → front). Bate com a ordem
-# das camadas em scenes/ui/player_preview.tscn.
+# das camadas em scenes/player/player.tscn (Body → Skin > Legs/Quiver/Shirt/
+# Alfaja/Cape/Hair/Bow). Cape DEPOIS de body porque o PNG da cape inclui a
+# máscara que cobre o rosto — se cape for renderizada antes, body apaga a máscara.
 const _KIT_LAYER_ORDER: Array[StringName] = [
-	&"cape", &"body", &"legs", &"quiver", &"shirt", &"alfaja", &"hair", &"bow"
+	&"body", &"legs", &"quiver", &"shirt", &"alfaja", &"cape", &"hair", &"bow"
 ]
 
 # Translation keys por slot — tr() onde o label é exibido (tabs).

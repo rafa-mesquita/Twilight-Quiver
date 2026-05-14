@@ -308,6 +308,9 @@ func _start_next_wave() -> void:
 		# da torreta do Ting (+1% por mago morto). Cada turno começa do zero.
 		if player.has_method("reset_mages_killed_this_wave"):
 			player.reset_mages_killed_this_wave()
+		# Zera breakdown de dano por fonte da wave (lido pelo painel TAB).
+		if player.has_method("reset_wave_damage_breakdown"):
+			player.reset_wave_damage_breakdown()
 	# Snapshot do gold do player no início da wave — pity pega gold REAL ganho
 	# (já coletado + ainda no chão), não conta em "coin entries" do drop.
 	if player != null and "gold" in player:
@@ -668,6 +671,10 @@ func _pick_spawn_for(type_key: String) -> Vector2:
 
 func _is_boss_wave(num: int) -> bool:
 	return num == 7 or num == boss_redux_wave
+
+
+func is_boss_wave_now() -> bool:
+	return _is_boss_wave(wave_number)
 
 
 func _prepare_wave7_spawn_assignments() -> void:

@@ -228,6 +228,12 @@ func _on_frame_changed() -> void:
 					current_target.take_damage(damage, "monkey")
 				else:
 					current_target.take_damage(damage)
+					# Macaco convertido pela Maldição: dano vai pro breakdown
+					# "curse_ally" no painel TAB.
+					if is_curse_ally:
+						var p := get_tree().get_first_node_in_group("player")
+						if p != null and p.has_method("notify_damage_dealt_by_source"):
+							p.notify_damage_dealt_by_source(damage, "curse_ally")
 
 	# Pulinho do walk: sprite sobe nos frames pares (visual de saltitar).
 	# Sombra fica intacta porque é um node separado, não filho do sprite.

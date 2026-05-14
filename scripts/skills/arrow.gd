@@ -90,8 +90,18 @@ var source: Node = null
 # atiradores não-player (ex: arrow_tower="arrow_tower", leno="leno") pra separar
 # dano/kills no dmg_dealt_by_source do player.
 var telemetry_source_id: String = "arrow_base"
+# Source id alternativo pra flechas EXTRAS da volley (não-primárias) quando o
+# player tem Multi-flecha ou Flechas Duplas. Setado pelo player no _spawn_arrow.
+# Vazio = flecha primária, usa telemetry_source_id normal. Hits da perfuração e
+# ricochete sempre sobrescrevem ("perfuracao"/"ricochet") via _resolve_source_id.
+var telemetry_source_id_extra: String = ""
+var is_primary_arrow: bool = true
 var _hit_bodies: Array[Node] = []
 var _pierce_hits: int = 0  # quantos targets a flecha perfurante já atravessou
+# Quantos ricochetes essa flecha já fez. Primeiro hit = 0 (conta como base).
+# Subsequentes (hops > 0) atribuem dano à fonte "ricochet". Clones de split
+# nascem com hops_used = 1 pra a primeira batida deles já contar como ricochete.
+var _ricochet_hops_used: int = 0
 # Esquivando: id da volley que disparou essa flecha + flag de "essa flecha já
 # gerou stack". Setado pelo player no _spawn_arrow. Lv1-3 do Esquivando: só a
 # 1ª flecha da volley + 1º hit dela contam. Lv4: cada hit conta (player ignora
@@ -339,7 +349,7 @@ func _on_hit(body: Node) -> void:
 			target._arrow_hit_flag = true
 		var _was_alive_arrow: bool = (not ("hp" in target)) or float(target.hp) > 0.0
 		target.take_damage(dmg_to_apply)
-		_notify_player_dmg_kill(dmg_to_apply, telemetry_source_id, _was_alive_arrow, target)
+		_notify_player_dmg_kill(dmg_to_apply, _resolve_dmg_source_id(), _was_alive_arrow, target)
 		# Esquivando: bater num inimigo real (target em grupo "enemy") gera stack
 		# no player. Helper trata as regras por nível (lv1-3 só 1 stack por volley,
 		# lv4 cada hit). Aliados/estruturas já retornaram acima — só inimigo cai aqui.
@@ -604,6 +614,7 @@ func _perform_ricochet(hit_target: Node = null) -> bool:
 		_spawn_ricochet_clone(secondary, new_hops, new_splits)
 	ricochet_hops_remaining = new_hops
 	ricochet_splits_remaining = new_splits
+	_ricochet_hops_used += 1
 	if new_dir.length() < 0.01:
 		return false
 	# Visual: ring ciano no ponto de impacto (claro pra ver que ricocheteou).
@@ -697,10 +708,18 @@ func _spawn_ricochet_clone(target: Node2D, hops: int, splits: int) -> void:
 		clone.is_ricochet = true
 		clone.ricochet_hops_remaining = hops
 		clone.ricochet_splits_remaining = splits
+	# Clone nasce de um ricochete — primeira batida dele já conta como "ricochet"
+	# no breakdown (não como flecha base).
+	if "_ricochet_hops_used" in clone:
+		clone._ricochet_hops_used = 1
 	if "source" in clone:
 		clone.source = source
 	if "telemetry_source_id" in clone:
 		clone.telemetry_source_id = telemetry_source_id
+	if "telemetry_source_id_extra" in clone:
+		clone.telemetry_source_id_extra = telemetry_source_id_extra
+	if "is_primary_arrow" in clone:
+		clone.is_primary_arrow = is_primary_arrow
 	_get_world().add_child(clone)
 	if clone.has_method("set_direction"):
 		var d: Vector2 = (target.global_position - global_position).normalized()
@@ -794,6 +813,23 @@ func _play_chain_sound(pos: Vector2) -> void:
 		if is_instance_valid(ref):
 			ref.queue_free()
 	)
+
+
+func _resolve_dmg_source_id() -> String:
+	# Atribuição dinâmica do source_id por hit. Ordem de precedência:
+	#   1. Perfuração (alvos atravessados além do 1º) → "perfuracao"
+	#   2. Ricochete (hits após o 1º hop) → "ricochet"
+	#   3. Flecha extra de Multi/Duplas (não-primária) → upgrade name
+	#   4. Default → telemetry_source_id ("arrow_base" ou override de torre/leno).
+	# Hits de impacto das flechas elementais (fire/curse) caem no default — o
+	# DoT é que tem seu próprio source ("fire_arrow"/"curse_arrow").
+	if is_piercing and _pierce_hits > 0:
+		return "perfuracao"
+	if is_ricochet and _ricochet_hops_used > 0:
+		return "ricochet"
+	if not is_primary_arrow and not telemetry_source_id_extra.is_empty():
+		return telemetry_source_id_extra
+	return telemetry_source_id
 
 
 func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, target: Node) -> void:

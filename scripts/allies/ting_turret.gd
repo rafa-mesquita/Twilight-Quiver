@@ -9,7 +9,7 @@ extends Node2D
 # - Auto-destroi após lifetime — pop-in/pop-out visual
 
 @export var lifetime: float = 8.0
-@export var attack_range: float = 140.0
+@export var attack_range: float = 180.0
 # Cooldown base (L1/L2 = 2.0s; L3+ Ting baixa pra 1.7s via export quando dropa).
 @export var attack_cooldown_base: float = 2.0
 @export var projectile_scene: PackedScene
@@ -144,11 +144,17 @@ func _pick_target() -> Node2D:
 
 
 func _current_cooldown() -> float:
-	# +1% atk speed por mago morto na wave (compounding via divisão no cd).
+	# +3% atk speed por mago morto na wave (compounding via divisão no cd).
+	# Nas waves do boss (gorila mago), o bônus é 20% mais fraco = 2.4% por mago,
+	# pra evitar snowball absurdo já que o boss invoca dezenas de magos.
 	var mages: int = 0
 	if _player != null and _player.has_method("get_mages_killed_this_wave"):
 		mages = int(_player.get_mages_killed_this_wave())
-	return attack_cooldown_base / (1.0 + float(mages) * 0.01)
+	var per_mage_bonus: float = 0.03
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm != null and wm.has_method("is_boss_wave_now") and bool(wm.is_boss_wave_now()):
+		per_mage_bonus *= 0.8
+	return attack_cooldown_base / (1.0 + float(mages) * per_mage_bonus)
 
 
 func _current_damage() -> float:

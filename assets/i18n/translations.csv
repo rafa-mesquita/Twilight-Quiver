@@ -75,8 +75,43 @@ PLAYER_QUEST_RED_VELVET,Alcance a raid 10,Reach raid 10,Alcanza el raid 10,Attei
 HUD_DASH_READY,Pronto,Ready,Listo,Prêt
 HUD_RAID_INTRO,Raid %d,Raid %d,Raid %d,Raid %d
 HUD_WAVE_CLEARED,Wave %d Limpa,Raid %d Cleared,Raid %d Limpio,Raid %d Nettoyé
+HUD_DODGE_MISS,MISS,MISS,FALLÓ,RATÉ
+DMG_PANEL_TITLE,DANO NA WAVE,WAVE DAMAGE,DAÑO DEL RAID,DÉGÂTS DU RAID
+DMG_PANEL_TOTAL,Total: %d,Total: %d,Total: %d,Total : %d
+DMG_PANEL_EMPTY,Sem dano causado ainda,No damage dealt yet,Sin daño aún,Aucun dégât pour l'instant
+DMG_PANEL_ARROW,Flecha,Arrow,Flecha,Flèche
+DMG_PANEL_MULTI_ARROW,Multi-flecha,Multi-shot,Multi-flecha,Multi-flèche
+DMG_PANEL_DOUBLE_ARROWS,Flechas Duplas,Double Arrows,Flechas dobles,Flèches doubles
+DMG_PANEL_PERFURACAO,Perfuração,Pierce,Perforación,Perforation
+DMG_PANEL_RICOCHET,Ricochete,Ricochet,Rebote,Ricochet
+DMG_PANEL_FIRE_DOT,Queimadura,Burn,Quemadura,Brûlure
+DMG_PANEL_FIRE_SKILL,Skill de Fogo,Fire Skill,Habilidad de Fuego,Compétence Feu
+DMG_PANEL_CURSE_DOT,Maldição (DoT),Curse (DoT),Maldición (DoT),Malédiction (DoT)
+DMG_PANEL_CURSE_SKILL,Feixe da Maldição,Curse Beam,Rayo de Maldición,Rayon de Malédiction
+DMG_PANEL_CHAIN,Cadeia de Raios,Chain Lightning,Cadena Eléctrica,Chaîne d'Éclairs
+DMG_PANEL_CHAIN_SKILL,Skill de Raios,Lightning Skill,Habilidad Eléctrica,Compétence Foudre
+DMG_PANEL_GRAVITON,Gráviton,Graviton,Gravitón,Graviton
+DMG_PANEL_TOWER,Torre de Flechas,Arrow Tower,Torre de Flechas,Tour à Flèches
+DMG_PANEL_TING,Mecânico Ting,Ting,Ting,Ting
+DMG_PANEL_WOODWARDEN,Woodwarden,Woodwarden,Woodwarden,Woodwarden
+DMG_PANEL_LENO,Leno,Leno,Leno,Leno
+DMG_PANEL_CAPIVARA,Capivara Joe,Capybara Joe,Capivara Joe,Capybara Joe
+DMG_PANEL_CURSE_ALLY,Aliados Flecha Profana,Curse Arrow Allies,Aliados Flecha Profana,Alliés Flèche Maudite
 HUD_DEATH_SCORE,SCORE %d,SCORE %d,SCORE %d,SCORE %d
 HUD_DEATH_SURVIVAL,Sobreviveu %d waves,Survived %d raids,Sobreviviste %d raids,Survécu à %d raids
+HUD_DEATH_BY_UNKNOWN,Morto por causa desconhecida,Killed by unknown cause,Muerto por causa desconocida,Tué par cause inconnue
+HUD_DEATH_BY_MELEE,Morto pelo bote do macaco furioso,Killed by the angry monkey's strike,Muerto por el embate del mono furioso,Tué par l'attaque du singe enragé
+HUD_DEATH_BY_MONKEY,Morto pelo golpe do macaco,Killed by the monkey's blow,Muerto por el golpe del mono,Tué par le coup du singe
+HUD_DEATH_BY_STONE_CUBE,Morto pelo cubo de pedra,Killed by the stone cube,Muerto por el cubo de piedra,Tué par le cube de pierre
+HUD_DEATH_BY_INSECT,Morto pelo cuspe do inseto,Killed by the insect's spit,Muerto por la escupida del insecto,Tué par le crachat de l'insecte
+HUD_DEATH_BY_INSECT_POISON,Morto pelo veneno do inseto,Killed by the insect's poison,Muerto por el veneno del insecto,Tué par le poison de l'insecte
+HUD_DEATH_BY_MAGE,Morto pelo tiro do mago,Killed by the mage's shot,Muerto por el disparo del mago,Tué par le tir du mage
+HUD_DEATH_BY_SUMMONER_MAGE,Morto pelo tiro do mago invocador,Killed by the summoner mage's shot,Muerto por el disparo del mago invocador,Tué par le tir du mage invocateur
+HUD_DEATH_BY_FIRE_MAGE,Morto pelo tiro do mago de fogo,Killed by the fire mage's shot,Muerto por el disparo del mago de fuego,Tué par le tir du mage de feu
+HUD_DEATH_BY_ICE_MAGE,Morto pelo tiro do mago de gelo,Killed by the ice mage's shot,Muerto por el disparo del mago de hielo,Tué par le tir du mage de glace
+HUD_DEATH_BY_ELECTRIC_MAGE,Morto pelo raio do mago eletrico,Killed by the electric mage's lightning,Muerto por el rayo del mago eléctrico,Tué par l'éclair du mage électrique
+HUD_DEATH_BY_MAGE_MONKEY,Morto pelo tiro do gorila mago,Killed by the mage gorilla's shot,Muerto por el disparo del gorila mago,Tué par le tir du gorille mage
+HUD_DEATH_BY_MAGE_MONKEY_BEAM,Morto pelo raio laser do gorila mago,Killed by the mage gorilla's laser beam,Muerto por el rayo láser del gorila mago,Tué par le rayon laser du gorille mage
 HUD_DEATH_RESTART,Jogar Novamente,Play Again,Jugar de nuevo,Rejouer
 HUD_DEATH_MENU,Voltar ao Menu,Back to Menu,Volver al menú,Retour au menu
 HUD_DEATH_STATS,"Tempo: %s
@@ -105,6 +140,7 @@ HUD_PAUSE_CONTINUE,Continuar,Continue,Continuar,Continuer
 HUD_PAUSE_SETTINGS,Configuracoes,Settings,Ajustes,Paramètres
 HUD_PAUSE_MENU,Voltar ao Menu,Back to Menu,Volver al menú,Retour au menu
 SHOP_NEXT_WAVE,Proxima Wave,Next Raid,Siguiente Raid,Raid suivant
+SHOP_NEXT_WAVE_FMT,Proxima Wave: %d,Next Raid: %d,Siguiente Raid: %d,Raid suivant : %d
 SHOP_GOLD_LABEL,%d coins,%d coins,%d monedas,%d pièces
 SHOP_HEADER_STRUCTURES,ESTRUTURAS,STRUCTURES,ESTRUCTURAS,STRUCTURES
 SHOP_HEADER_STATUS,STATUS,STATUS,ESTADO,STATS
@@ -418,25 +454,29 @@ also splits","2º rebote
 también divide","2e ricochet
 divise aussi"
 SHOP_GRAVITON_DESC_1,"Cada 3 ataques cria
-campo gravitacional","Every 3 attacks creates
-gravity field","Cada 3 ataques crea
-campo gravitacional","Toutes les 3 attaques
-champ gravitationnel"
-SHOP_GRAVITON_DESC_2,"Cada 2 ataques
-+ range maior","Every 2 attacks
-+ bigger range","Cada 2 ataques
-+ mayor alcance","Toutes les 2 attaques
-+ portée plus grande"
-SHOP_GRAVITON_DESC_3,"Pulso explode no fim
-30 dano area","Pulse explodes at end
-30 area damage","Pulso explota al final
-30 daño en área","Impulsion explose à la fin
-30 dégâts de zone"
-SHOP_GRAVITON_DESC_4,"+area + 50 dano
-na explosao","+area + 50 damage
-on explosion","+área + 50 daño
-en explosión","+zone + 50 dégâts
-à l'explosion"
+campo gravitacional
+20% slow, 1.3s","Every 3 attacks creates
+gravity field
+20% slow, 1.3s","Cada 3 ataques crea
+campo gravitacional
+20% lento, 1.3s","Toutes les 3 attaques
+champ gravitationnel
+20% ralent., 1.3s"
+SHOP_GRAVITON_DESC_2,"A cada 2 ataques
+30% slow, dura 3s","Every 2 attacks
+30% slow, lasts 3s","Cada 2 ataques
+30% lento, dura 3s","Toutes les 2 attaques
+30% ralent., 3s"
+SHOP_GRAVITON_DESC_3,"+range maior
+do campo","+bigger field
+range","+mayor alcance
+del campo","+grande portée
+du champ"
+SHOP_GRAVITON_DESC_4,"Explode no fim
+20 dano area","Explodes at end
+20 area damage","Explota al final
+20 daño en área","Explose à la fin
+20 dégâts de zone"
 SHOP_LENO_DESC_1,"Aliado voador, atira
 8 dano + slow area","Flying ally, shoots
 8 dmg + slow area","Aliado volador, dispara

@@ -309,13 +309,16 @@ const SELECTION_OVERLAY_COLOR: Color = Color(0.55, 0.25, 0.85, 0.4)
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var wm := get_tree().get_first_node_in_group("wave_manager")
+	var next_wn: int = 1
 	if wm != null and "wave_number" in wm:
 		var wn: int = int(wm.wave_number)
+		next_wn = wn + 1
 		if wn == 3 or (wn >= 4 and wn % 2 == 0):
 			max_upgrades_this_round = 2
 		# Wave 3: dá pet grátis aleatório (Woodwarden ou Leno) antes do roll.
 		if wn == ALIADO_FREE_PET_WAVE:
 			_grant_free_random_pet()
+	continue_btn.text = tr("SHOP_NEXT_WAVE_FMT") % next_wn
 	continue_btn.pressed.connect(_on_continue_pressed)
 	global_reroll_btn.pressed.connect(_on_global_reroll)
 	_setup_bonus_label()

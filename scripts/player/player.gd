@@ -111,18 +111,13 @@ var _tings: Array[Node2D] = []
 var _mages_killed_this_wave: int = 0
 # Fire skill (botão direito a partir do lv3 do Fogo).
 const FIRE_SKILL_COOLDOWN: float = 7.0
-const FIRE_SKILL_RANGE: float = 140.0
-const FIRE_SKILL_AREA_RADIUS: float = 44.0
 const FIRE_SKILL_DPS: float = 12.0
 const FIRE_SKILL_DURATION: float = 6.0
-const FIRE_SKILL_INDICATOR_SCENE: PackedScene = preload("res://scenes/skills/fire_skill_indicator.tscn")
 const FIRE_SKILL_PROJECTILE_SCENE: PackedScene = preload("res://scenes/skills/fire_skill_projectile.tscn")
 var _fire_skill_cd_remaining: float = 0.0
-var _fire_skill_targeting: bool = false
-var _fire_skill_indicator: Node2D = null
 
 # Chain Lightning lv3: skill ativa que invoca um raio (lightning_bolt do
-# electric_mage) no ponto alvo. Mesma mecânica do fogo (range + indicator).
+# electric_mage) no ponto alvo. Cast instantâneo na posição do cursor.
 # Lv4 buffa o dano do raio em +20%.
 const CHAIN_LIGHTNING_SKILL_COOLDOWN: float = 7.0
 const CHAIN_LIGHTNING_SKILL_AREA_RADIUS: float = 28.0
@@ -280,6 +275,10 @@ var stats_killed_by: String = ""
 # Breakdown de dano CAUSADO pelo player por fonte (upgrade/skill/aliado).
 # Ex: { "arrow_base": 1500, "fire_arrow": 800, "graviton": 400 }
 var stats_damage_dealt_by_source: Dictionary = {}
+# Mesmo breakdown mas zera no início de cada wave. Lido pelo painel TAB do HUD
+# pra mostrar contribuição de cada fonte na wave atual (ou na wave que acabou,
+# enquanto o shop está aberto — reset só acontece quando a próxima wave começa).
+var wave_damage_by_source: Dictionary = {}
 # Breakdown de kills por fonte. Ex: { "arrow_base": 12, "fire_arrow": 5 }
 var stats_kills_by_source: Dictionary = {}
 # Lista de IDs de bosses mortos nesta run. Usada pelo skin_loadout.record_run
@@ -426,12 +425,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if is_dead:
 		return
 	if event.is_action_pressed("attack") and can_attack:
-		# Em target mode de qualquer skill ativa, left-click confirma o cast
-		# em vez de atirar a flecha. Sem targeter aberto, comportamento normal.
-		if _fire_skill_targeting:
-			_confirm_fire_skill_cast()
-		else:
-			_start_attack()
+		_start_attack()
 	elif event.is_action_pressed("skill"):
 		_use_skill()
 	elif event.is_action_pressed("fire_cast"):
@@ -720,6 +714,15 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 	# qual volley já gerou stack (lv1-3) — lv4 ignora isso.
 	if "volley_id" in arrow:
 		arrow.volley_id = _esquivando_volley_id
+	# Breakdown de dano por fonte (painel TAB): flechas extras (não-primárias)
+	# são atribuídas ao upgrade que as gerou. Multi e Duplas são mutex.
+	if "is_primary_arrow" in arrow:
+		arrow.is_primary_arrow = is_primary
+	if "telemetry_source_id_extra" in arrow:
+		if multi_arrow_level > 0:
+			arrow.telemetry_source_id_extra = "multi_arrow"
+		elif double_arrows_level > 0:
+			arrow.telemetry_source_id_extra = "double_arrows"
 	_get_world().add_child(arrow)
 	if arrow.has_method("set_direction"):
 		arrow.set_direction(dir)
@@ -942,49 +945,11 @@ func _use_skill() -> void:
 
 
 func _handle_fire_skill_press() -> void:
-	if _fire_skill_targeting:
-		_confirm_fire_skill_cast()
-		return
+	# Cast direto na posição do cursor — sem targeter, sem range clamp. Range
+	# efetivo = tela inteira (igual ao Chain Lightning skill).
 	if _fire_skill_cd_remaining > 0.0:
 		return
-	_start_fire_skill_targeting()
-
-
-func _start_fire_skill_targeting() -> void:
-	_fire_skill_targeting = true
-	_fire_skill_indicator = FIRE_SKILL_INDICATOR_SCENE.instantiate()
-	if "range_radius" in _fire_skill_indicator:
-		_fire_skill_indicator.range_radius = FIRE_SKILL_RANGE
-	if "area_radius" in _fire_skill_indicator:
-		_fire_skill_indicator.area_radius = FIRE_SKILL_AREA_RADIUS
-	_get_world().add_child(_fire_skill_indicator)
-	_update_fire_skill_indicator()
-
-
-func _update_fire_skill_indicator() -> void:
-	if _fire_skill_indicator == null or not is_instance_valid(_fire_skill_indicator):
-		return
-	var mouse_pos: Vector2 = get_global_mouse_position()
-	var target: Vector2 = mouse_pos
-	if _fire_skill_indicator.has_method("get_clamped_target"):
-		target = _fire_skill_indicator.get_clamped_target(global_position, mouse_pos)
-	if _fire_skill_indicator.has_method("update_positions"):
-		_fire_skill_indicator.update_positions(global_position, target)
-
-
-func _confirm_fire_skill_cast() -> void:
-	if _fire_skill_indicator == null or not is_instance_valid(_fire_skill_indicator):
-		_fire_skill_targeting = false
-		return
-	var mouse_pos: Vector2 = get_global_mouse_position()
-	var target: Vector2 = mouse_pos
-	if _fire_skill_indicator.has_method("get_clamped_target"):
-		target = _fire_skill_indicator.get_clamped_target(global_position, mouse_pos)
-	# Despawn indicator
-	_fire_skill_indicator.queue_free()
-	_fire_skill_indicator = null
-	_fire_skill_targeting = false
-	# Spawn projectile (com lv4 multipliers se aplicáveis).
+	var target: Vector2 = get_global_mouse_position()
 	var proj: Node = FIRE_SKILL_PROJECTILE_SCENE.instantiate()
 	if "field_dps" in proj:
 		proj.field_dps = FIRE_SKILL_DPS * _fire_burn_multiplier()
@@ -995,7 +960,6 @@ func _confirm_fire_skill_cast() -> void:
 	_get_world().add_child(proj)
 	if proj.has_method("setup"):
 		proj.setup(global_position, target)
-	# Cooldown
 	_fire_skill_cd_remaining = FIRE_SKILL_COOLDOWN
 	fire_skill_cooldown_changed.emit(_fire_skill_cd_remaining, FIRE_SKILL_COOLDOWN)
 
@@ -1030,8 +994,7 @@ func _spawn_player_fire_trail_segment() -> void:
 
 
 func _update_fire_skill(delta: float) -> void:
-	if _fire_skill_targeting:
-		_update_fire_skill_indicator()
+	# Só tick do cooldown — cast é instantâneo, sem targeting state.
 	if _fire_skill_cd_remaining > 0.0:
 		_fire_skill_cd_remaining = maxf(_fire_skill_cd_remaining - delta, 0.0)
 		fire_skill_cooldown_changed.emit(_fire_skill_cd_remaining, FIRE_SKILL_COOLDOWN)
@@ -1276,6 +1239,7 @@ func _try_start_esquivando_ability() -> void:
 		return
 	_esquivando_ability_buff_remaining = ESQUIVANDO_ABILITY_DURATION
 	_esquivando_ability_cd = _esquivando_ability_cd_total()
+	_iframes_remaining = maxf(_iframes_remaining, DASH_IFRAMES_DURATION)
 	_esquivando_trail_last_pos = global_position
 	# Spawna o primeiro blob na hora pra dar feedback imediato (sem esperar
 	# percorrer ESQUIVANDO_TRAIL_SPACING).
@@ -1983,6 +1947,7 @@ func take_damage(amount: float, source_id: String = "") -> void:
 	# Nota: DoT/poison/burn também passam por aqui — esquivar um tick de DoT é
 	# ok como design (cada tick é um "ataque" independente).
 	if esquivando_level > 0 and randf() < _esquivando_dodge_chance():
+		_spawn_miss_number()
 		return
 	# Armor: reduz dano antes de aplicar — número/notify usam o valor reduzido,
 	# pra a UI mostrar o que de fato saiu do HP do player.
@@ -2129,6 +2094,15 @@ func _spawn_damage_number(amount: float) -> void:
 	get_tree().current_scene.add_child(num)
 
 
+func _spawn_miss_number() -> void:
+	if damage_number_scene == null:
+		return
+	var num := damage_number_scene.instantiate()
+	num.text_override = tr("HUD_DODGE_MISS")
+	num.position = global_position + Vector2(0, -26)
+	get_tree().current_scene.add_child(num)
+
+
 func _get_world() -> Node:
 	var w := get_tree().get_first_node_in_group("world")
 	return w if w != null else get_tree().current_scene
@@ -2196,6 +2170,14 @@ func notify_damage_dealt_by_source(amount: float, source_id: String) -> void:
 		return
 	var cur: float = float(stats_damage_dealt_by_source.get(source_id, 0.0))
 	stats_damage_dealt_by_source[source_id] = cur + amount
+	var wave_cur: float = float(wave_damage_by_source.get(source_id, 0.0))
+	wave_damage_by_source[source_id] = wave_cur + amount
+
+
+func reset_wave_damage_breakdown() -> void:
+	# Chamado pelo wave_manager no início de cada wave — limpa o breakdown da
+	# wave anterior pra o painel TAB mostrar só a wave atual.
+	wave_damage_by_source.clear()
 
 
 func notify_kill_by_source(source_id: String) -> void:

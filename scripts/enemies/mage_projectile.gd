@@ -128,6 +128,10 @@ func _on_body_entered(body: Node) -> void:
 			target.take_damage(damage, source_id)
 		else:
 			target.take_damage(damage)
+			# Mago convertido pela Maldição: contabiliza dano no breakdown do
+			# painel TAB sob "curse_ally" (somado entre todos os aliados profanos).
+			if is_ally_source and player != null and player.has_method("notify_damage_dealt_by_source"):
+				player.notify_damage_dealt_by_source(damage, "curse_ally")
 	_spawn_hit_effect()
 	_die()
 

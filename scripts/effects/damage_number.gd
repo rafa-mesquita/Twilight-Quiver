@@ -5,12 +5,13 @@ extends Node2D
 @export var horizontal_jitter: float = 4.0
 
 var amount: int = 0
+var text_override: String = ""
 var start_y: float = 0.0
 var elapsed: float = 0.0
 
 
 func _ready() -> void:
-	$Label.text = str(amount)
+	$Label.text = text_override if text_override != "" else str(amount)
 	position.x += randf_range(-horizontal_jitter, horizontal_jitter)
 	start_y = position.y
 
