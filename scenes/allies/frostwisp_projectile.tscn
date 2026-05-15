@@ -1,0 +1,30 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/allies/frostwisp_projectile.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/aliados/sangue frio/froswisp-Sheet.png" id="2_sheet"]
+
+[sub_resource type="AtlasTexture" id="A_proj_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_proj_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SF_proj"]
+animations = [{
+"frames": [{"duration": 1.0, "texture": SubResource("A_proj_0")}, {"duration": 1.0, "texture": SubResource("A_proj_1")}],
+"loop": true,
+"name": &"projectile",
+"speed": 8.0
+}]
+
+[node name="FrostwispProjectile" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+scale = Vector2(0.7, 0.7)
+sprite_frames = SubResource("SF_proj")
+animation = &"projectile"
+autoplay = "projectile"

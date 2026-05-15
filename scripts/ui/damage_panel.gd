@@ -32,6 +32,7 @@ const SOURCE_LABELS: Dictionary = {
 	"fire_skill": "DMG_PANEL_FIRE_SKILL",
 	"curse_arrow": "DMG_PANEL_CURSE_DOT",
 	"curse_skill": "DMG_PANEL_CURSE_SKILL",
+	"ice_arrow": "DMG_PANEL_ICE_DOT",
 	"chain_lightning": "DMG_PANEL_CHAIN",
 	"chain_lightning_skill": "DMG_PANEL_CHAIN_SKILL",
 	"graviton": "DMG_PANEL_GRAVITON",

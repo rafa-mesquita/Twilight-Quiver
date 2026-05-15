@@ -64,6 +64,8 @@ const HUD_RUNTIME_SCALE: Vector2 = Vector2(3, 3)
 @onready var chain_lightning_skill_cd_label: Label = $ChainLightningSkillIcon/CdLabel
 @onready var curse_skill_icon: Control = $CurseSkillIcon
 @onready var curse_skill_cd_label: Label = $CurseSkillIcon/CdLabel
+@onready var ice_skill_icon: Control = $IceSkillIcon
+@onready var ice_skill_cd_label: Label = $IceSkillIcon/CdLabel
 @onready var esquivando_skill_icon: Control = $EsquivandoSkillIcon
 @onready var esquivando_stack_label: Label = $EsquivandoSkillIcon/StackLabel
 @onready var perfurante_counter_icon: Control = $PerfuranteCounterIcon
@@ -97,7 +99,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 	"hp", "armor", "damage", "attack_speed", "move_speed",
 	# Upgrades de gameplay
 	"perfuracao", "ricochet_arrow", "multi_arrow", "double_arrows", "chain_lightning",
-	"fire_arrow", "curse_arrow", "graviton", "boomerang", "critical_chance", "life_steal", "dash", "esquivando",
+	"fire_arrow", "curse_arrow", "ice_arrow", "graviton", "boomerang", "critical_chance", "life_steal", "dash", "esquivando",
 	"gold_magnet",
 	# Aliados
 	"woodwarden", "leno", "capivara_joe", "ting",
@@ -105,7 +107,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 # Caps onde "MAX" substitui "Lx" no badge (status escala infinito → sem cap).
 const _UPG_CAPS: Dictionary = {
 	"perfuracao": 4, "ricochet_arrow": 4, "multi_arrow": 4, "double_arrows": 4, "chain_lightning": 4,
-	"fire_arrow": 4, "curse_arrow": 4, "graviton": 4, "boomerang": 4, "critical_chance": 4, "life_steal": 4,
+	"fire_arrow": 4, "curse_arrow": 4, "ice_arrow": 4, "graviton": 4, "boomerang": 4, "critical_chance": 4, "life_steal": 4,
 	"dash": 4, "esquivando": 4, "gold_magnet": 4,
 	"woodwarden": 4, "leno": 4, "capivara_joe": 4, "ting": 4,
 }
@@ -117,6 +119,7 @@ const _UPG_PATHS: Dictionary = {
 	"armor": "res://assets/Hud/shop/status/Armadura.png",
 	"fire_arrow": "res://assets/Hud/shop/upgrade/fire_arrow2.png",
 	"curse_arrow": "res://assets/Hud/shop/upgrade/curse_arrow.png",
+	"ice_arrow": "res://assets/Hud/shop/upgrade/ice arrow/sangue frio card design-Sheet.png",
 	"multi_arrow": "res://assets/Hud/shop/upgrade/multi_arrow.png",
 	"double_arrows": "res://assets/Hud/shop/upgrade/multi_arrow.png",  # compartilha arte do multi_arrow (mesma família marrom)
 	"chain_lightning": "res://assets/Hud/shop/upgrade/chain_lightning.png",
@@ -207,7 +210,7 @@ func _ready() -> void:
 	# (separados, não tocados aqui).
 	for control_path in [
 		"HudFrame", "HpBar", "DashCdBar", "FireSkillIcon", "ChainLightningSkillIcon", "CurseSkillIcon",
-		"EsquivandoSkillIcon", "PerfuranteCounterIcon", "GoldDisplay", "TowerAlertIndicator",
+		"IceSkillIcon", "EsquivandoSkillIcon", "PerfuranteCounterIcon", "GoldDisplay", "TowerAlertIndicator",
 	]:
 		var n := get_node_or_null(control_path)
 		if n != null:
@@ -283,6 +286,13 @@ func _connect_player_signals() -> void:
 		player.curse_skill_cooldown_changed.connect(_on_curse_skill_cooldown_changed)
 	if "curse_arrow_level" in player and int(player.curse_arrow_level) >= 4:
 		_on_curse_skill_unlocked()
+	# Ice (Time Freeze) skill icon — aparece quando player chega no Gelo lv4.
+	if player.has_signal("time_freeze_skill_unlocked") and not player.time_freeze_skill_unlocked.is_connected(_on_time_freeze_skill_unlocked):
+		player.time_freeze_skill_unlocked.connect(_on_time_freeze_skill_unlocked)
+	if player.has_signal("time_freeze_skill_cooldown_changed") and not player.time_freeze_skill_cooldown_changed.is_connected(_on_time_freeze_skill_cooldown_changed):
+		player.time_freeze_skill_cooldown_changed.connect(_on_time_freeze_skill_cooldown_changed)
+	if "ice_arrow_level" in player and int(player.ice_arrow_level) >= 4:
+		_on_time_freeze_skill_unlocked()
 	# Contador da flecha perfurante — visível a partir do lv1.
 	if player.has_signal("perfuracao_counter_changed") and not player.perfuracao_counter_changed.is_connected(_on_perfuracao_counter_changed):
 		player.perfuracao_counter_changed.connect(_on_perfuracao_counter_changed)
@@ -471,6 +481,8 @@ func _update_esquivando_icon_position(player: Node = null) -> void:
 		has_any_elemental = true
 	elif "curse_arrow_level" in player and int(player.curse_arrow_level) >= 4:
 		has_any_elemental = true
+	elif "ice_arrow_level" in player and int(player.ice_arrow_level) >= 4:
+		has_any_elemental = true
 	var new_x: float = ESQUIVANDO_ICON_RIGHT_X if has_any_elemental else ESQUIVANDO_ICON_LEFT_X
 	esquivando_skill_icon.offset_left = new_x
 	esquivando_skill_icon.offset_right = new_x + ESQUIVANDO_ICON_WIDTH
@@ -584,6 +596,21 @@ func _on_curse_skill_cooldown_changed(remaining: float, _total: float) -> void:
 	else:
 		curse_skill_cd_label.text = "%d" % int(ceilf(remaining))
 		curse_skill_icon.modulate = Color(0.55, 0.50, 0.65, 1.0)
+
+
+func _on_time_freeze_skill_unlocked() -> void:
+	ice_skill_icon.visible = true
+	_update_esquivando_icon_position()
+
+
+func _on_time_freeze_skill_cooldown_changed(remaining: float, _total: float) -> void:
+	# Mesmo pattern dos outros: full color quando pronto, dimmed em cd.
+	if remaining <= 0.001:
+		ice_skill_cd_label.text = ""
+		ice_skill_icon.modulate = Color.WHITE
+	else:
+		ice_skill_cd_label.text = "%d" % int(ceilf(remaining))
+		ice_skill_icon.modulate = Color(0.55, 0.65, 0.78, 1.0)
 
 
 func _process(delta: float) -> void:

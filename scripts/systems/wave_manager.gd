@@ -53,6 +53,8 @@ extends Node2D
 # nas outras waves. Default music = stream original do node Music no main.tscn,
 # capturado no _ready (não precisa hardcoded aqui).
 @export var boss_music: AudioStream = preload("res://audios/musics/monkey mage wave.mp3")
+# Trilha alternativa pras waves 4-5-6 e 12-13. Loop forçado em runtime.
+@export var corrupted_void_music: AudioStream = preload("res://audios/musics/Level 4 - 5 -6/Corrupted Void Gate.mp3")
 # Boss redux dropa MAIS gold pra compensar a perda dos drops dos minions
 # (que ficam zerados nas waves de boss). 3.5× sobre o base 9-12 → 32-42 coins.
 # Equivale (com folga) ao gold que viria dos ~16 minions na wave 14.
@@ -304,6 +306,8 @@ func _start_next_wave() -> void:
 			player.reset_perf_counter()
 		if player.has_method("reset_woodwardens_hp"):
 			player.reset_woodwardens_hp()
+		if player.has_method("reset_all_cooldowns"):
+			player.reset_all_cooldowns()
 		# Zera contador de magos mortos da wave — base do scaling de atk speed
 		# da torreta do Ting (+1% por mago morto). Cada turno começa do zero.
 		if player.has_method("reset_mages_killed_this_wave"):
@@ -320,16 +324,17 @@ func _start_next_wave() -> void:
 	# Renasce torres/aliados destruídos na wave anterior na mesma posição.
 	_respawn_owned_structures()
 
-	# Wave de boss: cinematic especial — música muda, boss + horda inicial são
-	# pré-spawnados, camera trava no boss, cinematic toca, camera pan pro player.
+	# Música da wave: boss / corrupted void / default — escolhida pelo número
+	# da wave (ver _music_for_wave).
+	_swap_music_to(_music_for_wave(wave_number))
+	# Wave de boss: cinematic especial — boss + horda inicial são pré-spawnados,
+	# camera trava no boss, cinematic toca, camera pan pro player.
 	var hud := get_tree().get_first_node_in_group("hud")
 	if _is_boss_wave(wave_number):
-		_swap_to_boss_music()
 		_prespawn_boss_wave_entities()
 		await _play_boss_intro_cinematic(hud)
 	else:
-		# Outras waves: música default + intro padrão.
-		_restore_default_music()
+		# Outras waves: intro padrão.
 		if hud != null and hud.has_method("play_raid_intro"):
 			await hud.play_raid_intro(wave_number)
 	if stopped:
@@ -1177,27 +1182,29 @@ func _show_free_upgrade_popup(name_key: String) -> void:
 
 # ---------- Boss intro cinematic (waves 7 e 14) ----------
 
-func _swap_to_boss_music() -> void:
-	if boss_music == null:
-		return
-	var music_node := get_tree().get_first_node_in_group("music") as AudioStreamPlayer
-	if music_node == null or music_node.stream == boss_music:
-		return
-	# Força loop em runtime: a .import do mp3 vem com loop=false (default Godot),
-	# então setamos aqui pra música tocar repetida durante toda a wave do boss.
-	if boss_music is AudioStreamMP3:
-		(boss_music as AudioStreamMP3).loop = true
-	music_node.stream = boss_music
-	music_node.play()
+func _music_for_wave(num: int) -> AudioStream:
+	# Seleção da música por wave:
+	#   7, 14         → boss_music (cinematic do mage monkey)
+	#   4, 5, 6, 12, 13 → corrupted_void_music (Level 4-5-6 / Level 12-13)
+	#   resto         → default (stream original do node Music)
+	if num == 7 or num == boss_redux_wave:
+		return boss_music
+	if num == 4 or num == 5 or num == 6 or num == 12 or num == 13:
+		return corrupted_void_music
+	return _default_music
 
 
-func _restore_default_music() -> void:
-	if _default_music == null:
+func _swap_music_to(stream: AudioStream) -> void:
+	# Troca a stream do node Music e re-toca. No-op se já está nessa stream.
+	# Força loop em runtime pra mp3 (a .import default não preserva o loop).
+	if stream == null:
 		return
 	var music_node := get_tree().get_first_node_in_group("music") as AudioStreamPlayer
-	if music_node == null or music_node.stream == _default_music:
+	if music_node == null or music_node.stream == stream:
 		return
-	music_node.stream = _default_music
+	if stream is AudioStreamMP3:
+		(stream as AudioStreamMP3).loop = true
+	music_node.stream = stream
 	music_node.play()
 
 

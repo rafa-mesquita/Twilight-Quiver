@@ -28,6 +28,7 @@ const UPGRADE_BTNS: Array = [
 	{"id": "life_steal", "node": "UpgLifeStealBtn", "max": 4, "base_text": "+1 Mestre da Cura"},
 	{"id": "fire_arrow", "node": "UpgFireArrowBtn", "max": 4, "base_text": "+1 Flecha de Fogo"},
 	{"id": "curse_arrow", "node": "UpgCurseArrowBtn", "max": 4, "base_text": "+1 Disparo Profano"},
+	{"id": "ice_arrow", "node": "UpgIceArrowBtn", "max": 4, "base_text": "+1 Fica Frio"},
 	{"id": "ricochet_arrow", "node": "UpgRicochetBtn", "max": 4, "base_text": "+1 Flecha Ricochete"},
 	{"id": "graviton", "node": "UpgGravitonBtn", "max": 4, "base_text": "+1 Graviton"},
 	{"id": "boomerang", "node": "UpgBoomerangBtn", "max": 4, "base_text": "+1 Bumerangue"},

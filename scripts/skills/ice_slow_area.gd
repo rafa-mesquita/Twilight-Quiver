@@ -168,9 +168,15 @@ func _apply_slow_to(target: Node) -> void:
 		return
 	# Ally/enemy: usa SlowDebuff. Refresh se já existir, senão cria novo.
 	# CurseDebuff já dá slow + DoT, então não conflita — pula.
+	# FreezeDebuff zera speed (cacheia o original) — se aplicarmos slow em cima,
+	# o SlowDebuff cacheia o speed=0 do freeze e o inimigo fica permanentemente
+	# parado quando o slow expira. Skip enquanto frozen — re-aplicará no
+	# próximo refresh frame após o freeze terminar.
 	if not ("speed" in target):
 		return
 	for c in target.get_children():
+		if c is FreezeDebuff:
+			return
 		if c is SlowDebuff:
 			(c as SlowDebuff).refresh(REFRESH_SLOW_DURATION, slow_multiplier)
 			return

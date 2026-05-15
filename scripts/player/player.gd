@@ -26,6 +26,9 @@ signal chain_lightning_skill_cooldown_changed(remaining: float, total: float)
 # Curse Skill (lv4 do elemental Maldição): raio roxo em linha reta, cd 3s.
 signal curse_skill_unlocked
 signal curse_skill_cooldown_changed(remaining: float, total: float)
+# Ice Time Freeze Skill (lv4 do elemental Gelo): pausa mundo inteiro 3s, cd 30s.
+signal time_freeze_skill_unlocked
+signal time_freeze_skill_cooldown_changed(remaining: float, total: float)
 # Perfuração: HUD mostra contador 1/2/3 (próximo tiro perfurante a cada 3 ataques
 # nos lv1-3; sempre ativo no lv4). Emitido em cada release_arrow e no apply_upgrade.
 signal perfuracao_counter_changed(counter: int, level: int)
@@ -76,6 +79,10 @@ var move_speed_level: int = 0
 var life_steal_level: int = 0  # cada stack +5% chance e +10% heal nos drops de coração
 var fire_arrow_level: int = 0  # elemental Fogo (excalidraw lv1-4)
 var curse_arrow_level: int = 0  # elemental Maldição (excalidraw lv1, escala lv1-4)
+var ice_arrow_level: int = 0  # elemental Gelo / "Fica Frio" (excalidraw lv1-4)
+# Referência à Frostwisp spawnada no L3 (1 só por run).
+const FROSTWISP_SCENE: PackedScene = preload("res://scenes/allies/frostwisp.tscn")
+var _frostwisp: Node2D = null
 var woodwarden_level: int = 0  # aliado tank — cada compra "uppa" stats e custo
 # Tracking dos woodwardens com respawn nativo (não usa o sistema de structure
 # do wave_manager). Cada entry: {"instance", "last_pos", "dead_for"}.
@@ -140,6 +147,18 @@ const CURSE_SKILL_RANGE: float = 1000.0
 const CURSE_SKILL_DAMAGE_PER_TICK: float = 8.0
 const CURSE_BEAM_SCENE: PackedScene = preload("res://scenes/skills/curse_beam.tscn")
 var _curse_skill_cd_remaining: float = 0.0
+# Ice Time Freeze (Q a partir do lv4 do Gelo): pausa todos os inimigos, aliados
+# e projéteis por 3s. Player continua se movendo/atirando normal. Overlay azul
+# em tela inteira pra reforçar a sensação de "tudo congelado".
+const TIME_FREEZE_DURATION: float = 3.0
+const TIME_FREEZE_COOLDOWN: float = 28.0
+const TIME_FREEZE_OVERLAY_COLOR: Color = Color(0.45, 0.75, 1.0, 0.25)
+var _time_freeze_cd_remaining: float = 0.0
+var _time_freeze_active_remaining: float = 0.0
+# Lista de nodes pausados durante o freeze + modo anterior pra restaurar.
+# Format: [{"node": Node, "prev_mode": int}]
+var _time_freeze_paused: Array = []
+var _time_freeze_overlay: CanvasLayer = null
 # Lv4 do Fogo: rastro passivo do player + 30% global em queimaduras + 25% área lv2/lv3.
 const FIRE_LV4_BURN_MULTIPLIER: float = 1.30
 const FIRE_LV4_AREA_SCALE: float = 1.25
@@ -366,6 +385,7 @@ func _physics_process(delta: float) -> void:
 	_update_chain_lightning_skill(delta)
 	_update_boomerang(delta)
 	_update_curse_skill(delta)
+	_update_time_freeze(delta)
 	_update_player_fire_trail()
 	_check_woodwarden_respawns(delta)
 	_tick_capivara_buffs(delta)
@@ -492,6 +512,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_handle_chain_lightning_skill_press()
 		elif curse_arrow_level >= 4:
 			_cast_curse_beam()
+		elif ice_arrow_level >= 4:
+			_trigger_time_freeze()
 	elif event.is_action_pressed("lightning_cast"):
 		# E é atalho alternativo específico pra Chain Lightning (lv3+).
 		if chain_lightning_level >= 3:
@@ -525,6 +547,10 @@ func _update_animation(_input_vec: Vector2) -> void:
 
 
 func _start_attack() -> void:
+	# Time Freeze (Q do Gelo lv4) ativo: player só pode se mover, não atira.
+	# Movimento livre dá um window tático de reposicionamento, sem DPS.
+	if _time_freeze_active_remaining > 0.0:
+		return
 	# Trava a direção AGORA (no clique). A flecha sai no frame de release com essa direção.
 	# Calcula a partir da posição prevista do muzzle (lado pra onde o player vai virar),
 	# não do centro do player — senão a flecha sai paralela e erra o alvo por ~muzzle_offset_x.
@@ -562,7 +588,10 @@ func _release_arrow() -> void:
 	var is_pierce: bool = _is_piercing_shot()
 	if is_pierce:
 		_perf_shot_counter = 0
-	else:
+	elif perfuracao_level > 0:
+		# Só incrementa se a perfurante foi comprada. Sem isso, o counter
+		# acumula a partida inteira e ao comprar o upgrade aparece em 100+
+		# até resetar no 1º hit.
 		_perf_shot_counter += 1
 	if perfuracao_level > 0:
 		perfuracao_counter_changed.emit(_perf_shot_counter, perfuracao_level)
@@ -740,6 +769,21 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 			arrow.curse_duration = _curse_duration()
 		if "curse_slow_factor" in arrow:
 			arrow.curse_slow_factor = _curse_slow_factor()
+	if ice_arrow_level > 0:
+		if "is_ice" in arrow:
+			arrow.is_ice = true
+		if "freeze_duration" in arrow:
+			arrow.freeze_duration = _ice_freeze_duration()
+		if "freeze_dps" in arrow:
+			arrow.freeze_dps = _ice_freeze_dps()
+		# Lv2+: spawna área nevada no impacto (reaproveita o IceSlowArea do mago).
+		if ice_arrow_level >= 2:
+			if "ice_area_enabled" in arrow:
+				arrow.ice_area_enabled = true
+			if "ice_area_slow_factor" in arrow:
+				arrow.ice_area_slow_factor = _ice_area_slow_factor()
+			if "ice_area_lifetime" in arrow:
+				arrow.ice_area_lifetime = _ice_area_lifetime()
 	if is_ricochet:
 		if "is_ricochet" in arrow:
 			arrow.is_ricochet = true
@@ -956,6 +1000,51 @@ func curse_convert_duration() -> String:
 	return "horda"
 
 
+func _ice_freeze_duration() -> float:
+	# Lv1: 2s de freeze ao contato. Níveis 2-4 ainda não implementados — placeholders
+	# pra escalar duração se quisermos no futuro (atualmente todos 2s).
+	if ice_arrow_level <= 0:
+		return 0.0
+	return 2.0
+
+
+func _ice_freeze_dps() -> float:
+	# DoT contínuo enquanto congelado. Lv1=4 dps (8 total em 2s). Lv2+=8 dps
+	# (16 total em 2s — dobra como upgrade do L2). Escala com o stat "Dano"
+	# (arrow_damage_multiplier) via _apply_dmg_pct_to_dps — mesmo padrão de
+	# burn/curse, garante que stacks de Dano também buffem o gelo.
+	if ice_arrow_level <= 0:
+		return 0.0
+	var base: float = 8.0 if ice_arrow_level >= 2 else 4.0
+	return _apply_dmg_pct_to_dps(base)
+
+
+func _spawn_frostwisp() -> void:
+	# Spawna a Frostwisp 1 vez (L3 do Gelo) e mantém a referência. Se já existe
+	# uma viva, no-op. Spawnada no world (Entities) pra ficar no mesmo bucket
+	# de spawn dos outros aliados.
+	if _frostwisp != null and is_instance_valid(_frostwisp):
+		return
+	if FROSTWISP_SCENE == null:
+		return
+	var wisp: Node = FROSTWISP_SCENE.instantiate()
+	_get_world().add_child(wisp)
+	if wisp is Node2D:
+		(wisp as Node2D).global_position = global_position + Vector2(48, -40)
+	_frostwisp = wisp as Node2D
+
+
+func _ice_area_slow_factor() -> float:
+	# Lv2: 37% slow na área (igual mage). Lv3-4 pode ficar mais forte no futuro.
+	return 0.63
+
+
+func _ice_area_lifetime() -> float:
+	# Lv2: área dura 5.5s. Refresh aplicado por outras flechas que pousem
+	# na mesma região (cada uma spawna sua própria área, sobrepondo).
+	return 5.5
+
+
 func _chain_target_count() -> int:
 	# Lv4 = "todos da área" — usa um número alto (1000) que é capado pelo
 	# tamanho real de candidates no arrow.
@@ -981,6 +1070,25 @@ func _chain_bonus_chance() -> float:
 	if chain_lightning_level == 2:
 		return 0.30
 	return 0.0
+
+
+# Contador global de hits pra gating de proc do chain L1 (proca a cada 2 hits).
+# Global em vez de per-arrow pra que volleys multi-arrow não driblem o gate.
+var _chain_proc_counter: int = 0
+
+
+func consume_chain_proc_token() -> bool:
+	# Retorna true se este hit deve gerar chain lightning. L1 = a cada 2 hits;
+	# L2+ = todo hit. Chamado pelo arrow antes de procar.
+	if chain_lightning_level <= 0:
+		return false
+	if chain_lightning_level >= 2:
+		return true
+	_chain_proc_counter += 1
+	if _chain_proc_counter >= 2:
+		_chain_proc_counter = 0
+		return true
+	return false
 
 
 func _perf_damage_bonus() -> float:
@@ -1172,6 +1280,141 @@ func _update_curse_skill(delta: float) -> void:
 	if _curse_skill_cd_remaining > 0.0:
 		_curse_skill_cd_remaining = maxf(_curse_skill_cd_remaining - delta, 0.0)
 		curse_skill_cooldown_changed.emit(_curse_skill_cd_remaining, CURSE_SKILL_TOTAL_CYCLE)
+
+
+# ---------- Ice Time Freeze (Q a partir do lv4 do Gelo) ----------
+
+func _trigger_time_freeze() -> void:
+	# Cast direto: pausa tudo que não é o player nem suas flechas + mostra
+	# overlay azul. Sem targeter, sem warmup. Ativa 3s + cd 30s.
+	if _time_freeze_cd_remaining > 0.0 or _time_freeze_active_remaining > 0.0:
+		return
+	_apply_time_freeze_world_pause()
+	_show_freeze_overlay()
+	_time_freeze_active_remaining = TIME_FREEZE_DURATION
+	_time_freeze_cd_remaining = TIME_FREEZE_COOLDOWN
+	time_freeze_skill_cooldown_changed.emit(_time_freeze_cd_remaining, TIME_FREEZE_COOLDOWN)
+
+
+func _update_time_freeze(delta: float) -> void:
+	# Decai o timer ativo (pausa expira → restaura mundo + esconde overlay).
+	# Cooldown decai depois — começa a contar junto com a ativação (igual ao
+	# fire skill), então 27s após o freeze expirar a skill volta a estar pronta.
+	if _time_freeze_active_remaining > 0.0:
+		_time_freeze_active_remaining = maxf(_time_freeze_active_remaining - delta, 0.0)
+		if _time_freeze_active_remaining <= 0.0:
+			_remove_time_freeze_world_pause()
+			_hide_freeze_overlay()
+	if _time_freeze_cd_remaining > 0.0:
+		_time_freeze_cd_remaining = maxf(_time_freeze_cd_remaining - delta, 0.0)
+		time_freeze_skill_cooldown_changed.emit(_time_freeze_cd_remaining, TIME_FREEZE_COOLDOWN)
+
+
+func _apply_time_freeze_world_pause() -> void:
+	# Itera o tree e pausa via process_mode = DISABLED todo node que NÃO seja
+	# o player nem suas flechas (arrow.source == self). Guarda o modo anterior
+	# pra restaurar depois sem alterar valores customizados.
+	_time_freeze_paused.clear()
+	# Inimigos + projéteis deles + estruturas/aliados/objetos animados.
+	for n in get_tree().get_nodes_in_group("enemy"):
+		_pause_node_for_freeze(n)
+	for n in get_tree().get_nodes_in_group("ally"):
+		_pause_node_for_freeze(n)
+	for n in get_tree().get_nodes_in_group("tank_ally"):
+		_pause_node_for_freeze(n)
+	# Projéteis genéricos: varre o world e pega tudo que é Area2D que NÃO é
+	# do player (arrow.source != self). Cobre mage_projectile, insect_projectile,
+	# lightning_bolt, fire_field, ice_slow_area, etc.
+	var world := _get_world()
+	if world != null:
+		for child in world.get_children():
+			if child == self:
+				continue
+			if "source" in child and child.source == self:
+				continue  # flecha do player — deixa passar
+			if not (child is Area2D or child is Node2D):
+				continue
+			# Skip se já pausamos via grupo acima.
+			if _is_node_in_pause_list(child):
+				continue
+			# Skip nodes estáticos sem _process (otimização — process_mode disabled
+			# em static decor não faz nada útil, mas tampouco quebra. Skip via
+			# group check pra evitar duplicatas e ruído.)
+			if child.is_in_group("static_decoration"):
+				continue
+			_pause_node_for_freeze(child)
+
+
+func _pause_node_for_freeze(node: Node) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+	if node == self:
+		return
+	# freeze_immune: aliados/projeteis "do gelo" (Frostwisp + projeteis dela)
+	# continuam ativos durante o Time Freeze pra dar dano no mundo congelado.
+	if node.is_in_group("freeze_immune"):
+		return
+	if node.process_mode == Node.PROCESS_MODE_DISABLED:
+		return
+	_time_freeze_paused.append({"node": node, "prev_mode": node.process_mode})
+	node.process_mode = Node.PROCESS_MODE_DISABLED
+
+
+func _is_node_in_pause_list(node: Node) -> bool:
+	for entry in _time_freeze_paused:
+		if entry["node"] == node:
+			return true
+	return false
+
+
+func _remove_time_freeze_world_pause() -> void:
+	# Usa variável untyped + is_instance_valid antes do acesso pra evitar
+	# "Trying to assign invalid previously freed instance" quando um inimigo
+	# foi queue_free durante o freeze (ex: DoT terminou de matar antes do
+	# freeze acabar, ou pickup foi coletado).
+	for entry in _time_freeze_paused:
+		var raw = entry.get("node")
+		if raw == null or not is_instance_valid(raw):
+			continue
+		raw.process_mode = entry["prev_mode"]
+	_time_freeze_paused.clear()
+
+
+func _show_freeze_overlay() -> void:
+	# CanvasLayer + ColorRect cobrindo a tela inteira. Layer alto pra ficar
+	# acima do mundo, abaixo da HUD (HUD usa layer ~5+, time freeze fica em 3).
+	# Tween de fade-in rápido pra não estourar bruto.
+	if _time_freeze_overlay != null and is_instance_valid(_time_freeze_overlay):
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = 3
+	var rect := ColorRect.new()
+	rect.color = TIME_FREEZE_OVERLAY_COLOR
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.anchor_right = 1.0
+	rect.anchor_bottom = 1.0
+	rect.modulate.a = 0.0
+	layer.add_child(rect)
+	get_tree().current_scene.add_child(layer)
+	_time_freeze_overlay = layer
+	var tw := rect.create_tween()
+	tw.tween_property(rect, "modulate:a", 1.0, 0.15)
+
+
+func _hide_freeze_overlay() -> void:
+	if _time_freeze_overlay == null or not is_instance_valid(_time_freeze_overlay):
+		return
+	var layer: CanvasLayer = _time_freeze_overlay
+	var rect: ColorRect = null
+	if layer.get_child_count() > 0:
+		rect = layer.get_child(0) as ColorRect
+	_time_freeze_overlay = null
+	if rect != null:
+		var tw := rect.create_tween()
+		tw.tween_property(rect, "modulate:a", 0.0, 0.25)
+		tw.tween_callback(layer.queue_free)
+	else:
+		layer.queue_free()
 
 
 func _try_start_dash() -> void:
@@ -1443,6 +1686,9 @@ func _dash_auto_attack_volley() -> void:
 	# ataque para o terceiro do perfurante").
 	if arrow_scene == null:
 		return
+	# Time Freeze do Gelo lv4 ativo: bloqueia auto-attack do dash também.
+	if _time_freeze_active_remaining > 0.0:
+		return
 	# Cada auto-attack do dash = uma volley separada pro Esquivando. (Mesmo
 	# acontecendo durante dash, é mecanicamente um disparo "novo" — não compartilha
 	# id com a volley manual anterior.)
@@ -1595,6 +1841,20 @@ func apply_upgrade(upgrade_id: String) -> void:
 				_curse_skill_cd_remaining = 0.0
 				curse_skill_unlocked.emit()
 				curse_skill_cooldown_changed.emit(0.0, CURSE_SKILL_TOTAL_CYCLE)
+		"ice_arrow":
+			# Elemental Gelo ("Fica Frio"). Lv1: congela 2s + 4 dps + cubo derretendo.
+			# Lv2: dobra dps (8) + área nevada com slow 37% por 5.5s.
+			# Lv3: spawn Frostwisp (aliada de bombardeio a cada 15s).
+			# Lv4: destrava skill Q (Time Freeze — pausa mundo 3s, cd 28s).
+			var was_below_3_ice: bool = ice_arrow_level < 3
+			var was_below_4_ice: bool = ice_arrow_level < 4
+			ice_arrow_level = mini(ice_arrow_level + 1, 4)
+			if was_below_3_ice and ice_arrow_level >= 3:
+				_spawn_frostwisp()
+			if was_below_4_ice and ice_arrow_level >= 4:
+				_time_freeze_cd_remaining = 0.0
+				time_freeze_skill_unlocked.emit()
+				time_freeze_skill_cooldown_changed.emit(0.0, TIME_FREEZE_COOLDOWN)
 		"leno":
 			leno_level = mini(leno_level + 1, 4)
 			_refresh_lenos()
@@ -1695,6 +1955,7 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"life_steal": return life_steal_level
 		"fire_arrow": return fire_arrow_level
 		"curse_arrow": return curse_arrow_level
+		"ice_arrow": return ice_arrow_level
 		"woodwarden": return woodwarden_level
 		"leno": return leno_level
 		"capivara_joe": return capivara_joe_level
@@ -2044,21 +2305,54 @@ func reset_pet(id: String) -> void:
 
 
 func _compute_damage_reduction(level: int) -> float:
-	# Armor: L1=8%, L2=12%, L3=16%, L4=20%, L5+=+3% por stack após L4. Cap em
-	# 75% pra evitar invencibilidade absoluta.
+	# Armor: L1=12%, L2=18%, L3=22%, L4=25%, L5+=+3% por stack após L4. Cap em
+	# 75% pra evitar invencibilidade absoluta. Curva front-loaded pra dar valor
+	# real no early game (insetos/melee de wave 1-3 perdem peso desde L1).
 	match level:
 		0: return 0.0
-		1: return 0.08
-		2: return 0.12
-		3: return 0.16
-		4: return 0.20
-	return minf(0.20 + 0.03 * float(level - 4), 0.75)
+		1: return 0.12
+		2: return 0.18
+		3: return 0.22
+		4: return 0.25
+	return minf(0.25 + 0.03 * float(level - 4), 0.75)
 
 
 func reset_perf_counter() -> void:
 	# Chamado pelo wave_manager no início de cada wave pra evitar que o counter
 	# persistente faça a 1ª flecha do round virar perfurante.
 	_perf_shot_counter = 0
+
+
+func reset_all_cooldowns() -> void:
+	# Zera todos os cooldowns de skills ao iniciar uma nova wave. Player começa
+	# cada round com todo o kit pronto. Inclui Time Freeze: se estava ativo
+	# durante o shop, força encerrar (restaura mundo).
+	_dash_cd_remaining = 0.0
+	dash_cooldown_changed.emit(0.0, dash_cooldown)
+	_fire_skill_cd_remaining = 0.0
+	if fire_arrow_level >= 3:
+		fire_skill_cooldown_changed.emit(0.0, FIRE_SKILL_COOLDOWN)
+	_chain_lightning_skill_cd_remaining = 0.0
+	if chain_lightning_level >= 3:
+		chain_lightning_skill_cooldown_changed.emit(0.0, CHAIN_LIGHTNING_SKILL_COOLDOWN)
+	_curse_skill_cd_remaining = 0.0
+	if curse_arrow_level >= 4:
+		curse_skill_cooldown_changed.emit(0.0, CURSE_SKILL_TOTAL_CYCLE)
+	# Time Freeze: força encerrar se ativo + zera CD.
+	if _time_freeze_active_remaining > 0.0:
+		_time_freeze_active_remaining = 0.0
+		_remove_time_freeze_world_pause()
+		_hide_freeze_overlay()
+	_time_freeze_cd_remaining = 0.0
+	if ice_arrow_level >= 4:
+		time_freeze_skill_cooldown_changed.emit(0.0, TIME_FREEZE_COOLDOWN)
+	_boomerang_cd_remaining = 0.0
+	# Frostwisp (L3 do Gelo): força delay inicial de 7s antes do primeiro
+	# cast da wave — evita que ela já comece bombardeando enquanto o player
+	# nem se posicionou ainda.
+	if _frostwisp != null and is_instance_valid(_frostwisp):
+		if _frostwisp.has_method("set_initial_cooldown"):
+			_frostwisp.set_initial_cooldown(7.0)
 
 
 func take_damage(amount: float, source_id: String = "") -> void:

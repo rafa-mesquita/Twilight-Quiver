@@ -87,6 +87,7 @@ DMG_PANEL_RICOCHET,Ricochete,Ricochet,Rebote,Ricochet
 DMG_PANEL_FIRE_DOT,Queimadura,Burn,Quemadura,Brûlure
 DMG_PANEL_FIRE_SKILL,Skill de Fogo,Fire Skill,Habilidad de Fuego,Compétence Feu
 DMG_PANEL_CURSE_DOT,Maldição (DoT),Curse (DoT),Maldición (DoT),Malédiction (DoT)
+DMG_PANEL_ICE_DOT,Gelo (DoT),Ice (DoT),Hielo (DoT),Glace (DoT)
 DMG_PANEL_CURSE_SKILL,Feixe da Maldição,Curse Beam,Rayo de Maldición,Rayon de Malédiction
 DMG_PANEL_CHAIN,Cadeia de Raios,Chain Lightning,Cadena Eléctrica,Chaîne d'Éclairs
 DMG_PANEL_CHAIN_SKILL,Skill de Raios,Lightning Skill,Habilidad Eléctrica,Compétence Foudre
@@ -196,10 +197,10 @@ SHOP_HP_PLUS_25,+25 HP,+25 HP,+25 HP,+25 PV
 SHOP_DAMAGE,+20% dano,+20% dmg,+20% daño,+20% dégâts
 SHOP_ATTACK_SPEED,+27% atk speed,+27% atk speed,+27% vel. ataque,+27% vit. attaque
 SHOP_MOVE_SPEED,+10% move speed,+10% move speed,+10% vel. movimiento,+10% vit. déplacement
-SHOP_ARMOR_8,(8%- dano e 4% tenc.),(8%- dmg & 4% tena.),(8%- daño y 4% tena.),(8%- dégâts & 4% ténac.)
 SHOP_ARMOR_12,(12%- dano e 6% tenc.),(12%- dmg & 6% tena.),(12%- daño y 6% tena.),(12%- dégâts & 6% ténac.)
-SHOP_ARMOR_16,(16%- dano e 8% tenc.),(16%- dmg & 8% tena.),(16%- daño y 8% tena.),(16%- dégâts & 8% ténac.)
-SHOP_ARMOR_20,(20%- dano e 10% tenc.),(20%- dmg & 10% tena.),(20%- daño y 10% tena.),(20%- dégâts & 10% ténac.)
+SHOP_ARMOR_18,(18%- dano e 9% tenc.),(18%- dmg & 9% tena.),(18%- daño y 9% tena.),(18%- dégâts & 9% ténac.)
+SHOP_ARMOR_22,(22%- dano e 11% tenc.),(22%- dmg & 11% tena.),(22%- daño y 11% tena.),(22%- dégâts & 11% ténac.)
+SHOP_ARMOR_25,(25%- dano e 12.5% tenc.),(25%- dmg & 12.5% tena.),(25%- daño y 12.5% tena.),(25%- dégâts & 12.5% ténac.)
 SHOP_ARMOR_3,(3%- dano e 1.5% tenc.),(3%- dmg & 1.5% tena.),(3%- daño y 1.5% tena.),(3%- dégâts & 1.5% ténac.)
 SHOP_UPG_PERFURACAO,Perfuracao,Piercing,Perforación,Perforation
 SHOP_UPG_MULTI_ARROW,Multiplas Flechas,Multiple Arrows,Flechas Múltiples,Flèches Multiples
@@ -213,6 +214,7 @@ SHOP_UPG_RICOCHET,Flecha Ricochete,Ricochet Arrow,Flecha Rebotadora,Flèche Rico
 SHOP_UPG_GRAVITON,Graviton,Graviton,Gravitón,Graviton
 SHOP_UPG_FIRE_ARROW,Flecha de Fogo,Fire Arrow,Flecha de Fuego,Flèche de Feu
 SHOP_UPG_CURSE_ARROW,Disparo Profano,Profane Shot,Disparo Profano,Tir Profane
+SHOP_UPG_ICE_ARROW,Fica Frio,Stay Frosty,Mantente Fresco,Reste Calme
 SHOP_UPG_BOOMERANG,Bumerangue,Boomerang,Bumerán,Boomerang
 SHOP_UPG_CRITICAL_CHANCE,Flechas Criticas,Critical Arrows,Flechas Críticas,Flèches Critiques
 SHOP_CRITICAL_CHANCE_DESC_1,"30% chance critico
@@ -276,26 +278,26 @@ SHOP_HP_DESC_1,+18 HP maximo,+18 max HP,+18 HP máximo,+18 PV max
 SHOP_HP_DESC_2,+20 HP maximo,+20 max HP,+20 HP máximo,+20 PV max
 SHOP_HP_DESC_3,+22 HP maximo,+22 max HP,+22 HP máximo,+22 PV max
 SHOP_HP_DESC_4,+25 HP maximo,+25 max HP,+25 HP máximo,+25 PV max
-SHOP_ARMOR_DESC_1,"-8% dano
--4% slow","-8% damage
--4% slow","-8% daño
--4% slow","-8% dégâts
--4% slow"
-SHOP_ARMOR_DESC_2,"-12% dano
+SHOP_ARMOR_DESC_1,"-12% dano
 -6% slow","-12% damage
 -6% slow","-12% daño
 -6% slow","-12% dégâts
 -6% slow"
-SHOP_ARMOR_DESC_3,"-16% dano
--8% slow","-16% damage
--8% slow","-16% daño
--8% slow","-16% dégâts
--8% slow"
-SHOP_ARMOR_DESC_4,"-20% dano
--10% slow","-20% damage
--10% slow","-20% daño
--10% slow","-20% dégâts
--10% slow"
+SHOP_ARMOR_DESC_2,"-18% dano
+-9% slow","-18% damage
+-9% slow","-18% daño
+-9% slow","-18% dégâts
+-9% slow"
+SHOP_ARMOR_DESC_3,"-22% dano
+-11% slow","-22% damage
+-11% slow","-22% daño
+-11% slow","-22% dégâts
+-11% slow"
+SHOP_ARMOR_DESC_4,"-25% dano
+-12.5% slow","-25% damage
+-12.5% slow","-25% daño
+-12.5% slow","-25% dégâts
+-12.5% slow"
 SHOP_ARMOR_DESC_5,"-3% dano / -1.5% slow
 por compra","-3% damage / -1.5% slow
 per purchase","-3% daño / -1.5% slow
@@ -356,15 +358,23 @@ SHOP_DOUBLE_ARROWS_DESC_4,"90% duplas, 60% triplas
 1% quíntuples (mayor gana)","90% doubles, 60% triples
 1% quintuples (max gagne)"
 SHOP_CHAIN_LIGHTNING_DESC_1,"30% dano no inimigo
-mais proximo","30% damage to nearest
-enemy","30% daño al enemigo
-más cercano","30% dégâts à l'ennemi
-le plus proche"
+mais proximo
+(a cada 2 hits)","30% damage to nearest
+enemy
+(every 2 hits)","30% daño al enemigo
+más cercano
+(cada 2 golpes)","30% dégâts à l'ennemi
+le plus proche
+(tous les 2 coups)"
 SHOP_CHAIN_LIGHTNING_DESC_2,"50% dano em 2 inimigos
-+30% chance no 3º","50% damage on 2 enemies
-+30% chance on 3rd","50% daño en 2 enemigos
-+30% chance en el 3º","50% dégâts sur 2 ennemis
-+30% chance sur le 3e"
++30% chance no 3º
+(todo hit)","50% damage on 2 enemies
++30% chance on 3rd
+(every hit)","50% daño en 2 enemigos
++30% chance en el 3º
+(cada golpe)","50% dégâts sur 2 ennemis
++30% chance sur le 3e
+(chaque coup)"
 SHOP_CHAIN_LIGHTNING_DESC_3,"60% dano em 4 inimigos
 Destrava skill ativável (E)","60% damage on 4 enemies
 Unlocks active skill (E)","60% daño en 4 enemigos
@@ -640,6 +650,26 @@ Q: purple beam cd 20s","Lentitud 55% + 8 dps
 Q: rayo púrpura cd 20s","Lenteur 55% + 8 dps
 50% de tuer
 Q : rayon violet cd 20s"
+SHOP_ICE_ARROW_DESC_1,"Congela 2s ao contato
++4 dps no congelado","Freezes 2s on contact
++4 dps while frozen","Congela 2s al contacto
++4 dps al congelado","Gèle 2s au contact
++4 dps gelé"
+SHOP_ICE_ARROW_DESC_2,"Dobra dano do gelo (8 dps)
++ área nevada slow 5.5s","Doubles ice damage (8 dps)
++ snow area slow 5.5s","Dobla daño de hielo (8 dps)
++ área lentitud 5.5s","Double dégâts glace (8 dps)
++ zone lenteur 5.5s"
+SHOP_ICE_ARROW_DESC_3,"Frostwisp aliada
+bombardeia área (15s)","Frostwisp ally
+bombards area (15s)","Frostwisp aliada
+bombardea zona (15s)","Frostwisp alliée
+bombarde zone (15s)"
+SHOP_ICE_ARROW_DESC_4,"Q: pausa o tempo 3s
+cd 28s (só movimento)","Q: time freeze 3s
+28s cd (move only)","Q: pausa el tiempo 3s
+cd 28s (solo mover)","Q : gèle le temps 3s
+cd 28s (déplace seulement)"
 SHOP_WW_MAX,Max (4/4) atingido,Max (4/4) reached,Máx (4/4) alcanzado,Max (4/4) atteint
 SHOP_WW_DESC_1,"Aliado tank: +20% HP
 stun em área, sem dano","Tank ally: +20% HP

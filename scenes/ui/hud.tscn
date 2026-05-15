@@ -12,6 +12,7 @@
 [ext_resource type="Texture2D" path="res://assets/Hud/skillsIcons/profane.png" id="10_profane_icon"]
 [ext_resource type="Texture2D" path="res://assets/Hud/skillsIcons/esquivando.png" id="11_esq_icon"]
 [ext_resource type="Texture2D" path="res://assets/Hud/skillsIcons/perfurante.png" id="12_perf_icon"]
+[ext_resource type="Texture2D" path="res://assets/Hud/skillsIcons/fica frio.png" id="13_ice_icon"]
 
 [sub_resource type="AtlasTexture" id="AtlasTex_hud_frame"]
 atlas = ExtResource("2_hud_sheet")
@@ -340,6 +341,68 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="CdLabel" type="Label" parent="CurseSkillIcon" unique_id=4037]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 28
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IceSkillIcon" type="Control" parent="." unique_id=4050]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+offset_left = 150.0
+offset_top = 160.0
+offset_right = 226.0
+offset_bottom = 236.0
+
+[node name="Bg" type="ColorRect" parent="IceSkillIcon" unique_id=4051]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.04, 0.08, 0.14, 0.92)
+
+[node name="FrameRing" type="ColorRect" parent="IceSkillIcon" unique_id=4052]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.05
+anchor_top = 0.05
+anchor_right = 0.95
+anchor_bottom = 0.95
+color = Color(0.30, 0.60, 0.90, 1)
+
+[node name="Inner" type="ColorRect" parent="IceSkillIcon" unique_id=4053]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.1
+anchor_right = 0.9
+anchor_bottom = 0.9
+color = Color(0.08, 0.16, 0.28, 1)
+
+[node name="Sprite" type="TextureRect" parent="IceSkillIcon" unique_id=4054]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+texture = ExtResource("13_ice_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CdLabel" type="Label" parent="IceSkillIcon" unique_id=4055]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

@@ -1,0 +1,53 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/allies/frostwisp.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/aliados/sangue frio/froswisp-Sheet.png" id="2_sheet"]
+[ext_resource type="PackedScene" path="res://scenes/allies/frostwisp_projectile.tscn" id="3_proj"]
+[ext_resource type="PackedScene" path="res://scenes/skills/frostwisp_field.tscn" id="4_field"]
+
+[sub_resource type="AtlasTexture" id="A_fly_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_fly_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SF_fly"]
+animations = [{
+"frames": [{"duration": 1.0, "texture": SubResource("A_fly_0")}, {"duration": 1.0, "texture": SubResource("A_fly_1")}],
+"loop": true,
+"name": &"fly",
+"speed": 5.0
+}]
+
+[sub_resource type="Gradient" id="Grad_white_aura"]
+offsets = PackedFloat32Array(0, 0.55, 1)
+colors = PackedColorArray(1, 1, 1, 1, 0.85, 0.95, 1, 0.5, 0.7, 0.9, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradTex_white_aura"]
+gradient = SubResource("Grad_white_aura")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[node name="Frostwisp" type="Node2D"]
+z_index = 10
+script = ExtResource("1_script")
+projectile_scene = ExtResource("3_proj")
+field_scene = ExtResource("4_field")
+scale = Vector2(0.5, 0.5)
+
+[node name="WhiteAura" type="PointLight2D" parent="."]
+position = Vector2(0, -2)
+color = Color(1, 1, 1, 1)
+energy = 0.25
+texture = SubResource("GradTex_white_aura")
+texture_scale = 1.1
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+light_mask = 2
+texture_filter = 1
+sprite_frames = SubResource("SF_fly")
+animation = &"fly"
+autoplay = "fly"

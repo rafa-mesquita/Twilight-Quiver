@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://di3b76pvy714s"
+path="res://.godot/imported/Corrupted Void Gate.mp3-5cc9ca237d6c838150d93adddd7c9707.mp3str"
+
+[deps]
+
+source_file="res://audios/musics/Level 4 - 5 -6/Corrupted Void Gate.mp3"
+dest_files=["res://.godot/imported/Corrupted Void Gate.mp3-5cc9ca237d6c838150d93adddd7c9707.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

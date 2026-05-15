@@ -46,7 +46,7 @@ const STATUS_POOL: Array = [
 	{"id": "damage", "name": "SHOP_DAMAGE"},
 	{"id": "attack_speed", "name": "SHOP_ATTACK_SPEED"},
 	{"id": "move_speed", "name": "SHOP_MOVE_SPEED"},
-	{"id": "armor", "name": "SHOP_ARMOR_8"},
+	{"id": "armor", "name": "SHOP_ARMOR_12"},
 ]
 
 # Pool dos cards de upgrade (gameplay-changing items, com requirements).
@@ -63,6 +63,7 @@ const UPGRADE_POOL: Array = [
 	{"id": "graviton", "name": "SHOP_UPG_GRAVITON", "max_level": 4},
 	{"id": "fire_arrow", "name": "SHOP_UPG_FIRE_ARROW", "max_level": 4},
 	{"id": "curse_arrow", "name": "SHOP_UPG_CURSE_ARROW", "max_level": 4},
+	{"id": "ice_arrow", "name": "SHOP_UPG_ICE_ARROW", "max_level": 4},
 	{"id": "boomerang", "name": "SHOP_UPG_BOOMERANG", "max_level": 4},
 	{"id": "critical_chance", "name": "SHOP_UPG_CRITICAL_CHANCE", "max_level": 4},
 ]
@@ -75,8 +76,8 @@ const UPGRADE_PRICE_OVERRIDES: Dictionary = {}
 # - Perfuração ↔ Flecha Ricochete (mesmo "slot" no design — flecha modifica o
 #   comportamento ao bater, escolha uma)
 const EXCLUSIVE_PAIRS: Array = [
-	# Elementais: só 1 por run (fogo / maldição / cadeia de raios).
-	["fire_arrow", "curse_arrow", "chain_lightning"],
+	# Elementais: só 1 por run (fogo / maldição / cadeia de raios / sangue frio).
+	["fire_arrow", "curse_arrow", "chain_lightning", "ice_arrow"],
 	# Tipo de flecha (modifier on-hit): perfuração ou ricochete.
 	["perfuracao", "ricochet_arrow"],
 	# Salva de flechas: multi (leque 30°) ou duplas (chance + apertado).
@@ -199,6 +200,12 @@ const CURSE_ARROW_DESCS: Array[String] = [
 	"SHOP_CURSE_ARROW_DESC_2",
 	"SHOP_CURSE_ARROW_DESC_3",
 	"SHOP_CURSE_ARROW_DESC_4",
+]
+const ICE_ARROW_DESCS: Array[String] = [
+	"SHOP_ICE_ARROW_DESC_1",
+	"SHOP_ICE_ARROW_DESC_2",
+	"SHOP_ICE_ARROW_DESC_3",
+	"SHOP_ICE_ARROW_DESC_4",
 ]
 const BOOMERANG_DESCS: Array[String] = [
 	"SHOP_BOOMERANG_DESC_1",
@@ -521,10 +528,10 @@ func _status_title_for(id: String, target_level: int, fallback_name: String) -> 
 				_: return "SHOP_HP_PLUS_25"
 		"armor":
 			match target_level:
-				1: return "SHOP_ARMOR_8"
-				2: return "SHOP_ARMOR_12"
-				3: return "SHOP_ARMOR_16"
-				4: return "SHOP_ARMOR_20"
+				1: return "SHOP_ARMOR_12"
+				2: return "SHOP_ARMOR_18"
+				3: return "SHOP_ARMOR_22"
+				4: return "SHOP_ARMOR_25"
 				_: return "SHOP_ARMOR_3"
 	return fallback_name
 
@@ -954,6 +961,7 @@ func _get_upgrade_descs_array(id: String) -> Array:
 		"life_steal": return LIFE_STEAL_DESCS
 		"fire_arrow": return FIRE_ARROW_DESCS
 		"curse_arrow": return CURSE_ARROW_DESCS
+		"ice_arrow": return ICE_ARROW_DESCS
 		"boomerang": return BOOMERANG_DESCS
 		"critical_chance": return CRITICAL_CHANCE_DESCS
 		"ricochet_arrow": return RICOCHET_ARROW_DESCS
@@ -979,6 +987,7 @@ const UPGRADE_CATEGORIES: Dictionary = {
 	"fire_arrow": "SHOP_UPG_CAT_ELEMENTAL",
 	"curse_arrow": "SHOP_UPG_CAT_ELEMENTAL",
 	"chain_lightning": "SHOP_UPG_CAT_ELEMENTAL",
+	"ice_arrow": "SHOP_UPG_CAT_ELEMENTAL",
 	"perfuracao": "SHOP_UPG_CAT_ARROW_MOD",
 	"ricochet_arrow": "SHOP_UPG_CAT_ARROW_MOD",
 	"multi_arrow": "SHOP_UPG_CAT_ARROW_VOLLEY",
@@ -1150,6 +1159,7 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 	"double_arrows": Color(0x3d / 255.0, 0x15 / 255.0, 0x00 / 255.0),  # #3d1500 (marrom escuro — mesma família do multi_arrow)
 	"fire_arrow": Color(0x77 / 255.0, 0x20 / 255.0, 0x00 / 255.0),  # #772000
 	"curse_arrow": Color(0x45 / 255.0, 0x14 / 255.0, 0x58 / 255.0),  # #451458
+	"ice_arrow": Color(0x1b / 255.0, 0x31 / 255.0, 0x6c / 255.0),  # #1b316c (azul escuro — combina com a arte do card)
 	"leno": Color(0xfc / 255.0, 0xb4 / 255.0, 0xcc / 255.0),  # #fcb4cc
 	"woodwarden": Color(0x5d / 255.0, 0x80 / 255.0, 0x5a / 255.0),  # #5d805a
 	"ting": Color.WHITE,  # branco — alto contraste no fundo laranja
@@ -1192,6 +1202,8 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	"life_steal": "res://assets/Hud/shop/upgrade/life steal.png",
 	# fire_arrow2.png é a arte nova; fire_arrow.png antigo foi removido.
 	"fire_arrow": "res://assets/Hud/shop/upgrade/fire_arrow2.png",
+	# Sangue Frio: sheet 4 frames (1 por nível), na subpasta "ice arrow".
+	"ice_arrow": "res://assets/Hud/shop/upgrade/ice arrow/sangue frio card design-Sheet.png",
 	"boomerang": "res://assets/Hud/shop/upgrade/boomerang/boomerang card design.png",
 	"critical_chance": "res://assets/Hud/shop/upgrade/flechas criticas/felchas criticas card design.png",
 	# id "dash" mas arquivo é "deslizando.png" (nome PT do upgrade).
@@ -2475,6 +2487,7 @@ func _augment_title_for(id: String) -> String:
 		"chain_lightning": return "SHOP_UPG_CHAIN_LIGHTNING"
 		"fire_arrow": return "SHOP_UPG_FIRE_ARROW"
 		"curse_arrow": return "SHOP_UPG_CURSE_ARROW"
+		"ice_arrow": return "SHOP_UPG_ICE_ARROW"
 		"boomerang": return "SHOP_UPG_BOOMERANG"
 		"critical_chance": return "SHOP_UPG_CRITICAL_CHANCE"
 		"graviton": return "SHOP_UPG_GRAVITON"

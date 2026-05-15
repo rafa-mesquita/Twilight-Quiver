@@ -210,6 +210,10 @@ func apply_knockback(dir: Vector2, strength: float) -> void:
 
 
 func _play_damage_sound(duration: float = 0.7) -> void:
+	# Inimigo congelado: silencia som de dano (encapsulado em gelo).
+	for c in get_children():
+		if c is FreezeDebuff:
+			return
 	if damage_sound == null:
 		return
 	var p := AudioStreamPlayer2D.new()

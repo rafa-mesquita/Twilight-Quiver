@@ -297,6 +297,11 @@ func _play_damage_sound(duration: float = 0.7) -> void:
 	if _suppress_damage_sound_once:
 		_suppress_damage_sound_once = false
 		return
+	# Inimigo congelado: silencia som de dano (é como se estivesse encapsulado
+	# em gelo — o grito não sai). Cracker do gelo toca em loop em vez disso.
+	for c in get_children():
+		if c is FreezeDebuff:
+			return
 	if damage_sound == null:
 		return
 	var player := AudioStreamPlayer2D.new()

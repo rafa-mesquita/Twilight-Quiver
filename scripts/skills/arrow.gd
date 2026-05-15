@@ -45,6 +45,19 @@ var is_curse: bool = false
 var curse_dps: float = 4.0
 var curse_duration: float = 4.0
 var curse_slow_factor: float = 0.65  # 0.65 = 35% slow no inimigo
+# Elemental Gelo: visual azul claro + snowflakes + aplica FreezeDebuff no contato.
+# Setado pelo player ANTES de add_child quando ice_arrow_level > 0.
+var is_ice: bool = false
+var freeze_duration: float = 2.0
+var freeze_dps: float = 4.0  # Lv1=4, Lv2+=8 (dobra no Lv2)
+# Lv2 do Gelo: spawna IceSlowArea no impacto (reaproveita 100% a área do
+# Ice Mage — slow contínuo em diamante). Só a flecha primária spawna pra
+# não estourar a tela em multi-arrow.
+var ice_area_enabled: bool = false
+var ice_area_slow_factor: float = 0.63  # mesma do mage (37% slow)
+var ice_area_lifetime: float = 3.5
+const SNOWFLAKE_TEXTURE: Texture2D = preload("res://assets/effects/snow flake.png")
+const ICE_SLOW_AREA_SCENE: PackedScene = preload("res://scenes/skills/ice_slow_area.tscn")
 # Flecha de Ricochete: setado pelo player ANTES de add_child quando ricochet
 # proca (cada 3 ataques no L1, cada 2 no L2+). Ao bater em inimigo, em vez de
 # cravar, redireciona pra inimigo aleatório próximo. Pode dividir em 2 (L2+/L4).
@@ -133,6 +146,8 @@ func _ready() -> void:
 		_apply_fire_visuals()
 	if is_curse:
 		_apply_curse_visuals()
+	if is_ice:
+		_apply_ice_visuals()
 	if is_ricochet:
 		_apply_ricochet_visuals()
 
@@ -227,6 +242,54 @@ func _apply_ricochet_visuals() -> void:
 		# Só sobrescreve trail se ainda não tem gradient elemental (fogo/maldição).
 		trail.default_color = Color(0.55, 0.95, 1.0, 0.85)
 		trail.width = max(trail.width, 1.8)
+
+
+func _apply_ice_visuals() -> void:
+	# Tinge sprite normal de azul-claro + trail ciano-branco + emite snowflakes
+	# pequenos pelo caminho (CPUParticles2D em coords globais — viram rastro
+	# natural conforme a flecha se move).
+	var normal_sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if normal_sprite != null:
+		normal_sprite.modulate = Color(0.55, 0.95, 1.7, 1.0)
+	if trail != null:
+		var grad := Gradient.new()
+		grad.offsets = PackedFloat32Array([0.0, 0.5, 1.0])
+		grad.colors = PackedColorArray([
+			Color(0.55, 0.85, 1.0, 0.0),  # tail: azul transparente
+			Color(0.75, 0.95, 1.0, 0.55),  # mid: ciano-claro
+			Color(1.00, 1.00, 1.00, 0.95)  # head: branco
+		])
+		trail.gradient = grad
+		trail.default_color = Color.WHITE
+		trail.width = 2.0
+	_spawn_snowflake_emitter()
+
+
+func _spawn_snowflake_emitter() -> void:
+	var snow := CPUParticles2D.new()
+	snow.texture = SNOWFLAKE_TEXTURE
+	snow.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	snow.amount = 12
+	snow.lifetime = 0.55
+	snow.preprocess = 0.15  # já começa com algumas no ar pra não "engatilhar"
+	snow.local_coords = false  # mundo: snowflakes ficam pra trás conforme a flecha voa
+	snow.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	snow.emission_sphere_radius = 3.0
+	snow.spread = 180.0  # todas as direções (rastro + nuvem ao redor)
+	snow.initial_velocity_min = 6.0
+	snow.initial_velocity_max = 18.0
+	snow.gravity = Vector2.ZERO
+	snow.scale_amount_min = 0.35
+	snow.scale_amount_max = 0.55
+	var ramp := Gradient.new()
+	ramp.offsets = PackedFloat32Array([0.0, 1.0])
+	ramp.colors = PackedColorArray([
+		Color(1.0, 1.0, 1.0, 0.9),
+		Color(0.9, 0.95, 1.0, 0.0),
+	])
+	snow.color_ramp = ramp
+	snow.z_index = -1
+	add_child(snow)
 
 
 func _apply_curse_visuals() -> void:
@@ -374,6 +437,12 @@ func _on_hit(body: Node) -> void:
 		_proc_chain_lightning(target)
 		if is_fire and is_instance_valid(target):
 			_apply_burn_to(target)
+		if is_ice and is_instance_valid(target):
+			_apply_freeze_to(target)
+			# Lv2: spawna área nevada no ponto de impacto (só na flecha primária
+			# pra não cobrir a tela inteira com multi-arrow).
+			if ice_area_enabled and is_primary_arrow:
+				_spawn_ice_slow_area_at(global_position)
 		# Graviton: pulso no ponto de impacto. Com perfuração: spawna apenas se o
 		# enemy morreu nesse hit (spec — "inimigos que morrerem"). Sem perfuração:
 		# spawna sempre que cravar (caso normal abaixo, antes do _stick_in_body).
@@ -575,6 +644,37 @@ func _apply_curse_to(target: Node) -> void:
 	target.add_child(deb)
 
 
+func _apply_freeze_to(target: Node) -> void:
+	# Re-aplica freeze existente (refresh duração + dps) ou cria novo FreezeDebuff.
+	# cc_immune é tratado dentro do _ready do debuff.
+	for child in target.get_children():
+		if child is FreezeDebuff:
+			(child as FreezeDebuff).refresh(freeze_duration, freeze_dps)
+			return
+	var fd := FreezeDebuff.new()
+	fd.duration = freeze_duration
+	fd.dps = freeze_dps
+	target.add_child(fd)
+
+
+func _spawn_ice_slow_area_at(pos: Vector2) -> void:
+	# Reaproveita o IceSlowArea do Ice Mage (visual idêntico — 13 tiles em
+	# diamante). is_enemy_source=false faz o slow atingir INIMIGOS (não o
+	# player) — mesma flag usada quando o Ice Mage vira aliado por curse.
+	if ICE_SLOW_AREA_SCENE == null:
+		return
+	var area: Node = ICE_SLOW_AREA_SCENE.instantiate()
+	if "is_enemy_source" in area:
+		area.is_enemy_source = false
+	if "slow_multiplier" in area:
+		area.slow_multiplier = ice_area_slow_factor
+	if "lifetime" in area:
+		area.lifetime = ice_area_lifetime
+	_get_world().add_child(area)
+	if area is Node2D:
+		(area as Node2D).global_position = pos
+
+
 func _perform_ricochet(hit_target: Node = null) -> bool:
 	# Chamado depois de aplicar dano/efeitos. Encontra próximo enemy aleatório
 	# no raio (excluindo já hitados), spawna clone se splits disponíveis, e
@@ -749,6 +849,11 @@ func _proc_chain_lightning(origin: Node) -> void:
 		return
 	if not (origin is Node2D):
 		return
+	# L1 do chain só proca a cada 2 hits — gate global no player (volleys também contam).
+	var player_for_gate := get_tree().get_first_node_in_group("player")
+	if player_for_gate != null and player_for_gate.has_method("consume_chain_proc_token"):
+		if not player_for_gate.consume_chain_proc_token():
+			return
 	# Origin shieldado (boss na fase escudada) não recebeu dano — não desencadeia.
 	# Sem isso, atacar boss com escudo passava o raio livremente pros minions.
 	if (origin as Node).is_in_group("boss_shielded"):

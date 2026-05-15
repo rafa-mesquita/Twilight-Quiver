@@ -301,6 +301,12 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 20
 text = "+1 Disparo Profano"
 
+[node name="UpgIceArrowBtn" type="Button" parent="Content/Scroll/VBox/UpgElementaisSection/UpgElementaisContent/PoderesSubSection/PoderesContent"]
+custom_minimum_size = Vector2(0, 36)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "+1 Fica Frio"
+
 [node name="EstruturasSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
 theme_override_constants/separation = 4
 

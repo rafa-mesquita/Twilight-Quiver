@@ -26,6 +26,15 @@ const BOLT_MAX_LEAD_DISTANCE: float = 180.0
 # offset aleatório no segundo raio pra dois círculos de dano distintos.
 const BOLT_MIN_SEPARATION: float = 12.0
 const BOLT_OFFSET_RADIUS: float = 24.0
+# Sistema anti-stack: bolts ativos são tracked globalmente. Quando um novo
+# bolt vai spawnar no mesmo lugar que outro ainda ativo, é empurrado pra fora.
+# Evita o cenário de 2-3 magos elétricos castarem no mesmo ponto e one-shotar
+# o player com dano cumulativo.
+const BOLT_MIN_DISTANCE: float = 55.0  # > damage_radius (12) com folga
+const BOLT_TRACK_DURATION_MSEC: int = 900  # ~tempo até impacto + buffer
+const BOLT_DISPLACE_ATTEMPTS: int = 8
+# Static: shared entre todos os electric_mages. Cada entry = {pos, expire_msec}.
+static var _active_bolts: Array = []
 
 
 func _ready() -> void:
@@ -85,6 +94,15 @@ func _fire_projectile() -> void:
 
 
 func _spawn_bolt(pos: Vector2) -> void:
+	# Empurra a posição se algum bolt ativo já reservou essa área. Só aplica
+	# pra bolts de mago original (mago convertido pela maldição não conta —
+	# os bolts dele são "player source" e bater em enemies, não no player).
+	if not is_curse_ally:
+		pos = _displace_if_overlapping(pos)
+		_active_bolts.append({
+			"pos": pos,
+			"expire_msec": Time.get_ticks_msec() + BOLT_TRACK_DURATION_MSEC,
+		})
 	var bolt: Node2D = lightning_bolt_scene.instantiate()
 	if "damage" in bolt:
 		bolt.damage = bolt_damage * damage_mult
@@ -94,3 +112,34 @@ func _spawn_bolt(pos: Vector2) -> void:
 		bolt.is_enemy_source = not is_curse_ally
 	_get_world().add_child(bolt)
 	bolt.global_position = pos
+
+
+func _displace_if_overlapping(pos: Vector2) -> Vector2:
+	# Limpa entries expiradas, depois tenta achar uma posição livre empurrando
+	# o bolt pra fora dos ativos. Até BOLT_DISPLACE_ATTEMPTS tentativas — se
+	# não achar (cenário denso), retorna a última tentativa.
+	var now_msec: int = Time.get_ticks_msec()
+	_active_bolts = _active_bolts.filter(
+		func(entry): return int(entry["expire_msec"]) > now_msec
+	)
+	if _active_bolts.is_empty():
+		return pos
+	var min_dist_sq: float = BOLT_MIN_DISTANCE * BOLT_MIN_DISTANCE
+	for attempt in BOLT_DISPLACE_ATTEMPTS:
+		var conflict: Dictionary = {}
+		for entry in _active_bolts:
+			var existing_pos: Vector2 = entry["pos"]
+			if pos.distance_squared_to(existing_pos) < min_dist_sq:
+				conflict = entry
+				break
+		if conflict.is_empty():
+			return pos
+		var existing_pos2: Vector2 = conflict["pos"]
+		var away: Vector2 = (pos - existing_pos2)
+		if away.length_squared() < 0.01:
+			# Mesmo ponto — gera direção aleatória pra empurrar.
+			away = Vector2(cos(randf() * TAU), sin(randf() * TAU))
+		else:
+			away = away.normalized()
+		pos = existing_pos2 + away * BOLT_MIN_DISTANCE
+	return pos
