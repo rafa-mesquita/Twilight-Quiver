@@ -733,10 +733,12 @@ func _perform_ricochet(hit_target: Node = null) -> bool:
 	ricochet_hops_remaining = new_hops
 	ricochet_splits_remaining = new_splits
 	_ricochet_hops_used += 1
+	var is_last_hop: bool = new_hops <= 0
 	if new_dir.length() < 0.01:
 		return false
-	# Visual: ring ciano no ponto de impacto (claro pra ver que ricocheteou).
-	_spawn_ricochet_hit_effect()
+	# Visual: aproveita o design do hit indicator da perfuração (mesmo
+	# hit_effect_scene), tinta de ciano e amplifica no último hop.
+	_spawn_ricochet_hit_effect(is_last_hop)
 	# "Salto" — empurra a flecha pra fora do alvo na nova direção, pra evitar
 	# que ela continue colidindo com o body atual e perca tempo voltando.
 	# Sem isso, ela demora 2-3 frames dentro do enemy antes de sair, fica feio.
@@ -769,25 +771,21 @@ func _spawn_graviton_pulse() -> void:
 		(pulse as Node2D).global_position = global_position
 
 
-func _spawn_ricochet_hit_effect() -> void:
-	# Ring ciano que expande e fade — feedback visual claro do ricochete.
-	var ring := Polygon2D.new()
-	var pts := PackedVector2Array()
-	var segs: int = 20
-	for i in segs:
-		var ang: float = TAU * float(i) / float(segs)
-		pts.append(Vector2(cos(ang), sin(ang)) * 6.0)
-	ring.polygon = pts
-	ring.color = Color(0.55, 0.95, 1.0, 0.9)
-	ring.global_position = global_position
-	ring.z_as_relative = false
-	ring.z_index = 5
-	_get_world().add_child(ring)
-	var tw := ring.create_tween().set_parallel(true)
-	tw.tween_property(ring, "scale", Vector2(3.5, 3.5), 0.25)\
-		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw.tween_property(ring, "modulate:a", 0.0, 0.25)
-	tw.chain().tween_callback(ring.queue_free)
+func _spawn_ricochet_hit_effect(is_last_hop: bool) -> void:
+	# Mesmo padrão do _spawn_pierce_hit_effect: usa o hit_effect_scene base e
+	# tinta com a cor da categoria (ciano pra ricochete). No último hop, amplia
+	# (mesmo style do 3º hit da perfuração) pra marcar o fim do ricochete.
+	if hit_effect_scene == null:
+		return
+	var fx := hit_effect_scene.instantiate()
+	_get_world().add_child(fx)
+	fx.global_position = global_position
+	if fx is CanvasItem:
+		(fx as CanvasItem).modulate = Color(0.55, 1.05, 1.45, 1.0)
+	if is_last_hop and fx is Node2D:
+		var fx2d: Node2D = fx
+		fx2d.scale = Vector2(2.2, 2.2)
+		fx2d.modulate = Color(0.5, 1.15, 1.6, 1.0)
 
 
 func _spawn_ricochet_clone(target: Node2D, hops: int, splits: int) -> void:

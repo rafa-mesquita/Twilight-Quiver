@@ -2200,32 +2200,37 @@ func _refresh_woodwardens() -> void:
 		# pra inicializar @onready var fg/trail antes de set_ratio.
 		_apply_woodwarden_stats(ww)
 		_woodwardens.append({"instance": ww, "last_pos": spawn_pos, "dead_for": 0.0})
-	# Atualiza stats em todos os vivos.
+	# Atualiza stats em todos os vivos. Variável untyped (raw) + is_instance_valid
+	# antes do acesso pra evitar "Trying to assign invalid previously freed
+	# instance" quando uma entrada do array aponta pra um warden já liberado
+	# (morreu, queue_free pendente). Mesmo padrão do _remove_time_freeze_world_pause.
 	for entry in _woodwardens:
-		var inst: Node = entry.get("instance")
-		if inst != null and is_instance_valid(inst):
-			_apply_woodwarden_stats(inst)
+		var raw = entry.get("instance")
+		if raw == null or not is_instance_valid(raw):
+			continue
+		_apply_woodwarden_stats(raw)
 
 
 func _apply_woodwarden_stats(ww: Node) -> void:
-	# Foco em tank/utilidade:
-	# - L1-L3: base_hp +20% (=384), damage=0, cooldown 3.5s (ataque só stuna em área).
-	# - L4: +150 hp (=534), damage=100, cooldown 3.0s (passa a dar dano).
+	# Foco em tank/utilidade + escudo humano (absorve projéteis de mago no raio):
+	# - L1-L3: base_hp 424, damage 60, cooldown 5.0s (stun em área + dano leve).
+	# - L4: +150 hp (=574), damage 160, cooldown 4.5s (passa a dar dano forte).
+	# +40 hp / +60 dmg em todos os níveis pra compensar o desgaste do escudo humano.
 	# Heal pro player no ataque é decidido em woodwarden._apply_hit via get_upgrade_count.
 	if not ("max_hp" in ww and "damage" in ww):
 		return
 	var lvl: int = woodwarden_level
 	if lvl <= 0:
 		return
-	var base_hp: float = 384.0  # 320 × 1.20
+	var base_hp: float = 424.0  # 384 + 40 (buff escudo humano)
 	var extra_hp: float = 150.0 if lvl >= 4 else 0.0
 	ww.max_hp = base_hp + extra_hp
 	if lvl >= 4:
-		ww.damage = 100.0
+		ww.damage = 160.0  # 100 + 60
 		if "attack_cooldown" in ww:
 			ww.attack_cooldown = 4.5
 	else:
-		ww.damage = 0.0
+		ww.damage = 60.0  # antes era 0
 		if "attack_cooldown" in ww:
 			ww.attack_cooldown = 5.0
 	if "hp" in ww:

@@ -39,6 +39,10 @@ signal died(woodwarden: Node)
 # aplica força de separação lateral pra não ficarem em cima um do outro.
 @export var separation_radius: float = 20.0
 @export var separation_strength: float = 35.0
+# Escudo humano: raio em volta do warden onde projéteis de magos são absorvidos.
+# Projétil entra no raio → take_damage(projectile.damage) no warden + projétil
+# destruído. Funciona com mage_projectile (basic, fire, ice, electric, boss).
+@export var shield_intercept_radius: float = 70.0
 @export var damage_effect_scene: PackedScene
 @export var damage_number_scene: PackedScene
 @export var kill_effect_scene: PackedScene
@@ -135,6 +139,32 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_update_facing(move_vec)
 	_update_animation(move_vec)
+	# Escudo humano: absorve projéteis de mago dentro do raio (após o movimento
+	# pra usar a posição final do frame).
+	_intercept_mage_projectiles()
+
+
+func _intercept_mage_projectiles() -> void:
+	# Escudo humano: projéteis no raio são magnetizados pro warden via
+	# magnet_to() do mage_projectile. NÃO destrói o projétil — ele segue voando
+	# em direção ao warden e atinge naturalmente via body_entered, aplicando
+	# o dano do projétil no warden (consistência com qualquer outro hit).
+	# Pula projéteis ally-source (mago convertido pela maldição — do time do
+	# player) e os com pierce_allies (boss já tem mecânica própria de passar).
+	var r_sq: float = shield_intercept_radius * shield_intercept_radius
+	for proj in get_tree().get_nodes_in_group("mage_projectile"):
+		if not is_instance_valid(proj) or not (proj is Node2D):
+			continue
+		if (proj as Node).is_queued_for_deletion():
+			continue
+		if "is_ally_source" in proj and bool(proj.is_ally_source):
+			continue
+		if "pierce_allies" in proj and bool(proj.pierce_allies):
+			continue
+		if (proj as Node2D).global_position.distance_squared_to(global_position) > r_sq:
+			continue
+		if proj.has_method("magnet_to"):
+			proj.magnet_to(self)
 
 
 func _far_speed_multiplier() -> float:

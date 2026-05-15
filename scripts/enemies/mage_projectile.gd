@@ -41,6 +41,9 @@ const BOSS_ALLY_DMG_MULT: float = 1.8
 
 
 func _ready() -> void:
+	# Grupo "mage_projectile" usado pelo Woodwarden pra detectar projéteis a
+	# interceptar no raio de escudo humano.
+	add_to_group("mage_projectile")
 	body_entered.connect(_on_body_entered)
 	get_tree().create_timer(lifetime).timeout.connect(_die)
 	player = get_tree().get_first_node_in_group("player")
@@ -88,6 +91,22 @@ func _physics_process(delta: float) -> void:
 		trail.add_point(global_position + VISUAL_OFFSET)
 		while trail.get_point_count() > trail_max_points:
 			trail.remove_point(0)
+
+
+func magnet_to(target_node: Node2D) -> void:
+	# Chamado pelo Woodwarden (escudo humano) — desvia o projétil pro warden
+	# e desabilita os redirects internos pra ele não voltar a mirar no player.
+	# Quando o projétil colidir com o warden, body_entered dispara o dano normal.
+	if target_node == null or not is_instance_valid(target_node):
+		return
+	has_redirected_halfway = true
+	has_redirected_final = true
+	var to_target: Vector2 = (target_node.global_position - global_position).normalized()
+	if to_target.length_squared() < 0.001:
+		return
+	direction = to_target
+	if sprite != null:
+		sprite.rotation = direction.angle()
 
 
 func _redirect_toward_player(strength: float) -> void:
