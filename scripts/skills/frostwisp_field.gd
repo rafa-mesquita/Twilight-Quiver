@@ -114,10 +114,10 @@ func _apply_tick() -> void:
 		var was_alive: bool = (not ("hp" in enemy)) or float(enemy.hp) > 0.0
 		enemy.take_damage(dmg)
 		if p_for_crit != null and p_for_crit.has_method("notify_damage_dealt_by_source"):
-			p_for_crit.notify_damage_dealt_by_source(dmg, "ice_arrow")
+			p_for_crit.notify_damage_dealt_by_source(dmg, "frostwisp")
 		if was_alive and p_for_crit != null and p_for_crit.has_method("notify_kill_by_source"):
 			if "hp" in enemy and float(enemy.hp) <= 0.0:
-				p_for_crit.notify_kill_by_source("ice_arrow")
+				p_for_crit.notify_kill_by_source("frostwisp")
 
 
 func _refresh_slows() -> void:

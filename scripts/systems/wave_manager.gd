@@ -39,9 +39,10 @@ extends Node2D
 @export var milestone_hp_bonus: float = 0.20
 @export var milestone_damage_bonus: float = 0.15
 @export var milestone_speed_bonus: float = 0.08
-# Wave 1 pity system: garante mínimo de N moedas pra player não ser punido por
-# RNG ruim na primeira shop. Só ATIVA se naturalmente caiu menos que N — os
-# faltantes spawnam no _finish_wave (ainda pegos pelo magnet de fim de wave).
+# Pity system de gold por wave: garante que o player ganhe pelo menos N moedas
+# em qualquer round. Se naturalmente o RNG dropou menos que N, os faltantes
+# spawnam no _finish_wave (são sugados pelo magnet de fim de wave). Aplica em
+# TODAS as waves — sem isso, sequências de drop ruins matam a economia mid-run.
 @export var wave1_min_guaranteed_drops: int = 4
 # Wave 14 (boss redux): mesmo setup da wave 7 (boss + horda de magos no centro),
 # porém com multiplicador extra em cima do scaling natural pra ficar 2,5×–3×
@@ -177,6 +178,7 @@ func spawn_enemy_at(type_key: String, pos: Vector2) -> Node:
 	var enemy: Node2D = info["scene"].instantiate()
 	world.add_child(enemy)
 	enemy.global_position = pos
+	_pause_if_time_frozen(enemy)
 	return enemy
 
 
@@ -577,7 +579,17 @@ func _spawn_one(type_key: String) -> void:
 			enemy.gold_drop_pivot = int(round(float(enemy.gold_drop_pivot) * BOSS_REDUX_GOLD_MULT))
 	world.add_child(enemy)
 	enemy.global_position = pos
+	_pause_if_time_frozen(enemy)
 	spawned_this_wave[type_key] = spawned_this_wave.get(type_key, 0) + 1
+
+
+func _pause_if_time_frozen(enemy: Node) -> void:
+	# Se o player ativou Time Freeze (Fica Frio L4), o inimigo recém-spawnado
+	# também é pausado — senão ele se infiltra na luta enquanto todo o resto
+	# está congelado.
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null and player.has_method("apply_freeze_pause_if_active"):
+		player.apply_freeze_pause_if_active(enemy)
 
 
 func _apply_wave_scaling(enemy: Node) -> void:
@@ -737,9 +749,9 @@ func _finish_wave() -> void:
 	# Torretas do Mecânico Ting também duram só o round — limpa as ativas no fim
 	# da wave pra cada raid começar limpo (o Ting volta a buildar normal).
 	_cleanup_ting_turrets()
-	# Wave 1 pity: se RNG não dropou as N mínimas, completa AGORA (antes do
-	# magnet sugar pro player). Wave 2+ não tem pity, RNG normal.
-	_top_up_wave1_coins()
+	# Pity de gold: se a wave rendeu menos que o mínimo garantido, completa
+	# AGORA (antes do magnet sugar pro player). Aplica em qualquer wave.
+	_top_up_min_coins()
 	# Suga todas as moedas restantes do mapa pro player (auto-coleta).
 	_magnet_remaining_gold()
 
@@ -755,8 +767,8 @@ func notify_coin_dropped(amount: int = 1) -> void:
 	_coins_dropped_this_wave += amount
 
 
-func _top_up_wave1_coins() -> void:
-	if wave_number != 1 or wave1_min_guaranteed_drops <= 0:
+func _top_up_min_coins() -> void:
+	if wave1_min_guaranteed_drops <= 0:
 		return
 	# Conta gold REAL ganho na wave: (gold atual do player − snapshot inicial)
 	# + gold ainda espalhado pelo mapa (cada moeda vale `value`). Dessa forma o
@@ -1245,6 +1257,7 @@ func _prespawn_boss_wave_entities() -> void:
 					enemy.gold_drop_pivot = int(round(float(enemy.gold_drop_pivot) * BOSS_REDUX_GOLD_MULT))
 			world.add_child(enemy)
 			enemy.global_position = _pick_spawn_for(type_key)
+			_pause_if_time_frozen(enemy)
 			spawned_this_wave[type_key] = spawned_this_wave.get(type_key, 0) + 1
 
 

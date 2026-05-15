@@ -238,6 +238,8 @@ SHOP_CRITICAL_CHANCE_DESC_4,"100% critico
 +65% daño","100% critique
 +65% dégâts"
 DMG_PANEL_BOOMERANG,Boomerang Veloz,Swift Boomerang,Bumerán Veloz,Boomerang Rapide
+DMG_PANEL_FROSTWISP,Frostwisp,Frostwisp,Frostwisp,Frostwisp
+HUD_DEATH_DMG_BREAKDOWN_TITLE,Dano por fonte:,Damage by source:,Daño por fuente:,Dégâts par source :
 SHOP_BOOMERANG_DESC_1,"Cada 5s lanca no
 inimigo mais proximo
 15 dano, vai e volta","Every 5s throws at

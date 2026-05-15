@@ -85,28 +85,29 @@ func _on_body_entered(body: Node) -> void:
 
 
 func _apply_ally_poison_slow(target: Node) -> void:
-	# Inseto aliado: aplica slow temporário (modifica enemy.speed) + DoT via
-	# BurnDoT. Reusa BurnDoT pra não criar componente novo — funciona como
-	# poison pro enemy (take_damage normal a cada 0.5s).
+	# Inseto aliado: aplica slow via SlowDebuff (não modifica enemy.speed direto
+	# pra evitar stacking errado quando o alvo já está slowed por outra fonte)
+	# + DoT via BurnDoT marcado como "curse_ally" pro painel de dano atribuir
+	# corretamente em vez de mostrar como Flecha de Fogo.
 	if not is_instance_valid(target):
 		return
 	if "speed" in target and slow_duration > 0.0:
-		var orig_speed: float = float(target.speed)
-		target.speed = orig_speed * slow_multiplier
-		# Restaura speed após slow_duration. Evita stomp se outro slow mais
-		# forte foi aplicado depois (pega o min entre o restore e o atual).
-		var ref: Node = target
-		target.get_tree().create_timer(slow_duration).timeout.connect(
-			func() -> void:
-				if not is_instance_valid(ref) or not ("speed" in ref):
-					return
-				if float(ref.speed) < orig_speed:
-					ref.speed = orig_speed
-		)
+		var has_slow: bool = false
+		for c in target.get_children():
+			if c is SlowDebuff:
+				(c as SlowDebuff).refresh(slow_duration, slow_multiplier)
+				has_slow = true
+				break
+		if not has_slow:
+			var deb := SlowDebuff.new()
+			deb.duration = slow_duration
+			deb.slow_factor = slow_multiplier
+			target.add_child(deb)
 	if poison_duration > 0.0 and poison_damage_total > 0.0:
 		var dot := BurnDoT.new()
 		dot.dps = poison_damage_total / poison_duration
 		dot.duration = poison_duration
+		dot.source_id = "curse_ally"
 		target.add_child(dot)
 
 

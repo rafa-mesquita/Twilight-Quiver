@@ -98,6 +98,11 @@ func _on_body_entered(body: Node) -> void:
 		return
 	if body.is_queued_for_deletion():
 		return
+	# Boss com shield ativo: projétil atravessa em vez de bater. Sem isso, se
+	# o boss caminhasse pra dentro da trajetória do projétil mirado num minion,
+	# o tiro era "desperdiçado" no shield (sem dano + projétil sumia).
+	if body.is_in_group("boss_shielded"):
+		return
 	var damageable: Node = _find_damageable(body)
 	if damageable == null:
 		return
@@ -132,6 +137,10 @@ func _apply_aoe(skip: Node, primary_dmg: float) -> void:
 			continue
 		if e.is_queued_for_deletion():
 			continue
+		# Boss shielded é imune ao splash também (consistência com _pick_target
+		# da torreta e com o impacto primário).
+		if (e as Node).is_in_group("boss_shielded"):
+			continue
 		if (e as Node2D).global_position.distance_to(global_position) > aoe_radius:
 			continue
 		if not e.has_method("take_damage"):
@@ -143,7 +152,9 @@ func _apply_aoe(skip: Node, primary_dmg: float) -> void:
 
 
 func _notify_player(amount: float, was_alive: bool, target: Node) -> void:
-	if source == null:
+	# is_instance_valid: player pode ter sido freed entre o disparo da torreta
+	# e o impacto do projétil (ex: boss matou player no mesmo frame).
+	if source == null or not is_instance_valid(source):
 		return
 	if source.has_method("notify_damage_dealt"):
 		source.notify_damage_dealt(amount)

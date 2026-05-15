@@ -887,6 +887,14 @@ func _show_restart_button() -> void:
 	survival_label.modulate.a = 0.0
 	survival_label.visible = true
 
+	# Painel do breakdown de dano por fonte fica à ESQUERDA, separado dos botões
+	# centrais. Criado programaticamente pra não ter que editar hud.tscn e
+	# pra escalar dinâmicamente com qtd de fontes.
+	var breakdown_label: Label = _build_or_get_dmg_breakdown_label()
+	breakdown_label.text = _build_death_dmg_breakdown()
+	breakdown_label.modulate.a = 0.0
+	breakdown_label.visible = not breakdown_label.text.is_empty()
+
 	restart_button.modulate.a = 0.0
 	restart_button.visible = true
 	menu_button.modulate.a = 0.0
@@ -927,6 +935,8 @@ func _show_restart_button() -> void:
 	reveal.tween_property(survival_label, "modulate:a", 1.0, 0.4)
 	reveal.tween_property(restart_button, "modulate:a", 1.0, 0.4)
 	reveal.tween_property(menu_button, "modulate:a", 1.0, 0.4)
+	if breakdown_label.visible:
+		reveal.tween_property(breakdown_label, "modulate:a", 1.0, 0.4)
 
 
 func _show_unlock_notification(skin_name: String) -> void:
@@ -1005,6 +1015,63 @@ func _format_killed_by(source_id: String) -> String:
 		return tr("HUD_DEATH_BY_UNKNOWN")
 	var key: String = String(_DEATH_SOURCE_LABELS.get(source_id, "HUD_DEATH_BY_UNKNOWN"))
 	return tr(key)
+
+
+func _build_or_get_dmg_breakdown_label() -> Label:
+	# Reusa o label entre runs se já foi criado. Posiciona ancorado no centro
+	# vertical com offset pra esquerda — fica fora da coluna central (score +
+	# survival + botões) pra não empurrar os botões pra baixo quando a lista
+	# de fontes é grande.
+	var existing: Label = death_top_layer.get_node_or_null("DmgBreakdownLabel") as Label
+	if existing != null:
+		return existing
+	var lbl := Label.new()
+	lbl.name = "DmgBreakdownLabel"
+	lbl.set_anchors_preset(Control.PRESET_CENTER)
+	# Ancora central; offsets puxam pra coluna esquerda do viewport (1920 wide).
+	lbl.offset_left = -900.0
+	lbl.offset_right = -360.0
+	lbl.offset_top = -280.0
+	lbl.offset_bottom = 320.0
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	lbl.add_theme_color_override("font_color", Color(0.9, 0.85, 1, 1))
+	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	lbl.add_theme_constant_override("outline_size", 4)
+	var font: Font = load("res://font/ByteBounce.ttf") as Font
+	if font != null:
+		lbl.add_theme_font_override("font", font)
+	lbl.add_theme_font_size_override("font_size", 24)
+	death_top_layer.add_child(lbl)
+	return lbl
+
+
+func _build_death_dmg_breakdown() -> String:
+	# Breakdown do dano causado por fonte (ordenado desc). Reusa o dict de
+	# labels do DamagePanel autoload pra consistência com o painel TAB.
+	# Filtra fontes com 0 dano (ex: skills/aliados não usados nessa run).
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null or not ("stats_damage_dealt_by_source" in p):
+		return ""
+	var raw: Dictionary = p.get("stats_damage_dealt_by_source")
+	var entries: Array = []
+	for k in raw.keys():
+		var amount: float = float(raw[k])
+		if amount <= 0.0:
+			continue
+		entries.append([String(k), amount])
+	if entries.is_empty():
+		return ""
+	entries.sort_custom(func(a, b): return a[1] > b[1])
+	var lines: PackedStringArray = PackedStringArray()
+	lines.append(tr("HUD_DEATH_DMG_BREAKDOWN_TITLE"))
+	for entry in entries:
+		var sid: String = entry[0]
+		var amount: float = entry[1]
+		var key: String = String(DamagePanel.SOURCE_LABELS.get(sid, ""))
+		var name: String = tr(key) if not key.is_empty() else sid
+		lines.append("%s: %d" % [name, int(round(amount))])
+	return "\n".join(lines)
 
 
 func _build_death_stats_block() -> String:

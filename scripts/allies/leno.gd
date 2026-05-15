@@ -131,7 +131,14 @@ func _separation_force() -> Vector2:
 
 
 func _pick_enemy_target() -> Node2D:
-	# Pega inimigo mais próximo dentro do aggro_range.
+	# Boss prioritário: se há um boss vivo e SEM shield, foca nele independente
+	# da distância (leno corre até chegar no attack_range). Em boss wave o boss
+	# invoca minions constantemente — sem essa prioridade, leno fica matando
+	# minion e ignorando o alvo principal.
+	var boss: Node2D = _find_unshielded_boss()
+	if boss != null:
+		return boss
+	# Fallback: inimigo mais próximo dentro do aggro_range.
 	var nearest: Node2D = null
 	var best: float = INF
 	for e in get_tree().get_nodes_in_group("enemy"):
@@ -148,6 +155,20 @@ func _pick_enemy_target() -> Node2D:
 			nearest = e
 			best = d
 	return nearest
+
+
+func _find_unshielded_boss() -> Node2D:
+	for b in get_tree().get_nodes_in_group("boss"):
+		if not is_instance_valid(b) or not (b is Node2D):
+			continue
+		if (b as Node).is_queued_for_deletion():
+			continue
+		if (b as Node).is_in_group("boss_shielded"):
+			continue
+		if "hp" in b and float(b.hp) <= 0.0:
+			continue
+		return b as Node2D
+	return null
 
 
 func _update_animation(move_vec: Vector2) -> void:
@@ -171,7 +192,9 @@ func _try_attack() -> void:
 		return
 	_locked_target = _current_target
 	_is_attacking = true
-	_attack_cd_remaining = attack_cooldown
+	# Cooldown só é consumido DEPOIS do disparo válido (em _fire_projectile),
+	# senão alvo que vira null durante a anim deixa o leno em "abrindo a boca"
+	# sem tiro e ainda gastando o CD.
 	if sprite.sprite_frames != null and sprite.sprite_frames.has_animation("attack"):
 		sprite.play("attack")
 	else:
@@ -209,6 +232,9 @@ func _fire_projectile() -> void:
 	if proj.has_method("set_direction"):
 		proj.set_direction(dir)
 	_play_attack_sound()
+	# CD consumido aqui (não em _try_attack) — garante que só conta se um tiro
+	# realmente saiu.
+	_attack_cd_remaining = attack_cooldown
 
 
 func _get_target_aim_offset(target: Node) -> Vector2:

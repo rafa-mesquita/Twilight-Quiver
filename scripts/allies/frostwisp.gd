@@ -3,9 +3,9 @@ extends Node2D
 # Frostwisp — aliada voadora do L3 do Fica Frio.
 # - Vagueia aleatoriamente em torno do player (waypoints random dentro de um raio)
 # - SEM HP, SEM colisão com inimigos, NÃO targetável, freeze_immune
-# - A cada 15s: voa pra área com mais inimigos (centroide), spawna um
+# - A cada 16s: voa pra área com mais inimigos (centroide), spawna um
 #   FrostwispField (dano + slow em AoE) e bombardeia com projeteis caindo
-#   dentro do campo por 4s. Voos rasantes em órbita, rastro azul, sons.
+#   dentro do campo por 5s. Voos rasantes em órbita, rastro azul, sons.
 
 @export var wander_radius: float = 110.0  # raio em volta do player onde escolhe waypoints
 @export var wander_min_pause: float = 0.4

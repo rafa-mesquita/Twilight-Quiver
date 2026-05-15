@@ -43,6 +43,7 @@ const SOURCE_LABELS: Dictionary = {
 	"leno": "DMG_PANEL_LENO",
 	"capivara_joe": "DMG_PANEL_CAPIVARA",
 	"curse_ally": "DMG_PANEL_CURSE_ALLY",
+	"frostwisp": "DMG_PANEL_FROSTWISP",
 }
 
 var _panel: PanelContainer = null

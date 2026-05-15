@@ -165,6 +165,11 @@ func _current_damage() -> float:
 
 
 func _start_fade() -> void:
+	# Guard contra dispose antecipado (_cleanup_ting_turrets do wave_manager mata
+	# a torreta no fim da wave antes do lifetime estourar — os SceneTreeTimers
+	# de _start_fade/_die ainda disparam e tocariam create_tween em nó freed).
+	if not is_inside_tree():
+		return
 	var tw := create_tween()
 	tw.tween_property(self, "modulate:a", 0.0, FADE_OUT_DURATION)
 

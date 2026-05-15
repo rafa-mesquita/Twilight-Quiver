@@ -2,7 +2,7 @@ extends Node2D
 
 # Projétil de gelo invocado pela Frostwisp — cai do céu, pousa numa posição
 # alvo, e dá dano + slow em AoE pequena. Crit rolls aplicam normalmente
-# (ice_arrow source — herda das Flechas Críticas se compradas).
+# (source "frostwisp" no painel de dano — separado de ice_arrow do player).
 
 @export var land_position: Vector2 = Vector2.ZERO
 @export var damage: float = 8.0
@@ -63,10 +63,10 @@ func _land() -> void:
 			var was_alive: bool = (not ("hp" in e)) or float(e.hp) > 0.0
 			e.take_damage(dmg)
 			if p != null and p.has_method("notify_damage_dealt_by_source"):
-				p.notify_damage_dealt_by_source(dmg, "ice_arrow")
+				p.notify_damage_dealt_by_source(dmg, "frostwisp")
 			if was_alive and p != null and p.has_method("notify_kill_by_source"):
 				if "hp" in e and float(e.hp) <= 0.0:
-					p.notify_kill_by_source("ice_arrow")
+					p.notify_kill_by_source("frostwisp")
 		_apply_slow(e)
 	_spawn_splash()
 	queue_free()

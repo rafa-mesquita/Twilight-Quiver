@@ -615,8 +615,15 @@ func _release_arrow() -> void:
 		# is_primary = i == 0 → flechas extras têm fogo reduzido pra 35%.
 		var delay: float = float(shot.get("delay_sec", 0.0))
 		if delay > 0.0:
+			# Lambda c/ guard pra cobrir player morto entre o cast e o tick do
+			# timer (ex: boss matou no mesmo frame do dash auto-attack).
+			var shot_dir: Vector2 = shot["dir"]
+			var shot_mult: float = float(shot["dmg_mult"])
 			get_tree().create_timer(delay).timeout.connect(
-				_spawn_arrow.bind(shot["dir"], shot["dmg_mult"], is_pierce, false, false, is_ricochet, is_graviton)
+				func() -> void:
+					if is_dead or not is_inside_tree():
+						return
+					_spawn_arrow(shot_dir, shot_mult, is_pierce, false, false, is_ricochet, is_graviton)
 			)
 		else:
 			_spawn_arrow(shot["dir"], shot["dmg_mult"], is_pierce, i == 0, i == 0, is_ricochet, is_graviton)
@@ -1345,6 +1352,15 @@ func _apply_time_freeze_world_pause() -> void:
 			_pause_node_for_freeze(child)
 
 
+func apply_freeze_pause_if_active(node: Node) -> void:
+	# Chamado pelo wave_manager logo após spawnar um inimigo: se o Time Freeze
+	# está ativo, pausa o recém-chegado pra ele não andar/atacar no meio do
+	# congelamento. Sem efeito se não há freeze ativo.
+	if _time_freeze_active_remaining <= 0.0:
+		return
+	_pause_node_for_freeze(node)
+
+
 func _pause_node_for_freeze(node: Node) -> void:
 	if node == null or not is_instance_valid(node):
 		return
@@ -1714,8 +1730,15 @@ func _dash_auto_attack_volley() -> void:
 		var shot: Dictionary = volley[i]
 		var delay: float = float(shot.get("delay_sec", 0.0))
 		if delay > 0.0:
+			# Lambda c/ guard pra cobrir player morto entre o cast e o tick do
+			# timer (ex: boss matou no mesmo frame do dash auto-attack).
+			var shot_dir: Vector2 = shot["dir"]
+			var shot_mult: float = float(shot["dmg_mult"])
 			get_tree().create_timer(delay).timeout.connect(
-				_spawn_arrow.bind(shot["dir"], shot["dmg_mult"], is_pierce, false, false, is_ricochet, is_graviton)
+				func() -> void:
+					if is_dead or not is_inside_tree():
+						return
+					_spawn_arrow(shot_dir, shot_mult, is_pierce, false, false, is_ricochet, is_graviton)
 			)
 		else:
 			_spawn_arrow(shot["dir"], shot["dmg_mult"], is_pierce, i == 0, i == 0, is_ricochet, is_graviton)

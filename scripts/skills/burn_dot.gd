@@ -11,6 +11,10 @@ extends Node
 # Dano extra aplicado uma única vez quando o burn TERMINA por timeout natural
 # (não quando o inimigo morre antes). 0 = desabilitado.
 @export var final_bonus_damage: float = 0.0
+# Source ID que aparece no painel de dano. Default "fire_arrow" pra Flecha de
+# Fogo do player. Outros usos (ex: inseto-aliado aplicando poison) sobrescrevem
+# antes do add_child pra atribuir no breakdown correto.
+@export var source_id: String = "fire_arrow"
 
 # Splash: a cada tick, os 2 inimigos vivos mais próximos do queimando levam
 # metade do tick_dmg como dano direto (sem propagar burn). Aplica em todos os
@@ -63,7 +67,7 @@ func _apply_tick() -> void:
 			CritFeedback.mark_next_hit_crit(parent)
 	var was_alive: bool = (not ("hp" in parent)) or float(parent.hp) > 0.0
 	parent.take_damage(tick_dmg)
-	_notify_player_dmg_kill(tick_dmg, "fire_arrow", was_alive, parent)
+	_notify_player_dmg_kill(tick_dmg, source_id, was_alive, parent)
 	_apply_splash(parent as Node2D, tick_dmg)
 
 
@@ -97,21 +101,16 @@ func _apply_splash(source: Node2D, tick_dmg: float) -> void:
 		return
 	candidates.sort_custom(func(a, b): return a["d_sq"] < b["d_sq"])
 	var n: int = mini(SPLASH_TARGETS, candidates.size())
+	# Splash herda o crit do tick primário (tick_dmg já vem multiplicado). Não
+	# rola crit independente por alvo — convenção do projeto (ting_turret,
+	# frostwisp) pra evitar duplicação de chance.
 	for i in n:
 		var target: Node = candidates[i]["node"]
 		if not is_instance_valid(target):
 			continue
 		var t_alive: bool = (not ("hp" in target)) or float(target.hp) > 0.0
-		# Crit roll por splash (mesma lógica DoT).
-		var sdmg: float = splash_dmg
-		var p_splash := get_tree().get_first_node_in_group("player")
-		if p_splash != null and p_splash.has_method("roll_crit_dot"):
-			var crit_s: Dictionary = p_splash.roll_crit_dot(sdmg)
-			sdmg = float(crit_s.get("dmg", sdmg))
-			if bool(crit_s.get("crit", false)):
-				CritFeedback.mark_next_hit_crit(target)
-		target.take_damage(sdmg)
-		_notify_player_dmg_kill(sdmg, "fire_arrow", t_alive, target)
+		target.take_damage(splash_dmg)
+		_notify_player_dmg_kill(splash_dmg, source_id, t_alive, target)
 
 
 # Refresca duração se nova flecha de fogo bate no mesmo alvo.
@@ -136,7 +135,7 @@ func _apply_final_bonus() -> void:
 		return
 	var was_alive: bool = (not ("hp" in parent)) or float(parent.hp) > 0.0
 	parent.take_damage(final_bonus_damage)
-	_notify_player_dmg_kill(final_bonus_damage, "fire_arrow", was_alive, parent)
+	_notify_player_dmg_kill(final_bonus_damage, source_id, was_alive, parent)
 
 
 func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, target: Node) -> void:
