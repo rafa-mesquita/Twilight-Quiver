@@ -29,6 +29,7 @@ var _waypoint: Vector2 = Vector2.ZERO
 var _drop_cd: float = 0.0
 var _drop_counter: int = 0  # alterna buff/dano no L2+
 var _is_dropping: bool = false
+var _anti_stuck: AntiStuckHelper = AntiStuckHelper.new()
 
 
 func _ready() -> void:
@@ -61,8 +62,12 @@ func _physics_process(delta: float) -> void:
 		to_wp = _waypoint - global_position
 		dist = to_wp.length()
 	var dir: Vector2 = Vector2.ZERO if dist < 0.001 else to_wp / dist
+	# Anti-stuck: se preso em árvore/parede, redireciona lateral pro waypoint.
+	if dir.length_squared() > 0.001:
+		dir = _anti_stuck.resolve(dir, delta)
 	velocity = dir * speed
 	move_and_slide()
+	_anti_stuck.update(self, _waypoint, dir.length_squared() > 0.001, delta)
 	if absf(dir.x) > 0.001:
 		sprite.flip_h = dir.x < 0.0
 	if sprite.animation != "walk":

@@ -265,6 +265,10 @@ func _process(delta: float) -> void:
 func _start_next_wave() -> void:
 	if stopped:
 		return
+	# Cleanup defensivo de corações órfãos: o sweep sequencial em _finish_wave
+	# pode travar (heart ativo nunca alcança o player → fila bloqueada). Sem
+	# isso os corações sobravam pra próxima wave e o player ganhava cura grátis.
+	_cleanup_remaining_hearts()
 	wave_number += 1
 	# Telemetria: emite run_start na wave 1, wave_reached em waves >= 2.
 	if wave_number == 1 and Engine.has_singleton("Telemetry") == false:
@@ -817,6 +821,16 @@ func _cleanup_capivara_mushrooms() -> void:
 	for m in get_tree().get_nodes_in_group("capivara_mushroom"):
 		if is_instance_valid(m):
 			m.queue_free()
+
+
+func _cleanup_remaining_hearts() -> void:
+	# Limpa todos os corações no chão antes da próxima wave começar. Chamado
+	# em _start_next_wave (não no _finish_wave) pra dar tempo do sweep
+	# sequencial em _magnet_remaining_gold puxar o que conseguir antes — só os
+	# que sobrarem (sweep travado, fora de raio, etc) são removidos aqui.
+	for h in get_tree().get_nodes_in_group("heart"):
+		if is_instance_valid(h):
+			h.queue_free()
 
 
 func _cleanup_ting_turrets() -> void:

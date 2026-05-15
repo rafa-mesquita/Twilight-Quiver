@@ -30,6 +30,11 @@ var play_shoot_sound: bool = true
 # procca raios em N inimigos próximos ao acertar um inimigo válido.
 var chain_count: int = 0
 var chain_dmg_pct: float = 0.0
+# Gate: cada flecha só proca cadeia UMA vez. Sem isso, perfuração multiplicava
+# (4 piercings × 4 flechas × N alvos no raio = explosão de hits absurda no
+# late game). Ricochete clona a flecha em nova instância (com flag zerada),
+# então cada bounce mantém a possibilidade de procar uma vez.
+var _chain_proc_used: bool = false
 # Chance [0..1] de cadeiar num alvo adicional além dos `chain_count` garantidos
 # (usado no lv2 da cadeia, que tem 30% de chance de pegar um 3º inimigo).
 var chain_bonus_chance: float = 0.0
@@ -847,6 +852,9 @@ func _proc_chain_lightning(origin: Node) -> void:
 	# volley multi-arrow procca seu próprio chain (audio é throttled).
 	if chain_count <= 0 or chain_dmg_pct <= 0.0:
 		return
+	# Uma cadeia por flecha — pierces seguintes não procam.
+	if _chain_proc_used:
+		return
 	if not (origin is Node2D):
 		return
 	# L1 do chain só proca a cada 2 hits — gate global no player (volleys também contam).
@@ -871,6 +879,10 @@ func _proc_chain_lightning(origin: Node) -> void:
 			candidates.append({"node": e, "dist": d})
 	if candidates.is_empty():
 		return
+	# Confirma o gate: a cadeia VAI disparar — pierces seguintes não procam.
+	# Se a flecha bater sem ninguém no raio, o gate fica aberto (próxima pierce
+	# pode tentar de novo se encontrar cluster).
+	_chain_proc_used = true
 	candidates.sort_custom(func(a, b): return a["dist"] < b["dist"])
 	var n: int = mini(chain_count, candidates.size())
 	# Bônus probabilístico: tenta um alvo extra além dos garantidos (lv2 = 30%).

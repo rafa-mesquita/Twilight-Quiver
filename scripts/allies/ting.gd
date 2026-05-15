@@ -30,6 +30,7 @@ var _is_building: bool = false
 # e o ting deve estar caminhando pro spot de combate. False = fase "safe",
 # perto do player mas fora do meio dos inimigos.
 var _is_approaching: bool = false
+var _anti_stuck: AntiStuckHelper = AntiStuckHelper.new()
 
 
 func _ready() -> void:
@@ -67,8 +68,12 @@ func _physics_process(delta: float) -> void:
 		to_wp = _waypoint - global_position
 		dist = to_wp.length()
 	var dir: Vector2 = Vector2.ZERO if dist < 0.001 else to_wp / dist
+	# Anti-stuck: redireciona lateral se ficou preso em árvore/parede.
+	if dir.length_squared() > 0.001:
+		dir = _anti_stuck.resolve(dir, delta)
 	velocity = dir * speed
 	move_and_slide()
+	_anti_stuck.update(self, _waypoint, dir.length_squared() > 0.001, delta)
 	if absf(dir.x) > 0.001:
 		sprite.flip_h = dir.x < 0.0
 	if sprite.animation != "walk":

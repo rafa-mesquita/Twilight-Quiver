@@ -16,6 +16,7 @@ var hp: float
 var can_hit: bool = true
 var player: Node2D
 var _flash_tween: Tween
+var _anti_stuck: AntiStuckHelper = AntiStuckHelper.new()
 
 
 func _ready() -> void:
@@ -24,7 +25,7 @@ func _ready() -> void:
 	player = get_tree().get_first_node_in_group("player")
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if player == null or not is_instance_valid(player):
 		velocity = Vector2.ZERO
 		return
@@ -32,15 +33,20 @@ func _physics_process(_delta: float) -> void:
 	var to_player := player.global_position - global_position
 	var dist := to_player.length()
 	var dir := to_player.normalized()
+	var was_moving: bool = false
 
 	if dist > attack_range:
+		# Anti-stuck: se preso em árvore/parede, redireciona lateral.
+		dir = _anti_stuck.resolve(dir, delta)
 		velocity = dir * speed
+		was_moving = true
 	else:
 		velocity = Vector2.ZERO
 		if can_hit:
 			_attack()
 
 	move_and_slide()
+	_anti_stuck.update(self, player.global_position, was_moving, delta)
 
 
 func _attack() -> void:

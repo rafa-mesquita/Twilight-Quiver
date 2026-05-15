@@ -62,6 +62,7 @@ var _flash_tween: Tween
 var _crit_pending: bool = false
 # Maldição: AI vira aliada ao ser convertido (mira em enemies, projétil hit them).
 var is_curse_ally: bool = false
+var _anti_stuck: AntiStuckHelper = AntiStuckHelper.new()
 
 
 func _ready() -> void:
@@ -108,11 +109,13 @@ func _physics_process(delta: float) -> void:
 		return
 	var ai_velocity: Vector2 = Vector2.ZERO
 	current_target = _pick_target()
+	var anchor_pos: Vector2 = global_position
 
 	if current_target != null and is_instance_valid(current_target):
 		var to_target: Vector2 = current_target.global_position - global_position
 		var dist: float = to_target.length()
 		var dir: Vector2 = to_target.normalized()
+		anchor_pos = current_target.global_position
 
 		if not is_attacking:
 			if dist < preferred_distance - distance_tolerance:
@@ -122,12 +125,19 @@ func _physics_process(delta: float) -> void:
 
 		_update_facing(to_target)
 
+	# Anti-stuck: se preso em árvore/parede, redireciona lateral.
+	if ai_velocity.length_squared() > 0.01:
+		var ai_dir: Vector2 = ai_velocity.normalized()
+		var ai_speed: float = ai_velocity.length()
+		ai_dir = _anti_stuck.resolve(ai_dir, delta)
+		ai_velocity = ai_dir * ai_speed
 	# Separação contra outros inimigos pra não empilhar.
 	var separation: Vector2 = EnemySeparation.compute(self, separation_radius, separation_strength)
 	# Knockback soma sobre AI velocity e decai linearmente até zero.
 	velocity = ai_velocity + knockback_velocity + separation
 	knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, knockback_decay * delta)
 	move_and_slide()
+	_anti_stuck.update(self, anchor_pos, ai_velocity.length_squared() > 0.01, delta)
 
 
 func _update_facing(to_player: Vector2) -> void:
