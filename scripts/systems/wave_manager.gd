@@ -1083,6 +1083,7 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	{"id": "armor", "name": "SHOP_UPG_ARMOR"},
 	{"id": "fire_arrow", "name": "SHOP_UPG_FIRE_ARROW"},
 	{"id": "curse_arrow", "name": "SHOP_UPG_CURSE_ARROW"},
+	{"id": "ice_arrow", "name": "SHOP_UPG_ICE_ARROW"},
 	{"id": "boomerang", "name": "SHOP_UPG_BOOMERANG"},
 	{"id": "critical_chance", "name": "SHOP_UPG_CRITICAL_CHANCE"},
 	{"id": "woodwarden", "name": "SHOP_ALLY_WOODWARDEN"},

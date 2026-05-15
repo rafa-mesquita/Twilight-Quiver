@@ -2102,7 +2102,7 @@ func _get_stat_gain_text(id: String, lvl: int, p: Node) -> String:
 			var max_hp: float = float(p.get("max_hp")) if "max_hp" in p else 100.0
 			return "+%d%%" % int(round(max(0.0, max_hp - 100.0)))
 		"damage":
-			# arrow_damage_multiplier base 1.0, +0.20 por stack.
+			# arrow_damage_multiplier base 1.0, +0.24 por stack.
 			var m: float = float(p.get("arrow_damage_multiplier")) if "arrow_damage_multiplier" in p else 1.0
 			return "+%d%%" % int(round((m - 1.0) * 100.0))
 		"move_speed":
@@ -2110,7 +2110,7 @@ func _get_stat_gain_text(id: String, lvl: int, p: Node) -> String:
 			var m2: float = float(p.get("move_speed_multiplier")) if "move_speed_multiplier" in p else 1.0
 			return "+%d%%" % int(round((m2 - 1.0) * 100.0))
 		"attack_speed":
-			# attack_speed_multiplier base 1.0, +0.27 por stack.
+			# attack_speed_multiplier base 1.0, +0.24 por stack.
 			var m3: float = float(p.get("attack_speed_multiplier")) if "attack_speed_multiplier" in p else 1.0
 			return "+%d%%" % int(round((m3 - 1.0) * 100.0))
 		"armor":

@@ -173,7 +173,7 @@ text = "+1 Graviton"
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 24
-text = "+1 Bumerangue"
+text = "+1 Boomerang Veloz"
 
 [node name="UpgCriticalChanceBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
 custom_minimum_size = Vector2(0, 34)

@@ -194,8 +194,8 @@ SHOP_HP_PLUS_18,+18 HP,+18 HP,+18 HP,+18 PV
 SHOP_HP_PLUS_20,+20 HP,+20 HP,+20 HP,+20 PV
 SHOP_HP_PLUS_22,+22 HP,+22 HP,+22 HP,+22 PV
 SHOP_HP_PLUS_25,+25 HP,+25 HP,+25 HP,+25 PV
-SHOP_DAMAGE,+20% dano,+20% dmg,+20% daño,+20% dégâts
-SHOP_ATTACK_SPEED,+27% atk speed,+27% atk speed,+27% vel. ataque,+27% vit. attaque
+SHOP_DAMAGE,+24% dano,+24% dmg,+24% daño,+24% dégâts
+SHOP_ATTACK_SPEED,+24% atk speed,+24% atk speed,+24% vel. ataque,+24% vit. attaque
 SHOP_MOVE_SPEED,+10% move speed,+10% move speed,+10% vel. movimiento,+10% vit. déplacement
 SHOP_ARMOR_12,(12%- dano e 6% tenc.),(12%- dmg & 6% tena.),(12%- daño y 6% tena.),(12%- dégâts & 6% ténac.)
 SHOP_ARMOR_18,(18%- dano e 9% tenc.),(18%- dmg & 9% tena.),(18%- daño y 9% tena.),(18%- dégâts & 9% ténac.)
@@ -215,7 +215,7 @@ SHOP_UPG_GRAVITON,Graviton,Graviton,Gravitón,Graviton
 SHOP_UPG_FIRE_ARROW,Flecha de Fogo,Fire Arrow,Flecha de Fuego,Flèche de Feu
 SHOP_UPG_CURSE_ARROW,Disparo Profano,Profane Shot,Disparo Profano,Tir Profane
 SHOP_UPG_ICE_ARROW,Fica Frio,Stay Frosty,Mantente Fresco,Reste Calme
-SHOP_UPG_BOOMERANG,Bumerangue,Boomerang,Bumerán,Boomerang
+SHOP_UPG_BOOMERANG,Boomerang Veloz,Swift Boomerang,Bumerán Veloz,Boomerang Rapide
 SHOP_UPG_CRITICAL_CHANCE,Flechas Criticas,Critical Arrows,Flechas Críticas,Flèches Critiques
 SHOP_CRITICAL_CHANCE_DESC_1,"30% chance critico
 +50% dano + knockback","30% crit chance
@@ -237,7 +237,7 @@ SHOP_CRITICAL_CHANCE_DESC_4,"100% critico
 +65% damage","100% crítica
 +65% daño","100% critique
 +65% dégâts"
-DMG_PANEL_BOOMERANG,Bumerangue,Boomerang,Bumerán,Boomerang
+DMG_PANEL_BOOMERANG,Boomerang Veloz,Swift Boomerang,Bumerán Veloz,Boomerang Rapide
 SHOP_BOOMERANG_DESC_1,"Cada 5s lanca no
 inimigo mais proximo
 15 dano, vai e volta","Every 5s throws at
