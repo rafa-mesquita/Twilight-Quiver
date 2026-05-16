@@ -1,0 +1,140 @@
+[gd_scene format=3 uid="uid://bfuyqhsta3i7s"]
+
+[ext_resource type="Script" uid="uid://c1s8xsbsv88kk" path="res://scripts/enemies/dark_ball.gd" id="1_db"]
+[ext_resource type="Texture2D" uid="uid://b3f6mc877y4cg" path="res://assets/enemies/dark ball/dark ball-Sheet.png" id="2_sheet"]
+[ext_resource type="PackedScene" path="res://scenes/effects/damage_effect.tscn" id="3_dmg"]
+[ext_resource type="PackedScene" uid="uid://c0fhcseis1qub" path="res://scenes/ui/hp_bar.tscn" id="4_hpbar"]
+[ext_resource type="PackedScene" path="res://scenes/effects/damage_number.tscn" id="5_dmgnum"]
+[ext_resource type="PackedScene" path="res://scenes/effects/kill_effect.tscn" id="6_kill"]
+[ext_resource type="AudioStream" uid="uid://bjm7k8hyfrgn1" path="res://audios/effects/macaco/monkey damage.mp3" id="7_dmg_sfx"]
+[ext_resource type="PackedScene" path="res://scenes/pickups/gold.tscn" id="8_gold"]
+[ext_resource type="PackedScene" uid="uid://diuv8x3rgs5aa" path="res://scenes/pickups/heart.tscn" id="9_heart"]
+[ext_resource type="AudioStream" path="res://audios/effects/dark ball dash.mp3" id="10_dash_sfx"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/dark_ball_venom.tscn" id="11_venom"]
+
+[sub_resource type="AtlasTexture" id="A_atk_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 96, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_atk_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 96, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_dash_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_dash_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_idle_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_idle_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_walk_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_walk_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_darkball"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_atk_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_atk_1")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 7.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_dash_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_dash_1")
+}],
+"loop": true,
+"name": &"dash",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_idle_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_1")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 4.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_walk_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_walk_1")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 6.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_db"]
+radius = 6.0
+height = 16.0
+
+[node name="DarkBall" type="CharacterBody2D" unique_id=335113033]
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_db")
+damage_effect_scene = ExtResource("3_dmg")
+damage_number_scene = ExtResource("5_dmgnum")
+kill_effect_scene = ExtResource("6_kill")
+damage_sound = ExtResource("7_dmg_sfx")
+dash_sound = ExtResource("10_dash_sfx")
+venom_puddle_scene = ExtResource("11_venom")
+gold_scene = ExtResource("8_gold")
+heart_scene = ExtResource("9_heart")
+
+[node name="Shadow" type="Node2D" parent="." unique_id=1263338459]
+
+[node name="Outer" type="Polygon2D" parent="Shadow" unique_id=394786266]
+position = Vector2(-0.16666698, -0.5)
+scale = Vector2(0.7708333, 0.5)
+color = Color(0, 0, 0, 0.15)
+polygon = PackedVector2Array(8, 0, 7, 1, 5, 2, 3, 3, 0, 3, -3, 3, -5, 2, -7, 1, -8, 0, -7, -1, -5, -2, -3, -3, 0, -3, 3, -3, 5, -2, 7, -1)
+
+[node name="Middle" type="Polygon2D" parent="Shadow" unique_id=624744439]
+position = Vector2(0.25000024, 0)
+scale = Vector2(0.74999994, 0.5)
+color = Color(0, 0, 0, 0.22)
+polygon = PackedVector2Array(5, 0, 4, 1, 2, 2, 0, 2, -2, 2, -4, 1, -5, 0, -4, -1, -2, -2, 0, -2, 2, -2, 4, -1)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=917166436]
+texture_filter = 1
+position = Vector2(0, -3)
+scale = Vector2(0.65, 0.65)
+sprite_frames = SubResource("SpriteFrames_darkball")
+animation = &"idle"
+autoplay = "idle"
+offset = Vector2(0, -10)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1135297290]
+position = Vector2(0, -8)
+shape = SubResource("CapsuleShape2D_db")
+
+[node name="HpBar" parent="." unique_id=1794052134 instance=ExtResource("4_hpbar")]
+position = Vector2(-8, -23)
+fg_color = Color(0.431, 0.129, 0.129, 1)

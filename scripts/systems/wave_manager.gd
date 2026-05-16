@@ -14,6 +14,7 @@ extends Node2D
 @export var ice_mage_scene: PackedScene
 @export var electric_mage_scene: PackedScene
 @export var mage_monkey_scene: PackedScene
+@export var dark_ball_scene: PackedScene
 @export var spawn_delay: float = 0.5
 @export var inter_wave_delay: float = 2.0
 @export var pre_cleared_hold: float = 2.0  # tempo segurando 100% antes da tela "Wave Limpa"
@@ -126,6 +127,7 @@ func _ready() -> void:
 		"ice_mage": {"scene": ice_mage_scene, "group": "ice_mage"},
 		"electric_mage": {"scene": electric_mage_scene, "group": "electric_mage"},
 		"mage_monkey": {"scene": mage_monkey_scene, "group": "mage_monkey"},
+		"dark_ball": {"scene": dark_ball_scene, "group": "dark_ball"},
 	}
 	var player := get_tree().get_first_node_in_group("player")
 	if player != null and player.has_signal("died"):
@@ -497,11 +499,24 @@ func _build_wave_config(num: int) -> Dictionary:
 		var elec_step: int = (num - 10) / 2
 		elec_alive = mini(2 + elec_step, 4)
 		elec_total = mini(3 + elec_step, 6)
+	# Dark Ball substitui 30-35% dos macacos a partir da wave 3.
+	# Aplicado proporcionalmente em alive_target E total — a soma macaco + dark
+	# ball bate com a quota original de monkey.
+	var dark_alive: int = 0
+	var dark_total: int = 0
+	if num >= 3 and monkey_total > 0:
+		var dark_pct: float = randf_range(0.30, 0.35)
+		dark_alive = int(round(float(monkey_alive) * dark_pct))
+		dark_total = int(round(float(monkey_total) * dark_pct))
+		monkey_alive = maxi(monkey_alive - dark_alive, 1)
+		monkey_total = maxi(monkey_total - dark_total, monkey_alive)
 	var cfg: Dictionary = {
 		"monkey": {"alive_target": maxi(monkey_alive, 1), "total": maxi(monkey_total, monkey_alive)},
 		"mage": {"alive_target": maxi(mage_alive, 1), "total": maxi(mage_total, mage_alive)},
 		"summoner_mage": {"alive_target": maxi(summ_alive, 1), "total": maxi(summ_total, summ_alive)},
 	}
+	if dark_total > 0:
+		cfg["dark_ball"] = {"alive_target": maxi(dark_alive, 1), "total": maxi(dark_total, dark_alive)}
 	if stone_total > 0:
 		cfg["stone_cube"] = {"alive_target": maxi(stone_alive, 1), "total": maxi(stone_total, stone_alive)}
 	if fire_total > 0:

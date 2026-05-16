@@ -44,6 +44,9 @@ const SOURCE_LABELS: Dictionary = {
 	"capivara_joe": "DMG_PANEL_CAPIVARA",
 	"curse_ally": "DMG_PANEL_CURSE_ALLY",
 	"frostwisp": "DMG_PANEL_FROSTWISP",
+	"dark_ball": "DMG_PANEL_DARK_BALL",
+	"dark_ball_burn": "DMG_PANEL_DARK_BALL_BURN",
+	"dark_ball_venom": "DMG_PANEL_DARK_BALL_VENOM",
 }
 
 var _panel: PanelContainer = null

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://ddlgxkvugk74j"
+path="res://.godot/imported/dark ball dash.mp3-58a9af436c55f7507483282b08805c84.mp3str"
+
+[deps]
+
+source_file="res://audios/effects/dark ball dash.mp3"
+dest_files=["res://.godot/imported/dark ball dash.mp3-58a9af436c55f7507483282b08805c84.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1007,6 +1007,9 @@ const _DEATH_SOURCE_LABELS: Dictionary = {
 	"electric_mage": "HUD_DEATH_BY_ELECTRIC_MAGE",
 	"mage_monkey": "HUD_DEATH_BY_MAGE_MONKEY",
 	"mage_monkey_beam": "HUD_DEATH_BY_MAGE_MONKEY_BEAM",
+	"dark_ball": "HUD_DEATH_BY_DARK_BALL",
+	"dark_ball_burn": "HUD_DEATH_BY_DARK_BALL_BURN",
+	"dark_ball_venom": "HUD_DEATH_BY_DARK_BALL_VENOM",
 }
 
 

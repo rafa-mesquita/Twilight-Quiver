@@ -1,0 +1,50 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/enemies/dark_ball_venom.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/effects/dash trilha.png" id="2_sheet"]
+
+[sub_resource type="CircleShape2D" id="CircleShape_venom"]
+radius = 9.0
+
+[sub_resource type="AtlasTexture" id="A_venom_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 24, 24)
+
+[sub_resource type="AtlasTexture" id="A_venom_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(24, 0, 24, 24)
+
+[sub_resource type="AtlasTexture" id="A_venom_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(48, 0, 24, 24)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_venom"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_venom_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_venom_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_venom_2")
+}],
+"loop": true,
+"name": &"default",
+"speed": 2.5
+}]
+
+[node name="DarkBallVenom" type="Area2D"]
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("1_script")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape_venom")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_venom")
+animation = &"default"
+autoplay = "default"

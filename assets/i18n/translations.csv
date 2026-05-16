@@ -106,6 +106,9 @@ HUD_DEATH_BY_MONKEY,Morto pelo golpe do macaco,Killed by the monkey's blow,Muert
 HUD_DEATH_BY_STONE_CUBE,Morto pelo cubo de pedra,Killed by the stone cube,Muerto por el cubo de piedra,Tué par le cube de pierre
 HUD_DEATH_BY_INSECT,Morto pelo cuspe do inseto,Killed by the insect's spit,Muerto por la escupida del insecto,Tué par le crachat de l'insecte
 HUD_DEATH_BY_INSECT_POISON,Morto pelo veneno do inseto,Killed by the insect's poison,Muerto por el veneno del insecto,Tué par le poison de l'insecte
+HUD_DEATH_BY_DARK_BALL,Morto pelo ataque da Dark Ball,Killed by the Dark Ball's strike,Muerto por el ataque de la Dark Ball,Tué par l'attaque de la Dark Ball
+HUD_DEATH_BY_DARK_BALL_BURN,Morto pelo veneno da Dark Ball,Killed by the Dark Ball's venom,Muerto por el veneno de la Dark Ball,Tué par le venin de la Dark Ball
+HUD_DEATH_BY_DARK_BALL_VENOM,Morto pela fumaça de veneno da Dark Ball,Killed by the Dark Ball's venom smoke,Muerto por la niebla venenosa de la Dark Ball,Tué par la brume toxique de la Dark Ball
 HUD_DEATH_BY_MAGE,Morto pelo tiro do mago,Killed by the mage's shot,Muerto por el disparo del mago,Tué par le tir du mage
 HUD_DEATH_BY_SUMMONER_MAGE,Morto pelo tiro do mago invocador,Killed by the summoner mage's shot,Muerto por el disparo del mago invocador,Tué par le tir du mage invocateur
 HUD_DEATH_BY_FIRE_MAGE,Morto pelo tiro do mago de fogo,Killed by the fire mage's shot,Muerto por el disparo del mago de fuego,Tué par le tir du mage de feu
@@ -238,7 +241,10 @@ SHOP_CRITICAL_CHANCE_DESC_4,"100% critico
 +65% daño","100% critique
 +65% dégâts"
 DMG_PANEL_BOOMERANG,Boomerang Veloz,Swift Boomerang,Bumerán Veloz,Boomerang Rapide
-DMG_PANEL_FROSTWISP,Frostwisp,Frostwisp,Frostwisp,Frostwisp
+DMG_PANEL_FROSTWISP,Brisa Gelada,Frostwisp,Frostwisp,Frostwisp
+DMG_PANEL_DARK_BALL,Dark Ball,Dark Ball,Dark Ball,Dark Ball
+DMG_PANEL_DARK_BALL_BURN,Veneno da Dark Ball,Dark Ball Venom,Veneno de Dark Ball,Venin de Dark Ball
+DMG_PANEL_DARK_BALL_VENOM,Fumaça da Dark Ball,Dark Ball Smoke,Niebla de Dark Ball,Brume de Dark Ball
 HUD_DEATH_DMG_BREAKDOWN_TITLE,Dano por fonte:,Damage by source:,Daño por fuente:,Dégâts par source :
 SHOP_BOOMERANG_DESC_1,"Cada 5s lanca no
 inimigo mais proximo
@@ -662,7 +668,7 @@ SHOP_ICE_ARROW_DESC_2,"Dobra dano do gelo (8 dps)
 + snow area slow 5.5s","Dobla daño de hielo (8 dps)
 + área lentitud 5.5s","Double dégâts glace (8 dps)
 + zone lenteur 5.5s"
-SHOP_ICE_ARROW_DESC_3,"Frostwisp aliada
+SHOP_ICE_ARROW_DESC_3,"Brisa Gelada aliada
 bombardeia área (15s)","Frostwisp ally
 bombards area (15s)","Frostwisp aliada
 bombardea zona (15s)","Frostwisp alliée

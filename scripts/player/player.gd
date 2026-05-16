@@ -326,6 +326,16 @@ var _slow_remaining: float = 0.0
 var _poison_dps: float = 0.0
 var _poison_remaining: float = 0.0
 var _poison_tick_accum: float = 0.0
+# Source ID que o poison vai atribuir no breakdown / morte. Default "insect_poison"
+# (uso original), mas a dark_ball sobrescreve via apply_poison(...,"dark_ball").
+var _poison_source_id: String = "insect_poison"
+# Cor do damage number do poison/burn ativo. Default = verde (poison_number_color);
+# dark_ball troca pra roxo via apply_poison(...,...,...,Color(...))
+var _poison_number_color_override: Color = Color(0, 0, 0, 0)  # alpha 0 = sem override
+# Se true, cada tick toca o damage_audio (mesmo som de "ai!" do hit normal).
+# Default false (insect poison é silencioso por design); dark_ball seta true
+# pra dar feedback audível enquanto o player tá em cima da poça.
+var _poison_plays_sound: bool = false
 
 # Run stats — exibidos na tela de morte. Tudo zerado em _ready.
 var _run_start_msec: int = 0
@@ -438,13 +448,27 @@ func apply_slow(multiplier: float, duration: float) -> void:
 	_slow_remaining = maxf(_slow_remaining, duration)
 
 
-func apply_poison(total_damage: float, duration: float) -> void:
+func apply_poison(total_damage: float, duration: float, source_id: String = "insect_poison", number_color_override: Color = Color(0, 0, 0, 0), plays_sound: bool = false, tick_delay: float = 0.0) -> void:
 	# Sobrescreve poison ativo se o novo for mais forte (DPS maior) ou refresca duração.
+	# source_id controla atribuição no breakdown + death screen ("insect_poison"
+	# por default; dark_ball passa "dark_ball" pra ficar agrupado com o impacto).
+	# number_color_override (alpha > 0) substitui a cor verde padrão do número.
+	# plays_sound = true: cada tick toca o damage_audio do player (dark_ball usa).
+	# tick_delay > 0: atrasa o PRIMEIRO tick por X segundos (dá janela pro
+	# player dodgar/dashar e escapar antes de começar a tickar). Duration
+	# continua decrementando durante o delay (perde tempo de tick efetivo).
 	if is_dead or duration <= 0.0:
 		return
 	var new_dps: float = total_damage / duration
 	if new_dps > _poison_dps or _poison_remaining <= 0.0:
 		_poison_dps = new_dps
+		_poison_source_id = source_id
+		_poison_number_color_override = number_color_override
+		_poison_plays_sound = plays_sound
+		# Reseta o accum pra negativo do delay — primeiro tick só fira após
+		# atingir POISON_TICK_INTERVAL, então delay + 0.5s no total.
+		if tick_delay > 0.0:
+			_poison_tick_accum = -tick_delay
 	_poison_remaining = maxf(_poison_remaining, duration)
 
 
@@ -470,17 +494,20 @@ func _update_status_effects(delta: float) -> void:
 
 
 func _apply_poison_tick(amount: float) -> void:
-	# Dano silencioso: sem flash/som/damage_effect — só hp-, hp_bar, e damage number verde.
+	# Por default silencioso (insect): só hp-, hp_bar, damage number. Com
+	# _poison_plays_sound = true (dark_ball), toca damage_audio a cada tick.
 	if is_dead or amount <= 0.0:
 		return
 	hp = maxf(hp - amount, 0.0)
-	notify_damage_taken(amount, "insect_poison")
+	notify_damage_taken(amount, _poison_source_id)
 	hp_changed.emit(hp, max_hp)
 	if hp_bar != null:
 		hp_bar.set_ratio(hp / max_hp)
 	_spawn_poison_number(amount)
+	if _poison_plays_sound and damage_audio != null:
+		damage_audio.play()
 	if hp == 0.0:
-		stats_killed_by = "insect_poison"
+		stats_killed_by = _poison_source_id
 		_die()
 
 
@@ -489,7 +516,8 @@ func _spawn_poison_number(amount: float) -> void:
 		return
 	var num := damage_number_scene.instantiate()
 	num.amount = int(round(amount))
-	num.modulate = poison_number_color
+	# Source overrides cor; senão default verde (poison clássico do inseto).
+	num.modulate = _poison_number_color_override if _poison_number_color_override.a > 0.0 else poison_number_color
 	num.position = global_position + Vector2(0, -26)
 	get_tree().current_scene.add_child(num)
 
@@ -1079,23 +1107,11 @@ func _chain_bonus_chance() -> float:
 	return 0.0
 
 
-# Contador global de hits pra gating de proc do chain L1 (proca a cada 2 hits).
-# Global em vez de per-arrow pra que volleys multi-arrow não driblem o gate.
-var _chain_proc_counter: int = 0
-
-
 func consume_chain_proc_token() -> bool:
-	# Retorna true se este hit deve gerar chain lightning. L1 = a cada 2 hits;
-	# L2+ = todo hit. Chamado pelo arrow antes de procar.
-	if chain_lightning_level <= 0:
-		return false
-	if chain_lightning_level >= 2:
-		return true
-	_chain_proc_counter += 1
-	if _chain_proc_counter >= 2:
-		_chain_proc_counter = 0
-		return true
-	return false
+	# Retorna true se este hit deve gerar chain lightning. Todo nível proca em
+	# todo hit (gate "uma cadeia por flecha" é feito no próprio arrow.gd via
+	# _chain_proc_used — não precisa de throttle global aqui).
+	return chain_lightning_level > 0
 
 
 func _perf_damage_bonus() -> float:
