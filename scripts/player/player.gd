@@ -610,6 +610,9 @@ func _release_arrow() -> void:
 	# nesse ataque (incluindo as delayed do double_arrows) compartilham o id —
 	# lv1-3 do Esquivando bloqueia stacks adicionais do mesmo volley_id.
 	_esquivando_volley_id += 1
+	# Chain lightning: novo ataque libera o token global (primeira flecha que
+	# acertar proca; demais multi-arrow/ricochete não procam mais).
+	reset_chain_attack_token()
 	# Decisão de pierce é feita UMA VEZ por ataque — a volley inteira de
 	# Multiple Arrows compartilha o mesmo flag (ex: lv perfuração 1 + multi lv1
 	# = a cada 3º ataque, as 3 flechas perfuram juntas).
@@ -1107,11 +1110,28 @@ func _chain_bonus_chance() -> float:
 	return 0.0
 
 
+# Gate global: cada ATAQUE (volley inteiro) só proca cadeia uma vez. Resetado
+# em _release_arrow e na dash auto-attack quando uma volley nova começa.
+# Primeira flecha que acertar (multi-arrow, ricochete, ou flecha base) consome
+# o token; as outras do mesmo ataque não procam mais.
+var _chain_attack_used: bool = false
+
+
 func consume_chain_proc_token() -> bool:
-	# Retorna true se este hit deve gerar chain lightning. Todo nível proca em
-	# todo hit (gate "uma cadeia por flecha" é feito no próprio arrow.gd via
-	# _chain_proc_used — não precisa de throttle global aqui).
-	return chain_lightning_level > 0
+	# Retorna true se este hit deve gerar chain lightning. Gate global por
+	# ataque — primeira flecha do volley que conectar reserva a cadeia.
+	if chain_lightning_level <= 0:
+		return false
+	if _chain_attack_used:
+		return false
+	_chain_attack_used = true
+	return true
+
+
+func reset_chain_attack_token() -> void:
+	# Chamado por _release_arrow (e dash auto-attack) quando uma volley nova
+	# começa — libera o token pra próxima cadeia.
+	_chain_attack_used = false
 
 
 func _perf_damage_bonus() -> float:
@@ -1725,6 +1745,8 @@ func _dash_auto_attack_volley() -> void:
 	# acontecendo durante dash, é mecanicamente um disparo "novo" — não compartilha
 	# id com a volley manual anterior.)
 	_esquivando_volley_id += 1
+	# Chain lightning: novo ataque libera o token global.
+	reset_chain_attack_token()
 	var target: Node2D = _find_nearest_enemy()
 	if target == null:
 		return
