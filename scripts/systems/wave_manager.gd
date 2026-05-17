@@ -425,11 +425,13 @@ func _build_wave_config(num: int) -> Dictionary:
 	# sendo a wave mais punitiva da curva inicial.
 	var reduction: float = 0.87
 	if num == 3:
-		reduction = 0.72
+		reduction = 0.62
+	elif num == 4:
+		reduction = 0.74
 	elif num == 5:
-		reduction = 0.76
+		reduction = 0.66
 	elif num == 6:
-		reduction = 0.72
+		reduction = 0.62
 	var scale: float = (1.0 + (num - 1) * 0.35) * reduction
 	var monkey_alive: int = int(round(5 * scale + randf_range(-1.0, 2.0)))
 	var monkey_total: int = int(round(15 * scale + randf_range(0.0, 4.0)))
@@ -499,13 +501,17 @@ func _build_wave_config(num: int) -> Dictionary:
 		var elec_step: int = (num - 10) / 2
 		elec_alive = mini(2 + elec_step, 4)
 		elec_total = mini(3 + elec_step, 6)
-	# Dark Ball substitui 30-35% dos macacos a partir da wave 3.
+	# Dark Ball cadência:
+	#   Wave 6: estreia (20% dos macacos).
+	#   Wave 9, 12, 15, 18...: a cada 3 waves (também 20%).
+	#   Wave 7/14 (boss): pula via configs hardcoded.
 	# Aplicado proporcionalmente em alive_target E total — a soma macaco + dark
 	# ball bate com a quota original de monkey.
 	var dark_alive: int = 0
 	var dark_total: int = 0
-	if num >= 3 and monkey_total > 0:
-		var dark_pct: float = randf_range(0.30, 0.35)
+	var dark_ball_wave: bool = num == 6 or (num >= 9 and num % 3 == 0)
+	if dark_ball_wave and monkey_total > 0:
+		var dark_pct: float = 0.20
 		dark_alive = int(round(float(monkey_alive) * dark_pct))
 		dark_total = int(round(float(monkey_total) * dark_pct))
 		monkey_alive = maxi(monkey_alive - dark_alive, 1)

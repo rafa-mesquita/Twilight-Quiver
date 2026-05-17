@@ -108,6 +108,14 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		move_and_slide()
 		return
+	# Freeze: FreezeDebuff só zera `speed`, mas a dark ball usa `dash_speed`
+	# quando em dash. Sem este block, ela continuava dashando congelada.
+	if _is_frozen():
+		if _is_dashing:
+			_exit_dash()
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
 	# Timer do "post-attack walk": bloqueia dash + ataque até zerar.
 	if _post_attack_remaining > 0.0:
 		_post_attack_remaining = maxf(_post_attack_remaining - delta, 0.0)
@@ -183,6 +191,9 @@ func _physics_process(delta: float) -> void:
 
 
 func _pick_target() -> Node2D:
+	# Curse ally: inverte alvo — busca enemies em vez de player/structure.
+	if is_curse_ally:
+		return _pick_curse_ally_target()
 	# Player vivo + perto = alvo prioritário. Se player longe ou morto, vai pra
 	# torre/aliado mais próximo (mesma lógica do monkey).
 	if player != null and is_instance_valid(player):
@@ -209,6 +220,20 @@ func _pick_target() -> Node2D:
 		return nearest
 	# Sem alvo válido — fica no player se existe (mesmo longe).
 	return player
+
+
+func _pick_curse_ally_target() -> Node2D:
+	# Quando convertido pela maldição: busca enemy mais próximo no mapa.
+	var nearest: Node2D = null
+	var best_dist: float = INF
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not is_instance_valid(e) or not (e is Node2D):
+			continue
+		var d: float = global_position.distance_to((e as Node2D).global_position)
+		if d < best_dist:
+			nearest = e
+			best_dist = d
+	return nearest
 
 
 func _enter_dash() -> void:
@@ -597,3 +622,10 @@ func apply_stun(duration: float) -> void:
 func _get_world() -> Node:
 	var w := get_tree().get_first_node_in_group("world")
 	return w if w != null else get_tree().current_scene
+
+
+func _is_frozen() -> bool:
+	for c in get_children():
+		if c is FreezeDebuff:
+			return true
+	return false
