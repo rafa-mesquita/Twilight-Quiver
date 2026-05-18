@@ -59,7 +59,7 @@ offset = Vector2(0, -16)
 [node name="PartyHat" type="Sprite2D" parent="."]
 texture_filter = 1
 visible = false
-position = Vector2(0, -12)
+position = Vector2(0, -14)
 z_index = 12
 texture = ExtResource("2_hat")
 script = ExtResource("3_hat_script")

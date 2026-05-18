@@ -340,7 +340,7 @@ bus = &"SFX"
 [node name="PartyHat" type="Sprite2D" parent="."]
 texture_filter = 1
 visible = false
-position = Vector2(0, -12)
+position = Vector2(0, -14)
 z_index = 12
 texture = ExtResource("10_hat")
 script = ExtResource("11_hat_script")
