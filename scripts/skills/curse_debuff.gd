@@ -14,12 +14,19 @@ extends Node
 @export var tick_interval: float = 0.5
 
 const SILHOUETTE_SHADER: Shader = preload("res://shaders/silhouette.gdshader")
+const CURSE_VISUAL_SCRIPT: Script = preload("res://scripts/effects/curse_visual.gd")
+# Cor exata do link de propagação (#ac7dd8) — mesma vibe roxa do debuff.
+const CHAIN_LINK_COLOR: Color = Color(0xac / 255.0, 0x7d / 255.0, 0xd8 / 255.0, 1.0)
+const CURSE_PASS_SOUND: AudioStream = preload("res://audios/effects/curse pass effect.mp3")
+const CURSE_PASS_SOUND_VOL_DB: float = -14.0
+const CURSE_PASS_SOUND_MAX_DURATION: float = 2.0
 
 var _remaining: float = 0.0
 var _tick_accum: float = 0.0
 var _original_speed: float = -1.0
 var _purple_number_color: Color = Color(0.78, 0.45, 1.0, 1.0)
 var _purple_flash_color: Color = Color(0.7, 0.3, 1.0, 0.75)
+var _visual: Node2D = null
 # Cached refs pra propagação: quando o parent morre, tree_exiting dispara e
 # get_tree()/is_inside_tree() podem retornar null/false. Cachear no _ready
 # (enquanto estamos garantidamente na árvore) garante acesso na propagação.
@@ -40,12 +47,14 @@ func _ready() -> void:
 	var parent: Node = get_parent()
 	if parent != null:
 		parent.tree_exiting.connect(_on_parent_exiting)
+	_spawn_visual()
 
 
 func _process(delta: float) -> void:
 	_remaining -= delta
 	if _remaining <= 0.0:
 		_restore_speed()
+		_clear_visual()
 		queue_free()
 		return
 	_tick_accum += delta
@@ -180,7 +189,28 @@ func _find_sprite_in(node: Node) -> Node2D:
 # direto não chama _restore_speed; só o _process com _remaining<=0 chama).
 func release() -> void:
 	_restore_speed()
+	_clear_visual()
 	queue_free()
+
+
+func _spawn_visual() -> void:
+	# Sprite animado (4 frames em loop) sinalizando o debuff ativo. Filho do
+	# parent — segue posição e free junto. Só um por inimigo.
+	var parent: Node = get_parent()
+	if parent == null or not (parent is Node2D):
+		return
+	if _visual != null and is_instance_valid(_visual):
+		return
+	var v: Node2D = Node2D.new()
+	v.set_script(CURSE_VISUAL_SCRIPT)
+	parent.add_child(v)
+	_visual = v
+
+
+func _clear_visual() -> void:
+	if _visual != null and is_instance_valid(_visual):
+		_visual.queue_free()
+	_visual = null
 
 
 func _on_parent_exiting() -> void:
@@ -234,7 +264,59 @@ func _propagate_to_nearest(origin: Vector2, exclude: Node, count: int, tree: Sce
 		if applied >= count:
 			break
 		_apply_curse_to_target(entry["node"])
+		_spawn_chain_link(origin, (entry["node"] as Node2D).global_position, tree)
 		applied += 1
+	if applied > 0:
+		_play_curse_pass_sound(origin, tree)
+
+
+func _play_curse_pass_sound(pos: Vector2, tree: SceneTree) -> void:
+	# Toca uma vez por propagação (não por alvo) — em lv3+ com 2 alvos, um som
+	# só. Limitado aos primeiros 2s do clip.
+	if tree == null or tree.current_scene == null:
+		return
+	var p := AudioStreamPlayer2D.new()
+	p.bus = &"SFX"
+	p.stream = CURSE_PASS_SOUND
+	p.volume_db = CURSE_PASS_SOUND_VOL_DB
+	tree.current_scene.add_child(p)
+	p.global_position = pos
+	p.play()
+	var ref: AudioStreamPlayer2D = p
+	tree.create_timer(CURSE_PASS_SOUND_MAX_DURATION).timeout.connect(func() -> void:
+		if is_instance_valid(ref):
+			ref.stop()
+			ref.queue_free()
+	)
+
+
+func _spawn_chain_link(from: Vector2, to: Vector2, tree: SceneTree) -> void:
+	# Linha #ac7dd8 com zigue-zague leve do inimigo morto pro novo alvo. Fade
+	# rápido (~0.35s) — só pra marcar visualmente o salto da maldição.
+	if tree == null or tree.current_scene == null:
+		return
+	var dir: Vector2 = to - from
+	if dir.length() < 0.01:
+		return
+	var perp: Vector2 = Vector2(-dir.y, dir.x).normalized()
+	var line := Line2D.new()
+	line.width = 2.4
+	line.default_color = CHAIN_LINK_COLOR
+	line.z_index = 8
+	line.joint_mode = Line2D.LINE_JOINT_ROUND
+	var segments: int = 6
+	for i in segments + 1:
+		var t: float = float(i) / float(segments)
+		var p: Vector2 = from.lerp(to, t)
+		if i > 0 and i < segments:
+			p += perp * randf_range(-4.5, 4.5)
+		line.add_point(p)
+	tree.current_scene.add_child(line)
+	line.global_position = Vector2.ZERO  # add_point usa coords absolutas
+	var tw := line.create_tween()
+	tw.tween_property(line, "modulate:a", 0.0, 0.35)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tw.tween_callback(line.queue_free)
 
 
 func _has_curse_debuff(node: Node) -> bool:

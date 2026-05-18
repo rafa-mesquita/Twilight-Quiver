@@ -499,6 +499,10 @@ func _apply_poison_tick(amount: float) -> void:
 	if is_dead or amount <= 0.0:
 		return
 	hp = maxf(hp - amount, 0.0)
+	# Mesmo clamp da take_damage — ticks de poison costumam ser fracionários
+	# (dps * tick_interval com float), então sub-1 HP é morte certa.
+	if hp < 1.0:
+		hp = 0.0
 	notify_damage_taken(amount, _poison_source_id)
 	hp_changed.emit(hp, max_hp)
 	if hp_bar != null:
@@ -506,7 +510,7 @@ func _apply_poison_tick(amount: float) -> void:
 	_spawn_poison_number(amount)
 	if _poison_plays_sound and damage_audio != null:
 		damage_audio.play()
-	if hp == 0.0:
+	if hp <= 0.0:
 		stats_killed_by = _poison_source_id
 		_die()
 
@@ -2437,6 +2441,11 @@ func take_damage(amount: float, source_id: String = "") -> void:
 	# pra a UI mostrar o que de fato saiu do HP do player.
 	var reduced: float = amount * (1.0 - damage_reduction_pct)
 	hp = maxf(hp - reduced, 0.0)
+	# Clamp de float dust: dano fracionário (ex: armor 12% reduzindo 10 → 8.8)
+	# pode deixar hp em valores tipo 0.2 — UI mostra "0" mas o check de morte
+	# (== 0.0) nunca dispara. Sub-1 HP é morte certa.
+	if hp < 1.0:
+		hp = 0.0
 	notify_damage_taken(reduced, source_id)
 	hp_changed.emit(hp, max_hp)
 	hp_bar.set_ratio(hp / max_hp)
@@ -2445,7 +2454,7 @@ func take_damage(amount: float, source_id: String = "") -> void:
 	_spawn_damage_number(reduced)
 	if damage_audio != null:
 		damage_audio.play()
-	if hp == 0.0:
+	if hp <= 0.0:
 		stats_killed_by = source_id if not source_id.is_empty() else "unknown"
 		_die()
 

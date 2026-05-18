@@ -171,6 +171,12 @@ const GRAVITON_DESCS: Array[String] = [
 	"SHOP_GRAVITON_DESC_3",
 	"SHOP_GRAVITON_DESC_4",
 ]
+const WOODWARDEN_DESCS: Array[String] = [
+	"SHOP_WW_DESC_1",
+	"SHOP_WW_DESC_2",
+	"SHOP_WW_DESC_3",
+	"SHOP_WW_DESC_4",
+]
 const LENO_DESCS: Array[String] = [
 	"SHOP_LENO_DESC_1",
 	"SHOP_LENO_DESC_2",
@@ -336,9 +342,9 @@ func _ready() -> void:
 		next_wn = wn + 1
 		if wn == 3 or (wn >= 4 and wn % 2 == 0):
 			max_upgrades_this_round = 2
-		# Wave 3: dá pet grátis aleatório (Woodwarden ou Leno) antes do roll.
-		if wn == ALIADO_FREE_PET_WAVE:
-			_grant_free_random_pet()
+		# Wave 3: pet grátis aleatório é entregue ANTES do shop abrir pelo
+		# wave_manager._grant_free_random_pet (que mostra popup com card art).
+		# Chamada antiga aqui removida pra não duplicar o grant.
 	continue_btn.text = tr("SHOP_NEXT_WAVE_FMT") % next_wn
 	continue_btn.pressed.connect(_on_continue_pressed)
 	global_reroll_btn.pressed.connect(_on_global_reroll)
@@ -373,29 +379,6 @@ func _start_free_tower_placement() -> void:
 	_placement_queue.clear()
 	_placement_queue.append({"type": "estrutura", "slot": free_slot, "free": true})
 	_process_next_placement()
-
-
-func _grant_free_random_pet() -> void:
-	# Sorteia entre os pets ainda não maxados e aplica via player.apply_upgrade.
-	var p := _get_player()
-	if p == null or not p.has_method("apply_upgrade"):
-		return
-	var pets: Array[String] = []
-	if p.has_method("get_upgrade_count"):
-		if p.get_upgrade_count("woodwarden") < 4:
-			pets.append("woodwarden")
-		if p.get_upgrade_count("leno") < 4:
-			pets.append("leno")
-		if p.get_upgrade_count("capivara_joe") < 4:
-			pets.append("capivara_joe")
-		if p.get_upgrade_count("ting") < 4:
-			pets.append("ting")
-	else:
-		pets = ["woodwarden", "leno", "capivara_joe", "ting"]
-	if pets.is_empty():
-		return
-	var pick: String = pets[randi() % pets.size()]
-	p.apply_upgrade(pick)
 
 
 func _process(_delta: float) -> void:
@@ -966,6 +949,7 @@ func _get_upgrade_descs_array(id: String) -> Array:
 		"critical_chance": return CRITICAL_CHANCE_DESCS
 		"ricochet_arrow": return RICOCHET_ARROW_DESCS
 		"graviton": return GRAVITON_DESCS
+		"woodwarden": return WOODWARDEN_DESCS
 		"leno": return LENO_DESCS
 		"capivara_joe": return CAPIVARA_JOE_DESCS
 		"ting": return TING_DESCS

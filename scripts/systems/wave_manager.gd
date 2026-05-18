@@ -919,6 +919,11 @@ func _cleanup_curse_allies() -> void:
 		await _grant_free_random_upgrade()
 		if stopped:
 			return
+	# Pet grátis após wave 3 (antes do shop pra wave 4). Mostra popup do card.
+	if wave_number == 3:
+		await _grant_free_random_pet()
+		if stopped:
+			return
 	# Loja pós-wave: 1 estrutura + 1 upgrade max.
 	await _open_shop()
 	if stopped:
@@ -1176,12 +1181,75 @@ func _grant_free_random_upgrade() -> void:
 		return
 	var pick: Dictionary = pool[randi() % pool.size()]
 	player.apply_upgrade(pick["id"])
-	await _show_free_upgrade_popup(pick["name"])
+	var lvl: int = 1
+	if player.has_method("get_upgrade_count"):
+		lvl = int(player.get_upgrade_count(pick["id"]))
+	await _show_card_reward_popup(pick["id"], lvl, "HUD_FREE_UPGRADE_TITLE", pick["name"])
 
 
-func _show_free_upgrade_popup(name_key: String) -> void:
-	# Popup procedural mostrando o upgrade ganho. Click ou ENTER fecha.
-	# name_key é uma translation key — vem do FREE_UPGRADE_POOL.
+# IDs cujos cards moram em pastas diferentes (subfolder ou nome PT). Mantido em
+# sync com wave_shop.CARD_PATH_OVERRIDES — qualquer mudança lá precisa refletir
+# aqui pra o popup de free reward achar a mesma arte que o shop.
+const FREE_REWARD_CARD_PATHS: Dictionary = {
+	"leno": "res://assets/Hud/shop/aliado/Leno/Leno Card.png",
+	"woodwarden": "res://assets/Hud/shop/aliado/woodwarden/woodwarden card.png",
+	"ting": "res://assets/Hud/shop/aliado/ting/ting card.png",
+	"capivara_joe": "res://assets/Hud/shop/aliado/capivara joe/capivara joe card.png",
+	"graviton": "res://assets/Hud/shop/upgrade/graviton/graviton card-Sheet.png",
+	"ricochet_arrow": "res://assets/Hud/shop/upgrade/ricochete.png",
+	"gold_magnet": "res://assets/Hud/shop/upgrade/coin master.png",
+	"life_steal": "res://assets/Hud/shop/upgrade/life steal.png",
+	"fire_arrow": "res://assets/Hud/shop/upgrade/fire_arrow2.png",
+	"ice_arrow": "res://assets/Hud/shop/upgrade/ice arrow/sangue frio card design-Sheet.png",
+	"boomerang": "res://assets/Hud/shop/upgrade/boomerang/boomerang card design.png",
+	"critical_chance": "res://assets/Hud/shop/upgrade/flechas criticas/felchas criticas card design.png",
+	"dash": "res://assets/Hud/shop/upgrade/deslizando.png",
+	"esquivando": "res://assets/Hud/shop/upgrade/deslizando.png",
+	"double_arrows": "res://assets/Hud/shop/upgrade/multi_arrow.png",
+}
+const FREE_REWARD_STATUS_SHEET: String = "res://assets/Hud/shop/status/HP - atck speed - Move speed - Atck Dmg.png"
+const FREE_REWARD_STATUS_ROWS: Dictionary = {"hp": 0, "attack_speed": 1, "move_speed": 2, "damage": 3}
+const FREE_REWARD_ALIADO_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe", "ting"]
+const FREE_REWARD_STATUS_IDS: Array[String] = ["hp", "damage", "attack_speed", "move_speed", "armor"]
+
+
+func _grant_free_random_pet() -> void:
+	# Sorteia entre os pets ainda não maxados (4 = max). Espelha a lógica antiga
+	# de wave_shop._grant_free_random_pet — agora roda em wave_manager pra usar
+	# o popup com card art ANTES do shop abrir.
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not player.has_method("apply_upgrade"):
+		return
+	var pets: Array[String] = []
+	if player.has_method("get_upgrade_count"):
+		for pid in FREE_REWARD_ALIADO_IDS:
+			if int(player.get_upgrade_count(pid)) < 4:
+				pets.append(pid)
+	else:
+		pets = FREE_REWARD_ALIADO_IDS.duplicate()
+	if pets.is_empty():
+		return
+	var pick: String = pets[randi() % pets.size()]
+	player.apply_upgrade(pick)
+	var lvl: int = 1
+	if player.has_method("get_upgrade_count"):
+		lvl = int(player.get_upgrade_count(pick))
+	var name_key: String = "SHOP_ALLY_WOODWARDEN"
+	for entry in FREE_UPGRADE_POOL:
+		if entry["id"] == pick:
+			name_key = entry["name"]
+			break
+	await _show_card_reward_popup(pick, lvl, "HUD_FREE_PET_TITLE", name_key)
+
+
+func _show_card_reward_popup(slot_id: String, target_level: int, title_key: String, name_key: String) -> void:
+	# Popup procedural mostrando o card do upgrade/ally ganho com animação de
+	# scale-up (overshoot pra dar sensação de "PRESENTE!"). Click no botão fecha.
+	var category: String = _reward_detect_category(slot_id)
+	var card_tex: Texture2D = _reward_load_card_texture(slot_id, category, target_level)
+	var is_landscape: bool = (category == "status" or category == "estrutura")
+	var card_size: Vector2 = Vector2(520, 136) if is_landscape else Vector2(304, 376)
+
 	var layer := CanvasLayer.new()
 	layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	layer.layer = 50
@@ -1191,41 +1259,128 @@ func _show_free_upgrade_popup(name_key: String) -> void:
 	bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	layer.add_child(bg)
 	var at01_font: Font = load("res://font/ByteBounce.ttf")
+
 	var title := Label.new()
 	title.set_anchors_preset(Control.PRESET_CENTER)
-	title.position = Vector2(-800, -220)
+	title.position = Vector2(-800, -360)
 	title.size = Vector2(1600, 100)
-	title.text = tr("HUD_FREE_UPGRADE_TITLE")
+	title.text = tr(title_key)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3, 1.0))
 	if at01_font != null:
 		title.add_theme_font_override("font", at01_font)
 	title.add_theme_font_size_override("font_size", 64)
 	bg.add_child(title)
+
+	# Card art centrado. Pivot no meio pro scale animar do centro.
+	var card := TextureRect.new()
+	card.set_anchors_preset(Control.PRESET_CENTER)
+	card.position = -card_size * 0.5
+	card.position.y += -20  # leve subida pra dar espaço pro name+btn embaixo
+	card.size = card_size
+	card.texture = card_tex
+	card.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	card.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	card.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	card.pivot_offset = card_size * 0.5
+	card.scale = Vector2(0.1, 0.1)
+	card.modulate.a = 0.0
+	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bg.add_child(card)
+
 	var name_label := Label.new()
 	name_label.set_anchors_preset(Control.PRESET_CENTER)
-	name_label.position = Vector2(-800, -90)
-	name_label.size = Vector2(1600, 140)
+	var name_y: float = card_size.y * 0.5 + 0  # card termina aqui (já offsetado -20)
+	name_label.position = Vector2(-800, name_y)
+	name_label.size = Vector2(1600, 80)
 	name_label.text = "+ %s" % tr(name_key)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	name_label.add_theme_color_override("font_color", Color.WHITE)
 	if at01_font != null:
 		name_label.add_theme_font_override("font", at01_font)
-	name_label.add_theme_font_size_override("font_size", 96)
+	name_label.add_theme_font_size_override("font_size", 64)
+	name_label.modulate.a = 0.0
 	bg.add_child(name_label)
+
 	var btn := Button.new()
 	btn.set_anchors_preset(Control.PRESET_CENTER)
-	btn.position = Vector2(-200, 100)
+	btn.position = Vector2(-200, name_y + 90)
 	btn.size = Vector2(400, 64)
 	btn.text = tr("COMMON_CONTINUE")
 	if at01_font != null:
 		btn.add_theme_font_override("font", at01_font)
 	btn.add_theme_font_size_override("font_size", 48)
+	btn.modulate.a = 0.0
+	btn.disabled = true  # evita click acidental durante animação
 	bg.add_child(btn)
+
 	get_tree().current_scene.add_child(layer)
+
+	# Animação: card cresce com overshoot, depois name + btn aparecem.
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(card, "modulate:a", 1.0, 0.08)
+	tw.tween_property(card, "scale", Vector2.ONE, 0.45)\
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.chain()
+	tw.tween_property(name_label, "modulate:a", 1.0, 0.22)
+	tw.parallel().tween_property(btn, "modulate:a", 1.0, 0.22)
+	tw.chain()
+	tw.tween_callback(func() -> void:
+		if is_instance_valid(btn):
+			btn.disabled = false
+	)
+
 	await btn.pressed
 	if is_instance_valid(layer):
 		layer.queue_free()
+
+
+func _reward_detect_category(slot_id: String) -> String:
+	if FREE_REWARD_ALIADO_IDS.has(slot_id):
+		return "aliado"
+	if FREE_REWARD_STATUS_IDS.has(slot_id):
+		return "status"
+	return "upgrade"
+
+
+func _reward_load_card_texture(slot_id: String, category: String, target_level: int) -> Texture2D:
+	# Status usa sheet combinado (1 PNG com várias linhas = ids, várias colunas = níveis).
+	if category == "status" and FREE_REWARD_STATUS_ROWS.has(slot_id):
+		var sheet_tex: Texture2D = load(FREE_REWARD_STATUS_SHEET) as Texture2D
+		if sheet_tex != null:
+			var atlas_s := AtlasTexture.new()
+			atlas_s.atlas = sheet_tex
+			var fw_s: int = 65
+			var fh_s: int = 17
+			var cols_s: int = maxi(1, int(sheet_tex.get_width() / fw_s))
+			var col_s: int = clampi(target_level - 1, 0, cols_s - 1)
+			var row_s: int = int(FREE_REWARD_STATUS_ROWS[slot_id])
+			atlas_s.region = Rect2(col_s * fw_s, row_s * fh_s, fw_s, fh_s)
+			return atlas_s
+	# Override path (assets fora do padrão `<category>/<id>.png`).
+	var path: String = ""
+	if FREE_REWARD_CARD_PATHS.has(slot_id):
+		path = FREE_REWARD_CARD_PATHS[slot_id]
+	else:
+		path = "res://assets/Hud/shop/%s/%s.png" % [category, slot_id]
+	if not ResourceLoader.exists(path):
+		return null
+	var tex: Texture2D = load(path) as Texture2D
+	if tex == null:
+		return null
+	# Atlas pro frame do nível atual (col=level-1, 1 row só pra upgrade/aliado).
+	var fw: int = 38
+	var fh: int = 47
+	if category == "status" or category == "estrutura":
+		fw = 65
+		fh = 17
+	var frame_count: int = maxi(1, int(tex.get_width() / fw))
+	var frame_idx: int = clampi(target_level - 1, 0, frame_count - 1)
+	var atlas := AtlasTexture.new()
+	atlas.atlas = tex
+	atlas.region = Rect2(frame_idx * fw, 0, fw, fh)
+	return atlas
 
 
 # ---------- Boss intro cinematic (waves 7 e 14) ----------

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dg6ql1osuonom"
+path="res://.godot/imported/curse pass effect.mp3-cdb3fbe24b2041f6e82a0d15143523ea.mp3str"
+
+[deps]
+
+source_file="res://audios/effects/curse pass effect.mp3"
+dest_files=["res://.godot/imported/curse pass effect.mp3-cdb3fbe24b2041f6e82a0d15143523ea.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
