@@ -113,6 +113,11 @@ var _capivara_atk_speed_buff_remaining: float = 0.0
 const TING_SCENE: PackedScene = preload("res://scenes/allies/ting.tscn")
 var ting_level: int = 0
 var _tings: Array[Node2D] = []
+const MINI_MAGO_SCENE: PackedScene = preload("res://scenes/allies/mini_mago.tscn")
+# Mini Mago: framework preparado, upgrades a desenhar. Placeholder = 1 instância
+# por compra, sem level-specific behavior ainda.
+var mini_mago_level: int = 0
+var _mini_magos: Array[Node2D] = []
 # Contador de magos mortos na wave atual — torreta do Ting ganha +1% atk speed
 # por mago morto. Reset no _ready de cada wave pelo wave_manager.
 var _mages_killed_this_wave: int = 0
@@ -1929,6 +1934,9 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"ting":
 			ting_level = mini(ting_level + 1, 4)
 			_refresh_tings()
+		"mini_mago":
+			mini_mago_level = mini(mini_mago_level + 1, 4)
+			_refresh_mini_magos()
 		"woodwarden":
 			# Cada compra: +1 level (max 4). Sobe stats em todos os existentes
 			# e spawna 1 novo woodwarden no player se ainda não tem todos.
@@ -2025,6 +2033,7 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"leno": return leno_level
 		"capivara_joe": return capivara_joe_level
 		"ting": return ting_level
+		"mini_mago": return mini_mago_level
 		"gold_magnet": return gold_magnet_level
 		"dash": return dash_level
 		"esquivando": return esquivando_level
@@ -2182,6 +2191,56 @@ func _cleanup_tings() -> void:
 		if is_instance_valid(t):
 			t.queue_free()
 	_tings.clear()
+
+
+# Mini Mago — 1 instância sempre. Por nível:
+#   L1: cast 8s, 1 macaco, sem buff.
+#   L2: cast 6s, 1 macaco, +25% HP/dano/atk speed/move speed nos macacos.
+#   L3: cast 6s, 2 macacos, mesmos buffs.
+#   L4: cast 6s, 3 macacos, mesmos buffs.
+func _refresh_mini_magos() -> void:
+	var target_count: int = 1 if mini_mago_level >= 1 else 0
+	var summon_interval: float = 8.0 if mini_mago_level <= 1 else 6.0
+	var monkey_count: int = 1
+	if mini_mago_level >= 4:
+		monkey_count = 3
+	elif mini_mago_level >= 3:
+		monkey_count = 2
+	var buff_mult: float = 1.0 if mini_mago_level <= 1 else 1.25
+	var alive: Array[Node2D] = []
+	for m in _mini_magos:
+		if is_instance_valid(m):
+			alive.append(m)
+	_mini_magos = alive
+	while _mini_magos.size() < target_count:
+		var mm: Node2D = MINI_MAGO_SCENE.instantiate()
+		_mini_magos.append(mm)
+		_get_world().add_child(mm)
+		if "wander_bounds" in mm:
+			var b: Rect2 = mm.wander_bounds
+			mm.global_position = Vector2(
+				randf_range(b.position.x, b.position.x + b.size.x),
+				randf_range(b.position.y, b.position.y + b.size.y)
+			)
+	while _mini_magos.size() > target_count:
+		var extra: Node2D = _mini_magos.pop_back()
+		if is_instance_valid(extra):
+			extra.queue_free()
+	# Aplica stats nas instâncias existentes (upgrade mid-game reflete no próximo cast).
+	for m in _mini_magos:
+		if "summon_interval" in m:
+			m.summon_interval = summon_interval
+		if "monkey_count" in m:
+			m.monkey_count = monkey_count
+		if "monkey_buff_mult" in m:
+			m.monkey_buff_mult = buff_mult
+
+
+func _cleanup_mini_magos() -> void:
+	for m in _mini_magos:
+		if is_instance_valid(m):
+			m.queue_free()
+	_mini_magos.clear()
 
 
 func get_mages_killed_this_wave() -> int:
@@ -2372,6 +2431,9 @@ func reset_pet(id: String) -> void:
 		"ting":
 			ting_level = 0
 			_cleanup_tings()
+		"mini_mago":
+			mini_mago_level = 0
+			_cleanup_mini_magos()
 
 
 func _compute_damage_reduction(level: int) -> float:
@@ -2472,6 +2534,7 @@ func _die() -> void:
 	_cleanup_woodwardens()
 	_cleanup_capivaras()
 	_cleanup_tings()
+	_cleanup_mini_magos()
 	_stop_world_audio()
 	# Som de morte tem que vir DEPOIS do _stop_world_audio pra não ser cortado.
 	# Anexa no scene root (fora do "world") pra sobreviver à animação de morte.

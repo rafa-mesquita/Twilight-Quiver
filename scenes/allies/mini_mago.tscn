@@ -1,0 +1,119 @@
+[gd_scene format=3 uid="uid://b3lviwcbii12a"]
+
+[ext_resource type="Script" uid="uid://dbyb8lx20ekid" path="res://scripts/allies/mini_mago.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/monkey_enemy.tscn" id="2_monkey"]
+[ext_resource type="Texture2D" uid="uid://dx7m4n2pqr8wb" path="res://assets/aliados/mamago/mini-mago.png" id="3_sheet"]
+
+[sub_resource type="AtlasTexture" id="A_cast_0"]
+atlas = ExtResource("3_sheet")
+region = Rect2(0, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_cast_1"]
+atlas = ExtResource("3_sheet")
+region = Rect2(32, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_cast_2"]
+atlas = ExtResource("3_sheet")
+region = Rect2(64, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_idle_0"]
+atlas = ExtResource("3_sheet")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_idle_1"]
+atlas = ExtResource("3_sheet")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_idle_2"]
+atlas = ExtResource("3_sheet")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_walk_0"]
+atlas = ExtResource("3_sheet")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_walk_1"]
+atlas = ExtResource("3_sheet")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_walk_2"]
+atlas = ExtResource("3_sheet")
+region = Rect2(64, 32, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_mini_mago"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_cast_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_cast_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_cast_2")
+}],
+"loop": false,
+"name": &"cast",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_idle_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_2")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 4.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_walk_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_walk_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_walk_2")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 6.0
+}]
+
+[sub_resource type="CircleShape2D" id="C_body"]
+radius = 9.0
+
+[node name="MiniMago" type="CharacterBody2D" unique_id=856485831]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_script")
+monkey_scene = ExtResource("2_monkey")
+
+[node name="Shadow" type="Polygon2D" parent="." unique_id=362270639]
+position = Vector2(1, 0.25)
+scale = Vector2(1.1428572, 0.875)
+color = Color(0, 0, 0, 0.24)
+polygon = PackedVector2Array(7, 0, 6, 1, 4, 2, 0, 2, -4, 2, -6, 1, -7, 0, -6, -1, -4, -2, 0, -2, 4, -2, 6, -1)
+
+[node name="Shadow" type="Polygon2D" parent="Shadow" unique_id=1221881215]
+position = Vector2(3.5762787e-07, -0.2857142)
+scale = Vector2(1.1874999, 1.1607144)
+color = Color(0, 0, 0, 0.24)
+polygon = PackedVector2Array(7, 0, 6, 1, 4, 2, 0, 2, -4, 2, -6, 1, -7, 0, -6, -1, -4, -2, 0, -2, 4, -2, 6, -1)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1573409766]
+texture_filter = 1
+position = Vector2(0, -1)
+sprite_frames = SubResource("SpriteFrames_mini_mago")
+animation = &"walk"
+autoplay = "walk"
+offset = Vector2(0, -8)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2024747274]
+position = Vector2(2, -8)
+shape = SubResource("C_body")

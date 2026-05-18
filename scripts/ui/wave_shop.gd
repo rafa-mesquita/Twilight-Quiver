@@ -20,9 +20,12 @@ const WOODWARDEN_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 const LENO_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 const CAPIVARA_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 const TING_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
+# Mini Mago: preço placeholder igual aos outros pets — user vai re-balancear
+# quando finalizar o design dos níveis.
+const MINI_MAGO_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 # Pool de aliados pra rolagem na shop. 3 cards exibidos por wave; sorteia 3
 # dos N possíveis (priorizando pets já owned pro player poder upgradar).
-const _ALL_ALLY_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe", "ting"]
+const _ALL_ALLY_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe", "ting", "mini_mago"]
 const STRUCTURE_SURCHARGE_PER_OWNED: int = 3
 # Aliado: primeira loja (wave 3) o pet é DADO de graça aleatório (não vai pra
 # loja). Depois aparece pra venda nas waves 5, 7, 9, 11...
@@ -195,6 +198,13 @@ const TING_DESCS: Array[String] = [
 	"SHOP_TING_DESC_3",
 	"SHOP_TING_DESC_4",
 ]
+# Placeholder até o user finalizar o design — texto genérico em todos os níveis.
+const MINI_MAGO_DESCS: Array[String] = [
+	"SHOP_MINI_MAGO_DESC_1",
+	"SHOP_MINI_MAGO_DESC_2",
+	"SHOP_MINI_MAGO_DESC_3",
+	"SHOP_MINI_MAGO_DESC_4",
+]
 const FIRE_ARROW_DESCS: Array[String] = [
 	"SHOP_FIRE_ARROW_DESC_1",
 	"SHOP_FIRE_ARROW_DESC_2",
@@ -284,7 +294,7 @@ const _AUGMENT_SLOT_SIZE: Vector2 = Vector2(60, 60)
 @onready var structures_box: HBoxContainer = $Root/StatsCard/StructuresBox
 
 # Aliados (pets) que aparecem no card do player. Ordem fixa.
-const _PETS_ROW_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe", "ting"]
+const _PETS_ROW_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe", "ting", "mini_mago"]
 # Estruturas conhecidas. Mapeia o scene_path em owned_structures pra um id
 # usado no chip. Por enquanto só arrow_tower.
 const _STRUCTURES_ROW: Array[Dictionary] = [
@@ -631,6 +641,7 @@ func _build_ally_slot(ally_id: String, p: Node, distinct_owned: int) -> Dictiona
 		"leno": name_key = "SHOP_ALLY_LENO"
 		"capivara_joe": name_key = "SHOP_ALLY_CAPIVARA"
 		"ting": name_key = "SHOP_ALLY_TING"
+		"mini_mago": name_key = "SHOP_ALLY_MINI_MAGO"
 	return {
 		"id": ally_id,
 		"name": name_key,
@@ -673,6 +684,7 @@ func _pet_price_table_for(id: String) -> Array:
 		"leno": return LENO_PRICE_TABLE
 		"capivara_joe": return CAPIVARA_PRICE_TABLE
 		"ting": return TING_PRICE_TABLE
+		"mini_mago": return MINI_MAGO_PRICE_TABLE
 	return []
 
 
@@ -953,6 +965,7 @@ func _get_upgrade_descs_array(id: String) -> Array:
 		"leno": return LENO_DESCS
 		"capivara_joe": return CAPIVARA_JOE_DESCS
 		"ting": return TING_DESCS
+		"mini_mago": return MINI_MAGO_DESCS
 	return []
 
 
@@ -1148,6 +1161,7 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 	"woodwarden": Color(0x5d / 255.0, 0x80 / 255.0, 0x5a / 255.0),  # #5d805a
 	"ting": Color.WHITE,  # branco — alto contraste no fundo laranja
 	"capivara_joe": Color.WHITE,  # branco — alto contraste no fundo vermelho
+	"mini_mago": Color.WHITE,  # branco — pedido pelo design da carta
 	"graviton": Color.WHITE,
 	"perfuracao": Color.WHITE,
 	"ricochet_arrow": Color.WHITE,
@@ -1166,6 +1180,7 @@ const UPGRADE_DESC_COLORS: Dictionary = {
 	"woodwarden": Color(0x2d / 255.0, 0x3e / 255.0, 0x2b / 255.0),  # #2d3e2b
 	"ting": Color.WHITE,  # mesmo do título — branco em todo o texto
 	"capivara_joe": Color.WHITE,  # mesmo do título — branco em todo o texto
+	"mini_mago": Color.WHITE,  # mesmo do título — branco em todo o texto
 	"graviton": Color(0x61 / 255.0, 0x61 / 255.0, 0x61 / 255.0),  # #616161
 	"chain_lightning": Color(0xa7 / 255.0, 0x8f / 255.0, 0x24 / 255.0),  # #a78f24
 }
@@ -1176,6 +1191,7 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	"woodwarden": "res://assets/Hud/shop/aliado/woodwarden/woodwarden card.png",
 	"ting": "res://assets/Hud/shop/aliado/ting/ting card.png",
 	"capivara_joe": "res://assets/Hud/shop/aliado/capivara joe/capivara joe card.png",
+	"mini_mago": "res://assets/Hud/shop/aliado/mini mago/mini mago card.png",
 	"graviton": "res://assets/Hud/shop/upgrade/graviton/graviton card-Sheet.png",
 	# id é "ricochet_arrow" mas o arquivo é "ricochete.png" (PT). Override pra
 	# o loader achar a arte certa.
@@ -2483,6 +2499,7 @@ func _augment_title_for(id: String) -> String:
 		"leno": return "SHOP_ALLY_LENO"
 		"capivara_joe": return "SHOP_ALLY_CAPIVARA"
 		"ting": return "SHOP_ALLY_TING"
+		"mini_mago": return "SHOP_ALLY_MINI_MAGO"
 	return id
 
 

@@ -1142,6 +1142,7 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	{"id": "leno", "name": "SHOP_ALLY_LENO"},
 	{"id": "capivara_joe", "name": "SHOP_ALLY_CAPIVARA"},
 	{"id": "ting", "name": "SHOP_ALLY_TING"},
+	{"id": "mini_mago", "name": "SHOP_ALLY_MINI_MAGO"},
 ]
 
 
@@ -1195,6 +1196,7 @@ const FREE_REWARD_CARD_PATHS: Dictionary = {
 	"woodwarden": "res://assets/Hud/shop/aliado/woodwarden/woodwarden card.png",
 	"ting": "res://assets/Hud/shop/aliado/ting/ting card.png",
 	"capivara_joe": "res://assets/Hud/shop/aliado/capivara joe/capivara joe card.png",
+	"mini_mago": "res://assets/Hud/shop/aliado/mini mago/mini mago card.png",
 	"graviton": "res://assets/Hud/shop/upgrade/graviton/graviton card-Sheet.png",
 	"ricochet_arrow": "res://assets/Hud/shop/upgrade/ricochete.png",
 	"gold_magnet": "res://assets/Hud/shop/upgrade/coin master.png",
@@ -1209,7 +1211,7 @@ const FREE_REWARD_CARD_PATHS: Dictionary = {
 }
 const FREE_REWARD_STATUS_SHEET: String = "res://assets/Hud/shop/status/HP - atck speed - Move speed - Atck Dmg.png"
 const FREE_REWARD_STATUS_ROWS: Dictionary = {"hp": 0, "attack_speed": 1, "move_speed": 2, "damage": 3}
-const FREE_REWARD_ALIADO_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe", "ting"]
+const FREE_REWARD_ALIADO_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe", "ting", "mini_mago"]
 const FREE_REWARD_STATUS_IDS: Array[String] = ["hp", "damage", "attack_speed", "move_speed", "armor"]
 
 

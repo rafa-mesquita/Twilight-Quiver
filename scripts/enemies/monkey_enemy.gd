@@ -229,11 +229,13 @@ func _on_frame_changed() -> void:
 				else:
 					current_target.take_damage(damage)
 					# Macaco convertido pela Maldição: dano vai pro breakdown
-					# "curse_ally" no painel TAB.
+					# "curse_ally" no painel TAB. Macaco invocado pelo Mini Mago
+					# (mesma conversão, mas precede a maldição): atribui a "mini_mago".
 					if is_curse_ally:
 						var p := get_tree().get_first_node_in_group("player")
 						if p != null and p.has_method("notify_damage_dealt_by_source"):
-							p.notify_damage_dealt_by_source(damage, "curse_ally")
+							var src_id: String = "mini_mago" if is_in_group("mini_mago_summon") else "curse_ally"
+							p.notify_damage_dealt_by_source(damage, src_id)
 
 	# Pulinho do walk: sprite sobe nos frames pares (visual de saltitar).
 	# Sombra fica intacta porque é um node separado, não filho do sprite.
@@ -280,8 +282,11 @@ func take_damage(amount: float) -> void:
 				p2.notify_enemy_killed()
 		# Gold dropa em ambos: morte de inimigo normal E morte de aliado convertido
 		# pela Maldição. Sem kill count nem heart pro curse_ally (já cumpriu o papel).
-		GoldDrop.try_drop(_get_world(), gold_scene, global_position,
-			gold_drop_chance, gold_drop_min, gold_drop_max)
+		# Exceção: macacos invocados pelo Mini Mago NÃO dropam gold — senão vira
+		# fazenda infinita (mini mago invoca → morre → gold → repete).
+		if not is_in_group("mini_mago_summon"):
+			GoldDrop.try_drop(_get_world(), gold_scene, global_position,
+				gold_drop_chance, gold_drop_min, gold_drop_max)
 		_spawn_kill_effect()
 		_spawn_death_silhouette()
 		queue_free()

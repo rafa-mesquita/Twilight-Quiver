@@ -97,6 +97,7 @@ DMG_PANEL_TING,Mecânico Ting,Ting,Ting,Ting
 DMG_PANEL_WOODWARDEN,Woodwarden,Woodwarden,Woodwarden,Woodwarden
 DMG_PANEL_LENO,Leno,Leno,Leno,Leno
 DMG_PANEL_CAPIVARA,Capivara Joe,Capybara Joe,Capivara Joe,Capybara Joe
+DMG_PANEL_MINI_MAGO,Mini Mago,Mini Mage,Mini Mago,Mini Mage
 DMG_PANEL_CURSE_ALLY,Aliados Flecha Profana,Curse Arrow Allies,Aliados Flecha Profana,Alliés Flèche Maudite
 HUD_DEATH_SCORE,SCORE %d,SCORE %d,SCORE %d,SCORE %d
 HUD_DEATH_SURVIVAL,Sobreviveu %d waves,Survived %d raids,Sobreviviste %d raids,Survécu à %d raids
@@ -282,6 +283,11 @@ SHOP_ALLY_WOODWARDEN,Woodwarden,Woodwarden,Woodwarden,Woodwarden
 SHOP_ALLY_LENO,Amigo Leno,Friend Leno,Amigo Leno,Ami Leno
 SHOP_ALLY_CAPIVARA,Capivara Joe,Capybara Joe,Capibara Joe,Capybara Joe
 SHOP_ALLY_TING,Mecânico Ting,Ting the Mechanic,Ting el Mecánico,Ting le Mécanicien
+SHOP_ALLY_MINI_MAGO,Mini Mago,Mini Mage,Mini Mago,Mini Mage
+SHOP_MINI_MAGO_DESC_1,Invoca um macaco aliado a cada 8s,Summons an ally monkey every 8s,Invoca un mono aliado cada 8s,Invoque un singe allié toutes les 8s
+SHOP_MINI_MAGO_DESC_2,"Cd 6s, macacos +25% HP/dano/atk speed/vel","Cd 6s, monkeys +25% HP/dmg/atk speed/speed","Cd 6s, monos +25% PV/daño/atk speed/vel","Cd 6s, singes +25% PV/dégâts/vit atk/vit"
+SHOP_MINI_MAGO_DESC_3,"Invoca 2 macacos por cast, mantém buffs","Summons 2 monkeys per cast, keeps buffs","Invoca 2 monos por cast, mantiene buffs","Invoque 2 singes par cast, garde les bonus"
+SHOP_MINI_MAGO_DESC_4,"Invoca 3 macacos por cast, mantém buffs","Summons 3 monkeys per cast, keeps buffs","Invoca 3 monos por cast, mantiene buffs","Invoque 3 singes par cast, garde les bonus"
 SHOP_HP_DESC_1,+18 HP maximo,+18 max HP,+18 HP máximo,+18 PV max
 SHOP_HP_DESC_2,+20 HP maximo,+20 max HP,+20 HP máximo,+20 PV max
 SHOP_HP_DESC_3,+22 HP maximo,+22 max HP,+22 HP máximo,+22 PV max

@@ -42,6 +42,7 @@ const SOURCE_LABELS: Dictionary = {
 	"woodwarden": "DMG_PANEL_WOODWARDEN",
 	"leno": "DMG_PANEL_LENO",
 	"capivara_joe": "DMG_PANEL_CAPIVARA",
+	"mini_mago": "DMG_PANEL_MINI_MAGO",
 	"curse_ally": "DMG_PANEL_CURSE_ALLY",
 	"frostwisp": "DMG_PANEL_FROSTWISP",
 	"dark_ball": "DMG_PANEL_DARK_BALL",
