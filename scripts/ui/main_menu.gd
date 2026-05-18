@@ -36,6 +36,32 @@ func _ready() -> void:
 		start_button.grab_focus()
 	# Patch notes da última versão (uma vez por versão por usuário).
 	_maybe_show_release_notes()
+	# Birthday event: fireworks ambient durante a janela do evento (universal,
+	# não nickname-gated).
+	_maybe_spawn_fireworks()
+
+
+func _maybe_spawn_fireworks() -> void:
+	# Gated em janela + nick alvo (ou dev toggle). Não é ambient universal.
+	if not BirthdayEvent.is_party_active_for_current_user():
+		return
+	# Guard contra spawn duplicado (essa função é chamada no _ready e de novo
+	# depois que o nick é salvo pela primeira vez).
+	if has_node("Fireworks"):
+		return
+	var fw_scene: PackedScene = load("res://scenes/effects/fireworks.tscn") as PackedScene
+	if fw_scene == null:
+		return
+	var fw: Node2D = fw_scene.instantiate() as Node2D
+	if fw == null:
+		return
+	# Posiciona no topo central da viewport. emission_width default 480 cobre
+	# bem a tela 720p; particles caem em direção ao centro/baixo.
+	var vp_size: Vector2 = get_viewport_rect().size
+	fw.position = Vector2(vp_size.x * 0.5, -16.0)
+	add_child(fw)
+	# Joga pra trás dos botões: move_child pra index 0 ou perto.
+	move_child(fw, 1)
 
 
 func _maybe_show_release_notes() -> void:
@@ -92,6 +118,13 @@ func _on_nickname_ok() -> void:
 	_save_nickname(nick)
 	nickname_prompt.visible = false
 	start_button.grab_focus()
+	# Nick acabou de ser salvo — refresh confetti autoload (pode ser o nick alvo
+	# do evento) e tenta spawnar fireworks que foram skipados no _ready inicial.
+	if has_node("/root/Confetti"):
+		var c: Node = get_node("/root/Confetti")
+		if c.has_method("refresh_active_state"):
+			c.refresh_active_state()
+	_maybe_spawn_fireworks()
 
 
 func _load_nickname() -> String:

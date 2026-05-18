@@ -10,6 +10,8 @@
 [ext_resource type="Texture2D" uid="uid://bmmo0gn8gv3b7" path="res://assets/ui/indicador.png" id="7_ind"]
 [ext_resource type="AudioStream" uid="uid://bwcmdrpa806yk" path="res://audios/effects/damage/player damage taken.mp3" id="8_dmg_sfx"]
 [ext_resource type="Script" uid="uid://d2q8s6mshmh7c" path="res://scripts/systems/skin_manager.gd" id="9_skin"]
+[ext_resource type="Texture2D" path="res://assets/source/chapeu_de_festa1.png" id="10_hat"]
+[ext_resource type="Script" path="res://scripts/effects/birthday_hat.gd" id="11_hat_script"]
 
 [sub_resource type="AtlasTexture" id="A_atk_0"]
 atlas = ExtResource("2_sheet")
@@ -334,3 +336,11 @@ autoplay = "default"
 stream = ExtResource("8_dmg_sfx")
 volume_db = -20.0
 bus = &"SFX"
+
+[node name="PartyHat" type="Sprite2D" parent="."]
+texture_filter = 1
+visible = false
+position = Vector2(0, -12)
+z_index = 12
+texture = ExtResource("10_hat")
+script = ExtResource("11_hat_script")

@@ -88,6 +88,21 @@ func _ready() -> void:
 		if sprite_node != null:
 			_layers[slot] = sprite_node
 			sprite_node.visible = false
+	# Birthday event hat: aplica no PartyHat (irmão de Skin, se existir).
+	# Funciona pro player.tscn E pro player_preview.tscn — ambos têm o sprite.
+	_apply_birthday_hat()
+
+
+func _apply_birthday_hat() -> void:
+	# Procura PartyHat como irmão (player.tscn) ou via get_parent (player_preview).
+	var parent: Node = get_parent()
+	if parent == null:
+		return
+	var hat: Node = parent.get_node_or_null("PartyHat")
+	if hat == null:
+		return
+	var nick: String = BirthdayEvent.load_current_nickname()
+	(hat as CanvasItem).visible = BirthdayEvent.should_show_hat_for(nick)
 
 
 func _process(_delta: float) -> void:

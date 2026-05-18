@@ -410,6 +410,13 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 20
 text = "Flush Telemetria"
 
+[node name="PartyModeBtn" type="Button" parent="Content/Scroll/VBox/StatsSection/StatsContent"]
+custom_minimum_size = Vector2(0, 36)
+theme_override_colors/font_color = Color(1, 0.55, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "🎉 Modo Festa: OFF"
+
 [node name="WavesSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
 theme_override_constants/separation = 4
 

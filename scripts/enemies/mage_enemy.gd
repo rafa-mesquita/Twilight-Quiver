@@ -81,6 +81,7 @@ func _ready() -> void:
 	shoot_timer.start()
 	sprite.animation_finished.connect(_on_animation_finished)
 	sprite.play("walk")
+	BirthdayEvent.attach_universal_hat(self, Vector2(0, -16))
 
 
 func _apply_summoner_skin() -> void:

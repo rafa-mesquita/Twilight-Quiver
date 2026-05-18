@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dleixdwoby6u7"]
+
+[ext_resource type="Script" path="res://scripts/effects/fireworks.gd" id="1_fw"]
+
+[node name="Fireworks" type="Node2D"]
+script = ExtResource("1_fw")

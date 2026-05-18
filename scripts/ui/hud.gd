@@ -1291,17 +1291,18 @@ func _open_pause() -> void:
 
 # Auto-pause quando a janela perde foco (alt+tab, clique em outro app). Mesma
 # guarda do ESC — não interrompe death screen, intros ou cleared overlay.
+# Cobre APPLICATION_FOCUS_OUT (app inteira) e WM_WINDOW_FOCUS_OUT (janela só).
 func _notification(what: int) -> void:
-	if what != NOTIFICATION_APPLICATION_FOCUS_OUT:
+	if what != NOTIFICATION_APPLICATION_FOCUS_OUT and what != NOTIFICATION_WM_WINDOW_FOCUS_OUT:
 		return
-	if _pause_visible:
-		return
-	var player := get_tree().get_first_node_in_group("player")
-	if player != null and "is_dead" in player and bool(player.is_dead):
+	if _pause_visible or get_tree().paused:
 		return
 	if cleared_overlay != null and cleared_overlay.visible:
 		return
 	if intro_overlay != null and intro_overlay.visible:
+		return
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null and "is_dead" in player and bool(player.is_dead):
 		return
 	_open_pause()
 

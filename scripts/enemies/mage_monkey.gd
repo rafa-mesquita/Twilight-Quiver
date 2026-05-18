@@ -177,6 +177,7 @@ func _ready() -> void:
 	# wave_manager spawnar 1 minion sequer → boss invocaria full-HP minions
 	# ignorando os "trash mobs" de 1 HP da config.
 	get_tree().create_timer(initial_horde_grace).timeout.connect(_initial_minion_check)
+	BirthdayEvent.attach_universal_hat(self, Vector2(0, -40))
 
 
 const ENTRANCE_DURATION: float = 0.9

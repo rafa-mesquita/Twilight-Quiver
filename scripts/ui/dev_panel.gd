@@ -77,6 +77,8 @@ func _ready() -> void:
 	$Content/Scroll/VBox/WavesSection/WavesContent/Wave8Btn.pressed.connect(_simulate_wave.bind(8))
 	$Content/Scroll/VBox/WavesSection/WavesContent/Wave14Btn.pressed.connect(_simulate_wave.bind(14))
 	$Content/Scroll/VBox/StatsSection/StatsContent/FlushTelemetryBtn.pressed.connect(_flush_telemetry)
+	$Content/Scroll/VBox/StatsSection/StatsContent/PartyModeBtn.pressed.connect(_toggle_party_mode)
+	_refresh_party_mode_label()
 	$Content/Scroll/VBox/MenuBtn.pressed.connect(_back_to_menu)
 	# Refresh inicial após o player estar pronto pra ler níveis atuais.
 	_refresh_upgrade_buttons.call_deferred()
@@ -239,6 +241,31 @@ func _flush_telemetry() -> void:
 			print("[dev] Telemetry has no flush_now() method")
 	else:
 		print("[dev] /root/Telemetry not found")
+
+
+func _toggle_party_mode() -> void:
+	# Liga/desliga o override do BirthdayEvent. Quando ON, qualquer player vê
+	# chapéu e fireworks. Useful pra testar sem precisar mudar data/nick.
+	BirthdayEvent.dev_force_active = not BirthdayEvent.dev_force_active
+	_refresh_party_mode_label()
+	# Re-aplica chapéu no player vivo (se houver). Preview no skin menu /
+	# StatsCard atualiza quando reabrir. Fireworks só spawnam ao entrar
+	# main_menu ou shop — toggle no meio do jogo não dispara.
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null and player.has_method("_apply_birthday_hat"):
+		player._apply_birthday_hat()
+	# Confetti autoload reage ao toggle pra ligar/desligar emission ao vivo.
+	if has_node("/root/Confetti"):
+		var c: Node = get_node("/root/Confetti")
+		if c.has_method("refresh_active_state"):
+			c.refresh_active_state()
+	print("[dev] Party mode: ", "ON" if BirthdayEvent.dev_force_active else "OFF")
+
+
+func _refresh_party_mode_label() -> void:
+	var btn := $Content/Scroll/VBox/StatsSection/StatsContent/PartyModeBtn as Button
+	if btn != null:
+		btn.text = "🎉 Modo Festa: ON" if BirthdayEvent.dev_force_active else "🎉 Modo Festa: OFF"
 
 
 func _spawn_tower_at_player() -> void:

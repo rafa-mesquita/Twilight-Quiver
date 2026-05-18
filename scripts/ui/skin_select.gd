@@ -18,11 +18,11 @@ const _KIT_SLOT: StringName = &"_kit"
 # Quantos slots distintos um display_name precisa ocupar pra ser considerado um "kit".
 const _KIT_MIN_SLOTS: int = 2
 # Ordem de empilhamento do thumbnail de kit (back → front). Bate com a ordem
-# das camadas em scenes/player/player.tscn (Body → Skin > Legs/Quiver/Shirt/
-# Alfaja/Cape/Hair/Bow). Cape DEPOIS de body porque o PNG da cape inclui a
-# máscara que cobre o rosto — se cape for renderizada antes, body apaga a máscara.
+# das camadas em scenes/ui/player_preview.tscn. Bate 1-pra-1 com a árvore de
+# filhos pra capa e bow renderem do mesmo jeito que no preview animado.
+# `bow_back` é pseudo-slot — usa o `texture_back` da SkinPart do bow.
 const _KIT_LAYER_ORDER: Array[StringName] = [
-	&"body", &"legs", &"quiver", &"shirt", &"alfaja", &"cape", &"hair", &"bow"
+	&"bow_back", &"body", &"legs", &"quiver", &"shirt", &"alfaja", &"cape", &"hair", &"bow"
 ]
 
 # Translation keys por slot — tr() onde o label é exibido (tabs).
@@ -382,8 +382,16 @@ func _make_kit_thumbnail(parts: Dictionary, locked: bool) -> Control:
 	holder.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for slot in _KIT_LAYER_ORDER:
-		var part: SkinPart = parts.get(slot)
-		if part == null or part.texture == null:
+		# `bow_back` é pseudo-slot: usa o texture_back da SkinPart do bow.
+		var part: SkinPart
+		var texture: Texture2D
+		if slot == &"bow_back":
+			part = parts.get(&"bow")
+			texture = part.texture_back if part != null else null
+		else:
+			part = parts.get(slot)
+			texture = part.texture if part != null else null
+		if texture == null:
 			continue
 		var layer := TextureRect.new()
 		layer.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -391,7 +399,7 @@ func _make_kit_thumbnail(parts: Dictionary, locked: bool) -> Control:
 		layer.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var atlas := AtlasTexture.new()
-		atlas.atlas = part.texture
+		atlas.atlas = texture
 		atlas.region = _IDLE_FRAME_REGION
 		layer.texture = atlas
 		if locked:

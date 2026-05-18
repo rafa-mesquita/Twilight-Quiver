@@ -372,6 +372,27 @@ func _ready() -> void:
 	# player entra na wave 8. Dispara placement ANTES de liberar o shop.
 	if pending_free_tower_scene != "":
 		call_deferred("_start_free_tower_placement")
+	# Birthday event: fireworks entre waves — gated em nick + janela (ou dev toggle).
+	_maybe_spawn_fireworks()
+
+
+func _maybe_spawn_fireworks() -> void:
+	if not BirthdayEvent.is_party_active_for_current_user():
+		return
+	var fw_scene: PackedScene = load("res://scenes/effects/fireworks.tscn") as PackedScene
+	if fw_scene == null:
+		return
+	var fw: Node2D = fw_scene.instantiate() as Node2D
+	if fw == null:
+		return
+	var vp_size: Vector2 = get_viewport().get_visible_rect().size
+	fw.position = Vector2(vp_size.x * 0.5, -16.0)
+	# Adiciona como filho do CanvasLayer; coloca entre Bg e Root pra ficar
+	# atrás da UI mas na frente do background.
+	add_child(fw)
+	var bg: Node = get_node_or_null("Bg")
+	if bg != null:
+		move_child(fw, bg.get_index() + 1)
 
 
 func _start_free_tower_placement() -> void:

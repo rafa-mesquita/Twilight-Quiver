@@ -390,6 +390,16 @@ func _ready() -> void:
 	# usuário ter peças configuradas em assets/player/skin_parts/ e selecionadas
 	# pela UI de skin.
 	SkinLoadout.apply_to(self)
+	# Birthday event: chapéu de festa pro eliyeolio durante a janela do evento.
+	_apply_birthday_hat()
+
+
+func _apply_birthday_hat() -> void:
+	var hat: Node = get_node_or_null("PartyHat")
+	if hat == null:
+		return
+	var nick: String = BirthdayEvent.load_current_nickname()
+	(hat as CanvasItem).visible = BirthdayEvent.should_show_hat_for(nick)
 
 
 func _physics_process(delta: float) -> void:
