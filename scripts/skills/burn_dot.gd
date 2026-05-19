@@ -15,6 +15,11 @@ extends Node
 # Fogo do player. Outros usos (ex: inseto-aliado aplicando poison) sobrescrevem
 # antes do add_child pra atribuir no breakdown correto.
 @export var source_id: String = "fire_arrow"
+# Stacks de queimadura — cada hit do mesmo source soma 1 stack (até max_stacks),
+# multiplicando o dano por tick. Flecha de Fogo L1=1, L2=2, L3=3, L4=4. Outros
+# users (dark_ball, insect) deixam max_stacks=1 = comportamento sem stack.
+@export var max_stacks: int = 1
+var stacks: int = 1
 
 # Splash: a cada tick, os 2 inimigos vivos mais próximos do queimando levam
 # metade do tick_dmg como dano direto (sem propagar burn). Aplica em todos os
@@ -57,7 +62,7 @@ func _apply_tick() -> void:
 		return
 	if "hp" in parent and float(parent.hp) <= 0.0:
 		return
-	var tick_dmg: float = dps * tick_interval
+	var tick_dmg: float = dps * tick_interval * float(stacks)
 	# Crit roll por tick (bônus mín +1 em DoTs pequenos).
 	var p_for_crit := get_tree().get_first_node_in_group("player")
 	if p_for_crit != null and p_for_crit.has_method("roll_crit_dot"):
@@ -115,10 +120,16 @@ func _apply_splash(source: Node2D, tick_dmg: float) -> void:
 
 # Refresca duração se nova flecha de fogo bate no mesmo alvo.
 # Mantém o `dps` mais alto entre o atual e o novo (não down-grade).
-func refresh(new_duration: float, new_dps: float) -> void:
+# `new_max_stacks`: se > 0, atualiza o cap (max do atual/novo). Cada refresh
+# adiciona 1 stack até o cap — primeiro hit cria, hits seguintes empilham.
+func refresh(new_duration: float, new_dps: float, new_max_stacks: int = -1) -> void:
 	_remaining = maxf(_remaining, new_duration)
 	if new_dps > dps:
 		dps = new_dps
+	if new_max_stacks > 0 and new_max_stacks > max_stacks:
+		max_stacks = new_max_stacks
+	if stacks < max_stacks:
+		stacks += 1
 
 
 func _apply_final_bonus() -> void:

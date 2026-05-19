@@ -130,6 +130,10 @@ var _horde_count: int = 0
 # Stun/CC: boss é imune (igual stone cube), mas mantemos as funções pra arrow.gd não crashar.
 var _flash_tween: Tween
 var _crit_pending: bool = false
+# Guarda contra múltiplas chamadas de _die() no mesmo frame. Sem isso, várias
+# fontes de dano simultâneas (volley multi-arrow, chain lightning, etc) podiam
+# levar o HP a <=0 várias vezes antes do queue_free, dropando 2-5× o gold.
+var _is_dead: bool = false
 
 
 func _ready() -> void:
@@ -599,6 +603,9 @@ func _tint_summon_effect_purple(fx: Node2D) -> void:
 # ---------- Damage / morte ----------
 
 func take_damage(amount: float) -> void:
+	# Já morreu: skipa pra não rodar _die() múltiplas vezes (dropava 2-5× gold).
+	if _is_dead:
+		return
 	# SHIELDED: ignora completamente o dano. Só mostra um pequeno flash branco
 	# pra dar feedback de "tem shield".
 	if _is_shielded:
@@ -616,6 +623,7 @@ func take_damage(amount: float) -> void:
 	_spawn_damage_number(amount)
 	_play_damage_sound()
 	if hp <= 0.0:
+		_is_dead = true
 		_die()
 
 

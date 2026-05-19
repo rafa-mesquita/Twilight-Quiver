@@ -25,6 +25,10 @@ const PLAYER_NODE_TARGET_OFFSET: Vector2 = Vector2(0, 12)
 
 var direction: Vector2 = Vector2.RIGHT
 var player: Node2D
+# Alvo alternativo do redirect: se setado (mage_enemy passa current_target
+# quando NÃO for o player — ex: mini_arbusto decoy), o projétil persegue
+# esse alvo em vez do player. Mantém o player como default pro caso normal.
+var target_override: Node2D = null
 var spawn_position: Vector2 = Vector2.ZERO
 var halfway_distance: float = -1.0
 var has_redirected_halfway: bool = false
@@ -41,7 +45,7 @@ const BOSS_ALLY_DMG_MULT: float = 1.8
 
 
 func _ready() -> void:
-	# Grupo "mage_projectile" usado pelo Woodwarden pra detectar projéteis a
+	# Grupo "mage_projectile" usado pelo Claudio Druida pra detectar projéteis a
 	# interceptar no raio de escudo humano.
 	add_to_group("mage_projectile")
 	body_entered.connect(_on_body_entered)
@@ -59,14 +63,34 @@ func _ready() -> void:
 func set_direction(dir: Vector2) -> void:
 	direction = dir.normalized()
 	spawn_position = global_position
-	if player != null and is_instance_valid(player):
-		var target := player.global_position + PLAYER_NODE_TARGET_OFFSET
-		halfway_distance = spawn_position.distance_to(target) * 0.5
+	var t := _target_node()
+	if t != null and is_instance_valid(t):
+		halfway_distance = spawn_position.distance_to(_target_position(t)) * 0.5
 	if sprite != null:
 		sprite.rotation = direction.angle()
 	if trail != null:
 		trail.clear_points()
 		trail.add_point(global_position + VISUAL_OFFSET)
+
+
+func set_target(target_node: Node2D) -> void:
+	# Chamado pelo mage_enemy ANTES do set_direction quando o alvo não é o player
+	# (ex: mini_arbusto decoy). Sem isso o projétil sempre redireciona pro player
+	# mesmo que o mago tenha mirado em outro alvo.
+	target_override = target_node
+
+
+func _target_node() -> Node2D:
+	if target_override != null and is_instance_valid(target_override):
+		return target_override
+	return player
+
+
+func _target_position(t: Node2D) -> Vector2:
+	# Player tem offset (mira no peito); outros alvos miram na origem do node.
+	if t.is_in_group("player"):
+		return t.global_position + PLAYER_NODE_TARGET_OFFSET
+	return t.global_position
 
 
 func _physics_process(delta: float) -> void:
@@ -81,12 +105,13 @@ func _physics_process(delta: float) -> void:
 	if not has_redirected_halfway and halfway_distance > 0.0:
 		if spawn_position.distance_to(global_position) >= halfway_distance:
 			has_redirected_halfway = true
-			_redirect_toward_player(redirect_strength)
-	if not has_redirected_final and player != null and is_instance_valid(player):
-		var target := player.global_position + PLAYER_NODE_TARGET_OFFSET
-		if global_position.distance_to(target) <= final_redirect_distance:
-			has_redirected_final = true
-			_redirect_toward_player(final_redirect_strength)
+			_redirect_toward_target(redirect_strength)
+	if not has_redirected_final:
+		var t := _target_node()
+		if t != null and is_instance_valid(t):
+			if global_position.distance_to(_target_position(t)) <= final_redirect_distance:
+				has_redirected_final = true
+				_redirect_toward_target(final_redirect_strength)
 	if trail != null:
 		trail.add_point(global_position + VISUAL_OFFSET)
 		while trail.get_point_count() > trail_max_points:
@@ -94,7 +119,7 @@ func _physics_process(delta: float) -> void:
 
 
 func magnet_to(target_node: Node2D) -> void:
-	# Chamado pelo Woodwarden (escudo humano) — desvia o projétil pro warden
+	# Chamado pelo Claudio Druida (escudo humano) — desvia o projétil pro warden
 	# e desabilita os redirects internos pra ele não voltar a mirar no player.
 	# Quando o projétil colidir com o warden, body_entered dispara o dano normal.
 	if target_node == null or not is_instance_valid(target_node):
@@ -109,11 +134,11 @@ func magnet_to(target_node: Node2D) -> void:
 		sprite.rotation = direction.angle()
 
 
-func _redirect_toward_player(strength: float) -> void:
-	if player == null or not is_instance_valid(player):
+func _redirect_toward_target(strength: float) -> void:
+	var t := _target_node()
+	if t == null or not is_instance_valid(t):
 		return
-	var target := player.global_position + PLAYER_NODE_TARGET_OFFSET
-	var to_target := (target - global_position).normalized()
+	var to_target := (_target_position(t) - global_position).normalized()
 	direction = direction.lerp(to_target, strength).normalized()
 	if sprite != null:
 		sprite.rotation = direction.angle()

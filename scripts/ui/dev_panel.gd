@@ -37,6 +37,7 @@ const UPGRADE_BTNS: Array = [
 	{"id": "capivara_joe", "node": "UpgCapivaraBtn", "max": 4, "base_text": "+1 Capivara Joe"},
 	{"id": "ting", "node": "UpgTingBtn", "max": 4, "base_text": "+1 Mecânico Ting"},
 	{"id": "mini_mago", "node": "UpgMiniMagoBtn", "max": 4, "base_text": "+1 Mini Mago"},
+	{"id": "arbusto", "node": "UpgArbustoBtn", "max": 4, "base_text": "+1 Arbusto Carrara"},
 	{"id": "dash", "node": "UpgDashBtn", "max": 4, "base_text": "+1 Deslizando"},
 	{"id": "esquivando", "node": "UpgEsquivandoBtn", "max": 4, "base_text": "+1 Esquivando"},
 ]
@@ -64,7 +65,7 @@ func _ready() -> void:
 	$Content/Scroll/VBox/StatsSection/StatsContent/OpenShopBtn.pressed.connect(_open_shop_directly)
 	# Estruturas e pets.
 	$Content/Scroll/VBox/EstruturasSection/EstruturasContent/SpawnTowerBtn.pressed.connect(_spawn_tower_at_player)
-	$Content/Scroll/VBox/EstruturasSection/EstruturasContent/SpawnWoodwardenBtn.pressed.connect(_spawn_woodwarden_at_player)
+	$Content/Scroll/VBox/EstruturasSection/EstruturasContent/SpawnClaudioDruidaBtn.pressed.connect(_spawn_claudio_druida_at_player)
 	# Conecta todos os botões de upgrade via UPGRADE_BTNS (find_child recursivo).
 	for entry in UPGRADE_BTNS:
 		var btn := _upgrade_btn(entry["node"]) as Button
@@ -283,12 +284,12 @@ func _spawn_tower_at_player() -> void:
 	tower.global_position = player.global_position + Vector2(48, 0)
 
 
-func _spawn_woodwarden_at_player() -> void:
-	# apply_upgrade("woodwarden") já cuida do level up + spawn (player gerencia
+func _spawn_claudio_druida_at_player() -> void:
+	# apply_upgrade("claudio_druida") já cuida do level up + spawn (player gerencia
 	# o ciclo de vida nativo agora — não passa mais pelo wave_manager).
 	var player := get_tree().get_first_node_in_group("player")
 	if player != null and player.has_method("apply_upgrade"):
-		player.apply_upgrade("woodwarden")
+		player.apply_upgrade("claudio_druida")
 
 
 func _apply_upgrade(upgrade_id: String) -> void:

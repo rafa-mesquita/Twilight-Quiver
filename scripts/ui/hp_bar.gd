@@ -47,6 +47,19 @@ func set_ratio(ratio: float) -> void:
 	trail.scale.x = trail_ratio
 
 
+# Set sem o efeito visual de trail/squash. Usado em drains contínuos
+# (CurseAllyDecay) que chamam toda frame — set_ratio normal resetava o
+# trail_timer a cada call, deixando o trail branco "preso" no HP inicial e
+# a barra inteira parecia drenada de uma vez.
+func set_ratio_silent(ratio: float) -> void:
+	ratio = clampf(ratio, 0.0, 1.0)
+	current_ratio = ratio
+	trail_ratio = ratio
+	trail_timer = 0.0
+	fg.scale.x = current_ratio
+	trail.scale.x = trail_ratio
+
+
 func _squash() -> void:
 	if _squash_tween != null and _squash_tween.is_valid():
 		_squash_tween.kill()

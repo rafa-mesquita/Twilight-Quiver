@@ -42,6 +42,14 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# Entre waves (shop, intro de raid, cinematic do boss): capivara para.
+	# Sem isso, ela continuava o ciclo e dropava cogumelos durante o tempo da
+	# loja — o set inicial da próxima wave é definido por
+	# wave_manager._spawn_capivara_starter_mushrooms.
+	if not _is_wave_active():
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
 	# Cooldown do drop.
 	if _drop_cd > 0.0:
 		_drop_cd = maxf(_drop_cd - delta, 0.0)
@@ -126,6 +134,10 @@ func _finish_drop() -> void:
 func _spawn_mushroom() -> void:
 	if mushroom_scene == null:
 		return
+	# Anim de drop pode ter começado pouco antes do fim da wave e disparado o
+	# animation_finished durante a loja — segura o spawn fora da wave.
+	if not _is_wave_active():
+		return
 	var mush: Node2D = mushroom_scene.instantiate()
 	# L2+: alterna buff (par) e damage (ímpar).
 	var lvl: int = _capivara_level()
@@ -134,6 +146,13 @@ func _spawn_mushroom() -> void:
 		mush.is_damage_variant = is_damage
 	_get_world().add_child(mush)
 	mush.global_position = global_position
+
+
+func _is_wave_active() -> bool:
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm == null:
+		return true
+	return bool(wm.get("wave_active"))
 
 
 func _capivara_level() -> int:

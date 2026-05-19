@@ -285,6 +285,11 @@ func _fire_projectile() -> void:
 			pass
 	_get_world().add_child(proj)
 	proj.global_position = Vector2(muzzle.global_position.x, global_position.y + 2)
+	# Se o mago tá mirando em algo que não é o player (mini_arbusto decoy etc.),
+	# passa o alvo pro projétil ANTES do set_direction pra que o halfway/final
+	# redirect mirem nesse alvo em vez do player.
+	if proj.has_method("set_target") and current_target != null and current_target != player:
+		proj.set_target(current_target)
 	if proj.has_method("set_direction"):
 		proj.set_direction(locked_attack_dir)
 	# Mago invocador: tinta o projétil de verde (sprite + trail + glow) pra
@@ -342,11 +347,10 @@ func take_damage(amount: float) -> void:
 			# todos extendem este MageEnemy e passam por este take_damage.
 			if p2 != null and p2.has_method("notify_mage_killed"):
 				p2.notify_mage_killed()
-		# Gold dropa em ambos: morte de inimigo normal E morte de aliado convertido
-		# pela Maldição. Coerente com a expectativa do jogador — o macaco/mago que
-		# ele "transformou" deveria valer gold quando morre lutando.
-		GoldDrop.try_drop(_get_world(), gold_scene, global_position,
-			gold_drop_chance, gold_drop_min, gold_drop_max)
+			# Gold só dropa quando morre como inimigo — aliado convertido pela
+			# Maldição que cai não dá gold (player não matou, perdeu um aliado).
+			GoldDrop.try_drop(_get_world(), gold_scene, global_position,
+				gold_drop_chance, gold_drop_min, gold_drop_max)
 		_spawn_kill_effect()
 		_spawn_death_silhouette()
 		queue_free()
@@ -357,7 +361,7 @@ func apply_knockback(dir: Vector2, strength: float) -> void:
 
 
 func apply_stun(duration: float) -> void:
-	# Stun do Woodwarden: bloqueia AI/ataque/invocação. Refresca duração se reaplicado.
+	# Stun do Claudio Druida: bloqueia AI/ataque/invocação. Refresca duração se reaplicado.
 	_stun_remaining = maxf(_stun_remaining, duration)
 	is_attacking = false
 	is_summoning = false
@@ -454,11 +458,14 @@ func _pick_target() -> Node2D:
 	# Curse ally: inverte alvo — busca enemies em vez de player.
 	if is_curse_ally:
 		return _pick_curse_ally_target()
-	# Player + tank allies (woodwarden) competem como alvo primário pela distância.
+	# Player + tank allies (claudio_druida, mini_arbusto decoy) competem como
+	# alvo primário pela distância. Se o player está em "bush_hidden" (escondido
+	# no Arbusto Carrara), ele fica invisível e mago foca só em tank_ally/torre.
 	var primary: Node2D = null
 	var primary_dist: float = INF
 	var player_alive: bool = player != null and is_instance_valid(player) and not (("is_dead" in player) and player.is_dead)
-	if player_alive:
+	var player_visible: bool = player_alive and not (player as Node).is_in_group("bush_hidden")
+	if player_visible:
 		primary_dist = global_position.distance_to(player.global_position)
 		primary = player
 	for tank in get_tree().get_nodes_in_group("tank_ally"):
@@ -468,6 +475,9 @@ func _pick_target() -> Node2D:
 		if d < primary_dist:
 			primary = tank as Node2D
 			primary_dist = d
+	# Player hidden + tank_ally encontrado → persegue sem distance gate.
+	if not player_visible and primary != null:
+		return primary
 	if primary != null and primary_dist <= tower_target_switch_distance:
 		return primary
 	var nearest_tower: Node2D = null
@@ -481,7 +491,7 @@ func _pick_target() -> Node2D:
 			nearest_dist = d
 	if nearest_tower != null:
 		return nearest_tower
-	return player if player_alive else null
+	return player if player_visible else null
 
 
 func _pick_curse_ally_target() -> Node2D:

@@ -1,12 +1,12 @@
 [gd_scene format=3 uid="uid://bhvp4sk8ums3d"]
 
-[ext_resource type="Script" uid="uid://btvgv1vqw84r3" path="res://scripts/enemies/woodwarden.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://btvgv1vqw84r3" path="res://scripts/enemies/claudio_druida.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://cn7fq6av2e3sx" path="res://assets/aliados/tree-loving ally-Sheet.png" id="2_sheet"]
 [ext_resource type="PackedScene" path="res://scenes/effects/damage_effect.tscn" id="3_dmg"]
 [ext_resource type="PackedScene" uid="uid://c0fhcseis1qub" path="res://scenes/ui/hp_bar.tscn" id="4_hpbar"]
 [ext_resource type="PackedScene" path="res://scenes/effects/damage_number.tscn" id="5_dmgnum"]
 [ext_resource type="PackedScene" path="res://scenes/effects/kill_effect.tscn" id="6_kill"]
-[ext_resource type="AudioStream" uid="uid://dxyeppqft3fj8" path="res://audios/effects/atack woodwarden 0.5 sec.mp3" id="7_atk_sfx"]
+[ext_resource type="AudioStream" uid="uid://dxyeppqft3fj8" path="res://audios/effects/atack claudio_druida 0.5 sec.mp3" id="7_atk_sfx"]
 
 [sub_resource type="Gradient" id="Grad_green_aura"]
 offsets = PackedFloat32Array(0, 0.55, 1)
@@ -54,7 +54,7 @@ region = Rect2(32, 32, 32, 32)
 atlas = ExtResource("2_sheet")
 region = Rect2(64, 32, 32, 32)
 
-[sub_resource type="SpriteFrames" id="SpriteFrames_woodwarden"]
+[sub_resource type="SpriteFrames" id="SpriteFrames_claudio_druida"]
 animations = [{
 "frames": [{
 "duration": 1.0,
@@ -103,7 +103,7 @@ animations = [{
 radius = 8.0
 height = 28.0
 
-[node name="Woodwarden" type="CharacterBody2D" unique_id=1375454157]
+[node name="ClaudioDruida" type="CharacterBody2D" unique_id=1375454157]
 collision_layer = 4
 collision_mask = 2
 script = ExtResource("1_script")
@@ -143,7 +143,7 @@ texture_scale = 1.1
 light_mask = 2
 texture_filter = 1
 scale = Vector2(1.2, 1.2)
-sprite_frames = SubResource("SpriteFrames_woodwarden")
+sprite_frames = SubResource("SpriteFrames_claudio_druida")
 animation = &"idle"
 autoplay = "idle"
 offset = Vector2(0, -8)

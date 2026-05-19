@@ -1,6 +1,6 @@
 extends CharacterBody2D
 
-# Woodwarden — primeiro aliado.
+# Claudio Druida — primeiro aliado.
 # Comportamento:
 # - Sem inimigo perto: fica em formação atrás/perto do player
 # - Com inimigo no `aggro_range`: corre na direção do mais próximo
@@ -10,7 +10,7 @@ extends CharacterBody2D
 # - Imune ao ataque do inseto (group "insect_immune")
 # - Renasce no início do próximo round (wave_manager respawna via owned_structures)
 
-signal died(woodwarden: Node)
+signal died(claudio_druida: Node)
 
 @export var max_hp: float = 384.0
 @export var damage: float = 0.0
@@ -20,11 +20,11 @@ signal died(woodwarden: Node)
 # Raio do stun em área aplicado em todo ataque (lv1+). Centrado no alvo principal.
 @export var aoe_stun_radius: float = 50.0
 @export var aggro_range: float = 140.0
-# Foco do Woodwarden é DEFENDER o player — só persegue inimigos que estão
+# Foco do Claudio Druida é DEFENDER o player — só persegue inimigos que estão
 # dentro deste raio em volta do PLAYER (não do warden). Evita correr pra
 # longe atrás de inimigo solto e deixar o player descoberto.
 @export var defense_radius: float = 110.0
-# Anel de respiro ao redor do player: woodwarden persegue se mais longe que
+# Anel de respiro ao redor do player: claudio_druida persegue se mais longe que
 # follow_max_distance, recua se mais perto que follow_min_distance, fica parado
 # entre os dois.
 @export var follow_min_distance: float = 28.0
@@ -35,7 +35,7 @@ signal died(woodwarden: Node)
 @export var far_speed_mult_max: float = 1.8
 @export var far_speed_threshold_start: float = 80.0  # dist em que começa a buffar
 @export var far_speed_threshold_full: float = 200.0  # dist em que pega o buff total
-# Anti-overlap entre múltiplos woodwardens — se outro está mais perto que isso,
+# Anti-overlap entre múltiplos claudio_druidas — se outro está mais perto que isso,
 # aplica força de separação lateral pra não ficarem em cima um do outro.
 @export var separation_radius: float = 20.0
 @export var separation_strength: float = 35.0
@@ -57,9 +57,9 @@ const STUN_VISUAL_SCRIPT: GDScript = preload("res://scripts/effects/stun_visual.
 # não escapar do alcance durante a anim de 0.667s).
 const HIT_FRAME: int = 1
 const BODY_CENTER_OFFSET: Vector2 = Vector2(0, -12)
-# Boss (mage_monkey): woodwarden bate por 25% menos pra não trivializar a
+# Boss (mage_monkey): claudio_druida bate por 25% menos pra não trivializar a
 # fase vulnerável do boss com build de tank-ally.
-const WOODWARDEN_BOSS_DMG_MULT: float = 0.75
+const CLAUDIO_DRUIDA_BOSS_DMG_MULT: float = 0.75
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var hp_bar: Node2D = $HpBar
@@ -79,7 +79,7 @@ func _ready() -> void:
 	add_to_group("ally")
 	add_to_group("tank_ally")  # _pick_target dos enemies considera estes além do player
 	add_to_group("insect_immune")  # insect_projectile pula este alvo
-	# Não está em "structure" — woodwarden tem respawn próprio gerenciado pelo
+	# Não está em "structure" — claudio_druida tem respawn próprio gerenciado pelo
 	# player (não pelo wave_manager). Sem o grupo, enemies a longa distância não
 	# o consideram como "torre alternativa", mas tank_ally ainda pega na mira.
 	hp = max_hp
@@ -130,7 +130,7 @@ func _physics_process(delta: float) -> void:
 			move_vec = to_player.normalized()
 		elif dist < follow_min_distance and dist > 0.01:
 			move_vec = -to_player.normalized()
-	# Separation: empurra pra longe de outros woodwardens próximos.
+	# Separation: empurra pra longe de outros claudio_druidas próximos.
 	var sep: Vector2 = _separation_force()
 	# Buff de speed quando longe do player — lerp linear entre threshold start
 	# (sem buff) e threshold full (buff máximo).
@@ -184,7 +184,7 @@ func _separation_force() -> Vector2:
 	for other in get_tree().get_nodes_in_group("ally"):
 		if other == self or not is_instance_valid(other) or not (other is Node2D):
 			continue
-		# Só repele de outros woodwardens (mesmo tipo) — não quero separar de torre.
+		# Só repele de outros claudio_druidas (mesmo tipo) — não quero separar de torre.
 		if not (other.get_script() == get_script()):
 			continue
 		var diff: Vector2 = global_position - (other as Node2D).global_position
@@ -197,7 +197,7 @@ func _separation_force() -> Vector2:
 
 
 func _pick_enemy_target() -> Node2D:
-	# Prioridade máxima: boss com defesa aberta (vulnerável) — woodwarden vai
+	# Prioridade máxima: boss com defesa aberta (vulnerável) — claudio_druida vai
 	# direto pra ele independente da distância pro player. Quando shielded,
 	# volta pra lógica normal de defender o player.
 	for boss in get_tree().get_nodes_in_group("mage_monkey"):
@@ -217,7 +217,7 @@ func _pick_enemy_target() -> Node2D:
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e) or not (e is Node2D):
 			continue
-		# Pula bosses com shield ativo — woodwarden não consegue dar dano
+		# Pula bosses com shield ativo — claudio_druida não consegue dar dano
 		# e o ataque desperdiça o cooldown.
 		if (e as Node).is_in_group("boss_shielded"):
 			continue
@@ -297,11 +297,11 @@ func _apply_hit() -> void:
 		# Curse ANTES do take_damage pra contar na conversão se o hit matar.
 		CurseAllyHelper.apply_ally_curse_on_damage(current_target, self)
 		var was_alive_ww: bool = (not ("hp" in current_target)) or float(current_target.hp) > 0.0
-		# Boss (mage_monkey): woodwarden bate por 25% menos pra build de
+		# Boss (mage_monkey): claudio_druida bate por 25% menos pra build de
 		# tank-ally não trivializar a fase vulnerável do boss.
 		var dmg: float = damage
 		if current_target.is_in_group("mage_monkey"):
-			dmg *= WOODWARDEN_BOSS_DMG_MULT
+			dmg *= CLAUDIO_DRUIDA_BOSS_DMG_MULT
 		# Crit roll (Flechas Críticas aplica em pets também).
 		var p_for_crit := get_tree().get_first_node_in_group("player")
 		if p_for_crit != null and p_for_crit.has_method("roll_crit"):
@@ -310,7 +310,7 @@ func _apply_hit() -> void:
 				dmg *= float(crit_ww.get("mult", 1.0))
 				CritFeedback.mark_next_hit_crit(current_target)
 		current_target.take_damage(dmg)
-		_notify_player_dmg_kill(dmg, "woodwarden", was_alive_ww, current_target)
+		_notify_player_dmg_kill(dmg, "claudio_druida", was_alive_ww, current_target)
 	# Stun em área: todos os inimigos no aoe_stun_radius em volta do alvo
 	# principal sofrem stun. cc_immune (boss/stone) ignoram via apply_stun próprio.
 	var aoe_origin: Vector2 = current_target.global_position
@@ -329,7 +329,7 @@ func _apply_hit() -> void:
 	# Cura do player no ataque: L2 = 25hp, L3+ = 30hp (carrega pro L4).
 	var p := get_tree().get_first_node_in_group("player")
 	if p != null and p.has_method("get_upgrade_count") and p.has_method("heal"):
-		var ww_lvl: int = int(p.get_upgrade_count("woodwarden"))
+		var ww_lvl: int = int(p.get_upgrade_count("claudio_druida"))
 		var heal_amount: float = 0.0
 		if ww_lvl == 2:
 			heal_amount = 25.0
@@ -447,7 +447,7 @@ func apply_knockback(dir: Vector2, strength: float) -> void:
 
 
 func heal(amount: float) -> void:
-	# Cura usada pela mecânica lv2+ do Woodwarden (ataques curam aliados).
+	# Cura usada pela mecânica lv2+ do Claudio Druida (ataques curam aliados).
 	if _is_dead or amount <= 0.0:
 		return
 	hp = minf(hp + amount, max_hp)

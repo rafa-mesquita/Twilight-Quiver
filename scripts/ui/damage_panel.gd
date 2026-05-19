@@ -39,7 +39,7 @@ const SOURCE_LABELS: Dictionary = {
 	"boomerang": "DMG_PANEL_BOOMERANG",
 	"arrow_tower": "DMG_PANEL_TOWER",
 	"ting_turret": "DMG_PANEL_TING",
-	"woodwarden": "DMG_PANEL_WOODWARDEN",
+	"claudio_druida": "DMG_PANEL_CLAUDIO_DRUIDA",
 	"leno": "DMG_PANEL_LENO",
 	"capivara_joe": "DMG_PANEL_CAPIVARA",
 	"mini_mago": "DMG_PANEL_MINI_MAGO",

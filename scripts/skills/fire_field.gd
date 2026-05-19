@@ -10,6 +10,10 @@ extends Area2D
 # bater em "enemy", machuca player + tank_ally + structure (e ignora outros
 # enemies, evitando friendly fire).
 @export var is_enemy_source: bool = false
+# Identificador da fonte (ex: "fire_mage") repassado pro player.take_damage
+# quando is_enemy_source=true. Sem isso, morrer no fogo aparece como "causa
+# desconhecida" no death screen.
+@export var source_id: String = ""
 const TICK_INTERVAL: float = 0.5
 
 var _enemies_inside: Array[Node] = []
@@ -74,9 +78,15 @@ func _apply_tick() -> void:
 				dmg_ff = float(crit_ff.get("dmg", dmg_ff))
 				if bool(crit_ff.get("crit", false)):
 					CritFeedback.mark_next_hit_crit(enemy)
-			enemy.take_damage(dmg_ff)
-			if not is_enemy_source:
-				_notify_player_dmg_kill(dmg_ff, "fire_skill", was_alive_ff, enemy)
+			# Enemy-source + target player: passa source_id pro death screen
+			# creditar a fonte (ex: "fire_mage"). Outros casos (enemy hits
+			# ally/structure ou player-source hits enemy) usam signature 1-arg.
+			if is_enemy_source and enemy.is_in_group("player"):
+				enemy.take_damage(dmg_ff, source_id)
+			else:
+				enemy.take_damage(dmg_ff)
+				if not is_enemy_source:
+					_notify_player_dmg_kill(dmg_ff, "fire_skill", was_alive_ff, enemy)
 
 
 func _on_body_entered(body: Node) -> void:

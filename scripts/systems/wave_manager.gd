@@ -312,8 +312,8 @@ func _start_next_wave() -> void:
 			(player as Node2D).global_position = _wave7_player_spawn
 		if player.has_method("reset_perf_counter"):
 			player.reset_perf_counter()
-		if player.has_method("reset_woodwardens_hp"):
-			player.reset_woodwardens_hp()
+		if player.has_method("reset_claudio_druidas_hp"):
+			player.reset_claudio_druidas_hp()
 		if player.has_method("reset_all_cooldowns"):
 			player.reset_all_cooldowns()
 		# Zera contador de magos mortos da wave — base do scaling de atk speed
@@ -531,6 +531,15 @@ func _build_wave_config(num: int) -> Dictionary:
 		cfg["ice_mage"] = {"alive_target": maxi(ice_alive, 1), "total": maxi(ice_total, ice_alive)}
 	if elec_total > 0:
 		cfg["electric_mage"] = {"alive_target": maxi(elec_alive, 1), "total": maxi(elec_total, elec_alive)}
+	# Wave 19+: pace acelerado — dobra alive_target e total de TODOS os tipos
+	# (mais inimigos ao mesmo tempo, mais inimigos no total). Combinado com o
+	# spawn_delay reduzido em _spawn_delay_for_wave, o mapa enche mais rápido
+	# e força o player a dar conta do volume.
+	if num >= 19:
+		for type_key in cfg.keys():
+			var entry: Dictionary = cfg[type_key]
+			entry["alive_target"] = int(entry["alive_target"]) * 2
+			entry["total"] = int(entry["total"]) * 2
 	return cfg
 
 
@@ -538,6 +547,10 @@ func _spawn_delay_for_wave() -> float:
 	# Wave 3 spawna mais devagar pra dar respiro depois do salto da wave 2.
 	if wave_number == 3:
 		return spawn_delay * 1.6
+	# Wave 19+: spawn delay caí pela metade pra completar a vibe de "pico de
+	# pressão" — inimigos chegam dobrados (alive_target × 2) e mais rápido.
+	if wave_number >= 19:
+		return spawn_delay * 0.5
 	return spawn_delay
 
 
@@ -1008,7 +1021,7 @@ func _on_player_died() -> void:
 
 # Chamado pelo wave_shop quando o player confirma o placement de uma estrutura.
 # Salva pra renascer entre waves se for destruída. Aceita ref do node atual
-# pra rastrear se ainda tá vivo (estruturas móveis tipo woodwarden movem do
+# pra rastrear se ainda tá vivo (estruturas móveis tipo claudio_druida movem do
 # spawn original — não dá pra checar só por proximidade de posição).
 func register_structure(scene_path: String, pos: Vector2, instance: Node2D = null) -> void:
 	owned_structures.append({
@@ -1050,7 +1063,7 @@ func _check_structure_respawns(delta: float) -> void:
 		if scene == null:
 			continue
 		var inst: Node2D = scene.instantiate()
-		_apply_woodwarden_scaling_if_applicable(inst, entry["scene_path"])
+		_apply_claudio_druida_scaling_if_applicable(inst, entry["scene_path"])
 		world.add_child(inst)
 		inst.global_position = pos
 		entry["instance"] = inst
@@ -1072,7 +1085,7 @@ func _respawn_owned_structures() -> void:
 			# Vivo — atualiza posição pra próxima respawn ser na última posição dele.
 			if inst_ref is Node2D:
 				entry["position"] = (inst_ref as Node2D).global_position
-			# Reseta HP no começo do round (woodwarden tank precisa entrar full
+			# Reseta HP no começo do round (claudio_druida tank precisa entrar full
 			# pro próximo round, não com o HP que sobrou do anterior).
 			if "max_hp" in inst_ref and "hp" in inst_ref:
 				inst_ref.hp = inst_ref.max_hp
@@ -1087,21 +1100,21 @@ func _respawn_owned_structures() -> void:
 		if scene == null:
 			continue
 		var inst: Node2D = scene.instantiate()
-		_apply_woodwarden_scaling_if_applicable(inst, entry["scene_path"])
+		_apply_claudio_druida_scaling_if_applicable(inst, entry["scene_path"])
 		world.add_child(inst)
 		inst.global_position = pos
 		entry["instance"] = inst
 
 
-# Aplica HP/dmg scalonado por nível do woodwarden_level do player. Cada compra
+# Aplica HP/dmg scalonado por nível do claudio_druida_level do player. Cada compra
 # aumenta os stats do aliado quando ele é spawnado (ou re-spawnado a cada round).
-func _apply_woodwarden_scaling_if_applicable(inst: Node2D, scene_path: String) -> void:
-	if not scene_path.ends_with("woodwarden.tscn"):
+func _apply_claudio_druida_scaling_if_applicable(inst: Node2D, scene_path: String) -> void:
+	if not scene_path.ends_with("claudio_druida.tscn"):
 		return
 	var player := get_tree().get_first_node_in_group("player")
 	if player == null or not player.has_method("get_upgrade_count"):
 		return
-	var lvl: int = int(player.get_upgrade_count("woodwarden"))
+	var lvl: int = int(player.get_upgrade_count("claudio_druida"))
 	if lvl <= 1:
 		return
 	# +25 HP, +5 dmg por level acima de 1.
@@ -1138,11 +1151,12 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	{"id": "ice_arrow", "name": "SHOP_UPG_ICE_ARROW"},
 	{"id": "boomerang", "name": "SHOP_UPG_BOOMERANG"},
 	{"id": "critical_chance", "name": "SHOP_UPG_CRITICAL_CHANCE"},
-	{"id": "woodwarden", "name": "SHOP_ALLY_WOODWARDEN"},
+	{"id": "claudio_druida", "name": "SHOP_ALLY_CLAUDIO_DRUIDA"},
 	{"id": "leno", "name": "SHOP_ALLY_LENO"},
 	{"id": "capivara_joe", "name": "SHOP_ALLY_CAPIVARA"},
 	{"id": "ting", "name": "SHOP_ALLY_TING"},
 	{"id": "mini_mago", "name": "SHOP_ALLY_MINI_MAGO"},
+	{"id": "arbusto", "name": "SHOP_ALLY_ARBUSTO"},
 ]
 
 
@@ -1193,10 +1207,11 @@ func _grant_free_random_upgrade() -> void:
 # aqui pra o popup de free reward achar a mesma arte que o shop.
 const FREE_REWARD_CARD_PATHS: Dictionary = {
 	"leno": "res://assets/Hud/shop/aliado/Leno/Leno Card.png",
-	"woodwarden": "res://assets/Hud/shop/aliado/woodwarden/woodwarden card.png",
+	"claudio_druida": "res://assets/Hud/shop/aliado/claudio_druida/claudio_druida card.png",
 	"ting": "res://assets/Hud/shop/aliado/ting/ting card.png",
 	"capivara_joe": "res://assets/Hud/shop/aliado/capivara joe/capivara joe card.png",
 	"mini_mago": "res://assets/Hud/shop/aliado/mini mago/mini mago card.png",
+	"arbusto": "res://assets/Hud/shop/aliado/abursto carrara/arbusto.png",
 	"graviton": "res://assets/Hud/shop/upgrade/graviton/graviton card-Sheet.png",
 	"ricochet_arrow": "res://assets/Hud/shop/upgrade/ricochete.png",
 	"gold_magnet": "res://assets/Hud/shop/upgrade/coin master.png",
@@ -1211,7 +1226,7 @@ const FREE_REWARD_CARD_PATHS: Dictionary = {
 }
 const FREE_REWARD_STATUS_SHEET: String = "res://assets/Hud/shop/status/HP - atck speed - Move speed - Atck Dmg.png"
 const FREE_REWARD_STATUS_ROWS: Dictionary = {"hp": 0, "attack_speed": 1, "move_speed": 2, "damage": 3}
-const FREE_REWARD_ALIADO_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe", "ting", "mini_mago"]
+const FREE_REWARD_ALIADO_IDS: Array[String] = ["claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto"]
 const FREE_REWARD_STATUS_IDS: Array[String] = ["hp", "damage", "attack_speed", "move_speed", "armor"]
 
 
@@ -1236,7 +1251,7 @@ func _grant_free_random_pet() -> void:
 	var lvl: int = 1
 	if player.has_method("get_upgrade_count"):
 		lvl = int(player.get_upgrade_count(pick))
-	var name_key: String = "SHOP_ALLY_WOODWARDEN"
+	var name_key: String = "SHOP_ALLY_CLAUDIO_DRUIDA"
 	for entry in FREE_UPGRADE_POOL:
 		if entry["id"] == pick:
 			name_key = entry["name"]

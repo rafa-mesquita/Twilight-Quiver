@@ -43,6 +43,14 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# Entre waves (shop, intro de raid, cinematic do boss): ting para. Sem isso,
+	# ele continuava o ciclo de deploy e construía torreta durante a loja.
+	# Torretas spawnadas na loja eram limpas no _finish_wave da próxima, mas a
+	# construção rolava na loja, atrapalhando o flow.
+	if not _is_wave_active():
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
 	if _deploy_cd > 0.0:
 		_deploy_cd = maxf(_deploy_cd - delta, 0.0)
 	# Transição safe → approach: quando entra na janela final, repica waypoint
@@ -268,6 +276,13 @@ func _find_boss() -> Node2D:
 	return null
 
 
+func _is_wave_active() -> bool:
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm == null:
+		return true
+	return bool(wm.get("wave_active"))
+
+
 func _clamp_to_bounds(p: Vector2) -> Vector2:
 	return Vector2(
 		clampf(p.x, wander_bounds.position.x, wander_bounds.position.x + wander_bounds.size.x),
@@ -300,6 +315,9 @@ func _finish_build() -> void:
 
 func _spawn_turret() -> void:
 	if turret_scene == null:
+		return
+	# Anim "build" pode ter terminado durante a loja — segura o spawn fora da wave.
+	if not _is_wave_active():
 		return
 	var t: Node2D = turret_scene.instantiate()
 	if "lifetime" in t:

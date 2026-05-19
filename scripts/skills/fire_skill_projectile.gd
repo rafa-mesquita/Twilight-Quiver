@@ -15,6 +15,9 @@ const ARC_HEIGHT: float = 80.0  # peak height da parábola — maior agora pra a
 # Quando true, propaga `is_enemy_source = true` pro FireField que spawnar
 # (vem de um inimigo, machuca player/ally/structure em vez de enemies).
 @export var is_enemy_source: bool = false
+# Source id propagado pro FireField → player.take_damage. Usado pelo death
+# screen pra creditar a morte (sem isso aparece "causa desconhecida").
+@export var source_id: String = ""
 
 var _start: Vector2 = Vector2.ZERO
 var _target: Vector2 = Vector2.ZERO
@@ -57,6 +60,8 @@ func _land() -> void:
 			field.duration = field_duration
 		if "is_enemy_source" in field:
 			field.is_enemy_source = is_enemy_source
+		if "source_id" in field:
+			field.source_id = source_id
 		var world := get_tree().get_first_node_in_group("world")
 		if world != null:
 			world.add_child(field)

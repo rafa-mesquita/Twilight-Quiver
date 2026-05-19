@@ -3,7 +3,7 @@ extends CanvasLayer
 # Loja pós-wave: 4 categorias, cada uma com reroll próprio.
 # - Estruturas (2 cards paisagem, esq. topo): Torre + slots futuros, placement.
 # - Status (2 cards paisagem, esq. base): HP, Dano, Atk Speed, Move Speed.
-# - Aliados (3 cards retrato, dir. topo): Woodwarden + slots futuros, placement.
+# - Aliados (3 cards retrato, dir. topo): Claudio Druida + slots futuros, placement.
 # - Upgrades (3 cards retrato, dir. base): perfuração, multi, chain, life steal,
 #   gold magnet, dash + subs, fire, curse.
 # Player seleciona max 1 por categoria (upgrades pode ser 1-2 com bonus em waves
@@ -16,16 +16,18 @@ const TOWER_PRICE: int = 7
 # Aliados/pets têm tabela própria (mais cara que upgrades comuns) — boost de
 # +1/+4/+4/+6 por estrela em cima dos valores antigos pra controlar pace de
 # compra de pet vs upgrade.
-const WOODWARDEN_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
+const CLAUDIO_DRUIDA_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 const LENO_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 const CAPIVARA_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 const TING_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 # Mini Mago: preço placeholder igual aos outros pets — user vai re-balancear
 # quando finalizar o design dos níveis.
 const MINI_MAGO_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
+# Arbusto Carrara: preço placeholder padrão de pet — L2-L4 ainda em design.
+const ARBUSTO_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 # Pool de aliados pra rolagem na shop. 3 cards exibidos por wave; sorteia 3
 # dos N possíveis (priorizando pets já owned pro player poder upgradar).
-const _ALL_ALLY_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe", "ting", "mini_mago"]
+const _ALL_ALLY_IDS: Array[String] = ["claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto"]
 const STRUCTURE_SURCHARGE_PER_OWNED: int = 3
 # Aliado: primeira loja (wave 3) o pet é DADO de graça aleatório (não vai pra
 # loja). Depois aparece pra venda nas waves 5, 7, 9, 11...
@@ -174,11 +176,11 @@ const GRAVITON_DESCS: Array[String] = [
 	"SHOP_GRAVITON_DESC_3",
 	"SHOP_GRAVITON_DESC_4",
 ]
-const WOODWARDEN_DESCS: Array[String] = [
-	"SHOP_WW_DESC_1",
-	"SHOP_WW_DESC_2",
-	"SHOP_WW_DESC_3",
-	"SHOP_WW_DESC_4",
+const CLAUDIO_DRUIDA_DESCS: Array[String] = [
+	"SHOP_CD_DESC_1",
+	"SHOP_CD_DESC_2",
+	"SHOP_CD_DESC_3",
+	"SHOP_CD_DESC_4",
 ]
 const LENO_DESCS: Array[String] = [
 	"SHOP_LENO_DESC_1",
@@ -204,6 +206,12 @@ const MINI_MAGO_DESCS: Array[String] = [
 	"SHOP_MINI_MAGO_DESC_2",
 	"SHOP_MINI_MAGO_DESC_3",
 	"SHOP_MINI_MAGO_DESC_4",
+]
+const ARBUSTO_DESCS: Array[String] = [
+	"SHOP_ARBUSTO_DESC_1",
+	"SHOP_ARBUSTO_DESC_2",
+	"SHOP_ARBUSTO_DESC_3",
+	"SHOP_ARBUSTO_DESC_4",
 ]
 const FIRE_ARROW_DESCS: Array[String] = [
 	"SHOP_FIRE_ARROW_DESC_1",
@@ -294,7 +302,7 @@ const _AUGMENT_SLOT_SIZE: Vector2 = Vector2(60, 60)
 @onready var structures_box: HBoxContainer = $Root/StatsCard/StructuresBox
 
 # Aliados (pets) que aparecem no card do player. Ordem fixa.
-const _PETS_ROW_IDS: Array[String] = ["woodwarden", "leno", "capivara_joe", "ting", "mini_mago"]
+const _PETS_ROW_IDS: Array[String] = ["claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto"]
 # Estruturas conhecidas. Mapeia o scene_path em owned_structures pra um id
 # usado no chip. Por enquanto só arrow_tower.
 const _STRUCTURES_ROW: Array[Dictionary] = [
@@ -646,23 +654,24 @@ func _build_ally_slot(ally_id: String, p: Node, distinct_owned: int) -> Dictiona
 		desc = "SHOP_MAX_REACHED"
 	elif pet_capped:
 		desc = "SHOP_PET_LIMIT_REACHED"
-	elif ally_id == "woodwarden":
-		# Woodwarden mantém as descs custom-WW_DESC_X (não passa por _get_upgrade_desc).
+	elif ally_id == "claudio_druida":
+		# Claudio Druida mantém as descs custom-WW_DESC_X (não passa por _get_upgrade_desc).
 		match lvl:
-			0: desc = "SHOP_WW_DESC_1"
-			1: desc = "SHOP_WW_DESC_2"
-			2: desc = "SHOP_WW_DESC_3"
-			3: desc = "SHOP_WW_DESC_4"
+			0: desc = "SHOP_CD_DESC_1"
+			1: desc = "SHOP_CD_DESC_2"
+			2: desc = "SHOP_CD_DESC_3"
+			3: desc = "SHOP_CD_DESC_4"
 			_: desc = ""
 	else:
 		desc = _get_upgrade_desc(ally_id, lvl + 1)
 	var name_key: String = ""
 	match ally_id:
-		"woodwarden": name_key = "SHOP_ALLY_WOODWARDEN"
+		"claudio_druida": name_key = "SHOP_ALLY_CLAUDIO_DRUIDA"
 		"leno": name_key = "SHOP_ALLY_LENO"
 		"capivara_joe": name_key = "SHOP_ALLY_CAPIVARA"
 		"ting": name_key = "SHOP_ALLY_TING"
 		"mini_mago": name_key = "SHOP_ALLY_MINI_MAGO"
+		"arbusto": name_key = "SHOP_ALLY_ARBUSTO"
 	return {
 		"id": ally_id,
 		"name": name_key,
@@ -701,11 +710,12 @@ func _on_pet_chip_input(event: InputEvent, id: String) -> void:
 # = total que o player pagou. Refund = metade (floor).
 func _pet_price_table_for(id: String) -> Array:
 	match id:
-		"woodwarden": return WOODWARDEN_PRICE_TABLE
+		"claudio_druida": return CLAUDIO_DRUIDA_PRICE_TABLE
 		"leno": return LENO_PRICE_TABLE
 		"capivara_joe": return CAPIVARA_PRICE_TABLE
 		"ting": return TING_PRICE_TABLE
 		"mini_mago": return MINI_MAGO_PRICE_TABLE
+		"arbusto": return ARBUSTO_PRICE_TABLE
 	return []
 
 
@@ -982,11 +992,12 @@ func _get_upgrade_descs_array(id: String) -> Array:
 		"critical_chance": return CRITICAL_CHANCE_DESCS
 		"ricochet_arrow": return RICOCHET_ARROW_DESCS
 		"graviton": return GRAVITON_DESCS
-		"woodwarden": return WOODWARDEN_DESCS
+		"claudio_druida": return CLAUDIO_DRUIDA_DESCS
 		"leno": return LENO_DESCS
 		"capivara_joe": return CAPIVARA_JOE_DESCS
 		"ting": return TING_DESCS
 		"mini_mago": return MINI_MAGO_DESCS
+		"arbusto": return ARBUSTO_DESCS
 	return []
 
 
@@ -1031,7 +1042,7 @@ func _build_all_cards() -> void:
 
 func _aliado_target_level(slot: Dictionary) -> int:
 	# Aliado não usa target_level no slot; calcula a partir do nível atual do
-	# player (woodwarden = nível atual + 1; futuros aliados podem seguir o
+	# player (claudio_druida = nível atual + 1; futuros aliados podem seguir o
 	# mesmo padrão se forem stackable).
 	var id: String = slot.get("id", "")
 	if id == "" or id == "soon" or id == "none":
@@ -1179,10 +1190,11 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 	"curse_arrow": Color(0x45 / 255.0, 0x14 / 255.0, 0x58 / 255.0),  # #451458
 	"ice_arrow": Color(0x1b / 255.0, 0x31 / 255.0, 0x6c / 255.0),  # #1b316c (azul escuro — combina com a arte do card)
 	"leno": Color(0xfc / 255.0, 0xb4 / 255.0, 0xcc / 255.0),  # #fcb4cc
-	"woodwarden": Color(0x5d / 255.0, 0x80 / 255.0, 0x5a / 255.0),  # #5d805a
+	"claudio_druida": Color(0x5d / 255.0, 0x80 / 255.0, 0x5a / 255.0),  # #5d805a
 	"ting": Color.WHITE,  # branco — alto contraste no fundo laranja
 	"capivara_joe": Color.WHITE,  # branco — alto contraste no fundo vermelho
 	"mini_mago": Color.WHITE,  # branco — pedido pelo design da carta
+	"arbusto": Color(0x2d / 255.0, 0x55 / 255.0, 0x2d / 255.0),  # verde escuro
 	"graviton": Color.WHITE,
 	"perfuracao": Color.WHITE,
 	"ricochet_arrow": Color.WHITE,
@@ -1198,10 +1210,11 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 # e descrição têm contraste de cor (ex: Leno: rosa-claro título, rosa-escuro desc).
 const UPGRADE_DESC_COLORS: Dictionary = {
 	"leno": Color(0xab / 255.0, 0x54 / 255.0, 0x82 / 255.0),  # #ab5482
-	"woodwarden": Color(0x2d / 255.0, 0x3e / 255.0, 0x2b / 255.0),  # #2d3e2b
+	"claudio_druida": Color(0x2d / 255.0, 0x3e / 255.0, 0x2b / 255.0),  # #2d3e2b
 	"ting": Color.WHITE,  # mesmo do título — branco em todo o texto
 	"capivara_joe": Color.WHITE,  # mesmo do título — branco em todo o texto
 	"mini_mago": Color.WHITE,  # mesmo do título — branco em todo o texto
+	"arbusto": Color(0x55 / 255.0, 0x7a / 255.0, 0x52 / 255.0),  # verde médio
 	"graviton": Color(0x61 / 255.0, 0x61 / 255.0, 0x61 / 255.0),  # #616161
 	"chain_lightning": Color(0xa7 / 255.0, 0x8f / 255.0, 0x24 / 255.0),  # #a78f24
 }
@@ -1209,10 +1222,11 @@ const UPGRADE_DESC_COLORS: Dictionary = {
 # o padrão `<category>/<id>.png` (ex: Leno tem subfolder e nome com espaço).
 const CARD_PATH_OVERRIDES: Dictionary = {
 	"leno": "res://assets/Hud/shop/aliado/Leno/Leno Card.png",
-	"woodwarden": "res://assets/Hud/shop/aliado/woodwarden/woodwarden card.png",
+	"claudio_druida": "res://assets/Hud/shop/aliado/claudio_druida/claudio_druida card.png",
 	"ting": "res://assets/Hud/shop/aliado/ting/ting card.png",
 	"capivara_joe": "res://assets/Hud/shop/aliado/capivara joe/capivara joe card.png",
 	"mini_mago": "res://assets/Hud/shop/aliado/mini mago/mini mago card.png",
+	"arbusto": "res://assets/Hud/shop/aliado/abursto carrara/arbusto.png",
 	"graviton": "res://assets/Hud/shop/upgrade/graviton/graviton card-Sheet.png",
 	# id é "ricochet_arrow" mas o arquivo é "ricochete.png" (PT). Override pra
 	# o loader achar a arte certa.
@@ -1746,7 +1760,7 @@ func _commit_status_only() -> void:
 
 
 func _commit_aliado_no_placement() -> void:
-	# Aliados com flag `auto_spawn` (Leno + Woodwarden hoje) não passam por
+	# Aliados com flag `auto_spawn` (Leno + Claudio Druida hoje) não passam por
 	# placement — `apply_upgrade` no player faz o spawn automaticamente.
 	# Aliados com "scene" usam placement (não há mais nenhum hoje).
 	var player := _get_player()
@@ -1822,11 +1836,11 @@ func _confirm_placement_at(chosen: Node2D) -> void:
 		else:
 			g.queue_free()
 	_placement_ghosts.clear()
-	if slot.get("id", "") == "woodwarden" and player.has_method("apply_upgrade"):
-		player.apply_upgrade("woodwarden")
+	if slot.get("id", "") == "claudio_druida" and player.has_method("apply_upgrade"):
+		player.apply_upgrade("claudio_druida")
 		var wm0 := get_tree().get_first_node_in_group("wave_manager")
-		if wm0 != null and wm0.has_method("_apply_woodwarden_scaling_if_applicable"):
-			wm0._apply_woodwarden_scaling_if_applicable(chosen, slot["scene"])
+		if wm0 != null and wm0.has_method("_apply_claudio_druida_scaling_if_applicable"):
+			wm0._apply_claudio_druida_scaling_if_applicable(chosen, slot["scene"])
 			if "max_hp" in chosen and "hp" in chosen:
 				chosen.hp = chosen.max_hp
 				if chosen.has_node("HpBar"):
@@ -2516,11 +2530,12 @@ func _augment_title_for(id: String) -> String:
 		"dash": return "SHOP_UPG_DASH"
 		"esquivando": return "SHOP_UPG_ESQUIVANDO"
 		"gold_magnet": return "SHOP_UPG_GOLD_MAGNET"
-		"woodwarden": return "SHOP_ALLY_WOODWARDEN"
+		"claudio_druida": return "SHOP_ALLY_CLAUDIO_DRUIDA"
 		"leno": return "SHOP_ALLY_LENO"
 		"capivara_joe": return "SHOP_ALLY_CAPIVARA"
 		"ting": return "SHOP_ALLY_TING"
 		"mini_mago": return "SHOP_ALLY_MINI_MAGO"
+		"arbusto": return "SHOP_ALLY_ARBUSTO"
 	return id
 
 

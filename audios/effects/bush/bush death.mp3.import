@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cx45ahj5h42ry"
+path="res://.godot/imported/bush death.mp3-03b634c8c6aebbe7645a4973a2a9205d.mp3str"
+
+[deps]
+
+source_file="res://audios/effects/bush/bush death.mp3"
+dest_files=["res://.godot/imported/bush death.mp3-03b634c8c6aebbe7645a4973a2a9205d.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

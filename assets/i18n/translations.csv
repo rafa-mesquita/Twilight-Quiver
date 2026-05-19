@@ -94,7 +94,7 @@ DMG_PANEL_CHAIN_SKILL,Skill de Raios,Lightning Skill,Habilidad Eléctrica,Compé
 DMG_PANEL_GRAVITON,Gráviton,Graviton,Gravitón,Graviton
 DMG_PANEL_TOWER,Torre de Flechas,Arrow Tower,Torre de Flechas,Tour à Flèches
 DMG_PANEL_TING,Mecânico Ting,Ting,Ting,Ting
-DMG_PANEL_WOODWARDEN,Woodwarden,Woodwarden,Woodwarden,Woodwarden
+DMG_PANEL_CLAUDIO_DRUIDA,Claudio o Druida,Claudio the Druid,Claudio el Druida,Claudio le Druide
 DMG_PANEL_LENO,Leno,Leno,Leno,Leno
 DMG_PANEL_CAPIVARA,Capivara Joe,Capybara Joe,Capivara Joe,Capybara Joe
 DMG_PANEL_MINI_MAGO,Mini Mago,Mini Mage,Mini Mago,Mini Mage
@@ -279,11 +279,16 @@ todas direcciones
 30 daño","4 boomerangs
 toutes directions
 30 dgt"
-SHOP_ALLY_WOODWARDEN,Woodwarden,Woodwarden,Woodwarden,Woodwarden
+SHOP_ALLY_CLAUDIO_DRUIDA,Claudio o Druida,Claudio the Druid,Claudio el Druida,Claudio le Druide
 SHOP_ALLY_LENO,Amigo Leno,Friend Leno,Amigo Leno,Ami Leno
 SHOP_ALLY_CAPIVARA,Capivara Joe,Capybara Joe,Capibara Joe,Capybara Joe
 SHOP_ALLY_TING,Mecânico Ting,Ting the Mechanic,Ting el Mecánico,Ting le Mécanicien
 SHOP_ALLY_MINI_MAGO,Mini Mago,Mini Mage,Mini Mago,Mini Mage
+SHOP_ALLY_ARBUSTO,Arbusto Carrara,Carrara Bush,Arbusto Carrara,Buisson Carrara
+SHOP_ARBUSTO_DESC_1,"Esconde o player ao tocar: +12% atk speed, +5 dmg/flecha por 3s","Hides player on touch: +12% atk speed, +5 dmg/arrow for 3s","Esconde al jugador al tocar: +12% atk speed, +5 daño/flecha por 3s","Cache le joueur au contact : +12% vit atk, +5 dmg/flèche pendant 3s"
+SHOP_ARBUSTO_DESC_2,Próximo nível em design,Next level WIP,Próximo nivel en diseño,Niveau suivant en conception
+SHOP_ARBUSTO_DESC_3,Próximo nível em design,Next level WIP,Próximo nivel en diseño,Niveau suivant en conception
+SHOP_ARBUSTO_DESC_4,Próximo nível em design,Next level WIP,Próximo nivel en diseño,Niveau suivant en conception
 SHOP_MINI_MAGO_DESC_1,Invoca um macaco aliado a cada 8s,Summons an ally monkey every 8s,Invoca un mono aliado cada 8s,Invoque un singe allié toutes les 8s
 SHOP_MINI_MAGO_DESC_2,"Cd 6s, macacos +25% HP/dano/atk speed/vel","Cd 6s, monkeys +25% HP/dmg/atk speed/speed","Cd 6s, monos +25% PV/daño/atk speed/vel","Cd 6s, singes +25% PV/dégâts/vit atk/vit"
 SHOP_MINI_MAGO_DESC_3,"Invoca 2 macacos por cast, mantém buffs","Summons 2 monkeys per cast, keeps buffs","Invoca 2 monos por cast, mantiene buffs","Invoque 2 singes par cast, garde les bonus"
@@ -684,23 +689,23 @@ cd 28s (só movimento)","Q: time freeze 3s
 28s cd (move only)","Q: pausa el tiempo 3s
 cd 28s (solo mover)","Q : gèle le temps 3s
 cd 28s (déplace seulement)"
-SHOP_WW_MAX,Max (4/4) atingido,Max (4/4) reached,Máx (4/4) alcanzado,Max (4/4) atteint
-SHOP_WW_DESC_1,"Aliado tank: +20% HP
+SHOP_CD_MAX,Max (4/4) atingido,Max (4/4) reached,Máx (4/4) alcanzado,Max (4/4) atteint
+SHOP_CD_DESC_1,"Aliado tank: +20% HP
 stun em área, sem dano","Tank ally: +20% HP
 area stun, no damage","Aliado tanque: +20% HP
 aturde en área, sin daño","Allié tank : +20% PV
 étourdit en zone, 0 dégât"
-SHOP_WW_DESC_2,"Lv2: cada ataque
+SHOP_CD_DESC_2,"Lv2: cada ataque
 cura player +25hp","Lv2: each attack
 heals player +25hp","Lv2: cada ataque
 cura jugador +25hp","Lv2 : chaque attaque
 soigne joueur +25pv"
-SHOP_WW_DESC_3,"Lv3: +1 aliado
+SHOP_CD_DESC_3,"Lv3: +1 aliado
 ataque cura +30hp","Lv3: +1 ally
 attack heals +30hp","Lv3: +1 aliado
 ataque cura +30hp","Lv3 : +1 allié
 attaque soigne +30pv"
-SHOP_WW_DESC_4,"Lv4 max: +150 HP
+SHOP_CD_DESC_4,"Lv4 max: +150 HP
 100 dano, cd 4.5s","Lv4 max: +150 HP
 100 damage, cd 4.5s","Lv4 máx: +150 HP
 100 daño, cd 4.5s","Lv4 max : +150 PV

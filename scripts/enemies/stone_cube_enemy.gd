@@ -313,10 +313,10 @@ func take_damage(amount: float) -> void:
 			var p2 := get_tree().get_first_node_in_group("player")
 			if p2 != null and p2.has_method("notify_enemy_killed"):
 				p2.notify_enemy_killed()
-		# Gold dropa em ambos: morte de inimigo normal E morte de aliado convertido
-		# pela Maldição (vale o trabalho que ele teve até cair).
-		GoldDrop.try_drop(_get_world(), gold_scene, global_position,
-			gold_drop_chance, gold_drop_min, gold_drop_max)
+			# Gold só dropa em morte como inimigo — aliado convertido caindo
+			# não dá gold (player perdeu um aliado, não matou um inimigo).
+			GoldDrop.try_drop(_get_world(), gold_scene, global_position,
+				gold_drop_chance, gold_drop_min, gold_drop_max)
 		_spawn_kill_effect()
 		_spawn_death_silhouette()
 		queue_free()
@@ -419,11 +419,13 @@ func _spawn_damage_number(amount: float) -> void:
 func _pick_target() -> Node2D:
 	if is_curse_ally:
 		return _pick_curse_ally_target()
-	# Default: player se vivo, senão tank ally / torre mais próxima.
+	# Default: player visível, senão tank ally / torre mais próxima. Se o player
+	# está escondido no Arbusto Carrara (group bush_hidden), tank_ally vira primary.
 	var primary: Node2D = null
 	var primary_dist: float = INF
 	var player_alive: bool = player != null and is_instance_valid(player) and not (("is_dead" in player) and player.is_dead)
-	if player_alive:
+	var player_visible: bool = player_alive and not (player as Node).is_in_group("bush_hidden")
+	if player_visible:
 		primary_dist = global_position.distance_to(player.global_position)
 		primary = player
 	for tank in get_tree().get_nodes_in_group("tank_ally"):

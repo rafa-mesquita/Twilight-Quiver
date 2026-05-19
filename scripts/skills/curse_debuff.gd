@@ -20,6 +20,10 @@ const CHAIN_LINK_COLOR: Color = Color(0xac / 255.0, 0x7d / 255.0, 0xd8 / 255.0, 
 const CURSE_PASS_SOUND: AudioStream = preload("res://audios/effects/curse pass effect.mp3")
 const CURSE_PASS_SOUND_VOL_DB: float = -14.0
 const CURSE_PASS_SOUND_MAX_DURATION: float = 2.0
+# Raio máximo (em px) pra propagar a maldição quando o portador morre. Fora
+# desse range a maldição não pula pra outro inimigo. Sem isso, a maldição
+# pulava o mapa inteiro e virava um "auto-spread" infinito.
+const PROPAGATION_RADIUS: float = 75.0
 
 var _remaining: float = 0.0
 var _tick_accum: float = 0.0
@@ -138,7 +142,7 @@ func _spawn_curse_number(amount: float, is_crit: bool = false) -> void:
 
 func _spawn_curse_flash(target: Node2D) -> void:
 	# Silhueta roxa no formato exato do enemy via silhouette shader (mesmo
-	# pattern do heal flash do woodwarden). Fade rápido pra não acumular
+	# pattern do heal flash do claudio_druida). Fade rápido pra não acumular
 	# entre os ticks de 0.5s.
 	var src_sprite: Node2D = _find_sprite_in(target)
 	if src_sprite == null:
@@ -247,6 +251,7 @@ func _propagate_to_nearest(origin: Vector2, exclude: Node, count: int, tree: Sce
 	if tree == null:
 		return
 	var candidates: Array = []
+	var radius_sq: float = PROPAGATION_RADIUS * PROPAGATION_RADIUS
 	for e in tree.get_nodes_in_group("enemy"):
 		if not is_instance_valid(e) or not (e is Node2D):
 			continue
@@ -257,6 +262,8 @@ func _propagate_to_nearest(origin: Vector2, exclude: Node, count: int, tree: Sce
 		if _has_curse_debuff(e):
 			continue
 		var dist_sq: float = (e as Node2D).global_position.distance_squared_to(origin)
+		if dist_sq > radius_sq:
+			continue
 		candidates.append({"node": e, "dist": dist_sq})
 	candidates.sort_custom(func(a, b): return a["dist"] < b["dist"])
 	var applied: int = 0

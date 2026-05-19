@@ -194,12 +194,13 @@ func _pick_target() -> Node2D:
 	# Curse ally: inverte alvo — busca enemies em vez de player/structure.
 	if is_curse_ally:
 		return _pick_curse_ally_target()
-	# Player vivo + perto = alvo prioritário. Se player longe ou morto, vai pra
-	# torre/aliado mais próximo (mesma lógica do monkey).
-	if player != null and is_instance_valid(player):
+	# Player vivo + perto + visível = alvo prioritário. Se player escondido no
+	# Arbusto Carrara (group bush_hidden), pula direto pro fallback de torre/tank.
+	var p_alive: bool = player != null and is_instance_valid(player) and ((not ("is_dead" in player)) or not bool(player.is_dead))
+	var p_visible: bool = p_alive and not (player as Node).is_in_group("bush_hidden")
+	if p_visible:
 		var dist: float = global_position.distance_to(player.global_position)
-		var p_alive: bool = (not ("is_dead" in player)) or not bool(player.is_dead)
-		if p_alive and dist <= tower_target_switch_distance:
+		if dist <= tower_target_switch_distance:
 			return player
 	# Fallback: torre/aliado mais próximo dentro do raio.
 	var nearest: Node2D = null
@@ -218,8 +219,8 @@ func _pick_target() -> Node2D:
 				nearest = n
 	if nearest != null:
 		return nearest
-	# Sem alvo válido — fica no player se existe (mesmo longe).
-	return player
+	# Sem alvo válido — fica no player se ele estiver visível (não escondido).
+	return player if p_visible else null
 
 
 func _pick_curse_ally_target() -> Node2D:
@@ -483,8 +484,9 @@ func take_damage(amount: float) -> void:
 			var p2 := get_tree().get_first_node_in_group("player")
 			if p2 != null and p2.has_method("notify_enemy_killed"):
 				p2.notify_enemy_killed()
-		GoldDrop.try_drop(_get_world(), gold_scene, global_position,
-			gold_drop_chance, gold_drop_min, gold_drop_max)
+			# Gold só dropa em morte como inimigo — aliado convertido caindo não dá gold.
+			GoldDrop.try_drop(_get_world(), gold_scene, global_position,
+				gold_drop_chance, gold_drop_min, gold_drop_max)
 		_spawn_kill_effect()
 		_spawn_death_silhouette()
 		queue_free()

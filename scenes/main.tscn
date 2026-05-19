@@ -22,7 +22,7 @@
 [ext_resource type="PackedScene" uid="uid://c6qapsybij0t2" path="res://scenes/enemies/mage_monkey.tscn" id="20_boss"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/ice_mage.tscn" id="21_icemage"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/electric_mage.tscn" id="22_elecmage"]
-[ext_resource type="PackedScene" path="res://scenes/enemies/dark_ball.tscn" id="23_darkball"]
+[ext_resource type="PackedScene" uid="uid://bfuyqhsta3i7s" path="res://scenes/enemies/dark_ball.tscn" id="23_darkball"]
 
 [sub_resource type="RectangleShape2D" id="RectShape_bound_h"]
 size = Vector2(842, 10)
@@ -500,7 +500,7 @@ position = Vector2(589, 401)
 position = Vector2(621, 401)
 
 [node name="CercaSul25" parent="Entities" unique_id=2031537814 instance=ExtResource("14_cerca")]
-position = Vector2(-132, 17)
+position = Vector2(-138, 17)
 
 [node name="CercaSul25" parent="Entities/CercaSul25" unique_id=740746164 instance=ExtResource("14_cerca")]
 position = Vector2(-32, 0)
@@ -565,13 +565,13 @@ position = Vector2(-112, -62)
 position = Vector2(-51, -51)
 
 [node name="CercaCimaEnd" parent="Entities" unique_id=1763064325 instance=ExtResource("13_muem4")]
-position = Vector2(-114, 38)
+position = Vector2(-120, 39)
 
 [node name="CercaCima" parent="Entities" unique_id=794535238 instance=ExtResource("14_dp3eg")]
-position = Vector2(-114, 53)
+position = Vector2(-120, 53)
 
 [node name="CercaCimaEnd2" parent="Entities" unique_id=630871252 instance=ExtResource("13_muem4")]
-position = Vector2(-114, 93)
+position = Vector2(-120, 93)
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1704360500 groups=["camera"]]
 zoom = Vector2(3.5, 3.5)

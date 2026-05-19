@@ -275,18 +275,18 @@ func take_damage(amount: float) -> void:
 			# Maldição: chance de virar aliado em vez de morrer (lv2-4 da curse).
 			if CurseAllyHelper.try_convert_on_death(self):
 				return
-			# Morte normal: heart + count na stat de kills (gold abaixo cobre os dois).
+			# Morte normal: heart + count na stat de kills + gold.
 			HeartDrop.try_drop(_get_world(), heart_scene, global_position, self)
 			var p2 := get_tree().get_first_node_in_group("player")
 			if p2 != null and p2.has_method("notify_enemy_killed"):
 				p2.notify_enemy_killed()
-		# Gold dropa em ambos: morte de inimigo normal E morte de aliado convertido
-		# pela Maldição. Sem kill count nem heart pro curse_ally (já cumpriu o papel).
-		# Exceção: macacos invocados pelo Mini Mago NÃO dropam gold — senão vira
-		# fazenda infinita (mini mago invoca → morre → gold → repete).
-		if not is_in_group("mini_mago_summon"):
-			GoldDrop.try_drop(_get_world(), gold_scene, global_position,
-				gold_drop_chance, gold_drop_min, gold_drop_max)
+			# Gold só dropa em morte como inimigo. Aliado convertido morrendo
+			# não dropa (player não "matou" — perdeu um aliado).
+			# Exceção: macacos invocados pelo Mini Mago NÃO dropam gold — senão
+			# vira fazenda infinita (mini mago invoca → morre → gold → repete).
+			if not is_in_group("mini_mago_summon"):
+				GoldDrop.try_drop(_get_world(), gold_scene, global_position,
+					gold_drop_chance, gold_drop_min, gold_drop_max)
 		_spawn_kill_effect()
 		_spawn_death_silhouette()
 		queue_free()
@@ -384,7 +384,7 @@ func apply_knockback(dir: Vector2, strength: float) -> void:
 	knockback_velocity = dir.normalized() * strength
 
 
-# Stun: aplicado pelo Woodwarden no hit. Bloqueia AI/ataque por `duration` segs.
+# Stun: aplicado pelo Claudio Druida no hit. Bloqueia AI/ataque por `duration` segs.
 # Re-aplicação refresca a duração.
 func apply_stun(duration: float) -> void:
 	_stun_remaining = maxf(_stun_remaining, duration)
@@ -422,12 +422,16 @@ func _pick_target() -> Node2D:
 	# Curse ally: inverte alvo — busca enemies em vez de player/structure.
 	if is_curse_ally:
 		return _pick_curse_ally_target()
-	# Default: player ou tank ally mais próximo (woodwarden etc.).
+	# Default: player ou tank ally mais próximo (claudio_druida etc.).
 	# Se ambos longe ou inválidos, troca pra torre/estrutura mais próxima.
 	var primary: Node2D = null
 	var primary_dist: float = INF
 	var player_alive: bool = player != null and is_instance_valid(player) and not (("is_dead" in player) and player.is_dead)
-	if player_alive:
+	# Arbusto Carrara: player escondido no arbusto perde aggro de macacos.
+	# Bush mantém o group "bush_hidden" só enquanto não tem outro macaco dentro
+	# do mesmo arbusto — esse check fica do lado do arbusto.
+	var player_visible: bool = player_alive and not (player as Node).is_in_group("bush_hidden")
+	if player_visible:
 		primary_dist = global_position.distance_to(player.global_position)
 		primary = player
 	# Tank allies (group "tank_ally") competem como alvo primário se mais perto.
@@ -438,6 +442,11 @@ func _pick_target() -> Node2D:
 		if d < primary_dist:
 			primary = tank as Node2D
 			primary_dist = d
+	# Se o player está escondido (bush_hidden), o único primary válido é um
+	# tank_ally (ex: mini_arbusto decoy). Ignora o distance gate nesse caso —
+	# o macaco persegue o decoy mesmo longe pra não ficar parado.
+	if not player_visible and primary != null:
+		return primary
 	if primary != null and primary_dist <= tower_target_switch_distance:
 		return primary
 	# Procura torre mais próxima.
@@ -452,8 +461,11 @@ func _pick_target() -> Node2D:
 			nearest_dist = d
 	if nearest_tower != null:
 		return nearest_tower
-	# Sem torre disponível — volta pro player se ele existir.
-	return player if player_alive else null
+	# Sem torre disponível — volta pro player se ele estiver visível.
+	# Importante: respeitar bush_hidden aqui também, senão o aggro shield do
+	# Arbusto Carrara é furado no fallback (macaco ainda vê o player se não
+	# tem tank/torre por perto).
+	return player if player_visible else null
 
 
 func _pick_curse_ally_target() -> Node2D:

@@ -15,7 +15,7 @@ const PURPLE_ALLY_TINT: Color = Color(0.85, 0.55, 1.0, 1.0)
 # Wave de boss (mage_monkey vivo): aliados convertidos pela maldição saem
 # nerfados (HP × 0.5, damage_mult × 0.5) pra build de Maldição não trivializar.
 const BOSS_WAVE_CONVERT_PENALTY: float = 0.5
-# Cor verde padrão dos aliados (mesmo fg_color do woodwarden e arrow_tower).
+# Cor verde padrão dos aliados (mesmo fg_color do claudio_druida e arrow_tower).
 const ALLY_HP_COLOR: Color = Color(0.4627451, 0.654902, 0.29803923, 1)
 const SUMMON_EFFECT_SCENE: PackedScene = preload("res://scenes/effects/summon_effect.tscn")
 # Som de impacto de aliados removido — bug irreproduzível causava som contínuo
@@ -77,7 +77,7 @@ static func convert_to_ally(enemy: Node) -> void:
 	var sprite: Node2D = _find_sprite_in(enemy)
 	if sprite is CanvasItem:
 		(sprite as CanvasItem).modulate = PURPLE_ALLY_TINT
-	# HP bar: troca cor pro verde de aliado (mesmo do woodwarden/torre) e refresca.
+	# HP bar: troca cor pro verde de aliado (mesmo do claudio_druida/torre) e refresca.
 	if enemy.has_node("HpBar"):
 		var bar: Node = enemy.get_node("HpBar")
 		if "fg_color" in bar:
@@ -89,6 +89,11 @@ static func convert_to_ally(enemy: Node) -> void:
 			bar.set_ratio(1.0)
 	# Anima conversão com o mesmo summon effect lilás do summoner mage.
 	_spawn_summon_effect(enemy)
+	# Decay: aliado convertido vive ~12s drenando HP. Sem isso, curse_allies
+	# acumulavam infinitamente entre waves. Anexado APÓS o HP ser restaurado
+	# pra calcular dps com base no max_hp já penalizado (se for boss wave).
+	var decay := CurseAllyDecay.new()
+	enemy.add_child(decay)
 	# Stat: contabiliza aliados feitos pra tela de morte.
 	var p := enemy.get_tree().get_first_node_in_group("player")
 	if p != null and p.has_method("notify_ally_made"):
@@ -113,7 +118,7 @@ static func _spawn_summon_effect(enemy: Node) -> void:
 
 static func apply_ally_curse_on_damage(target: Node, source: Node) -> void:
 	# Lv3+: aliado que causa dano também aplica CurseDebuff no alvo.
-	# `source` = quem atacou (woodwarden, torre, converted enemy, etc).
+	# `source` = quem atacou (claudio_druida, torre, converted enemy, etc).
 	if not is_instance_valid(target):
 		return
 	# Aliados convertidos pela Maldição (group "curse_ally") NÃO propagam o

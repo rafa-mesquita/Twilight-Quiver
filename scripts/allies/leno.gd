@@ -1,6 +1,6 @@
 extends CharacterBody2D
 
-# Aliado pet voador — estilo mob (similar ao woodwarden) MAS sem HP.
+# Aliado pet voador — estilo mob (similar ao claudio_druida) MAS sem HP.
 # Comportamento:
 # - Sem inimigo perto: anda em formação ao redor do player
 # - Inimigo no aggro_range: corre na direção dele

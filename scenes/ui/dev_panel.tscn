@@ -334,11 +334,11 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 20
 text = "Spawn Torre"
 
-[node name="SpawnWoodwardenBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
+[node name="SpawnClaudioDruidaBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 20
-text = "Spawn Woodwarden"
+text = "Spawn Claudio Druida"
 
 [node name="UpgLenoBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
 custom_minimum_size = Vector2(0, 36)
@@ -363,6 +363,12 @@ custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 20
 text = "+1 Mini Mago"
+
+[node name="UpgArbustoBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
+custom_minimum_size = Vector2(0, 36)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "+1 Arbusto Carrara"
 
 [node name="StatsSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
 theme_override_constants/separation = 4

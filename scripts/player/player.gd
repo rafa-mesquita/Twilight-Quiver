@@ -36,7 +36,7 @@ signal perfuracao_counter_changed(counter: int, level: int)
 # coluna de upgrades adquiridos.
 signal upgrade_applied(id: String, level: int)
 
-@export var speed: float = 60.961  # base 55 + 1.5% + 4% + 5% = 60.961
+@export var speed: float = 61.0
 @export var attack_cooldown: float = 0.90  # ~+11% atk speed sobre o base 1.0
 @export var arrow_scene: PackedScene
 @export var damage_effect_scene: PackedScene
@@ -83,13 +83,13 @@ var ice_arrow_level: int = 0  # elemental Gelo / "Fica Frio" (excalidraw lv1-4)
 # Referência à Frostwisp spawnada no L3 (1 só por run).
 const FROSTWISP_SCENE: PackedScene = preload("res://scenes/allies/frostwisp.tscn")
 var _frostwisp: Node2D = null
-var woodwarden_level: int = 0  # aliado tank — cada compra "uppa" stats e custo
-# Tracking dos woodwardens com respawn nativo (não usa o sistema de structure
+var claudio_druida_level: int = 0  # aliado tank — cada compra "uppa" stats e custo
+# Tracking dos claudio_druidas com respawn nativo (não usa o sistema de structure
 # do wave_manager). Cada entry: {"instance", "last_pos", "dead_for"}.
-const WOODWARDEN_SCENE: PackedScene = preload("res://scenes/enemies/woodwarden.tscn")
-const WOODWARDEN_SPAWN_FX_SCENE: PackedScene = preload("res://scenes/enemies/woodwarden_spawn_effect.tscn")
-const WOODWARDEN_RESPAWN_DELAY: float = 15.5
-var _woodwardens: Array[Dictionary] = []
+const CLAUDIO_DRUIDA_SCENE: PackedScene = preload("res://scenes/enemies/claudio_druida.tscn")
+const CLAUDIO_DRUIDA_SPAWN_FX_SCENE: PackedScene = preload("res://scenes/enemies/claudio_druida_spawn_effect.tscn")
+const CLAUDIO_DRUIDA_RESPAWN_DELAY: float = 15.5
+var _claudio_druidas: Array[Dictionary] = []
 # Leno (aliado voador, 4 níveis). Sem HP, orbita o player, dispara projétil
 # com slow area no impacto. L1=1 leno (20 dmg), L2=1 leno (50 dmg + atk speed),
 # L3=2 lenos, L4=3 lenos. Lenos morrem quando o player morre.
@@ -118,6 +118,25 @@ const MINI_MAGO_SCENE: PackedScene = preload("res://scenes/allies/mini_mago.tscn
 # por compra, sem level-specific behavior ainda.
 var mini_mago_level: int = 0
 var _mini_magos: Array[Node2D] = []
+# Arbusto Carrara (aliado wanderer). Corre pelo mapa, para em IDLE, e quando
+# o player encosta vira hide spot por 3s (buff: +12% atk speed, +5 dmg on-hit,
+# tint verde nas flechas, perde aggro de macacos se não tiver macaco dentro).
+const ARBUSTO_SCENE: PackedScene = preload("res://scenes/allies/arbusto.tscn")
+const MINI_ARBUSTO_SCENE: PackedScene = preload("res://scenes/allies/mini_arbusto.tscn")
+# Respawn do mini_arbusto: 3s após morrer, na posição do big arbusto pareado.
+const MINI_ARBUSTO_RESPAWN_DELAY: float = 3.0
+var arbusto_level: int = 0
+var _arbustos: Array[Node2D] = []
+# Mini arbustos pareados 1-pra-1 com os _arbustos (mesmo índice). Quando morrem
+# o slot fica null e o timer do _mini_arbusto_respawn_timers conta até spawnar
+# um novo na posição do big arbusto correspondente.
+var _mini_arbustos: Array[Node2D] = []
+var _mini_arbusto_respawn_timers: Array[float] = []
+# Buffs ativos enquanto o player está escondido no arbusto. Aplica em todas
+# as flechas (multiplicador de atk speed + bonus flat de dano + tint verde).
+var arbusto_hide_active: bool = false
+var arbusto_hide_atk_speed_bonus: float = 0.0
+var arbusto_hide_arrow_bonus_damage: float = 0.0
 # Contador de magos mortos na wave atual — torreta do Ting ganha +1% atk speed
 # por mago morto. Reset no _ready de cada wave pelo wave_manager.
 var _mages_killed_this_wave: int = 0
@@ -412,7 +431,8 @@ func _physics_process(delta: float) -> void:
 	_update_curse_skill(delta)
 	_update_time_freeze(delta)
 	_update_player_fire_trail()
-	_check_woodwarden_respawns(delta)
+	_check_claudio_druida_respawns(delta)
+	_check_mini_arbusto_respawns(delta)
 	_tick_capivara_buffs(delta)
 	# Dash trigger lê via polling pra garantir que o cooldown decrementa ANTES
 	# do check, e que múltiplas pressões na mesma frame só viram 1 dash.
@@ -614,7 +634,8 @@ func _start_attack() -> void:
 	# Attack speed: encurta cooldown e acelera a anim de ataque (release_frame chega
 	# proporcionalmente mais cedo). speed_scale só vale enquanto a anim está rolando.
 	# Capivara L3+: cogumelo de buff dá +50% atk speed temporário (some no fim).
-	var atk_mult: float = attack_speed_multiplier + _capivara_atk_speed_buff_amount + _esquivando_atk_buff()
+	# Arbusto: enquanto escondido, +12% atk speed.
+	var atk_mult: float = attack_speed_multiplier + _capivara_atk_speed_buff_amount + _esquivando_atk_buff() + arbusto_hide_atk_speed_bonus
 	attack_timer.wait_time = attack_cooldown / atk_mult
 	sprite.speed_scale = atk_mult
 	attack_timer.start()
@@ -775,6 +796,14 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 		arrow.play_shoot_sound = play_sound
 	if "damage" in arrow:
 		arrow.damage = arrow.damage * arrow_damage_multiplier * dmg_mult
+		# Arbusto hide: +5 dmg flat por flecha enquanto escondido. Aplicado APÓS
+		# multiplicador pra não ser amplificado pelo arrow_damage_multiplier (é
+		# um buff fixo da mecânica do hide, não um stat status).
+		if arbusto_hide_active and arbusto_hide_arrow_bonus_damage > 0.0:
+			arrow.damage += arbusto_hide_arrow_bonus_damage
+	# Tint verde nas flechas durante o hide do arbusto.
+	if arbusto_hide_active and arrow is CanvasItem:
+		(arrow as CanvasItem).modulate = Color(0.6, 1.2, 0.6, 1.0)
 	if is_pierce:
 		if "is_piercing" in arrow:
 			arrow.is_piercing = true
@@ -806,6 +835,11 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 			# Último tick do burn dá um dano extra fixo (ignora burn_scale —
 			# bonus pequeno, não vale a pena dividir entre flechas extras).
 			arrow.burn_final_bonus = 5.0
+		# Stacks de burn escalam com fire_arrow_level (L1=1, L2=2, L3=3, L4=4).
+		# Cada hit no mesmo inimigo soma +1 stack até o cap, multiplicando o
+		# dano por tick. Flechas extras carregam o mesmo cap (sem nerf).
+		if "burn_max_stacks" in arrow:
+			arrow.burn_max_stacks = clampi(fire_arrow_level, 1, 4)
 		# Lv2+: rastro de fogo no caminho da flecha.
 		if fire_arrow_level >= 2:
 			if "fire_trail_enabled" in arrow:
@@ -1947,11 +1981,14 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"mini_mago":
 			mini_mago_level = mini(mini_mago_level + 1, 4)
 			_refresh_mini_magos()
-		"woodwarden":
+		"arbusto":
+			arbusto_level = mini(arbusto_level + 1, 4)
+			_refresh_arbustos()
+		"claudio_druida":
 			# Cada compra: +1 level (max 4). Sobe stats em todos os existentes
-			# e spawna 1 novo woodwarden no player se ainda não tem todos.
-			woodwarden_level = mini(woodwarden_level + 1, 4)
-			_refresh_woodwardens()
+			# e spawna 1 novo claudio_druida no player se ainda não tem todos.
+			claudio_druida_level = mini(claudio_druida_level + 1, 4)
+			_refresh_claudio_druidas()
 		"gold_magnet":
 			# Refatorado pra 4 níveis (Chuva de Coins). Lv1+ habilita drop chance
 			# bonus (gold_drop.gd lê o level via get_upgrade_count).
@@ -2039,10 +2076,11 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"fire_arrow": return fire_arrow_level
 		"curse_arrow": return curse_arrow_level
 		"ice_arrow": return ice_arrow_level
-		"woodwarden": return woodwarden_level
+		"claudio_druida": return claudio_druida_level
 		"leno": return leno_level
 		"capivara_joe": return capivara_joe_level
 		"ting": return ting_level
+		"arbusto": return arbusto_level
 		"mini_mago": return mini_mago_level
 		"gold_magnet": return gold_magnet_level
 		"dash": return dash_level
@@ -2150,6 +2188,102 @@ func _cleanup_capivaras() -> void:
 		if is_instance_valid(c):
 			c.queue_free()
 	_capivaras.clear()
+
+
+# Arbusto: chamado pelo Arbusto Carrara quando o player entra no idle dele.
+# Ativa o buff de hide (atk speed + bonus dmg flat + tint nas flechas). O
+# arbusto chama exit_hide quando o hide acaba (3s). Aggro shield é gerido via
+# group "bush_hidden" — o próprio arbusto adiciona/remove dependendo se tem
+# macaco no zone (essa parte não passa por aqui).
+func arbusto_enter_hide(atk_speed_bonus: float, arrow_bonus_dmg: float) -> void:
+	arbusto_hide_active = true
+	arbusto_hide_atk_speed_bonus = atk_speed_bonus
+	arbusto_hide_arrow_bonus_damage = arrow_bonus_dmg
+
+
+func arbusto_exit_hide() -> void:
+	arbusto_hide_active = false
+	arbusto_hide_atk_speed_bonus = 0.0
+	arbusto_hide_arrow_bonus_damage = 0.0
+
+
+func _refresh_arbustos() -> void:
+	# L1: 1 arbusto. L2-L4 TBD — placeholder: continua 1 instância até definir.
+	var target_count: int = 1 if arbusto_level >= 1 else 0
+	# Limpa entries inválidos.
+	var alive: Array[Node2D] = []
+	for a in _arbustos:
+		if is_instance_valid(a):
+			alive.append(a)
+	_arbustos = alive
+	while _arbustos.size() < target_count:
+		var arb: Node2D = ARBUSTO_SCENE.instantiate()
+		_arbustos.append(arb)
+		_get_world().add_child(arb)
+		if "wander_bounds" in arb:
+			var b: Rect2 = arb.wander_bounds
+			arb.global_position = Vector2(
+				randf_range(b.position.x, b.position.x + b.size.x),
+				randf_range(b.position.y, b.position.y + b.size.y)
+			)
+	while _arbustos.size() > target_count:
+		var extra: Node2D = _arbustos.pop_back()
+		if is_instance_valid(extra):
+			extra.queue_free()
+	# Mini arbustos: 1 mini por big arbusto, pareado por índice.
+	while _mini_arbustos.size() < _arbustos.size():
+		_mini_arbustos.append(null)
+		_mini_arbusto_respawn_timers.append(0.0)
+		_spawn_mini_arbusto_for_slot(_mini_arbustos.size() - 1)
+	while _mini_arbustos.size() > _arbustos.size():
+		var extra_mini: Node2D = _mini_arbustos.pop_back()
+		_mini_arbusto_respawn_timers.pop_back()
+		if is_instance_valid(extra_mini):
+			extra_mini.queue_free()
+
+
+func _spawn_mini_arbusto_for_slot(i: int) -> void:
+	# Spawna um mini arbusto na posição do big arbusto correspondente.
+	var pos: Vector2 = Vector2.ZERO
+	if i < _arbustos.size() and is_instance_valid(_arbustos[i]):
+		pos = (_arbustos[i] as Node2D).global_position
+	var mini: Node2D = MINI_ARBUSTO_SCENE.instantiate()
+	_get_world().add_child(mini)
+	mini.global_position = pos
+	_mini_arbustos[i] = mini
+	_mini_arbusto_respawn_timers[i] = 0.0
+
+
+func _check_mini_arbusto_respawns(delta: float) -> void:
+	# Respawn de mini arbustos 3s após a morte, na posição do big arbusto
+	# correspondente. Só conta o tempo durante wave ativa.
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	var wave_active: bool = wm == null or bool(wm.get("wave_active"))
+	if not wave_active:
+		return
+	for i in _mini_arbustos.size():
+		var inst: Node2D = _mini_arbustos[i]
+		if inst != null and is_instance_valid(inst):
+			_mini_arbusto_respawn_timers[i] = 0.0
+			continue
+		_mini_arbustos[i] = null
+		_mini_arbusto_respawn_timers[i] += delta
+		if _mini_arbusto_respawn_timers[i] >= MINI_ARBUSTO_RESPAWN_DELAY:
+			_spawn_mini_arbusto_for_slot(i)
+
+
+func _cleanup_arbustos() -> void:
+	for a in _arbustos:
+		if is_instance_valid(a):
+			a.queue_free()
+	_arbustos.clear()
+	for m in _mini_arbustos:
+		if is_instance_valid(m):
+			m.queue_free()
+	_mini_arbustos.clear()
+	_mini_arbusto_respawn_timers.clear()
+	# Limpa o estado do hide caso o cleanup aconteça no meio do buff.
+	arbusto_exit_hide()
 
 
 func _refresh_tings() -> void:
@@ -2295,42 +2429,42 @@ func _tick_capivara_buffs(delta: float) -> void:
 			sprite.speed_scale = attack_speed_multiplier
 
 
-func _refresh_woodwardens() -> void:
-	# Spawna woodwardens faltantes pra match o level. Atualiza stats em todos
+func _refresh_claudio_druidas() -> void:
+	# Spawna claudio_druidas faltantes pra match o level. Atualiza stats em todos
 	# os vivos. Spawn em volta do player (offset random pra não empilhar).
 	# L1-L2 = 1 warden, L3+ = 2 wardens (foco tank/utilidade).
-	var target_count: int = _woodwarden_target_count()
+	var target_count: int = _claudio_druida_target_count()
 	# Limpa entries totalmente sem instance + sem timer (raro — só edge case
 	# em que ainda não foi spawnado).
-	while _woodwardens.size() < target_count:
-		var ww: Node2D = WOODWARDEN_SCENE.instantiate()
+	while _claudio_druidas.size() < target_count:
+		var ww: Node2D = CLAUDIO_DRUIDA_SCENE.instantiate()
 		var spawn_pos: Vector2 = global_position + Vector2(randf_range(-32.0, 32.0), randf_range(-16.0, 16.0))
 		_get_world().add_child(ww)
 		ww.global_position = spawn_pos
 		# Stats DEPOIS do add_child — HpBar (filha do ww) precisa do _ready
 		# pra inicializar @onready var fg/trail antes de set_ratio.
-		_apply_woodwarden_stats(ww)
-		_woodwardens.append({"instance": ww, "last_pos": spawn_pos, "dead_for": 0.0})
+		_apply_claudio_druida_stats(ww)
+		_claudio_druidas.append({"instance": ww, "last_pos": spawn_pos, "dead_for": 0.0})
 	# Atualiza stats em todos os vivos. Variável untyped (raw) + is_instance_valid
 	# antes do acesso pra evitar "Trying to assign invalid previously freed
 	# instance" quando uma entrada do array aponta pra um warden já liberado
 	# (morreu, queue_free pendente). Mesmo padrão do _remove_time_freeze_world_pause.
-	for entry in _woodwardens:
+	for entry in _claudio_druidas:
 		var raw = entry.get("instance")
 		if raw == null or not is_instance_valid(raw):
 			continue
-		_apply_woodwarden_stats(raw)
+		_apply_claudio_druida_stats(raw)
 
 
-func _apply_woodwarden_stats(ww: Node) -> void:
+func _apply_claudio_druida_stats(ww: Node) -> void:
 	# Foco em tank/utilidade + escudo humano (absorve projéteis de mago no raio):
 	# - L1-L3: base_hp 424, damage 60, cooldown 5.0s (stun em área + dano leve).
 	# - L4: +150 hp (=574), damage 160, cooldown 4.5s (passa a dar dano forte).
 	# +40 hp / +60 dmg em todos os níveis pra compensar o desgaste do escudo humano.
-	# Heal pro player no ataque é decidido em woodwarden._apply_hit via get_upgrade_count.
+	# Heal pro player no ataque é decidido em claudio_druida._apply_hit via get_upgrade_count.
 	if not ("max_hp" in ww and "damage" in ww):
 		return
-	var lvl: int = woodwarden_level
+	var lvl: int = claudio_druida_level
 	if lvl <= 0:
 		return
 	var base_hp: float = 424.0  # 384 + 40 (buff escudo humano)
@@ -2352,18 +2486,18 @@ func _apply_woodwarden_stats(ww: Node) -> void:
 			bar.set_ratio(1.0)
 
 
-func _woodwarden_target_count() -> int:
-	if woodwarden_level <= 0:
+func _claudio_druida_target_count() -> int:
+	if claudio_druida_level <= 0:
 		return 0
-	if woodwarden_level <= 2:
+	if claudio_druida_level <= 2:
 		return 1
 	return 2
 
 
-func _check_woodwarden_respawns(delta: float) -> void:
-	# Respawn nativo: 15.5s após woodwarden morrer, spawna novo na última posição.
+func _check_claudio_druida_respawns(delta: float) -> void:
+	# Respawn nativo: 15.5s após claudio_druida morrer, spawna novo na última posição.
 	# Sem sistema de structure do wave_manager (mantém só pra torres).
-	for entry in _woodwardens:
+	for entry in _claudio_druidas:
 		var inst: Variant = entry.get("instance")
 		var alive: bool = inst != null and is_instance_valid(inst) and (inst as Node).is_inside_tree()
 		if alive:
@@ -2373,32 +2507,32 @@ func _check_woodwarden_respawns(delta: float) -> void:
 			continue
 		var dead_for: float = float(entry.get("dead_for", 0.0)) + delta
 		entry["dead_for"] = dead_for
-		if dead_for < WOODWARDEN_RESPAWN_DELAY:
+		if dead_for < CLAUDIO_DRUIDA_RESPAWN_DELAY:
 			continue
 		var spawn_pos: Vector2 = entry.get("last_pos", global_position)
-		_spawn_woodwarden_portal_fx(spawn_pos)
-		var ww: Node2D = WOODWARDEN_SCENE.instantiate()
+		_spawn_claudio_druida_portal_fx(spawn_pos)
+		var ww: Node2D = CLAUDIO_DRUIDA_SCENE.instantiate()
 		_get_world().add_child(ww)
 		ww.global_position = spawn_pos
 		# Stats DEPOIS do add_child — HpBar precisa do _ready pra resolver @onready.
-		_apply_woodwarden_stats(ww)
+		_apply_claudio_druida_stats(ww)
 		entry["instance"] = ww
 		entry["dead_for"] = 0.0
 
 
-func _spawn_woodwarden_portal_fx(pos: Vector2) -> void:
-	if WOODWARDEN_SPAWN_FX_SCENE == null:
+func _spawn_claudio_druida_portal_fx(pos: Vector2) -> void:
+	if CLAUDIO_DRUIDA_SPAWN_FX_SCENE == null:
 		return
-	var fx: Node2D = WOODWARDEN_SPAWN_FX_SCENE.instantiate()
+	var fx: Node2D = CLAUDIO_DRUIDA_SPAWN_FX_SCENE.instantiate()
 	_get_world().add_child(fx)
 	fx.global_position = pos
 
 
-func reset_woodwardens_hp() -> void:
-	# Chamado pelo wave_manager no início de cada wave: woodwardens vivos voltam
+func reset_claudio_druidas_hp() -> void:
+	# Chamado pelo wave_manager no início de cada wave: claudio_druidas vivos voltam
 	# full HP (mesma lógica do owned_structures pra torres). Mortos seguem o
 	# timer de respawn nativo.
-	for entry in _woodwardens:
+	for entry in _claudio_druidas:
 		var inst: Variant = entry.get("instance")
 		if inst == null or not is_instance_valid(inst):
 			continue
@@ -2410,12 +2544,12 @@ func reset_woodwardens_hp() -> void:
 					bar.set_ratio(1.0)
 
 
-func _cleanup_woodwardens() -> void:
-	for entry in _woodwardens:
+func _cleanup_claudio_druidas() -> void:
+	for entry in _claudio_druidas:
 		var inst: Variant = entry.get("instance")
 		if inst != null and is_instance_valid(inst):
 			(inst as Node).queue_free()
-	_woodwardens.clear()
+	_claudio_druidas.clear()
 
 
 func _cleanup_lenos() -> void:
@@ -2429,9 +2563,9 @@ func _cleanup_lenos() -> void:
 # instâncias spawnadas. Refund de gold é responsabilidade do shop.
 func reset_pet(id: String) -> void:
 	match id:
-		"woodwarden":
-			woodwarden_level = 0
-			_cleanup_woodwardens()
+		"claudio_druida":
+			claudio_druida_level = 0
+			_cleanup_claudio_druidas()
 		"leno":
 			leno_level = 0
 			_cleanup_lenos()
@@ -2444,6 +2578,9 @@ func reset_pet(id: String) -> void:
 		"mini_mago":
 			mini_mago_level = 0
 			_cleanup_mini_magos()
+		"arbusto":
+			arbusto_level = 0
+			_cleanup_arbustos()
 
 
 func _compute_damage_reduction(level: int) -> float:
@@ -2541,10 +2678,11 @@ func _die() -> void:
 		hp_bar.visible = false
 	# Lenos morrem com o player (spec do excalidraw).
 	_cleanup_lenos()
-	_cleanup_woodwardens()
+	_cleanup_claudio_druidas()
 	_cleanup_capivaras()
 	_cleanup_tings()
 	_cleanup_mini_magos()
+	_cleanup_arbustos()
 	_stop_world_audio()
 	# Som de morte tem que vir DEPOIS do _stop_world_audio pra não ser cortado.
 	# Anexa no scene root (fora do "world") pra sobreviver à animação de morte.

@@ -1,0 +1,125 @@
+[gd_scene format=3 uid="uid://d3gafdlsjmx2p"]
+
+[ext_resource type="Script" uid="uid://cjwq0fd3f3woy" path="res://scripts/allies/mini_arbusto.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://bpf8ga0oj67bo" path="res://assets/aliados/arbusto/arbusto 2-Sheet.png" id="2_sheet"]
+[ext_resource type="PackedScene" uid="uid://c0fhcseis1qub" path="res://scenes/ui/hp_bar.tscn" id="3_hpbar"]
+[ext_resource type="PackedScene" path="res://scenes/effects/kill_effect.tscn" id="4_kill"]
+[ext_resource type="AudioStream" path="res://audios/effects/bush/bush death.mp3" id="5_death_sfx"]
+
+[sub_resource type="AtlasTexture" id="A_idle_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 35, 35)
+
+[sub_resource type="AtlasTexture" id="A_idle_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(35, 0, 35, 35)
+
+[sub_resource type="AtlasTexture" id="A_idle_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(70, 0, 35, 35)
+
+[sub_resource type="AtlasTexture" id="A_idle_3"]
+atlas = ExtResource("2_sheet")
+region = Rect2(105, 0, 35, 35)
+
+[sub_resource type="AtlasTexture" id="A_idle_4"]
+atlas = ExtResource("2_sheet")
+region = Rect2(140, 0, 35, 35)
+
+[sub_resource type="AtlasTexture" id="A_idle_5"]
+atlas = ExtResource("2_sheet")
+region = Rect2(175, 0, 35, 35)
+
+[sub_resource type="AtlasTexture" id="A_idle_6"]
+atlas = ExtResource("2_sheet")
+region = Rect2(210, 0, 35, 35)
+
+[sub_resource type="AtlasTexture" id="A_walk_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 35, 35, 35)
+
+[sub_resource type="AtlasTexture" id="A_walk_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(35, 35, 35, 35)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_mini_arbusto"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_idle_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_6")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_walk_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_walk_1")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 10.0
+}]
+
+[sub_resource type="CircleShape2D" id="C_body"]
+radius = 8.0
+
+[node name="MiniArbusto" type="CharacterBody2D" unique_id=2030572676]
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_script")
+kill_effect_scene = ExtResource("4_kill")
+death_sound = ExtResource("5_death_sfx")
+
+[node name="Shadow" type="Node2D" parent="." unique_id=713592610]
+position = Vector2(0, 2)
+scale = Vector2(1, 0.75)
+
+[node name="Outer" type="Polygon2D" parent="Shadow" unique_id=1822341736]
+color = Color(0, 0, 0, 0.15)
+polygon = PackedVector2Array(8, 0, 7, 1, 5, 2, 3, 3, 0, 3, -3, 3, -5, 2, -7, 1, -8, 0, -7, -1, -5, -2, -3, -3, 0, -3, 3, -3, 5, -2, 7, -1)
+
+[node name="Middle" type="Polygon2D" parent="Shadow" unique_id=1749010809]
+color = Color(0, 0, 0, 0.22)
+polygon = PackedVector2Array(5, 0, 4, 1, 2, 2, 0, 2, -2, 2, -4, 1, -5, 0, -4, -1, -2, -2, 0, -2, 2, -2, 4, -1)
+
+[node name="Inner" type="Polygon2D" parent="Shadow" unique_id=760454064]
+color = Color(0, 0, 0, 0.32)
+polygon = PackedVector2Array(3, 0, 2, 1, 0, 1, -2, 1, -3, 0, -2, -1, 0, -1, 2, -1)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1220001748]
+texture_filter = 1
+position = Vector2(0, 1)
+scale = Vector2(0.6, 0.6)
+sprite_frames = SubResource("SpriteFrames_mini_arbusto")
+animation = &"walk"
+autoplay = "walk"
+offset = Vector2(0, -16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1276942009]
+position = Vector2(0, -5)
+shape = SubResource("C_body")
+
+[node name="HpBar" parent="." unique_id=581697584 instance=ExtResource("3_hpbar")]
+position = Vector2(-8, -22)

@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cw66xwjg0yahu"
-path="res://.godot/imported/woodwarden card.png-8f342b83b3d37f29a56e44be313bb469.ctex"
+path="res://.godot/imported/claudio_druida card.png-859fec1707e9ccda24ec602ce7a6ca0a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/Hud/shop/aliado/woodwarden/woodwarden card.png"
-dest_files=["res://.godot/imported/woodwarden card.png-8f342b83b3d37f29a56e44be313bb469.ctex"]
+source_file="res://assets/Hud/shop/aliado/claudio_druida/claudio_druida card.png"
+dest_files=["res://.godot/imported/claudio_druida card.png-859fec1707e9ccda24ec602ce7a6ca0a.ctex"]
 
 [params]
 

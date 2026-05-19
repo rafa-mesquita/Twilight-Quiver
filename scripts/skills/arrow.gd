@@ -44,6 +44,9 @@ var is_fire: bool = false
 var burn_dps: float = 5.0
 var burn_duration: float = 3.0
 var burn_final_bonus: float = 0.0  # dano extra no fim do burn (último tick)
+# Stacks máximos do burn — escala com fire_arrow_level (L1=1, L2=2, L3=3, L4=4).
+# Cada hit do mesmo inimigo soma 1 stack até o cap, multiplicando o dano por tick.
+var burn_max_stacks: int = 1
 # Elemental Maldição: visual roxo + aplica CurseDebuff (slow + DoT toxic) em inimigos.
 # Setado pelo player ANTES de add_child quando curse_arrow_level > 0.
 var is_curse: bool = false
@@ -369,7 +372,7 @@ func _on_hit(body: Node) -> void:
 	# Sobe o parent chain pra achar quem tem take_damage — o body que entra na
 	# colisão pode ser um StaticBody2D filho (caso da torre).
 	var target: Node = _find_damageable(body)
-	# Aliado móvel (woodwarden tem "tank_ally"): flecha passa silenciosa pra não
+	# Aliado móvel (claudio_druida tem "tank_ally"): flecha passa silenciosa pra não
 	# atrapalhar mira do player em inimigos atrás dele.
 	if target != null and target.is_in_group("tank_ally"):
 		_hit_bodies.erase(body)
@@ -620,10 +623,11 @@ func _setup_shoot_sound() -> void:
 
 
 func _apply_burn_to(target: Node) -> void:
-	# Re-aplica DoT existente (refresh duration) ou cria novo BurnDoT como child.
+	# Re-aplica DoT existente (refresh duration + +1 stack) ou cria novo BurnDoT.
+	# Stacks: cada hit soma 1 até burn_max_stacks. Damage por tick = dps × stacks.
 	for child in target.get_children():
 		if child is BurnDoT:
-			(child as BurnDoT).refresh(burn_duration, burn_dps)
+			(child as BurnDoT).refresh(burn_duration, burn_dps, burn_max_stacks)
 			# Atualiza bonus final pro maior valor (mesma lógica do dps).
 			if burn_final_bonus > (child as BurnDoT).final_bonus_damage:
 				(child as BurnDoT).final_bonus_damage = burn_final_bonus
@@ -632,6 +636,7 @@ func _apply_burn_to(target: Node) -> void:
 	dot.dps = burn_dps
 	dot.duration = burn_duration
 	dot.final_bonus_damage = burn_final_bonus
+	dot.max_stacks = burn_max_stacks
 	target.add_child(dot)
 
 

@@ -1,0 +1,133 @@
+[gd_scene format=3 uid="uid://c2d2rdnh5tve0"]
+
+[ext_resource type="Script" uid="uid://diiqyfmo783yg" path="res://scripts/allies/arbusto.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://crxcckgajfbx3" path="res://assets/aliados/arbusto/arbusto-Sheet.png" id="2_sheet"]
+[ext_resource type="AudioStream" path="res://audios/effects/bush/bush sound.mp3" id="3_bush_sfx"]
+
+[sub_resource type="AtlasTexture" id="A_idle_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 35, 35)
+
+[sub_resource type="AtlasTexture" id="A_idle_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(35, 0, 35, 35)
+
+[sub_resource type="AtlasTexture" id="A_idle_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(70, 0, 35, 35)
+
+[sub_resource type="AtlasTexture" id="A_idle_3"]
+atlas = ExtResource("2_sheet")
+region = Rect2(105, 0, 35, 35)
+
+[sub_resource type="AtlasTexture" id="A_idle_4"]
+atlas = ExtResource("2_sheet")
+region = Rect2(140, 0, 35, 35)
+
+[sub_resource type="AtlasTexture" id="A_idle_5"]
+atlas = ExtResource("2_sheet")
+region = Rect2(175, 0, 35, 35)
+
+[sub_resource type="AtlasTexture" id="A_idle_6"]
+atlas = ExtResource("2_sheet")
+region = Rect2(210, 0, 35, 35)
+
+[sub_resource type="AtlasTexture" id="A_walk_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 35, 35, 35)
+
+[sub_resource type="AtlasTexture" id="A_walk_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(35, 35, 35, 35)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_arbusto"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_idle_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_6")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_walk_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_walk_1")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 10.0
+}]
+
+[sub_resource type="CircleShape2D" id="C_body"]
+radius = 6.0
+
+[sub_resource type="CircleShape2D" id="C_hide"]
+radius = 11.0
+
+[node name="Arbusto" type="CharacterBody2D" unique_id=1080357006]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_script")
+
+[node name="Shadow" type="Node2D" parent="." unique_id=1021246505]
+position = Vector2(0, 15)
+scale = Vector2(1.4, 1)
+
+[node name="Outer" type="Polygon2D" parent="Shadow" unique_id=1893775378]
+position = Vector2(0.35714293, -13)
+scale = Vector2(1.4732143, 1.9999999)
+color = Color(0, 0, 0, 0.15)
+polygon = PackedVector2Array(8, 0, 7, 1, 5, 2, 3, 3, 0, 3, -3, 3, -5, 2, -7, 1, -8, 0, -7, -1, -5, -2, -3, -3, 0, -3, 3, -3, 5, -2, 7, -1)
+
+[node name="Middle" type="Polygon2D" parent="Shadow" unique_id=836320467]
+position = Vector2(0.1428566, -13.5)
+scale = Vector2(1.7142856, 2.25)
+color = Color(0, 0, 0, 0.22)
+polygon = PackedVector2Array(5, 0, 4, 1, 2, 2, 0, 2, -2, 2, -4, 1, -5, 0, -4, -1, -2, -2, 0, -2, 2, -2, 4, -1)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=605472399]
+texture_filter = 1
+position = Vector2(0, 2)
+sprite_frames = SubResource("SpriteFrames_arbusto")
+animation = &"walk"
+autoplay = "walk"
+offset = Vector2(0, -16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=458388066]
+position = Vector2(0, -11)
+shape = SubResource("C_body")
+
+[node name="HideZone" type="Area2D" parent="." unique_id=494523440]
+position = Vector2(0, -5)
+collision_layer = 0
+collision_mask = 5
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HideZone" unique_id=1195250210]
+position = Vector2(0, -9)
+shape = SubResource("C_hide")
+
+[node name="BushSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("3_bush_sfx")
+volume_db = -14.0
