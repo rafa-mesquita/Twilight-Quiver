@@ -72,7 +72,9 @@ func _on_body_entered(body: Node) -> void:
 			_spawn_hit_effect()
 			_die()
 		return
-	# Inseto original: bate só no player (slow + poison existentes).
+	# Inseto original: bate em player E aliados (mini_arbusto, claudio, etc.).
+	# Player recebe damage + slow + poison; aliados recebem só damage (não têm
+	# apply_slow/apply_poison nem geralmente bem com DoT de inseto).
 	if body.is_in_group("player"):
 		if body.has_method("take_damage"):
 			body.take_damage(damage, "insect")
@@ -80,6 +82,16 @@ func _on_body_entered(body: Node) -> void:
 			body.apply_slow(slow_multiplier, slow_duration)
 		if body.has_method("apply_poison"):
 			body.apply_poison(poison_damage_total, poison_duration)
+		_spawn_hit_effect()
+		_die()
+		return
+	if body.is_in_group("ally") or body.is_in_group("tank_ally"):
+		if body.has_method("take_damage"):
+			body.take_damage(damage)
+		_spawn_hit_effect()
+		_die()
+		return
+	# Bateu em parede ou outra coisa não-relevante — só o hit FX e morre.
 	_spawn_hit_effect()
 	_die()
 

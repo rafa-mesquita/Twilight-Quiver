@@ -139,26 +139,27 @@ func _pick_target() -> Node2D:
 				nearest = e
 				best = d
 		return nearest
-	# Player escondido no Arbusto Carrara (group bush_hidden) é invisível pro
-	# inseto também — vai pra tank_ally / torre.
+	# Player + tank allies (mini_arbusto, claudio_druida) competem por distância.
+	# Player escondido (bush_hidden) é invisível → só tank_ally/torre viram alvo.
+	var primary: Node2D = null
+	var primary_dist: float = INF
 	var player_alive: bool = player != null and is_instance_valid(player) and not (("is_dead" in player) and player.is_dead)
 	var player_visible: bool = player_alive and not (player as Node).is_in_group("bush_hidden")
 	if player_visible:
-		var pdist: float = global_position.distance_to(player.global_position)
-		if pdist <= tower_target_switch_distance:
-			return player
-	# Tank_ally na lista (mini_arbusto decoy etc.) — prioridade quando player hidden.
-	if not player_visible:
-		var nearest_tank: Node2D = null
-		var best_tank: float = INF
-		for t in get_tree().get_nodes_in_group("tank_ally"):
-			if is_instance_valid(t) and t is Node2D:
-				var dt: float = global_position.distance_to((t as Node2D).global_position)
-				if dt < best_tank:
-					nearest_tank = t as Node2D
-					best_tank = dt
-		if nearest_tank != null:
-			return nearest_tank
+		primary_dist = global_position.distance_to(player.global_position)
+		primary = player
+	for t in get_tree().get_nodes_in_group("tank_ally"):
+		if not is_instance_valid(t) or not (t is Node2D):
+			continue
+		var d: float = global_position.distance_to((t as Node2D).global_position)
+		if d < primary_dist:
+			primary = t as Node2D
+			primary_dist = d
+	# Sem player visível + tank_ally encontrado → persegue sem distance gate.
+	if not player_visible and primary != null:
+		return primary
+	if primary != null and primary_dist <= tower_target_switch_distance:
+		return primary
 	var nearest_tower: Node2D = null
 	var nearest_dist: float = INF
 	for s in get_tree().get_nodes_in_group("structure"):

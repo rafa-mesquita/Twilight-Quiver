@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://c2d2rdnh5tve0"]
 
 [ext_resource type="Script" uid="uid://diiqyfmo783yg" path="res://scripts/allies/arbusto.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://crxcckgajfbx3" path="res://assets/aliados/arbusto/arbusto-Sheet.png" id="2_sheet"]
+[ext_resource type="Texture2D" uid="uid://bpf8ga0oj67bo" path="res://assets/aliados/arbusto/arbusto 2-Sheet.png" id="2_sheet"]
 [ext_resource type="AudioStream" path="res://audios/effects/bush/bush sound.mp3" id="3_bush_sfx"]
 
 [sub_resource type="AtlasTexture" id="A_idle_0"]

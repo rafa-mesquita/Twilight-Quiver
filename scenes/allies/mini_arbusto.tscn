@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://d3gafdlsjmx2p"]
 
 [ext_resource type="Script" uid="uid://cjwq0fd3f3woy" path="res://scripts/allies/mini_arbusto.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://bpf8ga0oj67bo" path="res://assets/aliados/arbusto/arbusto 2-Sheet.png" id="2_sheet"]
+[ext_resource type="Texture2D" uid="uid://crxcckgajfbx3" path="res://assets/aliados/arbusto/arbusto-Sheet.png" id="2_sheet"]
 [ext_resource type="PackedScene" uid="uid://c0fhcseis1qub" path="res://scenes/ui/hp_bar.tscn" id="3_hpbar"]
 [ext_resource type="PackedScene" path="res://scenes/effects/kill_effect.tscn" id="4_kill"]
 [ext_resource type="AudioStream" path="res://audios/effects/bush/bush death.mp3" id="5_death_sfx"]

@@ -139,10 +139,14 @@ func _physics_process(delta: float) -> void:
 		# - DEFENSE → CHARGE quando player entra em detect_range (e não está
 		#   travado em DEFENSE após ataque)
 		# - CHARGE → DEFENSE quando player sai do leash_range (perde aggro)
-		if _state == State.DEFENSE and dist <= detect_range and _defense_lock_remaining <= 0.0:
+		# Quando só restam stone cubes no mapa (lone): força CHARGE em qualquer
+		# distância — todos correm pro player até morrer/atacar. Sem leash de
+		# volta pra DEFENSE pra não ficarem girando entre estados.
+		var lone_charge: bool = _only_stone_cubes_remaining()
+		if _state == State.DEFENSE and (dist <= detect_range or lone_charge) and _defense_lock_remaining <= 0.0:
 			_state = State.CHARGE
 			_play_run_sound()
-		elif _state == State.CHARGE and dist > leash_range:
+		elif _state == State.CHARGE and dist > leash_range and not lone_charge:
 			_state = State.DEFENSE
 			_stop_run_sound()
 

@@ -374,7 +374,7 @@ text = "+1 Mini Mago"
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 20
-text = "+1 Arbusto Carrara"
+text = "+1 Pai do verde e verde"
 
 [node name="StatsSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
 theme_override_constants/separation = 4

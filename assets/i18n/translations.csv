@@ -189,7 +189,7 @@ SHOP_LOCK_TITLE_PLURAL,"Desbloqueia em
 %d tours"
 SHOP_TOWER_NAME,Torre 80% dano,Tower 80% dmg,Torre 80% daño,Tour 80% dégâts
 SHOP_TOWER_DESC,"Atira em inimigos
-proximos. 80% dano.","Shoots nearby
+próximos. 80% dano.","Shoots nearby
 enemies. 80% dmg.","Dispara a enemigos
 cercanos. 80% daño.","Tire sur les ennemis
 proches. 80% dégâts."
@@ -201,7 +201,7 @@ SHOP_HP_PLUS_20,+20 HP,+20 HP,+20 HP,+20 PV
 SHOP_HP_PLUS_22,+22 HP,+22 HP,+22 HP,+22 PV
 SHOP_HP_PLUS_25,+25 HP,+25 HP,+25 HP,+25 PV
 SHOP_DAMAGE,+24% dano,+24% dmg,+24% daño,+24% dégâts
-SHOP_ATTACK_SPEED,+24% atk speed,+24% atk speed,+24% vel. ataque,+24% vit. attaque
+SHOP_ATTACK_SPEED,+23% atk speed,+23% atk speed,+23% vel. ataque,+23% vit. attaque
 SHOP_MOVE_SPEED,+10% move speed,+10% move speed,+10% vel. movimiento,+10% vit. déplacement
 SHOP_ARMOR_12,(12%- dano e 6% tenc.),(12%- dmg & 6% tena.),(12%- daño y 6% tena.),(12%- dégâts & 6% ténac.)
 SHOP_ARMOR_18,(18%- dano e 9% tenc.),(18%- dmg & 9% tena.),(18%- daño y 9% tena.),(18%- dégâts & 9% ténac.)
@@ -250,8 +250,8 @@ DMG_PANEL_DARK_BALL,Dark Ball,Dark Ball,Dark Ball,Dark Ball
 DMG_PANEL_DARK_BALL_BURN,Veneno da Dark Ball,Dark Ball Venom,Veneno de Dark Ball,Venin de Dark Ball
 DMG_PANEL_DARK_BALL_VENOM,Fumaça da Dark Ball,Dark Ball Smoke,Niebla de Dark Ball,Brume de Dark Ball
 HUD_DEATH_DMG_BREAKDOWN_TITLE,Dano por fonte:,Damage by source:,Daño por fuente:,Dégâts par source :
-SHOP_BOOMERANG_DESC_1,"Cada 5s lanca no
-inimigo mais proximo
+SHOP_BOOMERANG_DESC_1,"Cada 5s lança no
+inimigo mais próximo
 15 dano, vai e volta","Every 5s throws at
 nearest enemy
 15 dmg, returns","Cada 5s lanza al
@@ -274,7 +274,7 @@ SHOP_BOOMERANG_DESC_3,"2 bumerangues
 (cible + opposé)
 25 dgt"
 SHOP_BOOMERANG_DESC_4,"4 bumerangues
-todas direcoes
+todas direções
 30 dano","4 boomerangs
 all directions
 30 dmg","4 bumeranes
@@ -320,7 +320,7 @@ SHOP_ALLY_LENO,Amigo Leno,Friend Leno,Amigo Leno,Ami Leno
 SHOP_ALLY_CAPIVARA,Capivara Joe,Capybara Joe,Capibara Joe,Capybara Joe
 SHOP_ALLY_TING,Mecânico Ting,Ting the Mechanic,Ting el Mecánico,Ting le Mécanicien
 SHOP_ALLY_MINI_MAGO,Mini Mago,Mini Mage,Mini Mago,Mini Mage
-SHOP_ALLY_ARBUSTO,Arbusto Carrara,Carrara Bush,Arbusto Carrara,Buisson Carrara
+SHOP_ALLY_ARBUSTO,Pai do verde e verde,Father of green and green,Padre del verde y verde,Père du vert et vert
 SHOP_ARBUSTO_DESC_1,"Esconde o player ao tocar: +12% atk speed, +5 dmg/flecha por 3s","Hides player on touch: +12% atk speed, +5 dmg/arrow for 3s","Esconde al jugador al tocar: +12% atk speed, +5 daño/flecha por 3s","Cache le joueur au contact : +12% vit atk, +5 dmg/flèche pendant 3s"
 SHOP_ARBUSTO_DESC_2,Próximo nível em design,Next level WIP,Próximo nivel en diseño,Niveau suivant en conception
 SHOP_ARBUSTO_DESC_3,Próximo nível em design,Next level WIP,Próximo nivel en diseño,Niveau suivant en conception
@@ -367,31 +367,31 @@ perfore, +30% dégâts"
 SHOP_PERFURACAO_DESC_2,+60% dano + hitbox maior,+60% damage + bigger hitbox,+60% daño + hitbox mayor,+60% dégâts + hitbox plus grande
 SHOP_PERFURACAO_DESC_3,+90% dano,+90% damage,+90% daño,+90% dégâts
 SHOP_PERFURACAO_DESC_4,Todo ataque atravessa,Every attack pierces,Cada ataque perfora,Chaque attaque perfore
-SHOP_ATTACK_SPEED_DESC,"+24% velocidade de
-ataque","+24% attack
-speed","+24% velocidad de
-ataque","+24% vitesse
+SHOP_ATTACK_SPEED_DESC,"+23% velocidade de
+ataque","+23% attack
+speed","+23% velocidad de
+ataque","+23% vitesse
 d'attaque"
-SHOP_MULTI_ARROW_DESC_1,"+2 flechas a 30°
-(50% dano)","+2 arrows at 30°
-(50% damage)","+2 flechas a 30°
-(50% daño)","+2 flèches à 30°
-(50% dégâts)"
-SHOP_MULTI_ARROW_DESC_2,"Flechas extras agora
-80% do dano","Extra arrows now
-80% damage","Flechas extra ahora
-80% del daño","Flèches sup. font
-80% des dégâts"
-SHOP_MULTI_ARROW_DESC_3,"+2 flechas (5 total)
-em leque","+2 arrows (5 total)
-in fan","+2 flechas (5 total)
-en abanico","+2 flèches (5 total)
-en éventail"
-SHOP_MULTI_ARROW_DESC_4,"10 flechas em todas
-as direcoes","10 arrows in every
-direction","10 flechas en todas
-las direcciones","10 flèches dans
-toutes les directions"
+SHOP_MULTI_ARROW_DESC_1,"3 flechas a ±30°
+(laterais 30% dano)","3 arrows at ±30°
+(sides 30% damage)","3 flechas a ±30°
+(laterales 30% daño)","3 flèches à ±30°
+(côtés 30% dégâts)"
+SHOP_MULTI_ARROW_DESC_2,"Laterais agora a
+65% do dano","Sides now at
+65% damage","Laterales ahora a
+65% del daño","Côtés à
+65% des dégâts"
+SHOP_MULTI_ARROW_DESC_3,"Laterais a 75%
+(continua 3 flechas)","Sides at 75%
+(still 3 arrows)","Laterales a 75%
+(siguen 3 flechas)","Côtés à 75%
+(toujours 3 flèches)"
+SHOP_MULTI_ARROW_DESC_4,"5 flechas a ±15°/±45°
+(extras 85% dano)","5 arrows at ±15°/±45°
+(extras 85% damage)","5 flechas a ±15°/±45°
+(extras 85% daño)","5 flèches à ±15°/±45°
+(extras 85% dégâts)"
 SHOP_DOUBLE_ARROWS_DESC_1,"50% chance flechas duplas
 Secundária dá 70% dano","50% chance double arrows
 Secondary deals 70% damage","50% chance flechas dobles
@@ -413,7 +413,7 @@ SHOP_DOUBLE_ARROWS_DESC_4,"90% duplas, 60% triplas, 5% quíntuplas
 +15%/+30% daño en 3/5","90% doubles, 60% triples, 5% quintuples
 +15%/+30% dgt en 3/5"
 SHOP_CHAIN_LIGHTNING_DESC_1,"30% dano no inimigo
-mais proximo
+mais próximo
 (a cada 2 hits)","30% damage to nearest
 enemy
 (every 2 hits)","30% daño al enemigo
@@ -671,7 +671,7 @@ SHOP_FIRE_ARROW_DESC_4,"Rastro do player
 +30% brûle zone"
 SHOP_CURSE_ARROW_DESC_1,"Slow 35% + 3 dps
 Morte propaga DoT
-pro alvo mais proximo","Slow 35% + 3 dps
+pro alvo mais próximo","Slow 35% + 3 dps
 Death spreads DoT
 to nearest target","Lentitud 35% + 3 dps
 Muerte propaga DoT

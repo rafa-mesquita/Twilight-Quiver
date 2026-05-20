@@ -1107,13 +1107,15 @@ func _curse_dps() -> float:
 
 func _apply_dmg_pct_to_dps(base: float) -> float:
 	# Aplica o arrow_damage_multiplier (stat "Dano") no dps de DoT.
-	# Garante incremento mínimo de +1 quando há % de dano ativo — DoTs de base
-	# baixa (ex: curse lv1 = 3 dps × 1.20 = 3.6) sentiriam pouco do stat sem isso.
-	if base <= 0.0 or arrow_damage_multiplier <= 1.0:
+	# Garante incremento mínimo de +1 POR STACK comprado de "Dano" — DoTs de
+	# base baixa (ex: curse lv1 = 3 dps × 1.20 = 3.6) sentiriam pouco do stat
+	# sem isso. Sem stacks (damage_upgrades = 0), retorna base sem mudança.
+	if base <= 0.0 or damage_upgrades <= 0:
 		return base
 	var scaled: float = base * arrow_damage_multiplier
-	if scaled - base < 1.0:
-		scaled = base + 1.0
+	var min_scaled: float = base + float(damage_upgrades)
+	if scaled < min_scaled:
+		scaled = min_scaled
 	return scaled
 
 
@@ -2142,10 +2144,9 @@ func apply_upgrade(upgrade_id: String) -> void:
 			perfuracao_counter_changed.emit(_perf_shot_counter, perfuracao_level)
 		"attack_speed":
 			attack_speed_level += 1
-			# +24% por stack (aditivo). Aplica imediatamente — próximo ataque
+			# +23% por stack (aditivo). Aplica imediatamente — próximo ataque
 			# já usa o novo wait_time/speed_scale via _start_attack.
-			# Equalizado com damage pra DPS idêntico por nível.
-			attack_speed_multiplier += 0.24
+			attack_speed_multiplier += 0.23
 		"multi_arrow":
 			multi_arrow_level = mini(multi_arrow_level + 1, 4)
 		"double_arrows":
