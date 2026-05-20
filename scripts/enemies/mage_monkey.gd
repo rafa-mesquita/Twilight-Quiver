@@ -616,6 +616,11 @@ func take_damage(amount: float) -> void:
 	if p != null and p.has_method("notify_damage_dealt"):
 		p.notify_damage_dealt(amount)
 	hp = maxf(hp - amount, 0.0)
+	# Clamp de float dust: max_hp × hp_mult resulta em frac (ex: 3128.7) e o
+	# dano tira fracionário, deixando hp em ~0.0001 — `hp <= 0.0` não pega e o
+	# boss fica "vivo" com 0 HP visível na barra. Sub-1 HP é morte certa.
+	if hp < 1.0:
+		hp = 0.0
 	if hp_bar != null and hp_bar.has_method("set_ratio"):
 		hp_bar.set_ratio(hp / max_hp if max_hp > 0.0 else 0.0)
 	_flash_damage()

@@ -32,6 +32,7 @@ signal time_freeze_skill_cooldown_changed(remaining: float, total: float)
 # Perfuração: HUD mostra contador 1/2/3 (próximo tiro perfurante a cada 3 ataques
 # nos lv1-3; sempre ativo no lv4). Emitido em cada release_arrow e no apply_upgrade.
 signal perfuracao_counter_changed(counter: int, level: int)
+signal ricochet_counter_changed(counter: int, level: int)
 # Disparado a cada compra/aquisição de upgrade. HUD escuta pra atualizar a
 # coluna de upgrades adquiridos.
 signal upgrade_applied(id: String, level: int)
@@ -49,7 +50,7 @@ signal upgrade_applied(id: String, level: int)
 @export var kill_effect_scene: PackedScene = preload("res://scenes/effects/kill_effect.tscn")
 const DEATH_SOUND: AudioStream = preload("res://audios/effects/dead effect.mp3")
 const DASH_SOUND: AudioStream = preload("res://audios/effects/player arrow/dash.mp3")
-@export var poison_number_color: Color = Color(0.55, 1.0, 0.45, 1.0)
+@export var poison_number_color: Color = Color(0.75, 0.35, 1.0, 1.0)
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var muzzle: Marker2D = $Muzzle
@@ -137,6 +138,9 @@ var _mini_arbusto_respawn_timers: Array[float] = []
 var arbusto_hide_active: bool = false
 var arbusto_hide_atk_speed_bonus: float = 0.0
 var arbusto_hide_arrow_bonus_damage: float = 0.0
+# L4: cada hit que o player acerta enquanto hidden cura essa quantidade.
+# Setado pelo arbusto.gd no enter_hide, zerado no exit_hide.
+var arbusto_hide_heal_per_hit: float = 0.0
 # Contador de magos mortos na wave atual — torreta do Ting ganha +1% atk speed
 # por mago morto. Reset no _ready de cada wave pelo wave_manager.
 var _mages_killed_this_wave: int = 0
@@ -269,6 +273,15 @@ var _graviton_shot_counter: int = 0
 # (alvo + oposto + 2 perpendiculares).
 const BOOMERANG_SCENE: PackedScene = preload("res://scenes/skills/boomerang.tscn")
 const BOOMERANG_CD_BY_LEVEL: Array[float] = [5.0, 4.0, 4.0, 4.0]
+# Garras de Tigre: autocast que dá 2 arranhadas em N inimigos aleatórios
+# dentro de TIGER_CLAWS_RADIUS. Cada arranhada aplica damage_per_scratch.
+const TIGER_CLAWS_VFX_SCENE: PackedScene = preload("res://scenes/skills/tiger_claws_vfx.tscn")
+const TIGER_CLAWS_CD_BY_LEVEL: Array[float] = [0.0, 7.0, 7.0, 5.5, 5.5]
+const TIGER_CLAWS_TARGETS_BY_LEVEL: Array[int] = [0, 1, 2, 2, 3]
+const TIGER_CLAWS_DMG_PER_SCRATCH_BY_LEVEL: Array[float] = [0.0, 25.0, 27.0, 35.0, 35.0]
+const TIGER_CLAWS_RADIUS: float = 180.0
+var tiger_claws_level: int = 0
+var _tiger_claws_cd_remaining: float = 0.0
 const BOOMERANG_DAMAGE_BY_LEVEL: Array[float] = [15.0, 20.0, 25.0, 30.0]
 const BOOMERANG_RANGE_BY_LEVEL: Array[float] = [140.0, 140.0, 140.0, 140.0]
 var boomerang_level: int = 0
@@ -340,6 +353,20 @@ var can_attack: bool = true
 var is_attacking: bool = false
 var is_drawing: bool = false
 var is_dead: bool = false
+# Screenshot do viewport no momento da morte — usado como background no replay
+# pra dar contexto visual do cenário onde a morte aconteceu.
+var death_screenshot: ImageTexture = null
+# Replay da morte: ring buffer dos últimos 3.5s capturado a 20fps (70 snapshots).
+# Cada snapshot é um Dictionary com:
+#   {player_pos: Vector2, entities: [{id, sprite_frames, pos, anim, frame, flip_h, modulate, z_index}, ...]}
+# Captura no _physics_process via _record_replay_snapshot. Congela quando o
+# player morre — HUD lê via stats_replay_snapshots no botão de replay.
+const REPLAY_DURATION_SECONDS: float = 3.5
+const REPLAY_RECORD_INTERVAL: float = 0.05  # 20fps
+const REPLAY_MAX_SNAPSHOTS: int = 70  # ~3.5s × 20fps
+const REPLAY_RECORD_RADIUS: float = 260.0  # entidades dentro desse raio do player entram no snapshot
+var stats_replay_snapshots: Array = []
+var _replay_record_accum: float = 0.0
 var locked_aim_dir: Vector2 = Vector2.RIGHT
 var locked_facing_left: bool = false
 var start_position: Vector2 = Vector2.ZERO
@@ -428,6 +455,8 @@ func _physics_process(delta: float) -> void:
 	_update_fire_skill(delta)
 	_update_chain_lightning_skill(delta)
 	_update_boomerang(delta)
+	_update_tiger_claws(delta)
+	_tick_replay_recorder(delta)
 	_update_curse_skill(delta)
 	_update_time_freeze(delta)
 	_update_player_fire_trail()
@@ -463,6 +492,7 @@ func _physics_process(delta: float) -> void:
 			input_vec = input_vec.normalized()
 
 	velocity = input_vec * speed * _slow_factor * (move_speed_multiplier + _capivara_speed_buff_amount + _esquivando_move_buff())
+	velocity = _apply_corner_slide(velocity, delta)
 	move_and_slide()
 
 	_update_facing(input_vec)
@@ -672,6 +702,8 @@ func _release_arrow() -> void:
 		_ricochet_shot_counter = 0
 	elif ricochet_arrow_level > 0:
 		_ricochet_shot_counter += 1
+	if ricochet_arrow_level > 0:
+		ricochet_counter_changed.emit(_ricochet_shot_counter, ricochet_arrow_level)
 	# Graviton: mesma regra (volley compartilha o flag).
 	var is_graviton: bool = _is_graviton_shot()
 	if is_graviton:
@@ -711,80 +743,90 @@ func _build_volley() -> Array:
 		0:
 			shots.append({"dir": primary, "dmg_mult": 1.0})
 		1:
+			# 3 flechas em ±30°. Laterais a 30% — tier de entrada bem fraco.
 			shots.append({"dir": primary, "dmg_mult": 1.0})
-			shots.append({"dir": primary.rotated(deg_to_rad(30.0)), "dmg_mult": 0.5})
-			shots.append({"dir": primary.rotated(deg_to_rad(-30.0)), "dmg_mult": 0.5})
+			shots.append({"dir": primary.rotated(deg_to_rad(30.0)), "dmg_mult": 0.3})
+			shots.append({"dir": primary.rotated(deg_to_rad(-30.0)), "dmg_mult": 0.3})
 		2:
+			# 3 flechas em ±30°. Laterais sobem pra 65%.
 			shots.append({"dir": primary, "dmg_mult": 1.0})
-			shots.append({"dir": primary.rotated(deg_to_rad(30.0)), "dmg_mult": 0.8})
-			shots.append({"dir": primary.rotated(deg_to_rad(-30.0)), "dmg_mult": 0.8})
+			shots.append({"dir": primary.rotated(deg_to_rad(30.0)), "dmg_mult": 0.65})
+			shots.append({"dir": primary.rotated(deg_to_rad(-30.0)), "dmg_mult": 0.65})
 		3:
+			# 3 flechas em ±30°ainda — L3 não adiciona flechas, só sobe pra 75%.
 			shots.append({"dir": primary, "dmg_mult": 1.0})
-			shots.append({"dir": primary.rotated(deg_to_rad(15.0)), "dmg_mult": 0.8})
-			shots.append({"dir": primary.rotated(deg_to_rad(-15.0)), "dmg_mult": 0.8})
-			shots.append({"dir": primary.rotated(deg_to_rad(45.0)), "dmg_mult": 0.8})
-			shots.append({"dir": primary.rotated(deg_to_rad(-45.0)), "dmg_mult": 0.8})
+			shots.append({"dir": primary.rotated(deg_to_rad(30.0)), "dmg_mult": 0.75})
+			shots.append({"dir": primary.rotated(deg_to_rad(-30.0)), "dmg_mult": 0.75})
 		_:
-			# Lv 4: 10 flechas em todas as direções (TAU/10 = 36°), 80% cada.
-			for i in 10:
-				var ang: float = (TAU / 10.0) * float(i)
-				shots.append({"dir": primary.rotated(ang), "dmg_mult": 0.8})
+			# L4: 5 flechas em ±15° e ±45° (não mais 10 in-the-round). Extras 85%.
+			shots.append({"dir": primary, "dmg_mult": 1.0})
+			shots.append({"dir": primary.rotated(deg_to_rad(15.0)), "dmg_mult": 0.85})
+			shots.append({"dir": primary.rotated(deg_to_rad(-15.0)), "dmg_mult": 0.85})
+			shots.append({"dir": primary.rotated(deg_to_rad(45.0)), "dmg_mult": 0.85})
+			shots.append({"dir": primary.rotated(deg_to_rad(-45.0)), "dmg_mult": 0.85})
 	return shots
 
 
-# Flechas Duplas — alternativo do Multi Arrow. Clusters mais apertados (±12/20/32°)
-# e contagem decidida por rolls. Counter de 3 ataques só conta a partir do NV2.
-# Resolução: roll 5-flechas (1%, só NV4) → roll 3-flechas (NV3 30% / NV4 60%) →
-# garantia/30% de duplas. Extras = 0.75x dano da primária.
+# Flechas Duplas — alternativo do Multi Arrow. Clusters apertados (±0.5 a ±2°)
+# com contagem aleatória por roll. Counter de 3 ataques só conta a partir do NV2.
+# Spec atual (post-buff 0.5.7):
+#   NV1: 50% chance de 2 flechas. Secundária a 70% dano.
+#   NV2: 60% chance de 2 flechas. Ambas dano total.
+#   NV3: 75% chance de 2 + 45% chance de 3 → maior prevalece. 3-flechas dá +15%
+#        dano em TODAS (recompensa burst).
+#   NV4: 90% chance de 2 + 60% chance de 3 + 5% chance de 5 → maior prevalece.
+#        3-flechas = +15%, 5-flechas = +30% em TODAS.
 func _build_double_arrows_volley(primary: Vector2) -> Array:
-	# Spec por nível (cada roll independente; "maior contagem prevalece"):
-	#   NV1: 30% duplas. Secundária dá 50% dano.
-	#   NV2: 30% duplas. Ambas dano total.
-	#   NV3: 60% duplas + 30% triplas → maior prevalece (≤3 flechas).
-	#   NV4: 90% duplas + 60% triplas + 1% quíntuplas → maior prevalece (≤5).
 	var shots: Array = []
 	var lvl: int = double_arrows_level
 	var count: int = 1
 	match lvl:
 		1:
-			if randf() < 0.30:
+			if randf() < 0.50:
 				count = 2
 		2:
-			if randf() < 0.30:
+			if randf() < 0.60:
 				count = 2
 		3:
-			if randf() < 0.60:
+			if randf() < 0.75:
 				count = maxi(count, 2)
-			if randf() < 0.30:
+			if randf() < 0.45:
 				count = maxi(count, 3)
 		4:
 			if randf() < 0.90:
 				count = maxi(count, 2)
 			if randf() < 0.60:
 				count = maxi(count, 3)
-			if randf() < 0.01:
+			if randf() < 0.05:
 				count = maxi(count, 5)
-	# Dano: NV1 secundária a 50%; NV2+ todas a 100%.
-	var extra_dmg: float = 0.5 if lvl == 1 else 1.0
+	# Dano da extra: NV1 a 70% (era 50% pré-buff); NV2+ a 100%.
+	var extra_dmg: float = 0.70 if lvl == 1 else 1.0
+	# Burst bonus: 3 flechas dão +15% em TODAS; 5 flechas dão +30%. Reforça o
+	# feel de "lucky strike" quando o roll grande sai.
+	var burst_bonus: float = 1.0
+	if count >= 5:
+		burst_bonus = 1.30
+	elif count >= 3:
+		burst_bonus = 1.15
 	# Delay entre flechas extras (burst rápido pra cada uma ser distinta no spawn).
 	const DELAY_PER_EXTRA: float = 0.04
 	# Ângulos APERTADOS: 1° de diferença entre flechas adjacentes — quase a mesma
 	# mira, mas separação suficiente pra não sobrepor visualmente no spawn.
 	if count == 1:
-		shots.append({"dir": primary, "dmg_mult": 1.0})
+		shots.append({"dir": primary, "dmg_mult": 1.0 * burst_bonus})
 	elif count == 2:
-		shots.append({"dir": primary.rotated(deg_to_rad(-0.5)), "dmg_mult": 1.0})
-		shots.append({"dir": primary.rotated(deg_to_rad(0.5)), "dmg_mult": extra_dmg, "delay_sec": DELAY_PER_EXTRA})
+		shots.append({"dir": primary.rotated(deg_to_rad(-0.5)), "dmg_mult": 1.0 * burst_bonus})
+		shots.append({"dir": primary.rotated(deg_to_rad(0.5)), "dmg_mult": extra_dmg * burst_bonus, "delay_sec": DELAY_PER_EXTRA})
 	elif count == 3:
-		shots.append({"dir": primary, "dmg_mult": 1.0})
-		shots.append({"dir": primary.rotated(deg_to_rad(1.0)), "dmg_mult": extra_dmg, "delay_sec": DELAY_PER_EXTRA})
-		shots.append({"dir": primary.rotated(deg_to_rad(-1.0)), "dmg_mult": extra_dmg, "delay_sec": DELAY_PER_EXTRA * 2})
+		shots.append({"dir": primary, "dmg_mult": 1.0 * burst_bonus})
+		shots.append({"dir": primary.rotated(deg_to_rad(1.0)), "dmg_mult": extra_dmg * burst_bonus, "delay_sec": DELAY_PER_EXTRA})
+		shots.append({"dir": primary.rotated(deg_to_rad(-1.0)), "dmg_mult": extra_dmg * burst_bonus, "delay_sec": DELAY_PER_EXTRA * 2})
 	elif count == 5:
-		shots.append({"dir": primary, "dmg_mult": 1.0})
-		shots.append({"dir": primary.rotated(deg_to_rad(1.0)), "dmg_mult": extra_dmg, "delay_sec": DELAY_PER_EXTRA})
-		shots.append({"dir": primary.rotated(deg_to_rad(-1.0)), "dmg_mult": extra_dmg, "delay_sec": DELAY_PER_EXTRA * 2})
-		shots.append({"dir": primary.rotated(deg_to_rad(2.0)), "dmg_mult": extra_dmg, "delay_sec": DELAY_PER_EXTRA * 3})
-		shots.append({"dir": primary.rotated(deg_to_rad(-2.0)), "dmg_mult": extra_dmg, "delay_sec": DELAY_PER_EXTRA * 4})
+		shots.append({"dir": primary, "dmg_mult": 1.0 * burst_bonus})
+		shots.append({"dir": primary.rotated(deg_to_rad(1.0)), "dmg_mult": extra_dmg * burst_bonus, "delay_sec": DELAY_PER_EXTRA})
+		shots.append({"dir": primary.rotated(deg_to_rad(-1.0)), "dmg_mult": extra_dmg * burst_bonus, "delay_sec": DELAY_PER_EXTRA * 2})
+		shots.append({"dir": primary.rotated(deg_to_rad(2.0)), "dmg_mult": extra_dmg * burst_bonus, "delay_sec": DELAY_PER_EXTRA * 3})
+		shots.append({"dir": primary.rotated(deg_to_rad(-2.0)), "dmg_mult": extra_dmg * burst_bonus, "delay_sec": DELAY_PER_EXTRA * 4})
 	return shots
 
 
@@ -801,6 +843,11 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 		# um buff fixo da mecânica do hide, não um stat status).
 		if arbusto_hide_active and arbusto_hide_arrow_bonus_damage > 0.0:
 			arrow.damage += arbusto_hide_arrow_bonus_damage
+		# L4: stampa o heal-on-hit na flecha. Cada hit dessa flecha cura o
+		# player no impacto. Stamp no disparo (e não check no hit) garante que
+		# o heal aplica mesmo se o player sair do bush antes do projétil chegar.
+		if arbusto_hide_active and arbusto_hide_heal_per_hit > 0.0 and "arbusto_heal_on_hit" in arrow:
+			arrow.arbusto_heal_on_hit = arbusto_hide_heal_per_hit
 	# Tint verde nas flechas durante o hide do arbusto.
 	if arbusto_hide_active and arrow is CanvasItem:
 		(arrow as CanvasItem).modulate = Color(0.6, 1.2, 0.6, 1.0)
@@ -809,8 +856,11 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 			arrow.is_piercing = true
 		# Bonus de dano da perfuração entra como multiplicador do PRIMEIRO alvo
 		# atingido. Os demais que a flecha atravessar recebem `damage` base.
+		# Flechas extras do Multi Arrow aplicam só 60% do bônus (alinha com a
+		# regra de "efeitos ao contato em 60%" das extras).
 		if "pierce_first_dmg_mult" in arrow:
-			arrow.pierce_first_dmg_mult = 1.0 + _perf_damage_bonus()
+			var pierce_bonus_scale: float = 1.0 if is_primary else 0.60
+			arrow.pierce_first_dmg_mult = 1.0 + _perf_damage_bonus() * pierce_bonus_scale
 		if "hitbox_scale" in arrow and perfuracao_level >= 2:
 			arrow.hitbox_scale = 1.8
 	if chain_lightning_level > 0:
@@ -825,8 +875,10 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 			arrow.is_fire = true
 		# Multi Arrow combo: flechas extras têm fogo reduzido. Burn (tick do
 		# hit) cai 30% (= 70% do normal); rastro cai 65% (= 35% do normal).
-		var burn_scale: float = 1.0 if is_primary else 0.70
-		var trail_scale: float = 1.0 if is_primary else 0.35
+		# Flechas extras do Multi Arrow aplicam efeitos ao contato em 60% da
+		# eficácia — padrão único pra burn/curse/freeze + fire trail.
+		var burn_scale: float = 1.0 if is_primary else 0.60
+		var trail_scale: float = 1.0 if is_primary else 0.60
 		if "burn_dps" in arrow:
 			arrow.burn_dps = _fire_burn_dps() * burn_scale
 		if "burn_duration" in arrow:
@@ -852,8 +904,8 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 	if curse_arrow_level > 0:
 		if "is_curse" in arrow:
 			arrow.is_curse = true
-		# Multi Arrow combo: flechas extras com curse reduzido (igual fogo).
-		var curse_scale: float = 1.0 if is_primary else 0.70
+		# Multi Arrow combo: flechas extras com curse reduzido (mesmo 60% do burn).
+		var curse_scale: float = 1.0 if is_primary else 0.60
 		if "curse_dps" in arrow:
 			arrow.curse_dps = _curse_dps() * curse_scale
 		if "curse_duration" in arrow:
@@ -865,8 +917,11 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 			arrow.is_ice = true
 		if "freeze_duration" in arrow:
 			arrow.freeze_duration = _ice_freeze_duration()
+		# Flechas extras do Multi Arrow aplicam freeze DPS a 60% também
+		# (alinhado com burn/curse). Duração do freeze não é afetada.
+		var freeze_scale: float = 1.0 if is_primary else 0.60
 		if "freeze_dps" in arrow:
-			arrow.freeze_dps = _ice_freeze_dps()
+			arrow.freeze_dps = _ice_freeze_dps() * freeze_scale
 		# Lv2+: spawna área nevada no impacto (reaproveita o IceSlowArea do mago).
 		if ice_arrow_level >= 2:
 			if "ice_area_enabled" in arrow:
@@ -891,8 +946,11 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 			arrow.graviton_lifetime = _graviton_lifetime()
 		if "graviton_slow_factor" in arrow:
 			arrow.graviton_slow_factor = _graviton_slow_factor()
+		# Explosão final do graviton é flat (não escala com arrow.damage),
+		# então precisa do scale explícito pra ficar em 60% nas extras.
 		if "graviton_explosion_damage" in arrow:
-			arrow.graviton_explosion_damage = _graviton_explosion_damage()
+			var grav_scale: float = 1.0 if is_primary else 0.60
+			arrow.graviton_explosion_damage = _graviton_explosion_damage() * grav_scale
 	# Fora do `if is_graviton:` — source e volley_id valem pra TODA flecha do
 	# player (não só as graviton). Bug pré-existente: estavam aninhados na
 	# graviton, impedindo notify_esquivando_hit em flechas normais.
@@ -988,8 +1046,9 @@ func _graviton_explosion_damage() -> float:
 	# Só L4 dá dano AoE no fim (20). L1-L3 são puro CC/slow.
 	# O throttle de 3s/inimigo é aplicado no graviton_pulse pra evitar que
 	# múltiplos pulsos (volley/ataques em sequência) empilhem dano no mesmo alvo.
+	# Escala com o stat "Dano" (arrow_damage_multiplier) — é skill do player.
 	if graviton_level >= 4:
-		return 20.0
+		return _apply_dmg_pct_to_dps(20.0)
 	return 0.0
 
 
@@ -1209,7 +1268,8 @@ func _handle_fire_skill_press() -> void:
 	var target: Vector2 = get_global_mouse_position()
 	var proj: Node = FIRE_SKILL_PROJECTILE_SCENE.instantiate()
 	if "field_dps" in proj:
-		proj.field_dps = FIRE_SKILL_DPS * _fire_burn_multiplier()
+		# Skill do player escala com stat "Dano" + bônus L4 do Fogo.
+		proj.field_dps = _apply_dmg_pct_to_dps(FIRE_SKILL_DPS) * _fire_burn_multiplier()
 	if "field_duration" in proj:
 		proj.field_duration = FIRE_SKILL_DURATION
 	if "field_scale" in proj:
@@ -1269,7 +1329,8 @@ func _handle_chain_lightning_skill_press() -> void:
 		var bolt: Node = CHAIN_LIGHTNING_BOLT_SCENE.instantiate()
 		var dmg_mult: float = CHAIN_LIGHTNING_LV4_DAMAGE_MULT if chain_lightning_level >= 4 else 1.0
 		if "damage" in bolt:
-			bolt.damage = CHAIN_LIGHTNING_SKILL_BOLT_DAMAGE * dmg_mult
+			# Skill do player escala com stat "Dano".
+			bolt.damage = _apply_dmg_pct_to_dps(CHAIN_LIGHTNING_SKILL_BOLT_DAMAGE) * dmg_mult
 		if "damage_radius" in bolt:
 			bolt.damage_radius = CHAIN_LIGHTNING_SKILL_AREA_RADIUS
 		if "is_enemy_source" in bolt:
@@ -1338,6 +1399,168 @@ func _spawn_boomerang(dir: Vector2, dmg: float, rng: float) -> void:
 		boom.setup(global_position, dir, self)
 
 
+func _update_tiger_claws(delta: float) -> void:
+	if tiger_claws_level <= 0 or is_dead:
+		return
+	if _tiger_claws_cd_remaining > 0.0:
+		_tiger_claws_cd_remaining = maxf(_tiger_claws_cd_remaining - delta, 0.0)
+		return
+	# Tenta castar. Sem inimigo no raio → cd não dispara, retenta no próximo frame.
+	if _try_cast_tiger_claws():
+		_tiger_claws_cd_remaining = TIGER_CLAWS_CD_BY_LEVEL[tiger_claws_level]
+
+
+func _try_cast_tiger_claws() -> bool:
+	var candidates: Array[Node2D] = []
+	var rsq: float = TIGER_CLAWS_RADIUS * TIGER_CLAWS_RADIUS
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not is_instance_valid(e) or not (e is Node2D):
+			continue
+		var enemy_node: Node2D = e as Node2D
+		# Pula tank_ally (claudio_druida, mini_arbusto decoy) — só enemy real.
+		if enemy_node.is_in_group("ally"):
+			continue
+		# Boss shieldado não toma dano — pular pra não desperdiçar cast.
+		if enemy_node.is_in_group("boss_shielded"):
+			continue
+		if enemy_node.global_position.distance_squared_to(global_position) <= rsq:
+			candidates.append(enemy_node)
+	if candidates.is_empty():
+		return false
+	# Embaralha e pega N (max = candidates.size()).
+	candidates.shuffle()
+	var target_count: int = mini(TIGER_CLAWS_TARGETS_BY_LEVEL[tiger_claws_level], candidates.size())
+	# Skill do player escala com stat "Dano".
+	var dmg: float = _apply_dmg_pct_to_dps(TIGER_CLAWS_DMG_PER_SCRATCH_BY_LEVEL[tiger_claws_level])
+	for i in target_count:
+		_spawn_tiger_claws_vfx(candidates[i], dmg)
+	return true
+
+
+func _capture_clean_death_screenshot() -> void:
+	# Esconde entidades dinâmicas por 1 frame, captura o viewport, restaura.
+	# Resulta num screenshot só com chão/decoração — base limpa pro replay.
+	var hidden_nodes: Array[CanvasItem] = []
+	var groups: Array[String] = ["enemy", "ally", "arrow", "mage_projectile", "boomerang", "tank_ally", "mini_arbusto", "arbusto"]
+	for group_name in groups:
+		for n in get_tree().get_nodes_in_group(group_name):
+			if n is CanvasItem and (n as CanvasItem).visible:
+				hidden_nodes.append(n as CanvasItem)
+				(n as CanvasItem).visible = false
+	# Player também (o ghost vai ocupar o lugar no replay).
+	var was_visible: bool = visible
+	visible = false
+	# Espera o próximo frame ser desenhado COM os nós escondidos.
+	await RenderingServer.frame_post_draw
+	var vp_img: Image = get_viewport().get_texture().get_image()
+	if vp_img != null:
+		death_screenshot = ImageTexture.create_from_image(vp_img)
+	# Restaura visibilidade — a death sequence ainda precisa renderizar alguns
+	# desses nós antes do blackout final.
+	for n in hidden_nodes:
+		if is_instance_valid(n):
+			n.visible = true
+	visible = was_visible
+
+
+func _tick_replay_recorder(delta: float) -> void:
+	# Captura snapshot a cada REPLAY_RECORD_INTERVAL pra alimentar o ring buffer.
+	# Para quando is_dead — o último snapshot é capturado em _die().
+	if is_dead:
+		return
+	_replay_record_accum += delta
+	if _replay_record_accum < REPLAY_RECORD_INTERVAL:
+		return
+	_replay_record_accum -= REPLAY_RECORD_INTERVAL
+	_record_replay_snapshot()
+
+
+func _record_replay_snapshot() -> void:
+	# Snapshot do player + entidades próximas. Mantém só os últimos
+	# REPLAY_MAX_SNAPSHOTS (ring buffer).
+	var entities: Array = []
+	# Player primeiro — id reservado 0 + flag is_player pro replay instanciar
+	# o player_preview com SkinLoadout em vez de um sprite genérico.
+	var player_entry: Dictionary = _snapshot_entity(self, 0)
+	player_entry["is_player"] = true
+	entities.append(player_entry)
+	var rsq: float = REPLAY_RECORD_RADIUS * REPLAY_RECORD_RADIUS
+	# Grupos relevantes pro replay (entidades que aparecem visualmente perto).
+	for group_name in ["enemy", "ally", "arrow", "mage_projectile", "boomerang", "tank_ally"]:
+		for n in get_tree().get_nodes_in_group(group_name):
+			if not is_instance_valid(n) or not (n is Node2D):
+				continue
+			if n == self:
+				continue
+			var node2d: Node2D = n as Node2D
+			if node2d.global_position.distance_squared_to(global_position) > rsq:
+				continue
+			var entry: Dictionary = _snapshot_entity(node2d, node2d.get_instance_id())
+			# Evita duplicatas (ex: tank_ally também tá em ally).
+			var dup: bool = false
+			for existing in entities:
+				if int(existing.get("id", -1)) == int(entry.get("id", -2)):
+					dup = true
+					break
+			if not dup:
+				entities.append(entry)
+	stats_replay_snapshots.append({
+		"player_pos": global_position,
+		"entities": entities,
+	})
+	if stats_replay_snapshots.size() > REPLAY_MAX_SNAPSHOTS:
+		stats_replay_snapshots.pop_front()
+
+
+func _snapshot_entity(node: Node2D, id: int) -> Dictionary:
+	var sprite_frames: SpriteFrames = null
+	var anim_name: String = ""
+	var frame_idx: int = 0
+	var flip_h: bool = false
+	var sprite_node: Node = node.get_node_or_null("AnimatedSprite2D")
+	if sprite_node == null:
+		# Player tem o sprite em outro lugar (Skin/Body). Procura recursivo.
+		sprite_node = _find_first_animated_sprite(node)
+	if sprite_node is AnimatedSprite2D:
+		var asprite: AnimatedSprite2D = sprite_node as AnimatedSprite2D
+		sprite_frames = asprite.sprite_frames
+		anim_name = String(asprite.animation)
+		frame_idx = asprite.frame
+		flip_h = asprite.flip_h
+	return {
+		"id": id,
+		"sprite_frames": sprite_frames,
+		"sprite_offset": Vector2.ZERO if sprite_node == null else (sprite_node as Node2D).position,
+		"pos": node.global_position,
+		"anim": anim_name,
+		"frame": frame_idx,
+		"flip_h": flip_h,
+		"modulate": node.modulate if node is CanvasItem else Color.WHITE,
+		"z_index": node.z_index if node is CanvasItem else 0,
+	}
+
+
+func _find_first_animated_sprite(node: Node) -> Node:
+	if node is AnimatedSprite2D:
+		return node
+	for child in node.get_children():
+		var found: Node = _find_first_animated_sprite(child)
+		if found != null:
+			return found
+	return null
+
+
+func _spawn_tiger_claws_vfx(target: Node2D, damage_per_scratch: float) -> void:
+	var vfx: Node = TIGER_CLAWS_VFX_SCENE.instantiate()
+	if "damage_per_scratch" in vfx:
+		vfx.damage_per_scratch = damage_per_scratch
+	if "target" in vfx:
+		vfx.target = target
+	_get_world().add_child(vfx)
+	if vfx is Node2D:
+		(vfx as Node2D).global_position = target.global_position
+
+
 func _cast_curse_beam() -> void:
 	# Lv4: raio roxo sustentado por CURSE_SKILL_DURATION segundos. Direção
 	# travada no momento do cast (mouse). Aplica damage + CurseDebuff por tick.
@@ -1351,7 +1574,8 @@ func _cast_curse_beam() -> void:
 		return
 	var beam: Node = CURSE_BEAM_SCENE.instantiate()
 	if "damage_per_tick" in beam:
-		beam.damage_per_tick = CURSE_SKILL_DAMAGE_PER_TICK
+		# Skill do player escala com stat "Dano".
+		beam.damage_per_tick = _apply_dmg_pct_to_dps(CURSE_SKILL_DAMAGE_PER_TICK)
 	if "max_range_per_side" in beam:
 		beam.max_range_per_side = CURSE_SKILL_RANGE
 	if "lifetime" in beam:
@@ -1850,13 +2074,18 @@ func reset_hp() -> void:
 
 
 func heal(amount: float) -> void:
-	# Cura usada pelo coração de Life Steal e qualquer outro pickup curativo.
+	# Cura usada pelo coração de Life Steal, capivara, claudio druida e
+	# qualquer outra fonte. Spawna +N verde acima do player como feedback.
 	if is_dead or amount <= 0.0:
 		return
+	var before: float = hp
 	hp = minf(hp + amount, max_hp)
+	var actual: float = hp - before
 	hp_changed.emit(hp, max_hp)
 	if hp_bar != null:
 		hp_bar.set_ratio(hp / max_hp)
+	if actual > 0.0:
+		_spawn_heal_number(actual)
 
 
 func add_gold(amount: int) -> void:
@@ -2019,6 +2248,7 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# Lv1-4 da flecha de ricochete. Mecânica é resolvida em arrow.gd
 			# baseada no nível atual do player.
 			ricochet_arrow_level = mini(ricochet_arrow_level + 1, 4)
+			ricochet_counter_changed.emit(_ricochet_shot_counter, ricochet_arrow_level)
 		"graviton":
 			# Lv1-4 do Graviton. Mecânica em arrow.gd + graviton_pulse.gd.
 			# L1: cada 3 ataques cria pulso ao bater. L2: cada 2 + range maior.
@@ -2030,6 +2260,12 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# L4: 4 boomerangs (alvo + 3 direções) cd 3s.
 			boomerang_level = mini(boomerang_level + 1, 4)
 			_boomerang_cd_remaining = 0.0  # próximo cast imediato
+		"tiger_claws":
+			# Lv1-4. Autocast: arranha 2× em N inimigos aleatórios no raio.
+			# L1: 1 alvo, 25/scratch, cd 4.5s. L2: 2 alvos, 27/scratch.
+			# L3: 2 alvos, 35/scratch, cd 3s. L4: 3 alvos, 35/scratch.
+			tiger_claws_level = mini(tiger_claws_level + 1, 4)
+			_tiger_claws_cd_remaining = 0.0  # próximo cast imediato
 		"critical_chance":
 			# Lv1-4. Chance % de crit em flechas + skills. Aplica multiplicador
 			# de dano + visual amarelo (damage number + flash do enemy).
@@ -2088,6 +2324,7 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"ricochet_arrow": return ricochet_arrow_level
 		"graviton": return graviton_level
 		"boomerang": return boomerang_level
+		"tiger_claws": return tiger_claws_level
 		"critical_chance": return critical_chance_level
 	return 0
 
@@ -2191,20 +2428,20 @@ func _cleanup_capivaras() -> void:
 
 
 # Arbusto: chamado pelo Arbusto Carrara quando o player entra no idle dele.
-# Ativa o buff de hide (atk speed + bonus dmg flat + tint nas flechas). O
-# arbusto chama exit_hide quando o hide acaba (3s). Aggro shield é gerido via
-# group "bush_hidden" — o próprio arbusto adiciona/remove dependendo se tem
-# macaco no zone (essa parte não passa por aqui).
-func arbusto_enter_hide(atk_speed_bonus: float, arrow_bonus_dmg: float) -> void:
+# Ativa o buff de hide (atk speed + bonus dmg flat + tint nas flechas + heal/hit L4).
+# Aggro shield é gerido via group "bush_hidden" — o próprio arbusto adiciona/remove.
+func arbusto_enter_hide(atk_speed_bonus: float, arrow_bonus_dmg: float, heal_per_hit: float = 0.0) -> void:
 	arbusto_hide_active = true
 	arbusto_hide_atk_speed_bonus = atk_speed_bonus
 	arbusto_hide_arrow_bonus_damage = arrow_bonus_dmg
+	arbusto_hide_heal_per_hit = heal_per_hit
 
 
 func arbusto_exit_hide() -> void:
 	arbusto_hide_active = false
 	arbusto_hide_atk_speed_bonus = 0.0
 	arbusto_hide_arrow_bonus_damage = 0.0
+	arbusto_hide_heal_per_hit = 0.0
 
 
 func _refresh_arbustos() -> void:
@@ -2230,12 +2467,14 @@ func _refresh_arbustos() -> void:
 		var extra: Node2D = _arbustos.pop_back()
 		if is_instance_valid(extra):
 			extra.queue_free()
-	# Mini arbustos: 1 mini por big arbusto, pareado por índice.
-	while _mini_arbustos.size() < _arbustos.size():
+	# Mini arbustos: L1/L2 tem 1 mini por big, L3+ tem 2 minis por big.
+	var minis_per_big: int = 2 if arbusto_level >= 3 else 1
+	var target_mini_count: int = _arbustos.size() * minis_per_big
+	while _mini_arbustos.size() < target_mini_count:
 		_mini_arbustos.append(null)
 		_mini_arbusto_respawn_timers.append(0.0)
 		_spawn_mini_arbusto_for_slot(_mini_arbustos.size() - 1)
-	while _mini_arbustos.size() > _arbustos.size():
+	while _mini_arbustos.size() > target_mini_count:
 		var extra_mini: Node2D = _mini_arbustos.pop_back()
 		_mini_arbusto_respawn_timers.pop_back()
 		if is_instance_valid(extra_mini):
@@ -2244,9 +2483,14 @@ func _refresh_arbustos() -> void:
 
 func _spawn_mini_arbusto_for_slot(i: int) -> void:
 	# Spawna um mini arbusto na posição do big arbusto correspondente.
+	# Quando há mais minis que bigs (L3+: 2 minis por big), cicla pelo array
+	# de bigs (slot i → big[i % bigs]). Garante que o mini sempre nasce em
+	# cima de um big vivo.
 	var pos: Vector2 = Vector2.ZERO
-	if i < _arbustos.size() and is_instance_valid(_arbustos[i]):
-		pos = (_arbustos[i] as Node2D).global_position
+	if not _arbustos.is_empty():
+		var big_idx: int = i % _arbustos.size()
+		if is_instance_valid(_arbustos[big_idx]):
+			pos = (_arbustos[big_idx] as Node2D).global_position
 	var mini: Node2D = MINI_ARBUSTO_SCENE.instantiate()
 	_get_world().add_child(mini)
 	mini.global_position = pos
@@ -2600,6 +2844,15 @@ func reset_perf_counter() -> void:
 	# Chamado pelo wave_manager no início de cada wave pra evitar que o counter
 	# persistente faça a 1ª flecha do round virar perfurante.
 	_perf_shot_counter = 0
+	if perfuracao_level > 0:
+		perfuracao_counter_changed.emit(0, perfuracao_level)
+
+
+func reset_ricochet_counter() -> void:
+	# Mesma lógica do reset_perf_counter, pro contador do ricochete.
+	_ricochet_shot_counter = 0
+	if ricochet_arrow_level > 0:
+		ricochet_counter_changed.emit(0, ricochet_arrow_level)
 
 
 func reset_all_cooldowns() -> void:
@@ -2626,6 +2879,7 @@ func reset_all_cooldowns() -> void:
 	if ice_arrow_level >= 4:
 		time_freeze_skill_cooldown_changed.emit(0.0, TIME_FREEZE_COOLDOWN)
 	_boomerang_cd_remaining = 0.0
+	_tiger_claws_cd_remaining = 0.0
 	# Frostwisp (L3 do Gelo): força delay inicial de 7s antes do primeiro
 	# cast da wave — evita que ela já comece bombardeando enquanto o player
 	# nem se posicionou ainda.
@@ -2669,9 +2923,15 @@ func take_damage(amount: float, source_id: String = "") -> void:
 
 
 func _die() -> void:
+	# Snapshot final do ring buffer (todos os ghosts pra o replay).
+	_record_replay_snapshot()
 	is_dead = true
 	is_attacking = false
 	is_drawing = false
+	# Captura screenshot do CENÁRIO sem os bonecos — esconde player/enemy/ally/
+	# projétil por 1 frame, captura, restaura. Sem isso, o fundo do replay
+	# fica com tudo congelado e atrapalha entender o que aconteceu.
+	await _capture_clean_death_screenshot()
 	if sprite != null:
 		sprite.stop()
 	if hp_bar != null:
@@ -2807,9 +3067,59 @@ func _spawn_miss_number() -> void:
 	get_tree().current_scene.add_child(num)
 
 
+# Cor verde do heal number — usado por todas as fontes de cura
+# (life steal hearts, capivara, claudio druida, arbusto L4, qualquer outra).
+const HEAL_NUMBER_COLOR: Color = Color(0.4, 1.0, 0.4, 1.0)
+
+
+func _spawn_heal_number(amount: float) -> void:
+	if damage_number_scene == null or amount <= 0.0:
+		return
+	var num := damage_number_scene.instantiate()
+	num.text_override = "+%d" % int(round(amount))
+	num.color_override = HEAL_NUMBER_COLOR
+	num.position = global_position + Vector2(0, -26)
+	get_tree().current_scene.add_child(num)
+
+
 func _get_world() -> Node:
 	var w := get_tree().get_first_node_in_group("world")
 	return w if w != null else get_tree().current_scene
+
+
+# Corner sliding: quando o player anda RETO contra um canto/objeto, dá um
+# leve empurrão perpendicular pra deslizar e passar — locomoção fluida.
+# Só aplica em input axis-aligned (HORZ ou VERT puro); diagonal o move_and_slide
+# já desliza naturalmente.
+#
+# Lógica: testa o motion direto. Se colide, testa motion + perp*PROBE pros 2
+# lados. Se um lado tá livre, injeta uma componente perpendicular pra criar
+# uma diagonal — o move_and_slide faz o resto contornando o canto.
+const CORNER_SLIDE_PROBE_DIST: float = 8.0
+const CORNER_SLIDE_FORCE: float = 0.7
+
+
+func _apply_corner_slide(desired_vel: Vector2, delta: float) -> Vector2:
+	if desired_vel.length_squared() < 0.01:
+		return desired_vel
+	var dir: Vector2 = desired_vel.normalized()
+	# Diagonal? Sai — move_and_slide já trata.
+	if absf(dir.x) > 0.05 and absf(dir.y) > 0.05:
+		return desired_vel
+	var motion: Vector2 = desired_vel * delta
+	# Path direto livre? Sem nudge.
+	if not test_move(global_transform, motion):
+		return desired_vel
+	# Bloqueado: probe perpendicular pros dois lados.
+	var perp: Vector2 = Vector2(-dir.y, dir.x)
+	var probe_left: Vector2 = perp * CORNER_SLIDE_PROBE_DIST + motion
+	var probe_right: Vector2 = -perp * CORNER_SLIDE_PROBE_DIST + motion
+	var blocked_left: bool = test_move(global_transform, probe_left)
+	var blocked_right: bool = test_move(global_transform, probe_right)
+	if blocked_left and blocked_right:
+		return desired_vel  # canto fechado, nada a fazer
+	var slide_dir: Vector2 = perp if not blocked_left else -perp
+	return desired_vel + slide_dir * desired_vel.length() * CORNER_SLIDE_FORCE
 
 
 func _on_attack_timer_timeout() -> void:
@@ -2867,6 +3177,23 @@ func notify_monkey_cursed() -> void:
 func notify_damage_dealt(amount: float) -> void:
 	if amount > 0.0:
 		stats_damage_dealt += amount
+
+
+# Arbusto L4: cura o player por uma flat amount. Chamado por arrow.gd no hit
+# (com o valor armado pelo player no momento do disparo — assim cada flecha
+# que sai de dentro do bush garante o heal mesmo se o player sair antes do
+# projétil chegar).
+func arbusto_heal_on_arrow_hit(amount: float) -> void:
+	if amount <= 0.0 or is_dead:
+		return
+	var before: float = hp
+	hp = minf(hp + amount, max_hp)
+	var actual: float = hp - before
+	hp_changed.emit(hp, max_hp)
+	if hp_bar != null:
+		hp_bar.set_ratio(hp / max_hp)
+	if actual > 0.0:
+		_spawn_heal_number(actual)
 
 
 func notify_damage_dealt_by_source(amount: float, source_id: String) -> void:

@@ -312,6 +312,8 @@ func _start_next_wave() -> void:
 			(player as Node2D).global_position = _wave7_player_spawn
 		if player.has_method("reset_perf_counter"):
 			player.reset_perf_counter()
+		if player.has_method("reset_ricochet_counter"):
+			player.reset_ricochet_counter()
 		if player.has_method("reset_claudio_druidas_hp"):
 			player.reset_claudio_druidas_hp()
 		if player.has_method("reset_all_cooldowns"):
@@ -603,6 +605,11 @@ func _spawn_one(type_key: String) -> void:
 	# wave 14 e boss em qualquer wave) leva scaling normal.
 	if wave_number != 7 or type_key == "mage_monkey":
 		_apply_wave_scaling(enemy)
+		# Override pro boss da wave 7: HP "limpo" exatos 3000 (sem frac de
+		# hp_mult). Wave 14 (boss_redux) continua escalando em cima do scaling
+		# normal pra ficar mais forte.
+		if wave_number == 7 and type_key == "mage_monkey" and "max_hp" in enemy:
+			enemy.max_hp = 3000.0
 	# Wave 14 boss (redux): drops escalam pra compensar a perda de drops dos
 	# minions + a dificuldade extra. Multiplicador maior que o normal de
 	# scaling porque tem ~16-18 minions a menos contribuindo gold.
@@ -1151,6 +1158,7 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	{"id": "ice_arrow", "name": "SHOP_UPG_ICE_ARROW"},
 	{"id": "boomerang", "name": "SHOP_UPG_BOOMERANG"},
 	{"id": "critical_chance", "name": "SHOP_UPG_CRITICAL_CHANCE"},
+	{"id": "tiger_claws", "name": "SHOP_UPG_TIGER_CLAWS"},
 	{"id": "claudio_druida", "name": "SHOP_ALLY_CLAUDIO_DRUIDA"},
 	{"id": "leno", "name": "SHOP_ALLY_LENO"},
 	{"id": "capivara_joe", "name": "SHOP_ALLY_CAPIVARA"},
@@ -1220,6 +1228,7 @@ const FREE_REWARD_CARD_PATHS: Dictionary = {
 	"ice_arrow": "res://assets/Hud/shop/upgrade/ice arrow/sangue frio card design-Sheet.png",
 	"boomerang": "res://assets/Hud/shop/upgrade/boomerang/boomerang card design.png",
 	"critical_chance": "res://assets/Hud/shop/upgrade/flechas criticas/felchas criticas card design.png",
+	"tiger_claws": "res://assets/Hud/shop/upgrade/garras de tigre/garras de tigre hud-Sheet.png",
 	"dash": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"esquivando": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"double_arrows": "res://assets/Hud/shop/upgrade/multi_arrow.png",

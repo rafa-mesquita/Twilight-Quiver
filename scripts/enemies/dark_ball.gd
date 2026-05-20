@@ -8,8 +8,8 @@ extends CharacterBody2D
 
 @export var speed: float = 28.0          # walk normal — mais lento que macaco (40)
 @export var dash_speed: float = 72.0     # boost quando entra em range de dash
-@export var dash_trigger_distance: float = 44.0  # entra em dash quando player nessa dist
-@export var dash_exit_distance: float = 84.0     # sai de dash se player ficou longe (hysteresis)
+@export var dash_trigger_distance: float = 60.0  # entra em dash quando player nessa dist
+@export var dash_exit_distance: float = 100.0    # sai de dash se player ficou longe (hysteresis)
 @export var max_hp: float = 14.0         # < mage (18)
 @export var damage: float = 26.0         # ~+45% sobre macaco (18) — golpe forte pra compensar HP frágil
 @export var attack_range: float = 8.0    # trigger: precisa colar bem antes de iniciar a anim

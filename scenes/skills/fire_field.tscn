@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" path="res://assets/effects/fire-Sheet.png" id="2_sheet"]
 
 [sub_resource type="CircleShape2D" id="CircleShape_field"]
-radius = 44.0
+radius = 57.0
 
 [sub_resource type="Gradient" id="Grad_glow_field"]
 offsets = PackedFloat32Array(0, 0.5, 1)
@@ -51,16 +51,16 @@ scale = Vector2(1, 0.55)
 shape = SubResource("CircleShape_field")
 
 [node name="RedShadow" type="Polygon2D" parent="."]
-scale = Vector2(1, 0.55)
+scale = Vector2(1.78, 0.98)
 color = Color(0.45, 0.06, 0.04, 0.4)
 polygon = PackedVector2Array(32, 0, 29.56, 12.25, 22.63, 22.63, 12.25, 29.56, 0, 32, -12.25, 29.56, -22.63, 22.63, -29.56, 12.25, -32, 0, -29.56, -12.25, -22.63, -22.63, -12.25, -29.56, 0, -32, 12.25, -29.56, 22.63, -22.63, 29.56, -12.25)
 
 [node name="GlowLight" type="PointLight2D" parent="."]
-scale = Vector2(1, 0.55)
+scale = Vector2(1.30, 0.72)
 color = Color(1, 0.85, 0.35, 1)
 energy = 0.85
 texture = SubResource("GradTex_glow_field")
-texture_scale = 0.55
+texture_scale = 0.72
 
 [node name="Flame1" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
@@ -70,63 +70,63 @@ autoplay = "default"
 
 [node name="Flame2" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
-position = Vector2(-18, -4)
+position = Vector2(-23, -5)
 sprite_frames = SubResource("SpriteFrames_fire")
 animation = &"default"
 autoplay = "default"
 
 [node name="Flame3" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
-position = Vector2(18, -4)
+position = Vector2(23, -5)
 sprite_frames = SubResource("SpriteFrames_fire")
 animation = &"default"
 autoplay = "default"
 
 [node name="Flame4" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
-position = Vector2(-12, 8)
+position = Vector2(-16, 10)
 sprite_frames = SubResource("SpriteFrames_fire")
 animation = &"default"
 autoplay = "default"
 
 [node name="Flame5" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
-position = Vector2(14, 8)
+position = Vector2(18, 10)
 sprite_frames = SubResource("SpriteFrames_fire")
 animation = &"default"
 autoplay = "default"
 
 [node name="Flame6" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
-position = Vector2(0, -12)
+position = Vector2(0, -16)
 sprite_frames = SubResource("SpriteFrames_fire")
 animation = &"default"
 autoplay = "default"
 
 [node name="Flame7" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
-position = Vector2(-25, 3)
+position = Vector2(-32, 4)
 sprite_frames = SubResource("SpriteFrames_fire")
 animation = &"default"
 autoplay = "default"
 
 [node name="Flame8" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
-position = Vector2(25, 3)
+position = Vector2(32, 4)
 sprite_frames = SubResource("SpriteFrames_fire")
 animation = &"default"
 autoplay = "default"
 
 [node name="Flame9" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
-position = Vector2(-6, 13)
+position = Vector2(-8, 17)
 sprite_frames = SubResource("SpriteFrames_fire")
 animation = &"default"
 autoplay = "default"
 
 [node name="Flame10" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
-position = Vector2(8, -8)
+position = Vector2(10, -10)
 sprite_frames = SubResource("SpriteFrames_fire")
 animation = &"default"
 autoplay = "default"

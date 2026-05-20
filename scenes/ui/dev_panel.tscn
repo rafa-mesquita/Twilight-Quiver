@@ -187,6 +187,12 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 24
 text = "+1 Flechas Criticas"
 
+[node name="UpgTigerClawsBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
+custom_minimum_size = Vector2(0, 34)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 24
+text = "+1 Garras de Tigre"
+
 [node name="VidaSection" type="VBoxContainer" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent"]
 theme_override_constants/separation = 2
 

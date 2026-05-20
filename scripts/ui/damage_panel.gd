@@ -37,6 +37,7 @@ const SOURCE_LABELS: Dictionary = {
 	"chain_lightning_skill": "DMG_PANEL_CHAIN_SKILL",
 	"graviton": "DMG_PANEL_GRAVITON",
 	"boomerang": "DMG_PANEL_BOOMERANG",
+	"tiger_claws": "DMG_PANEL_TIGER_CLAWS",
 	"arrow_tower": "DMG_PANEL_TOWER",
 	"ting_turret": "DMG_PANEL_TING",
 	"claudio_druida": "DMG_PANEL_CLAUDIO_DRUIDA",

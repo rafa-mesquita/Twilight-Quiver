@@ -20,14 +20,20 @@ extends CharacterBody2D
 # L2-L4: TBD.
 
 @export var run_speed: float = 70.0
-@export var run_duration: float = 16.0
 @export var wander_bounds: Rect2 = Rect2(5, 8, 510, 284)
 @export var arrive_dist: float = 6.0
 
 const FIRST_RUN_DURATION: float = 8.0
 const HIDE_ALPHA: float = 0.45
-const ATK_SPEED_BONUS: float = 0.12
-const ARROW_BONUS_DAMAGE: float = 5.0
+# Tabelas por nível do upgrade (index 1..4). Index 0 = sem upgrade (sem efeito).
+# - L2: atk speed e dano dos buffs sobem.
+# - L3: 2 minis + 30 HP extra cada + big senta com menos CD.
+# - L4: atk/dano sobem mais + cada hit dentro do bush cura o player.
+const ATK_SPEED_BONUS_BY_LEVEL: Array[float] = [0.0, 0.12, 0.20, 0.20, 0.30]
+const ARROW_BONUS_DAMAGE_BY_LEVEL: Array[float] = [0.0, 5.0, 9.0, 9.0, 14.0]
+const MINI_MAX_HP_BY_LEVEL: Array[float] = [0.0, 120.0, 120.0, 150.0, 150.0]
+const RUN_DURATION_BY_LEVEL: Array[float] = [0.0, 16.0, 16.0, 10.0, 10.0]
+const HEAL_PER_HIT_BY_LEVEL: Array[float] = [0.0, 0.0, 0.0, 0.0, 5.0]
 # Player se mexendo dentro do bush dispara o som a cada N px de deslocamento
 # acumulado. 24px ~= 2 tiles — suficiente pra não spammar mas reagir a movimento real.
 const PLAYER_MOVE_SOUND_THRESHOLD: float = 24.0
@@ -46,9 +52,9 @@ var _anti_stuck: AntiStuckHelper = AntiStuckHelper.new()
 # Flag pra primeira corrida do arbusto — usa FIRST_RUN_DURATION (8s) em vez
 # de run_duration (20s) pra parar mais cedo logo após spawn.
 var _first_run: bool = true
-# Ref pro mini_arbusto que está atuando como decoy nessa sessão de HIDDEN.
+# Minis atuando como decoy nessa sessão de HIDDEN. L1/L2 tem 1, L3+ tem 2.
 # Setado em _enter_hidden, limpo em _exit_hidden.
-var _mini_decoy: Node2D = null
+var _mini_decoys: Array[Node2D] = []
 # Tracking do movimento do player dentro do bush — quando o acumulado passa
 # do threshold, toca o som de novo (rustle de folhas).
 var _last_player_pos: Vector2 = Vector2.ZERO
@@ -84,8 +90,9 @@ func _physics_process(delta: float) -> void:
 
 func _enter_run() -> void:
 	_state = State.RUN
-	# Primeira corrida do arbusto dura 8s; subsequentes duram run_duration (20s).
-	_state_timer = FIRST_RUN_DURATION if _first_run else run_duration
+	# Primeira corrida do arbusto sempre dura 8s; subsequentes usam o
+	# run_duration do nível (L1/L2 = 16s, L3+ = 10s — "senta mais rápido").
+	_state_timer = FIRST_RUN_DURATION if _first_run else RUN_DURATION_BY_LEVEL[_get_arbusto_level()]
 	_first_run = false
 	_pick_new_waypoint()
 	if sprite.sprite_frames != null and sprite.sprite_frames.has_animation("walk"):
@@ -146,42 +153,66 @@ func _enter_hidden() -> void:
 		if sprite.animation != &"idle" or not sprite.is_playing():
 			sprite.play("idle")
 	_play_bush_sound()
-	# Procura um mini_arbusto vivo pra atuar como decoy. Se não tem, o hide
-	# não tem efeito de aggro — o player ainda ganha buffs mas mobs continuam
-	# vendo ele (pq bush_hidden só é aplicado se tem decoy).
-	_mini_decoy = _find_live_mini()
-	if _mini_decoy != null:
-		if _mini_decoy.has_method("set_decoy_active"):
-			_mini_decoy.set_decoy_active(true)
-		if _mini_decoy.has_signal("died") and not _mini_decoy.died.is_connected(_on_mini_decoy_died):
-			_mini_decoy.died.connect(_on_mini_decoy_died)
+	# Ativa TODOS os minis vivos como decoy (L1/L2 tem 1, L3+ tem 2).
+	# Cada um vira tank_ally + recebe o HP override do nível.
+	var level: int = _get_arbusto_level()
+	var mini_hp: float = MINI_MAX_HP_BY_LEVEL[level]
+	_mini_decoys.clear()
+	for n in get_tree().get_nodes_in_group("mini_arbusto"):
+		if not (is_instance_valid(n) and n is Node2D):
+			continue
+		_mini_decoys.append(n)
+		if n.has_method("set_decoy_active"):
+			n.set_decoy_active(true, mini_hp)
+		if n.has_signal("died") and not n.died.is_connected(_on_mini_decoy_died):
+			n.died.connect(_on_mini_decoy_died)
 	_apply_player_hide(true)
 
 
 func _process_hidden() -> void:
 	velocity = Vector2.ZERO
 	move_and_slide()
-	# Fallback: se o mini sumiu sem disparar o signal (queue_free externo,
-	# wave reset, etc.), sai do hidden defensivamente.
-	if _mini_decoy == null or not is_instance_valid(_mini_decoy):
+	# Limpa refs inválidas (mini morto ou liberado externamente). Só sai do
+	# HIDDEN quando NENHUM decoy continua vivo.
+	_mini_decoys = _mini_decoys.filter(func(n): return is_instance_valid(n))
+	if _mini_decoys.is_empty():
 		_exit_hidden()
 
 
 func _on_mini_decoy_died() -> void:
-	if _state == State.HIDDEN:
-		_exit_hidden()
+	# Só dispara o exit quando todos os minis morreram. Se ainda tem outro
+	# vivo (L3+), continua o hide.
+	if _state != State.HIDDEN:
+		return
+	for n in _mini_decoys:
+		if is_instance_valid(n) and not bool(n.get("_is_dead")):
+			return
+	_exit_hidden()
 
 
 func _exit_hidden() -> void:
 	_apply_hide_visual(false)
-	if _mini_decoy != null and is_instance_valid(_mini_decoy):
-		if _mini_decoy.died.is_connected(_on_mini_decoy_died):
-			_mini_decoy.died.disconnect(_on_mini_decoy_died)
-		if _mini_decoy.has_method("set_decoy_active"):
-			_mini_decoy.set_decoy_active(false)
-	_mini_decoy = null
+	for mini in _mini_decoys:
+		if not is_instance_valid(mini):
+			continue
+		if mini.died.is_connected(_on_mini_decoy_died):
+			mini.died.disconnect(_on_mini_decoy_died)
+		if mini.has_method("set_decoy_active"):
+			mini.set_decoy_active(false)
+	_mini_decoys.clear()
 	_apply_player_hide(false)
 	_enter_run()
+
+
+func _get_arbusto_level() -> int:
+	# Nível corrente do upgrade no player. Default 1 se não achar (defensivo).
+	# Clampado em [1, 4] pra indexar as tabelas com segurança.
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null:
+		return 1
+	if "arbusto_level" in p:
+		return clampi(int(p.arbusto_level), 1, 4)
+	return 1
 
 
 func _apply_hide_visual(active: bool) -> void:
@@ -225,13 +256,6 @@ func _play_bush_sound() -> void:
 		bush_sound.play()
 
 
-func _find_live_mini() -> Node2D:
-	for n in get_tree().get_nodes_in_group("mini_arbusto"):
-		if is_instance_valid(n) and n is Node2D:
-			return n as Node2D
-	return null
-
-
 # --- Player hide buffs ---
 
 func _apply_player_hide(active: bool) -> void:
@@ -239,6 +263,8 @@ func _apply_player_hide(active: bool) -> void:
 	# o player no _pick_target deles). Aggro shield agora é simples: enquanto
 	# o mini estiver vivo, mobs focam o mini (tank_ally) — não importa se tem
 	# macaco dentro do bush ou não.
+	#
+	# Valores dos buffs (atk speed, dano flat, heal/hit) escalam por nível.
 	var tree := get_tree()
 	if tree == null:
 		return
@@ -246,8 +272,12 @@ func _apply_player_hide(active: bool) -> void:
 	if player == null:
 		return
 	if active:
+		var level: int = _get_arbusto_level()
+		var atk_bonus: float = ATK_SPEED_BONUS_BY_LEVEL[level]
+		var arrow_bonus: float = ARROW_BONUS_DAMAGE_BY_LEVEL[level]
+		var heal_per_hit: float = HEAL_PER_HIT_BY_LEVEL[level]
 		if player.has_method("arbusto_enter_hide"):
-			player.arbusto_enter_hide(ATK_SPEED_BONUS, ARROW_BONUS_DAMAGE)
+			player.arbusto_enter_hide(atk_bonus, arrow_bonus, heal_per_hit)
 		if not player.is_in_group("bush_hidden"):
 			player.add_to_group("bush_hidden")
 	else:
@@ -264,11 +294,11 @@ func _on_zone_body_entered(body: Node) -> void:
 		_player_inside = true
 		_last_player_pos = (body as Node2D).global_position
 		_player_move_accumulator = 0.0
-		# Player encostou: entra em HIDDEN tanto vindo de IDLE quanto interceptando
-		# durante RUN. Antes só permitia IDLE, mas resultava no bush continuar
-		# correndo enquanto o player tentava colar nele — o visual de hide não
-		# aplicava e parecia que o player estava "fora" do bush.
-		if _state == State.RUN or _state == State.IDLE:
+		# Player só consegue se esconder quando o bush ESTÁ parado (IDLE) — se
+		# ele tá correndo (RUN), passar por cima não conta. _enter_idle re-checa
+		# _player_inside no próximo ciclo de IDLE pra fazer a transição se o
+		# player ainda estiver em cima.
+		if _state == State.IDLE:
 			_enter_hidden()
 		elif _state == State.HIDDEN:
 			# Re-entrou durante HIDDEN (saiu e voltou enquanto mini ainda vivo) —

@@ -7,7 +7,7 @@
 size = Vector2(4, 33.5)
 
 [sub_resource type="RectangleShape2D" id="RectShape_fadearea_cerca_cima_end"]
-size = Vector2(8, 41)
+size = Vector2(8, 40.5)
 
 [node name="CercaCimaEnd" type="Node2D" unique_id=630871252]
 
@@ -31,5 +31,5 @@ collision_mask = 5
 script = ExtResource("2_fade")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="FadeArea" unique_id=361598155]
-position = Vector2(0, -20)
+position = Vector2(0, -19.75)
 shape = SubResource("RectShape_fadearea_cerca_cima_end")

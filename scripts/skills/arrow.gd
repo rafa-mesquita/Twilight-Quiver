@@ -38,6 +38,10 @@ var _chain_proc_used: bool = false
 # Chance [0..1] de cadeiar num alvo adicional além dos `chain_count` garantidos
 # (usado no lv2 da cadeia, que tem 30% de chance de pegar um 3º inimigo).
 var chain_bonus_chance: float = 0.0
+# Arbusto Carrara L4: heal aplicado no player a cada hit válido dessa flecha.
+# Stampado pelo player no disparo se arbusto_hide_active (ver player.gd
+# _spawn_arrow). Mantém o heal mesmo se o player sair do bush antes do impacto.
+var arbusto_heal_on_hit: float = 0.0
 # Elemental Fogo: visual vermelho/animado + aplica BurnDoT em inimigos.
 # Setado pelo player ANTES de add_child quando has_fire_arrow.
 var is_fire: bool = false
@@ -430,6 +434,7 @@ func _on_hit(body: Node) -> void:
 		var _was_alive_arrow: bool = (not ("hp" in target)) or float(target.hp) > 0.0
 		target.take_damage(dmg_to_apply)
 		_notify_player_dmg_kill(dmg_to_apply, _resolve_dmg_source_id(), _was_alive_arrow, target)
+		_arbusto_heal_player()
 		# Esquivando: bater num inimigo real (target em grupo "enemy") gera stack
 		# no player. Helper trata as regras por nível (lv1-3 só 1 stack por volley,
 		# lv4 cada hit). Aliados/estruturas já retornaram acima — só inimigo cai aqui.
@@ -910,6 +915,7 @@ func _proc_chain_lightning(origin: Node) -> void:
 		var _was_alive_chain: bool = (not ("hp" in enemy)) or float(enemy.hp) > 0.0
 		enemy.take_damage(chain_dmg_final)
 		_notify_player_dmg_kill(chain_dmg_final, "chain_lightning", _was_alive_chain, enemy)
+		_arbusto_heal_player()
 		if is_fire:
 			_apply_burn_to(enemy)
 		_spawn_lightning_visual(origin_pos, (enemy as Node2D).global_position)
@@ -975,6 +981,16 @@ func _resolve_dmg_source_id() -> String:
 	if not is_primary_arrow and not telemetry_source_id_extra.is_empty():
 		return telemetry_source_id_extra
 	return telemetry_source_id
+
+
+func _arbusto_heal_player() -> void:
+	# Arbusto L4: cada hit dessa flecha cura o player. Chamado depois do
+	# take_damage no impacto direto E em cada tick de chain lightning derivado.
+	if arbusto_heal_on_hit <= 0.0 or not is_inside_tree():
+		return
+	var p := get_tree().get_first_node_in_group("player")
+	if p != null and p.has_method("arbusto_heal_on_arrow_hit"):
+		p.arbusto_heal_on_arrow_hit(arbusto_heal_on_hit)
 
 
 func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, target: Node) -> void:

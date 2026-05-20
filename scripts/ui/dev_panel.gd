@@ -33,6 +33,7 @@ const UPGRADE_BTNS: Array = [
 	{"id": "graviton", "node": "UpgGravitonBtn", "max": 4, "base_text": "+1 Graviton"},
 	{"id": "boomerang", "node": "UpgBoomerangBtn", "max": 4, "base_text": "+1 Boomerang Veloz"},
 	{"id": "critical_chance", "node": "UpgCriticalChanceBtn", "max": 4, "base_text": "+1 Flechas Criticas"},
+	{"id": "tiger_claws", "node": "UpgTigerClawsBtn", "max": 4, "base_text": "+1 Garras de Tigre"},
 	{"id": "leno", "node": "UpgLenoBtn", "max": 4, "base_text": "+1 Leno"},
 	{"id": "capivara_joe", "node": "UpgCapivaraBtn", "max": 4, "base_text": "+1 Capivara Joe"},
 	{"id": "ting", "node": "UpgTingBtn", "max": 4, "base_text": "+1 Mecânico Ting"},

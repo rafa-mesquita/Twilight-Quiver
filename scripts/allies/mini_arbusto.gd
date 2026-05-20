@@ -158,11 +158,16 @@ func _world_node() -> Node:
 # Liga o decoy: enemies passam a considerar o mini como tank_ally e focam
 # nele em vez do player (que está em group "bush_hidden" e portanto invisível).
 # Também reseta o HP, habilita take_damage e mostra a hp_bar.
-func set_decoy_active(active: bool) -> void:
+#
+# override_max_hp: se > 0, sobrescreve max_hp (usado pelo arbusto.gd pra
+# escalar HP por nível de upgrade — L3+ dá +30 HP). Default mantém max_hp atual.
+func set_decoy_active(active: bool, override_max_hp: float = -1.0) -> void:
 	_decoy_active = active
 	if active:
 		# Cada engajamento começa com HP full + decay zerado — mini é um
 		# defender fresh por hide.
+		if override_max_hp > 0.0:
+			max_hp = override_max_hp
 		hp = max_hp
 		_time_since_last_hit = INF
 		if hp_bar != null:

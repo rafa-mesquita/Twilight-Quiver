@@ -71,6 +71,9 @@ const HUD_RUNTIME_SCALE: Vector2 = Vector2(3, 3)
 @onready var perfurante_counter_icon: Control = $PerfuranteCounterIcon
 @onready var perfurante_count_label: Label = $PerfuranteCounterIcon/CountLabel
 @onready var perfurante_frame_ring: ColorRect = $PerfuranteCounterIcon/FrameRing
+@onready var ricochete_counter_icon: Control = $RicocheteCounterIcon
+@onready var ricochete_count_label: Label = $RicocheteCounterIcon/CountLabel
+@onready var ricochete_frame_ring: ColorRect = $RicocheteCounterIcon/FrameRing
 @onready var perfurante_inner: ColorRect = $PerfuranteCounterIcon/Inner
 # Glow ativo (skill do espaço): durante esse período, modulate do ícone é
 # sobrescrito pelo "active color" e ignora o estado de stacks.
@@ -101,6 +104,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 	"perfuracao", "ricochet_arrow", "multi_arrow", "double_arrows", "chain_lightning",
 	"fire_arrow", "curse_arrow", "ice_arrow", "graviton", "boomerang", "critical_chance", "life_steal", "dash", "esquivando",
 	"gold_magnet",
+	"tiger_claws",
 	# Aliados
 	"claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto",
 ]
@@ -108,7 +112,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 const _UPG_CAPS: Dictionary = {
 	"perfuracao": 4, "ricochet_arrow": 4, "multi_arrow": 4, "double_arrows": 4, "chain_lightning": 4,
 	"fire_arrow": 4, "curse_arrow": 4, "ice_arrow": 4, "graviton": 4, "boomerang": 4, "critical_chance": 4, "life_steal": 4,
-	"dash": 4, "esquivando": 4, "gold_magnet": 4,
+	"dash": 4, "esquivando": 4, "gold_magnet": 4, "tiger_claws": 4,
 	"claudio_druida": 4, "leno": 4, "capivara_joe": 4, "ting": 4, "mini_mago": 4, "arbusto": 4,
 }
 const _UPG_STATUS_COMBINED_PATH: String = "res://assets/Hud/shop/status/HP - atck speed - Move speed - Atck Dmg.png"
@@ -138,6 +142,7 @@ const _UPG_PATHS: Dictionary = {
 	"arbusto": "res://assets/Hud/shop/aliado/abursto carrara/arbusto.png",
 	"boomerang": "res://assets/Hud/shop/upgrade/boomerang/boomerang card design.png",
 	"critical_chance": "res://assets/Hud/shop/upgrade/flechas criticas/felchas criticas card design.png",
+	"tiger_claws": "res://assets/Hud/shop/upgrade/garras de tigre/garras de tigre hud-Sheet.png",
 }
 const _UPG_FALLBACK_UPGRADE: String = "res://assets/Hud/shop/upgrade/placeholder.png"
 const _UPG_FALLBACK_ALIADO: String = "res://assets/Hud/shop/aliado/placeholder.png"
@@ -301,6 +306,12 @@ func _connect_player_signals() -> void:
 	if "perfuracao_level" in player and int(player.perfuracao_level) >= 1:
 		var ctr: int = int(player.get("_perf_shot_counter")) if "_perf_shot_counter" in player else 0
 		_on_perfuracao_counter_changed(ctr, int(player.perfuracao_level))
+	# Contador da flecha ricochete — mesmo padrão do perfurante.
+	if player.has_signal("ricochet_counter_changed") and not player.ricochet_counter_changed.is_connected(_on_ricochet_counter_changed):
+		player.ricochet_counter_changed.connect(_on_ricochet_counter_changed)
+	if "ricochet_arrow_level" in player and int(player.ricochet_arrow_level) >= 1:
+		var rctr: int = int(player.get("_ricochet_shot_counter")) if "_ricochet_shot_counter" in player else 0
+		_on_ricochet_counter_changed(rctr, int(player.ricochet_arrow_level))
 	# Coluna de upgrades adquiridos: rebuild on signal.
 	if player.has_signal("upgrade_applied") and not player.upgrade_applied.is_connected(_on_upgrade_applied):
 		player.upgrade_applied.connect(_on_upgrade_applied)
@@ -585,6 +596,27 @@ func _on_perfuracao_counter_changed(counter: int, level: int) -> void:
 		perfurante_count_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 
 
+# Ricochete: cadência depende do level.
+# - L1: cada 3 ataques (counter 0→1→2 → próximo procca). Label mostra 1/2/3.
+# - L2-L3: cada 2 ataques (counter 0→1 → próximo procca). Label mostra 1/2.
+# - L4: idem L2 (cada 2 ataques) — sem star pq mecânica de hops/splits
+#   é o diferencial do nível, não a frequência.
+func _on_ricochet_counter_changed(counter: int, level: int) -> void:
+	if level <= 0:
+		ricochete_counter_icon.visible = false
+		return
+	ricochete_counter_icon.visible = true
+	var threshold: int = 2 if level == 1 else 1
+	var is_imminent: bool = counter >= threshold
+	ricochete_count_label.text = "%d" % (counter + 1)
+	if is_imminent:
+		ricochete_counter_icon.modulate = Color.WHITE
+		ricochete_count_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.45, 1.0))
+	else:
+		ricochete_counter_icon.modulate = Color(0.55, 0.62, 0.7, 1.0)
+		ricochete_count_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+
+
 func _on_curse_skill_unlocked() -> void:
 	curse_skill_icon.visible = true
 	_update_esquivando_icon_position()
@@ -800,6 +832,82 @@ func update_wave_progress(killed: int, total: int, wave_number: int) -> void:
 	wave_number_label.text = str(wave_number)
 
 
+const KILLCAM_HOLD_DURATION: float = 2.0
+const KILLCAM_FADE_IN: float = 0.3
+const KILLCAM_FADE_OUT: float = 0.25
+const KILLCAM_BG_ALPHA: float = 0.85
+
+
+# Killcam (replay estático): mostra o frame congelado do momento da morte
+# (screenshot capturado no player._die) com "MORTO POR X" sobreposto. Player
+# pode reassistir clicando no botão "Ver replay da morte" — fica acessível
+# enquanto o death screen tá ativo.
+func _play_killcam(source_id: String) -> void:
+	var killed_by_str: String = _format_killed_by(source_id)
+	# Pega o screenshot do player (capturado no _die).
+	var p := get_tree().get_first_node_in_group("player")
+	var snapshot: Texture2D = null
+	if p != null and "death_screenshot" in p:
+		snapshot = p.get("death_screenshot")
+	# Overlay no death_top_layer (CanvasLayer já em cima do mundo).
+	var overlay := Control.new()
+	overlay.name = "KillcamOverlay"
+	overlay.anchor_right = 1.0
+	overlay.anchor_bottom = 1.0
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.modulate.a = 0.0
+	overlay.process_mode = Node.PROCESS_MODE_ALWAYS
+	death_top_layer.add_child(overlay)
+	# Fundo: o próprio screenshot do momento da morte (full screen). Se não
+	# capturou, cai num fundo vermelho-escuro como fallback.
+	if snapshot != null:
+		var img_rect := TextureRect.new()
+		img_rect.texture = snapshot
+		img_rect.anchor_right = 1.0
+		img_rect.anchor_bottom = 1.0
+		img_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		img_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		img_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		# Escurece um pouco pro texto se destacar.
+		img_rect.modulate = Color(0.7, 0.7, 0.7, 1.0)
+		overlay.add_child(img_rect)
+	else:
+		var bg := ColorRect.new()
+		bg.color = Color(0.08, 0.02, 0.02, KILLCAM_BG_ALPHA)
+		bg.anchor_right = 1.0
+		bg.anchor_bottom = 1.0
+		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		overlay.add_child(bg)
+	# Texto "MORTO POR X" centralizado em vermelho com outline preto.
+	if not killed_by_str.is_empty():
+		var label := Label.new()
+		label.text = killed_by_str
+		label.anchor_left = 0.0
+		label.anchor_right = 1.0
+		label.anchor_top = 0.42
+		label.anchor_bottom = 0.58
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.add_theme_font_size_override("font_size", 64)
+		label.add_theme_color_override("font_color", Color(1, 0.3, 0.3, 1))
+		label.add_theme_color_override("font_outline_color", Color.BLACK)
+		label.add_theme_constant_override("outline_size", 10)
+		if survival_label != null:
+			var existing_font := survival_label.get_theme_font("font", "")
+			if existing_font != null:
+				label.add_theme_font_override("font", existing_font)
+		overlay.add_child(label)
+	var tw_in := create_tween()
+	tw_in.tween_property(overlay, "modulate:a", 1.0, KILLCAM_FADE_IN)
+	await tw_in.finished
+	await get_tree().create_timer(KILLCAM_HOLD_DURATION).timeout
+	var tw_out := create_tween()
+	tw_out.tween_property(overlay, "modulate:a", 0.0, KILLCAM_FADE_OUT)
+	await tw_out.finished
+	overlay.queue_free()
+
+
 func play_death_sequence(
 	player_sprite: AnimatedSprite2D,
 	kill_effect_scene: PackedScene,
@@ -896,6 +1004,12 @@ func _show_restart_button() -> void:
 	breakdown_label.text = _build_death_dmg_breakdown()
 	breakdown_label.modulate.a = 0.0
 	breakdown_label.visible = not breakdown_label.text.is_empty()
+	# Botão "Ver replay da morte" no lado DIREITO da tela (simétrico ao breakdown
+	# que fica à esquerda). On-click → mostra a killcam estática. Pode ser
+	# clicado várias vezes pra reassistir.
+	var replay_btn: Button = _build_or_get_replay_button()
+	replay_btn.modulate.a = 0.0
+	replay_btn.visible = true
 
 	restart_button.modulate.a = 0.0
 	restart_button.visible = true
@@ -939,6 +1053,7 @@ func _show_restart_button() -> void:
 	reveal.tween_property(menu_button, "modulate:a", 1.0, 0.4)
 	if breakdown_label.visible:
 		reveal.tween_property(breakdown_label, "modulate:a", 1.0, 0.4)
+	reveal.tween_property(replay_btn, "modulate:a", 1.0, 0.4)
 
 
 func _show_unlock_notification(skin_name: String) -> void:
@@ -1020,6 +1135,60 @@ func _format_killed_by(source_id: String) -> String:
 		return tr("HUD_DEATH_BY_UNKNOWN")
 	var key: String = String(_DEATH_SOURCE_LABELS.get(source_id, "HUD_DEATH_BY_UNKNOWN"))
 	return tr(key)
+
+
+func _build_or_get_replay_button() -> Button:
+	# Botão "Ver replay da morte" logo acima do "Jogar Novamente" (RestartButton
+	# fica em offset_top=160, esse vai pra offset_top=96).
+	var existing: Button = death_top_layer.get_node_or_null("ReplayDeathButton") as Button
+	if existing != null:
+		return existing
+	var btn := Button.new()
+	btn.name = "ReplayDeathButton"
+	btn.set_anchors_preset(Control.PRESET_CENTER)
+	# Mesma largura do RestartButton (offset -200 a 200), 8px acima dele.
+	btn.offset_left = -200.0
+	btn.offset_right = 200.0
+	btn.offset_top = 96.0
+	btn.offset_bottom = 152.0
+	btn.text = tr("HUD_REPLAY_DEATH_BUTTON")
+	btn.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4, 1.0))
+	btn.add_theme_color_override("font_outline_color", Color.BLACK)
+	btn.add_theme_constant_override("outline_size", 4)
+	var font: Font = load("res://font/ByteBounce.ttf") as Font
+	if font != null:
+		btn.add_theme_font_override("font", font)
+	btn.add_theme_font_size_override("font_size", 32)
+	btn.pressed.connect(_on_replay_death_pressed)
+	death_top_layer.add_child(btn)
+	return btn
+
+
+const _DEATH_REPLAY_SCENE: PackedScene = preload("res://scenes/ui/death_replay.tscn")
+
+
+func _on_replay_death_pressed() -> void:
+	# Reproduz os últimos ~3.5s antes da morte. Pega os snapshots e o
+	# stats_killed_by do player (que sobrevivem até a próxima run).
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null:
+		return
+	var snaps: Array = []
+	if "stats_replay_snapshots" in p:
+		snaps = p.get("stats_replay_snapshots")
+	if snaps.is_empty():
+		return
+	var src_id: String = ""
+	if "stats_killed_by" in p:
+		src_id = String(p.get("stats_killed_by"))
+	var replay: CanvasLayer = _DEATH_REPLAY_SCENE.instantiate()
+	replay.snapshots = snaps
+	replay.killed_by_str = _format_killed_by(src_id)
+	if "death_screenshot" in p:
+		replay.background_texture = p.get("death_screenshot")
+	# Adiciona em current_scene pra ficar acima do HUD (CanvasLayer com layer
+	# alto). Auto-libera ao terminar via signal.
+	get_tree().current_scene.add_child(replay)
 
 
 func _build_or_get_dmg_breakdown_label() -> Label:

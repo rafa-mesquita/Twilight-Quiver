@@ -71,6 +71,7 @@ const UPGRADE_POOL: Array = [
 	{"id": "ice_arrow", "name": "SHOP_UPG_ICE_ARROW", "max_level": 4},
 	{"id": "boomerang", "name": "SHOP_UPG_BOOMERANG", "max_level": 4},
 	{"id": "critical_chance", "name": "SHOP_UPG_CRITICAL_CHANCE", "max_level": 4},
+	{"id": "tiger_claws", "name": "SHOP_UPG_TIGER_CLAWS", "max_level": 4},
 ]
 
 const UPGRADE_PRICE_OVERRIDES: Dictionary = {}
@@ -242,6 +243,12 @@ const CRITICAL_CHANCE_DESCS: Array[String] = [
 	"SHOP_CRITICAL_CHANCE_DESC_2",
 	"SHOP_CRITICAL_CHANCE_DESC_3",
 	"SHOP_CRITICAL_CHANCE_DESC_4",
+]
+const TIGER_CLAWS_DESCS: Array[String] = [
+	"SHOP_TIGER_CLAWS_DESC_1",
+	"SHOP_TIGER_CLAWS_DESC_2",
+	"SHOP_TIGER_CLAWS_DESC_3",
+	"SHOP_TIGER_CLAWS_DESC_4",
 ]
 
 @onready var gold_label: Label = $Root/GoldLabel
@@ -887,9 +894,9 @@ func _sell_pet(id: String) -> void:
 	if _augment_tooltip != null:
 		_augment_tooltip.visible = false
 	_play_buy_sound()
-	# Re-roll do aliado (pra liberar o slot do 3o pet se tinha cap) + rebuild
-	# de cards + UI do StatsCard.
-	_roll_aliado_slots()
+	# Rebuild de cards + UI do StatsCard. NÃO faz reroll dos slots — vender um
+	# pet não troca os cards exibidos (player escolhe se quer um novo pet
+	# usando o reroll manual).
 	_build_all_cards()
 	_connect_card_buttons()
 	_refresh_button_states()
@@ -990,6 +997,7 @@ func _get_upgrade_descs_array(id: String) -> Array:
 		"ice_arrow": return ICE_ARROW_DESCS
 		"boomerang": return BOOMERANG_DESCS
 		"critical_chance": return CRITICAL_CHANCE_DESCS
+		"tiger_claws": return TIGER_CLAWS_DESCS
 		"ricochet_arrow": return RICOCHET_ARROW_DESCS
 		"graviton": return GRAVITON_DESCS
 		"claudio_druida": return CLAUDIO_DRUIDA_DESCS
@@ -1241,6 +1249,7 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	"ice_arrow": "res://assets/Hud/shop/upgrade/ice arrow/sangue frio card design-Sheet.png",
 	"boomerang": "res://assets/Hud/shop/upgrade/boomerang/boomerang card design.png",
 	"critical_chance": "res://assets/Hud/shop/upgrade/flechas criticas/felchas criticas card design.png",
+	"tiger_claws": "res://assets/Hud/shop/upgrade/garras de tigre/garras de tigre hud-Sheet.png",
 	# id "dash" mas arquivo é "deslizando.png" (nome PT do upgrade).
 	"dash": "res://assets/Hud/shop/upgrade/deslizando.png",
 	# Esquivando compartilha a arte do dash (mesma categoria movimentação,
@@ -2525,6 +2534,7 @@ func _augment_title_for(id: String) -> String:
 		"ice_arrow": return "SHOP_UPG_ICE_ARROW"
 		"boomerang": return "SHOP_UPG_BOOMERANG"
 		"critical_chance": return "SHOP_UPG_CRITICAL_CHANCE"
+		"tiger_claws": return "SHOP_UPG_TIGER_CLAWS"
 		"graviton": return "SHOP_UPG_GRAVITON"
 		"life_steal": return "SHOP_UPG_LIFE_STEAL"
 		"dash": return "SHOP_UPG_DASH"

@@ -1,0 +1,69 @@
+[gd_scene format=3 uid="uid://btigerclaws00"]
+
+[ext_resource type="Script" path="res://scripts/skills/tiger_claws_vfx.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/Hud/shop/upgrade/garras de tigre/garras de tigre-Sheet.png" id="2_sheet"]
+[ext_resource type="AudioStream" path="res://audios/effects/garras de tigre.mp3" id="3_sfx"]
+
+[sub_resource type="AtlasTexture" id="A_f0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_f1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_f2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_f3"]
+atlas = ExtResource("2_sheet")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_f4"]
+atlas = ExtResource("2_sheet")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="A_f5"]
+atlas = ExtResource("2_sheet")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_tiger_claws"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_f0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_f1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_f2")
+}],
+"loop": false,
+"name": &"scratch_1",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_f3")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_f4")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_f5")
+}],
+"loop": false,
+"name": &"scratch_2",
+"speed": 12.0
+}]
+
+[node name="TigerClawsVFX" type="Node2D"]
+script = ExtResource("1_script")
+sfx = ExtResource("3_sfx")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_tiger_claws")
+animation = &"scratch_1"

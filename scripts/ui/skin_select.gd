@@ -236,8 +236,8 @@ func _build_cards_for_slot(slot: StringName) -> void:
 		_build_kit_cards()
 		return
 	var parts: Array = (_available.get(slot, []) as Array).duplicate()
-	if SkinLoadout.REMOVABLE_SLOTS.has(slot):
-		parts.insert(0, null)  # "Nenhum" card primeiro
+	# Decisão de design 0.5.7: NÃO inserir mais "Nenhum" como opção mesmo em
+	# slots removíveis. Player sempre vê uma peça equipada.
 	for part in parts:
 		# Pula skins hidden-locked (quest.hidden=true E ainda lockada).
 		if part != null and SkinLoadout.is_hidden_locked(part):

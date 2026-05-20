@@ -86,7 +86,7 @@ const SKIN_QUESTS: Dictionary = {
 		"type": "monkeys_cursed",
 		"value": 200,
 		"label": "PLAYER_QUEST_LINKED",
-		"hidden": true,
+		"hidden": false,
 	},
 	"Hawk": {
 		"type": "wave_reached",

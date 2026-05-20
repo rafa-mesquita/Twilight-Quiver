@@ -13,6 +13,7 @@
 [ext_resource type="Texture2D" path="res://assets/Hud/skillsIcons/esquivando.png" id="11_esq_icon"]
 [ext_resource type="Texture2D" path="res://assets/Hud/skillsIcons/perfurante.png" id="12_perf_icon"]
 [ext_resource type="Texture2D" path="res://assets/Hud/skillsIcons/fica frio.png" id="13_ice_icon"]
+[ext_resource type="Texture2D" path="res://assets/Hud/skillsIcons/ricochete.png" id="14_ricoch_icon"]
 
 [sub_resource type="AtlasTexture" id="AtlasTex_hud_frame"]
 atlas = ExtResource("2_hud_sheet")
@@ -488,8 +489,10 @@ offset_left = 420.0
 offset_top = 160.0
 offset_right = 496.0
 offset_bottom = 236.0
+mouse_filter = 2
 
 [node name="Bg" type="ColorRect" parent="PerfuranteCounterIcon" unique_id=4071]
+mouse_filter = 2
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -504,6 +507,7 @@ anchor_top = 0.05
 anchor_right = 0.95
 anchor_bottom = 0.95
 color = Color(0.28, 0.45, 0.62, 1)
+mouse_filter = 2
 
 [node name="Inner" type="ColorRect" parent="PerfuranteCounterIcon" unique_id=4073]
 layout_mode = 1
@@ -513,6 +517,7 @@ anchor_top = 0.1
 anchor_right = 0.9
 anchor_bottom = 0.9
 color = Color(0.08, 0.12, 0.18, 1)
+mouse_filter = 2
 
 [node name="Sprite" type="TextureRect" parent="PerfuranteCounterIcon" unique_id=4074]
 texture_filter = 1
@@ -527,6 +532,7 @@ offset_bottom = -10.0
 texture = ExtResource("12_perf_icon")
 expand_mode = 1
 stretch_mode = 5
+mouse_filter = 2
 
 [node name="CountLabel" type="Label" parent="PerfuranteCounterIcon" unique_id=4075]
 layout_mode = 1
@@ -535,6 +541,77 @@ anchor_left = 0.55
 anchor_top = 0.55
 anchor_right = 1.05
 anchor_bottom = 1.05
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 32
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
+mouse_filter = 2
+
+[node name="RicocheteCounterIcon" type="Control" parent="."]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+offset_left = 420.0
+offset_top = 160.0
+offset_right = 496.0
+offset_bottom = 236.0
+mouse_filter = 2
+
+[node name="Bg" type="ColorRect" parent="RicocheteCounterIcon"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.05, 0.07, 0.10, 0.92)
+mouse_filter = 2
+
+[node name="FrameRing" type="ColorRect" parent="RicocheteCounterIcon"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.05
+anchor_top = 0.05
+anchor_right = 0.95
+anchor_bottom = 0.95
+color = Color(0.28, 0.45, 0.62, 1)
+mouse_filter = 2
+
+[node name="Inner" type="ColorRect" parent="RicocheteCounterIcon"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.1
+anchor_right = 0.9
+anchor_bottom = 0.9
+color = Color(0.08, 0.12, 0.18, 1)
+mouse_filter = 2
+
+[node name="Sprite" type="TextureRect" parent="RicocheteCounterIcon"]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+texture = ExtResource("14_ricoch_icon")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+
+[node name="CountLabel" type="Label" parent="RicocheteCounterIcon"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.55
+anchor_top = 0.55
+anchor_right = 1.05
+anchor_bottom = 1.05
+mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4

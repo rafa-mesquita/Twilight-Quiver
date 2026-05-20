@@ -6,7 +6,7 @@ extends Node2D
 # Nó controlado pelo player (que faz follow_player + clamp_to_range em _process).
 
 @export var range_radius: float = 200.0
-@export var area_radius: float = 32.0
+@export var area_radius: float = 42.0
 # Achata o Y pra dar visual isométrico (LoL-style) — circle vira elipse no plano
 # do chão. O cálculo de range/clamp continua usando o raio real (3D-equivalente),
 # só o visual é projetado.

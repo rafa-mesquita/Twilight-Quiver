@@ -101,6 +101,8 @@ DMG_PANEL_MINI_MAGO,Mini Mago,Mini Mage,Mini Mago,Mini Mage
 DMG_PANEL_CURSE_ALLY,Aliados Flecha Profana,Curse Arrow Allies,Aliados Flecha Profana,Alliés Flèche Maudite
 HUD_DEATH_SCORE,SCORE %d,SCORE %d,SCORE %d,SCORE %d
 HUD_DEATH_SURVIVAL,Sobreviveu %d waves,Survived %d raids,Sobreviviste %d raids,Survécu à %d raids
+HUD_REPLAY_DEATH_BUTTON,Ver replay da morte,Watch death replay,Ver repetición,Revoir la mort
+HUD_REPLAY_TITLE,REPLAY,REPLAY,REPLAY,REJOUER
 HUD_DEATH_BY_UNKNOWN,Morto por causa desconhecida,Killed by unknown cause,Muerto por causa desconocida,Tué par cause inconnue
 HUD_DEATH_BY_MELEE,Morto pelo bote do macaco furioso,Killed by the angry monkey's strike,Muerto por el embate del mono furioso,Tué par l'attaque du singe enragé
 HUD_DEATH_BY_MONKEY,Morto pelo golpe do macaco,Killed by the monkey's blow,Muerto por el golpe del mono,Tué par le coup du singe
@@ -242,6 +244,7 @@ SHOP_CRITICAL_CHANCE_DESC_4,"100% critico
 +65% daño","100% critique
 +65% dégâts"
 DMG_PANEL_BOOMERANG,Boomerang Veloz,Swift Boomerang,Bumerán Veloz,Boomerang Rapide
+DMG_PANEL_TIGER_CLAWS,Garras de Tigre,Tiger Claws,Garras de Tigre,Griffes de Tigre
 DMG_PANEL_FROSTWISP,Brisa Gelada,Frostwisp,Frostwisp,Frostwisp
 DMG_PANEL_DARK_BALL,Dark Ball,Dark Ball,Dark Ball,Dark Ball
 DMG_PANEL_DARK_BALL_BURN,Veneno da Dark Ball,Dark Ball Venom,Veneno de Dark Ball,Venin de Dark Ball
@@ -279,6 +282,39 @@ todas direcciones
 30 daño","4 boomerangs
 toutes directions
 30 dgt"
+SHOP_UPG_TIGER_CLAWS,Garras de Tigre,Tiger Claws,Garras de Tigre,Griffes de Tigre
+SHOP_TIGER_CLAWS_DESC_1,"CD 7s
+1 alvo aleatorio
+2 arranhadas
+25 dano cada","CD 7s
+1 random target
+2 scratches
+25 dmg each","CD 7s
+1 objetivo aleatorio
+2 arañazos
+25 daño cada","CD 7s
+1 cible aléatoire
+2 griffures
+25 dgt chacune"
+SHOP_TIGER_CLAWS_DESC_2,"2 alvos aleatorios
+27 dano por arranhada","2 random targets
+27 dmg per scratch","2 objetivos aleatorios
+27 daño por arañazo","2 cibles aléatoires
+27 dgt par griffure"
+SHOP_TIGER_CLAWS_DESC_3,"CD 5.5s
+2 alvos
+35 dano por arranhada","CD 5.5s
+2 targets
+35 dmg per scratch","CD 5.5s
+2 objetivos
+35 daño por arañazo","CD 5.5s
+2 cibles
+35 dgt par griffure"
+SHOP_TIGER_CLAWS_DESC_4,"3 alvos aleatorios
+35 dano por arranhada","3 random targets
+35 dmg per scratch","3 objetivos aleatorios
+35 daño por arañazo","3 cibles aléatoires
+35 dgt par griffure"
 SHOP_ALLY_CLAUDIO_DRUIDA,Claudio o Druida,Claudio the Druid,Claudio el Druida,Claudio le Druide
 SHOP_ALLY_LENO,Amigo Leno,Friend Leno,Amigo Leno,Ami Leno
 SHOP_ALLY_CAPIVARA,Capivara Joe,Capybara Joe,Capibara Joe,Capybara Joe
@@ -356,26 +392,26 @@ as direcoes","10 arrows in every
 direction","10 flechas en todas
 las direcciones","10 flèches dans
 toutes les directions"
-SHOP_DOUBLE_ARROWS_DESC_1,"30% chance flechas duplas
-Secundária dá 50% dano","30% chance double arrows
-Secondary deals 50% damage","30% chance flechas dobles
-Secundaria da 50% daño","30% chance flèches doubles
-Secondaire 50% dégâts"
-SHOP_DOUBLE_ARROWS_DESC_2,"30% chance duplas
-Ambas com dano total","30% chance double
-Both at full damage","30% chance dobles
-Ambas dañan total","30% chance doubles
+SHOP_DOUBLE_ARROWS_DESC_1,"50% chance flechas duplas
+Secundária dá 70% dano","50% chance double arrows
+Secondary deals 70% damage","50% chance flechas dobles
+Secundaria da 70% daño","50% chance flèches doubles
+Secondaire 70% dégâts"
+SHOP_DOUBLE_ARROWS_DESC_2,"60% chance duplas
+Ambas com dano total","60% chance double
+Both at full damage","60% chance dobles
+Ambas dañan total","60% chance doubles
 Deux dégâts pleins"
-SHOP_DOUBLE_ARROWS_DESC_3,"60% duplas + 30% triplas
-Maior quantidade prevalece","60% double + 30% triple
-Higher count wins","60% dobles + 30% triples
-Gana el mayor","60% doubles + 30% triples
-Le plus grand l'emporte"
-SHOP_DOUBLE_ARROWS_DESC_4,"90% duplas, 60% triplas
-1% quíntuplas (maior prevalece)","90% double, 60% triple
-1% quintuple (higher wins)","90% dobles, 60% triples
-1% quíntuples (mayor gana)","90% doubles, 60% triples
-1% quintuples (max gagne)"
+SHOP_DOUBLE_ARROWS_DESC_3,"75% duplas + 45% triplas
++15% dano se 3 procarem","75% double + 45% triple
++15% dmg if 3 proc","75% dobles + 45% triples
++15% daño si 3 disparan","75% doubles + 45% triples
++15% dgt si 3 sortent"
+SHOP_DOUBLE_ARROWS_DESC_4,"90% duplas, 60% triplas, 5% quíntuplas
++15%/+30% dano em 3/5","90% double, 60% triple, 5% quintuple
++15%/+30% dmg on 3/5","90% dobles, 60% triples, 5% quíntuples
++15%/+30% daño en 3/5","90% doubles, 60% triples, 5% quintuples
++15%/+30% dgt en 3/5"
 SHOP_CHAIN_LIGHTNING_DESC_1,"30% dano no inimigo
 mais proximo
 (a cada 2 hits)","30% damage to nearest
