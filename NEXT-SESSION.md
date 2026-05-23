@@ -1,142 +1,107 @@
 # Próxima Sessão
 
-> Última atualização: 2026-05-22 21:50
-> Sessão anterior: Construção quase completa da boss Duskrose (wave 14) + dev panel refactor + stun system
+> Última atualização: 2026-05-23 23:00
+> Sessão anterior: v0.6.0 release — Duskrose boss completo + skin Rosa Onyx + tutorial hints + Vida Infinita no dev mode
 
 ## Estado atual
 
-- **Duskrose (wave 14)** funcional com 3 poderes ativos: summon rosas (4-5 por cast, primeiro cast 6), smoke veneno (11-15 nuvens cobrindo ~45% mapa), vinhas espinhosas (3-4 verticais com stun 3s). **Glass Shield** ativo (8s ON / 12s OFF cycle, 80% damage reduction).
-- **Mapa wave 14** customizado em `scenes/world/wave14_map.tscn`: cópia do Map original + 40 rosas decorativas (3 variantes) + cercas verticais nos lados + thorn wall horizontal permanente no topo com zona tóxica + bubbles animadas pink.
-- **Dev panel refatorado**: WaveBar bottom-left (Start Wave 1, Finish Wave, Boss W7, Boss W14), UtilityBar top-left (+50 coins, Open Shop, Reset HP, Clear Enemies, Party Mode, Flush Telemetria). HUD Editor removido.
-- **Player stun system** novo (`apply_stun(duration)`): trava movimento + ataques + força idle anim + ícone visual igual o do macaco do Claudio Druida.
-- Branch `main`, **muitas mudanças não-commitadas** (17 modified + ~30 untracked).
+- **Versão 0.6.0 publicada e pushada** (`pre-alpha-0.6.0` em [project.godot](project.godot) + [export_presets.cfg](export_presets.cfg)). Branch `main` clean, dois commits novos: `adf150d` (feature) + bump do export path.
+- **Duskrose (wave 14) finalizada**: HP 5500, melee single (80 flat, AoE circ), melee double (60×2, AoE retangular), ranged barrage (5 volleys × 3 projéteis), summon de rose monsters, smoke letal, vinhas verticais com stun, thorn wall horizontal, dark balls a cada 18s. Recebe 2× dano durante dash e 30% menos de DoT. Pity counter garante dash a cada 3-4 casts, com 25% de chance de double cast (ranged+melee proibido).
+- **Skin Rosa Onyx** (4 layers tintadas + variante de shop face) desbloqueia ao matar Duskrose. SkinLoadout tem entry em `SKIN_QUESTS` com `type: "boss_killed"`.
+- **Tutorial hints** WASD+Click no game start, Space ao destravar dash/esquivando L2+, Q ao destravar fogo/chain/curse/ice. Position centralizada-superior.
+- **Dev mode**: botão "Vida Infinita" na UtilityBar (toggle, persiste em GameState), botão "Renascer (mesmos upgrades)" na death screen + UtilityBar.
 
 ## Por onde começar
 
-1. **Commitar o trabalho da Duskrose** — Big-bang commit pra fazer baseline. Veja comando abaixo. Sem isso qualquer rollback futuro perde tudo.
-2. **Testar a HUD translúcida do boss** — Último fix da sessão: `hud.gd._update_boss_hp_bar` agora sincroniza `boss_hp_bar.modulate.a = _hud_alpha_target` quando barra fica visível. User reportou que barra não tava ficando transparente quando player passa por baixo. Precisa playtest pra confirmar fix.
-3. **Implementar Laser Solar** — Sem sprite necessário (Polygon2D + tween). Era um dos poderes originais propostos: 1-1.5s warmup (linha vermelha telegrafada), depois beam grosso dourado por 0.3s com dano alto. Boss para de patrulhar (`_cast_remaining`). Adicionar como POWER_LASER no `_compute_power_weights`.
-4. **Dash + Attack power** — Áudio já existe (`assets/enemies/duskrose/duskrose dash + atack.mp3`). Faltam sprites de movimento/dash da boss (user precisa desenhar) + mecânica de telegraph → dash → AoE impact. Bloqueio durante shield já implementado via `boss.is_shielded()` (método público pronto).
+1. **Playtest da wave 14 com balance final** — todos os valores estão na release 0.6.0. Vale rodar 2-3 runs completas pra checar se: dash hit acerta bem nos cantos do mapa, Duskrose não fica imobilizada por colisão, ranged não é injusto (sem indicator agora — user removeu), rose monsters dão dano OK (-46% total após 0.7×0.8).
+2. **Build de release pra download público** — o export_presets.cfg já tá apontando pra 0.6.0. Falta gerar os .exe/.zip e subir no GitHub Releases com os patch notes que eu drafftei (estão no fim do chat anterior).
+3. **Decidir próxima feature/wave** — boss da 14 fechado. Possíveis caminhos:
+   - Sistema de progressão entre runs (meta-progression)
+   - Mais skins/quests pra unlock
+   - Wave 20+ (próximo boss?)
+   - Polish de UX (death screen, shop, etc.)
+4. **Validar Vida Infinita** — o usuário reportou bug na primeira tentativa (cobria só `take_damage`, faltava `_apply_poison_tick`). Fix aplicado mas só testei o caminho do code, não in-game. Rodar uma run com Vida Infinita ON em wave 14 pra confirmar que NADA hita.
 
 ## Contexto crítico
 
-### Wave 14 — Arquitetura
-- **Não confunda**: Duskrose é wave 14 (`= boss_redux_wave`). Mage Monkey é wave 7. Muitas funções têm `if wave_number == boss_redux_wave` ou `if type_key == "duskrose"`.
-- **Spawn**: `wave_manager._prespawn_boss_wave_entities` instancia `duskrose.tscn` no `_wave7_boss_center`. Boss então usa `call_deferred("_snap_to_patrol")` que a coloca em `(clamped_x, patrol_y=0)` no fim da frame.
-- **Cinematic intro**: HUD skipa o "surgimento" do gorila na wave 14 (`if wave_number == 14: return` em `hud.gd.play_boss_intro`). Câmera foca direto na boss (fix em `_play_boss_intro_cinematic` usando `boss.patrol_y` ao invés de centroide).
-- **Map override durante wave 14**:
-  - `_set_main_map_hidden(true)` — esconde Map original (visual + physics via `process_mode = DISABLED`)
-  - `_set_main_entities_props_hidden(true)` — esconde árvores/casas/cercas/postes/poços do main.tscn por scene_file_path
-  - `_spawn_wave14_map(world)` — instancia o map editável (children: TowerSpawnPoints, Grass, Ground, Boundaries, CercaSul, VerticalFences, DecorativeRoses, TopBarrier)
+### Duskrose — arquitetura
+- **Damage flat (sem scaling)**: `dash_attack_damage` (80) e `dash_double_damage` (60) pulam `damage_mult` da wave. Thorn wall + toxic zone também. **TODO opcional**: smoke, vinha, projétil ranged, rose monster (impacto+poison) ainda usam scaling — se quiser tudo flat, ver tabela na conversa anterior.
+- **HP override em DOIS lugares no wave_manager**: `_apply_wave_scaling` (linha ~628) E `_prespawn_boss_wave_entities` (linha ~1519). Ambos em 5500 agora. Se for mudar de novo, **mude os dois**.
+- **DoT detection via metadata**: `parent.set_meta("_dot_damage_pending", true)` em BurnDoT e CurseDebuff antes do `take_damage`. Duskrose.take_damage lê + `remove_meta` no início. Atômico no GDScript single-threaded.
+- **Collision mask = 0 durante dash**: boss vira fantasma pra não travar em cercas/postes. Cache em `_default_collision_mask` no `_ready`, restaura no fim da fase "return" + safety em `_start_single_dash` (se player desaparecer).
+- **Lead clamp do dash**: target_pos.x clamped pra [-40, 578], y pra [40, 380] (bounds das cercas verticais do wave14_map: -55 esquerda, 593 direita). Velocidade do player capada em 160 px/s antes do lead (filtra spike do dash do player).
 
-### Player Stun
-- `_stun_remaining` em `player.gd`. Decrementa no `_update_status_effects`. Checa logo após status effects **ANTES dos `_update_*_skill`** pra evitar autocast durante stun.
-- `apply_stun(duration)` cria visual via `STUN_VISUAL_SCRIPT` preload (`scripts/effects/stun_visual.gd`). Bloqueio de inputs em `_unhandled_input` (early return se stunado).
-- Stun visual auto-destrói quando parent's `_stun_remaining <= 0`.
-- Vinhas (`duskrose_vine.gd`) e thorn wall (`permanent_thorn_wall.gd`) chamam `body.apply_stun(3.0)` quando player toca.
+### SkinLoadout
+- Auto-discovery por filesystem em `assets/player/<slot>/`. Pra adicionar skin: drop PNG (32×32 × 8 rows) na pasta certa, aparece automático na UI.
+- Tinting de skin grayscale: templates `hair/Bluey.png`, `shirt/Red_Velvet.png`, `legs/Red_Velvet.png`, `cape/Gingerale.png` são quase grayscale. `new_rgb = src_rgb × target/255` (alpha preservado).
+- **playerHud (shop face)** é separado: PNG horizontal 858×66 (13 frames × 66×66) por slot em `assets/Hud/playerHud/<slot>/<name>.png` (lowercase). Aseprite em `Rosa_Onyx.aseprite` tem 6 layers, mapeei 4 pros slots head/hair/cape/shirt (FUNDO e Borda descartadas).
+- SKIN_QUESTS com `type: "boss_killed", value: "<group_id>"`. Duskrose chama `notify_boss_killed("duskrose")` no death — SkinLoadout.record_run persiste no `bosses_killed_set` do settings.cfg.
 
-### Power Cooldown System (Duskrose)
-- `_power_cd` decrementa em `_physics_process`. Quando ≤ 0, casta poder (via tactical weights) e reset cd com `randf_range(4.0, 7.0)`.
-- `_cast_remaining` = 1.2s pause da boss durante cast (velocity=0, força permanecer em patrol_y).
-- `_first_power_done` flag: primeiro cast sempre summon com 6 rosas (`initial_summon_count`, bypass weights).
-- **Shield tem CD separado**: `_shield_cd_remaining = 20s`, `_shield_remaining = 8s`. Tick em `_physics_process` antes do cast logic.
+### Dev mode — Vida Infinita
+- Flag em `GameState.dev_godmode` (autoload, persiste entre scene reloads).
+- Gate em DOIS lugares: `player.take_damage` (linha ~3008) E `player._apply_poison_tick` (linha ~603). Sem o segundo, poison/venom passava.
+- Toggle em [scenes/ui/dev_panel.tscn](scenes/ui/dev_panel.tscn) na UtilityBar (botão `GodmodeBtn`).
 
-### Aseprite Export Workflow
-- User coloca `.aseprite` em `assets/enemies/duskrose/` (ou similar).
-- Python script usa `aseprite-reader` (já instalada): renderiza frames RGBA composiando layers visíveis e exporta PNG horizontal strip.
-- Pattern: `from aseprite_reader import AsepriteFile; ase = AsepriteFile(...); render layers; sheet.paste(canvas, ...)`.
-- **Não usar Aseprite CLI** (não instalado).
-- **Cuidado**: glass shield precisou de sheet à parte (`duskrose-shield-Sheet.png`) porque o export do aseprite principal não capturou opacidade correta.
+### Indicator do ranged
+- **Removido por decisão do user** (achou que polui o jogo). Volley dispara direto, primeiro com `_ranged_shot_timer = 0.0` (frame imediato). Se um dia quiser voltar, ver git log do commit `adf150d` (estava lá antes do squash).
 
-### Permanent Thorn Wall
-- Em `scripts/effects/permanent_thorn_wall.gd` — root = Area2D (thorn area), filho `_toxic_area` Area2D (zona tóxica acima).
-- Posição em `wave14_map.tscn`: `TopBarrier` em `(-55, 25)`, `area_width = 720`.
-- Visual: vinha (`vinhas-Sheet.png` frame 3) rotacionada 90° tilada horizontalmente + 40 bubbles animadas (`bubbles-Sheet.png`) em grid com jitter 35%.
-- Thorn: 34 dps + stun 3s on enter. Toxic: 20 dps contínuo. `toxic_extend_up = 200` (cobre até y=-175, impossibilita dash pra cima).
-- Boss imune (collision_mask=1, só pega player layer 1).
-
-### Death Attribution
-Source IDs adicionados em `hud.gd._DEATH_SOURCE_LABELS` + traduções:
-- `duskrose`, `duskrose_smoke`, `duskrose_vine`, `duskrose_permanent_thorn`, `duskrose_toxic`, `rose_monster`
-
-### Targeting Mudou
-Inseto + magos agora têm **prioridade incondicional** em `tank_ally` (Claudio Druida e mini_arbusto decoy). Removido o "1 vinha perto do player" — vinhas agora 100% random.
+### Rose monster
+- `output_damage_mult = 0.56` (= 0.7 × 0.8) aplicado em CIMA do `damage_mult` da wave. Multiplica `damage` e `poison_damage_total` do projétil no spawn.
+- Drop de heart com `heart_drop_chance_multiplier = 0.45` (chance reduzida na boss fight). Dark balls têm o mesmo export, setado em 0.4 quando spawnados pela Duskrose.
 
 ## Pendências conhecidas
 
-- [ ] **HUD translúcido boss** — Fix aplicado, não testado em runtime.
-- [ ] **Sprite de dash da boss** — Aguardando user desenhar frames de movimento.
-- [ ] **Power Dash + Attack** — Áudio existe, mecânica não implementada.
-- [ ] **Power Laser Solar** — Pode ser feito sem sprite. Não implementado.
-- [ ] **Sprite "cast pose"** da Duskrose — Hoje só tem idle (frames 0-1). Durante `_cast_remaining` boss fica parada em idle.
-- [ ] **Balance** — Valores não playtested em runs reais. Boss HP 8500, rose monster HP 30 base (~160 wave 14), smoke 8/tick, vine 12 instant + 3s stun, thorn 17/tick + 3s stun, shield 80% reduction 8s.
-- [ ] **Dead code cleanup** em `wave_manager.gd`: `_spawn_duskrose_decorative_roses` virou dead code (rosas agora estáticas no wave14_map). Exports `decorative_rose_scene` + `_b` + `_c` também não são mais usados pelo wave_manager (mas continuam sendo refs válidos pra wave14_map.tscn via ExtResource).
-- [ ] **Commit + push** — Pendente.
+- [ ] Build de release 0.6.0 pra download público (export_presets já bumpado, falta gerar e subir no GitHub Releases)
+- [ ] Playtest in-game da Vida Infinita em wave 14 (fix aplicado mas não validado em runtime)
+- [ ] (Opcional) Tornar TUDO flat na wave 14: smoke, vinha, projétil ranged, rose HP, rose damage atualmente ainda escalam pela wave
+- [ ] (Opcional) Re-adicionar indicator do ranged se balance ficar muito injusto
 
 ## Arquivos / locais relevantes
 
-### Novos (untracked)
-- `assets/enemies/duskrose/` — aseprite (24 frames), duskrose-Sheet.png (40×40 × 24), bubbles-Sheet.png, vinhas espinhosas.aseprite + vinhas-Sheet.png (20×64 × 4), duskrose-shield-Sheet.png (40×40 × 8), 4 mp3s (atack rosa, cast rosa, cast shield, dash+atack)
-- `audios/musics/duskrose wave.mp3` — música do encontro (jazz)
-- `scripts/enemies/duskrose.gd` — boss
-- `scripts/enemies/rose_monster.gd` — minion
-- `scripts/effects/duskrose_smoke.gd` — nuvem
-- `scripts/effects/duskrose_vine.gd` — vinha lançada
-- `scripts/effects/permanent_thorn_wall.gd` — barreira topo + toxic + bubbles
-- `scripts/world/decorative_rose.gd` — rosa estática
-- `scenes/enemies/duskrose.tscn`, `rose_monster.tscn`
-- `scenes/effects/duskrose_smoke.tscn`, `duskrose_vine.tscn`, `permanent_thorn_wall.tscn`
-- `scenes/world/wave14_map.tscn` — mapa editável da wave 14
-- `scenes/world/decorative_rose.tscn`, `decorative_rose_b.tscn`, `decorative_rose_c.tscn`
+### Scripts críticos da Duskrose
+- [scripts/enemies/duskrose.gd](scripts/enemies/duskrose.gd) — boss principal, ~1100 linhas
+- [scripts/enemies/rose_monster.gd](scripts/enemies/rose_monster.gd) — minion, com curse propagation + heart drop
+- [scripts/effects/duskrose_smoke.gd](scripts/effects/duskrose_smoke.gd) — fumaça tóxica (tick separado pra player vs ally)
+- [scripts/effects/duskrose_vine.gd](scripts/effects/duskrose_vine.gd) — vinhas verticais com stun
+- [scripts/effects/duskrose_projectile.gd](scripts/effects/duskrose_projectile.gd) — projétil ranged
+- [scripts/effects/permanent_thorn_wall.gd](scripts/effects/permanent_thorn_wall.gd) — barreira horizontal + toxic zone
+- [scenes/world/wave14_map.tscn](scenes/world/wave14_map.tscn) — mapa custom da Duskrose
 
-### Modificados (modified)
-- `scripts/systems/wave_manager.gd` — wave 14 config, prespawn boss/map swap, scaling override (8500 HP), gold mult, music switch, cinematic boss focus, decorative spawn (deprecated agora)
-- `scripts/player/player.gd` — `apply_stun()` + `_stun_remaining`, bush_hidden invuln + bubble visual, replay recorder existente
-- `scripts/ui/hud.gd` — boss bar reposition top/bottom, translucency expanded pra incluir boss_hp_bar, _DEATH_SOURCE_LABELS updates
-- `scripts/enemies/insect_projectile.gd` — `pink_skin` flag pra rose monster + filter `is_in_group("enemy"): return`
-- `scripts/enemies/insect_enemy.gd` + `mage_enemy.gd` — tank_ally targeting priority incondicional
-- `scripts/enemies/enemy_separation.gd` — TTL cache 100ms (já vinha desta sessão também)
-- `scripts/skills/curse_ally_helper.gd` — skip decay pra mini_mago_summon
-- `scripts/ui/dev_panel.gd` + `scenes/ui/dev_panel.tscn` — refactor pra WaveBar/UtilityBar
-- `scenes/main.tscn` — wiring de duskrose/rose_monster/decorative_roses/wave14_map_scene
-- `scenes/ui/wave_shop.tscn` — autowrap + clip_text nos DescLabels (sessão anterior, ainda não commitado)
-- `assets/i18n/translations.csv` — death attributions + shop arbusto invul + outros
+### Sistema de skin
+- [scripts/systems/skin_loadout.gd](scripts/systems/skin_loadout.gd) — quests + persistência
+- [scripts/systems/skin_manager.gd](scripts/systems/skin_manager.gd) — composição em runtime
+- [scripts/ui/shop_player_face.gd](scripts/ui/shop_player_face.gd) — preview no shop
 
-### Deletados
-- `scripts/ui/hud_editor.gd` + `.uid` + `scenes/ui/hud_editor.tscn`
+### Dev panel
+- [scripts/ui/dev_panel.gd](scripts/ui/dev_panel.gd) — handlers (Vida Infinita, Renascer, +50 coins, etc.)
+- [scripts/ui/control_hint.gd](scripts/ui/control_hint.gd) — tutorial hints (icon + label fade)
+
+### Sistemas globais
+- [scripts/systems/game_state.gd](scripts/systems/game_state.gd) — autoload (dev_mode, dev_godmode, pending_respawn_upgrades, settings)
+- [scripts/systems/wave_manager.gd](scripts/systems/wave_manager.gd) — wave config, boss scaling overrides (CUIDADO: 2 lugares com HP override da Duskrose)
 
 ## Comandos úteis
 
 ```bash
-# Status check antes de commitar
+# Status + log
 rtk git status
+rtk git log --oneline -10
 
-# Big-bang commit do trabalho da Duskrose (use git add explícito, evita pegar coisas suspeitas)
-rtk git add scripts/enemies/duskrose.gd scripts/enemies/rose_monster.gd
-rtk git add scripts/effects/duskrose_smoke.gd scripts/effects/duskrose_vine.gd scripts/effects/permanent_thorn_wall.gd
-rtk git add scripts/world/decorative_rose.gd
-rtk git add scripts/systems/wave_manager.gd scripts/player/player.gd scripts/ui/hud.gd
-rtk git add scripts/enemies/insect_projectile.gd scripts/enemies/insect_enemy.gd scripts/enemies/mage_enemy.gd
-rtk git add scripts/enemies/enemy_separation.gd scripts/skills/curse_ally_helper.gd
-rtk git add scripts/ui/dev_panel.gd scenes/ui/dev_panel.tscn
-rtk git add scenes/main.tscn scenes/enemies/ scenes/effects/ scenes/world/
-rtk git add assets/enemies/duskrose/ audios/musics/duskrose*
-rtk git add assets/i18n/translations.csv
-rtk git rm scripts/ui/hud_editor.gd scripts/ui/hud_editor.gd.uid scenes/ui/hud_editor.tscn
-rtk git commit -m "feat: Duskrose boss wave 14 + dev panel refactor + stun system"
-rtk git push
+# Build (Godot CLI) — usar paths do export_presets.cfg
+# Windows: exports/Twilight Quiver pre-alpha-0.6.0.exe
+# Linux/Web: exports/...
 
-# Re-export aseprite (pattern reutilizável)
+# Re-exportar aseprite (pattern do projeto)
 python << 'EOF'
 from aseprite_reader import AsepriteFile
 from PIL import Image
 import zlib
-ase = AsepriteFile('CAMINHO.aseprite')
+ase = AsepriteFile('PATH.aseprite')
 W, H, N = ase.header.width, ase.header.height, len(ase.frames)
 visible = {i for i, l in enumerate(ase.layers) if (l.flags & 1) != 0}
-def render_cel(cel):
-    raw = zlib.decompress(cel.compressed_image_data)
-    return Image.frombytes('RGBA', (cel.width, cel.height), raw), cel.x_position, cel.y_position
+def render_cel(c):
+    raw = zlib.decompress(c.compressed_image_data)
+    return Image.frombytes('RGBA', (c.width, c.height), raw), c.x_position, c.y_position
 sheet = Image.new('RGBA', (W*N, H), (0,0,0,0))
 for fi, frame in enumerate(ase.frames):
     canvas = Image.new('RGBA', (W, H), (0,0,0,0))
@@ -147,29 +112,46 @@ for fi, frame in enumerate(ase.frames):
     sheet.paste(canvas, (fi*W, 0), canvas)
 sheet.save('OUTPUT.png')
 EOF
+
+# Tintar skin grayscale (template + cor alvo)
+python << 'EOF'
+from PIL import Image
+def tint(src, dst, rgb):
+    img = Image.open(src).convert('RGBA')
+    px = img.load()
+    for y in range(img.height):
+        for x in range(img.width):
+            r,g,b,a = px[x,y]
+            if a: px[x,y] = (int(r*rgb[0]/255), int(g*rgb[1]/255), int(b*rgb[2]/255), a)
+    img.save(dst)
+# tint('assets/player/shirt/Red_Velvet.png', 'assets/player/shirt/Novo.png', (40, 100, 180))
+EOF
 ```
 
-## Como testar (dev panel)
+## Patch notes da release 0.6.0 (pra colar no GitHub)
 
-1. Rode o jogo em dev mode
-2. UtilityBar (topo-esquerda): clique `+50 Coins` várias vezes pra dinheiro
-3. UtilityBar: `Abrir Shop` pra comprar upgrades (atk speed, dmg, etc)
-4. WaveBar (baixo-esquerda): `Boss W14` pra ir direto pra wave 14
-5. Espera cinematic "Raid 14" + foco na Duskrose no topo
-6. Observe na arena:
-   - Shield rosa pulsando (8s ON, 20s ciclo)
-   - Thorn wall horizontal no topo com bubbles tóxicas
-   - Vinhas verticais nas laterais (cercas) + extras nos cantos
-   - Smoke nuvens cobrindo ~45% mapa
-   - Rose monsters caindo (primeiro cast = 6, depois 4-5)
-   - 40 rosas decorativas estáticas
-   - Player spawn no meio-inferior, boss no topo (y=0)
+```markdown
+# Twilight Quiver pre-alpha-0.6.0 — Duskrose
 
-## Lições desta sessão
+## ✨ Novidades
 
-- **Aseprite export ≠ aseprite editor** — Glass shield precisou de sheet à parte porque export não pegou opacidade correta. Quando user quer asset visual fidedigno, exportar à mão.
-- **TileMapLayer + StaticBody2D não desligam física com `visible = false`** — Precisa de `process_mode = PROCESS_MODE_DISABLED` pra desligar física. Vide `_set_main_map_hidden`.
-- **call_deferred timing matters** — Duskrose snapa pra patrol_y via `call_deferred` porque wave_manager seta global_position APÓS add_child (e portanto após _ready). Cinematic camera usa `patrol_y` exposto pra mirar certinho (boss snapa só na próxima frame).
-- **Y-sort + objetos longos** — Vinhas verticais tem o root no TOPO mas estendem pra baixo. Y-sort com root y posiciona elas em z baseado no top. Pra vinhas ficarem atrás de player, melhor usar z_index = -1 (override y-sort).
-- **Random distribution puro é ruim** — Bubbles random tinham clusters + gaps. Grid + jitter (35%) deu distribuição uniforme com aspecto orgânico.
-- **Modulate inherits** mas só pra controls/canvas_items na mesma cadeia. Quando boss_hp_bar fica `visible = false` e depois `true`, modulate.a fica preso ao último valor — precisa sincronizar manualmente com `_hud_alpha_target` no momento que vira visível.
+**Duskrose, a nova boss da Raid 14** entrou em cena. Ela patrulha o topo da arena
+flutuando entre rosas decorativas e tem um arsenal bem variado: invoca rose monsters,
+lança projéteis em leque, joga nuvens de gás letal, faz vinhas espinhosas brotarem do
+chão, escuda glass shield, dá investidas de melee (single e duplo) e ainda cospe
+dark balls de tempos em tempos. Um mapa novo todo temático com cerca espinhosa
+horizontal que separa a arena dela.
+
+**Skin nova: Rosa Onyx** — roupa toda preta com cabelo e capa rosa bebê.
+Desbloqueada ao derrotar a Duskrose pela primeira vez.
+
+**Pai do Verde e Verde agora dá invulnerabilidade** quando você está escondido —
+nada de DoT ou projétil em voo arranhando você.
+
+**Dicas de controle** aparecem nas primeiras runs (WASD + Click) e quando você
+desbloqueia uma skill nova (Space, Q).
+
+## 🪲 Correções
+
+- Inseto agora bate em aliados corretamente (bug do hit que não saía)
+```
