@@ -1,11 +1,31 @@
 extends CharacterBody2D
 
-@export var speed: float = 32.0
-@export var max_hp: float = 12.0
-@export var preferred_distance: float = 100.0
-@export var distance_tolerance: float = 10.0
-@export var detection_range: float = 220.0
-@export var shoot_interval: float = 2.4
+# Rosa Monstro — minion invocado pela Duskrose (boss da wave 14). Anda em
+# direção ao player/tank e cospe um projétil (reusa insect_projectile.tscn pra
+# começo; pode trocar pra um projetil próprio depois).
+#
+# Diferenças vs insect_enemy:
+# - Anim "walk" rodando enquanto se move (insect só tem "fly")
+# - Sem hover (anda no chão)
+# - Sprite 40×40 (frames 8-15 da duskrose-Sheet)
+#
+# Targeting: copia o pattern do insect_enemy (tank_ally > player > tower) com
+# tank tendo prioridade incondicional (puxa aggro).
+
+@export var speed: float = 25.0
+@export var max_hp: float = 30.0
+@export var preferred_distance: float = 110.0
+@export var distance_tolerance: float = 12.0
+@export var detection_range: float = 240.0
+@export var shoot_interval: float = 2.6
+# Cor do flash quando toma dano. Rosa pra combinar com o tema da Duskrose.
+const HIT_FLASH_COLOR: Color = Color(1.7, 0.55, 0.95, 1.0)
+# Tint do damage_effect spawnado. Rosa coerente com o flash.
+const HIT_EFFECT_TINT: Color = Color(1.5, 0.55, 0.9, 1.0)
+# Som de ataque (cuspe). Carregado lazy via load() pra tolerar mp3 sem .import
+# (Godot gera .import automático no próximo refresh do FileSystem dock).
+const ATTACK_SOUND_PATH: String = "res://assets/enemies/duskrose/atack rosa mosntro.mp3"
+@export var attack_sound_volume_db: float = -14.0
 @export var projectile_scene: PackedScene
 @export var damage_effect_scene: PackedScene
 @export var damage_number_scene: PackedScene
@@ -14,12 +34,10 @@ extends CharacterBody2D
 @export var damage_sound: AudioStream
 @export var damage_sound_volume_db: float = -18.0
 @export var knockback_decay: float = 350.0
-@export var hover_amplitude: float = 1.5
-@export var hover_speed: float = 4.0
 @export var spawn_in_duration: float = 0.45
 @export var separation_radius: float = 14.0
 @export var separation_strength: float = 25.0
-@export var tower_target_switch_distance: float = 220.0
+@export var tower_target_switch_distance: float = 240.0
 
 const SILHOUETTE_SHADER: Shader = preload("res://shaders/silhouette.gdshader")
 const BODY_CENTER_OFFSET: Vector2 = Vector2(0, -16)
@@ -30,7 +48,7 @@ const BODY_CENTER_OFFSET: Vector2 = Vector2(0, -16)
 @onready var shoot_timer: Timer = $ShootTimer
 
 var hp: float
-var damage_mult: float = 1.0  # setado pelo wave_manager — aplica no projectile no disparo
+var damage_mult: float = 1.0
 var player: Node2D
 var current_target: Node2D = null
 var is_attacking: bool = false
@@ -39,24 +57,19 @@ var knockback_velocity: Vector2 = Vector2.ZERO
 var _flash_tween: Tween
 var _crit_pending: bool = false
 var _spawning_in: bool = false
-# Maldição: convertido pra aliado (mira em enemies, projétil bate em enemies).
 var is_curse_ally: bool = false
-var _hover_phase: float = 0.0
-var _sprite_base_offset_y: float = 0.0
 
 
 func _ready() -> void:
 	add_to_group("enemy")
-	add_to_group("insect")
+	add_to_group("rose_monster")
 	hp = max_hp
 	player = get_tree().get_first_node_in_group("player")
-	_sprite_base_offset_y = sprite.offset.y
-	_hover_phase = randf() * TAU
 	shoot_timer.wait_time = shoot_interval
 	shoot_timer.timeout.connect(_try_shoot)
 	shoot_timer.start()
 	sprite.animation_finished.connect(_on_animation_finished)
-	sprite.play("fly")
+	sprite.play("walk")
 
 
 func play_spawn_in() -> void:
@@ -70,10 +83,6 @@ func play_spawn_in() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	# Hover suave: sprite balança no Y, sombra fica no chão (não é filha do sprite).
-	_hover_phase += hover_speed * delta
-	sprite.offset.y = _sprite_base_offset_y + sin(_hover_phase) * hover_amplitude
-
 	if _spawning_in:
 		velocity = Vector2.ZERO
 		move_and_slide()
@@ -95,7 +104,6 @@ func _physics_process(delta: float) -> void:
 
 		_update_facing(to_target)
 
-	# Separação contra outros inimigos pra não empilhar.
 	var separation: Vector2 = EnemySeparation.compute(self, separation_radius, separation_strength)
 	velocity = ai_velocity + knockback_velocity + separation
 	knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, knockback_decay * delta)
@@ -119,15 +127,30 @@ func _try_shoot() -> void:
 	var dist := global_position.distance_to(current_target.global_position)
 	if dist > detection_range:
 		return
-
 	var target := current_target.global_position + Vector2(0, -12)
 	locked_attack_dir = (target - muzzle.global_position).normalized()
 	is_attacking = true
 	sprite.play("attack")
+	# Som do cuspe — toca no mundo (sobrevive se a rosa morrer mid-attack).
+	_play_one_shot(load(ATTACK_SOUND_PATH) as AudioStream, global_position, attack_sound_volume_db)
+
+
+func _play_one_shot(sound: AudioStream, pos: Vector2, volume_db: float) -> void:
+	if sound == null:
+		return
+	var p := AudioStreamPlayer2D.new()
+	p.bus = &"SFX"
+	p.stream = sound
+	p.volume_db = volume_db
+	p.pitch_scale = randf_range(0.95, 1.05)
+	_get_world().add_child(p)
+	p.global_position = pos
+	p.play()
+	p.finished.connect(p.queue_free)
 
 
 func _pick_target() -> Node2D:
-	# Curse ally: mira em enemy mais próximo em vez de player/structure.
+	# Curse ally: mira em enemy mais próximo.
 	if is_curse_ally:
 		var nearest: Node2D = null
 		var best: float = INF
@@ -139,11 +162,7 @@ func _pick_target() -> Node2D:
 				nearest = e
 				best = d
 		return nearest
-	# Tank_ally (claudio_druida, mini_arbusto decoy) tem PRIORIDADE INCONDICIONAL
-	# sobre o player — sem gate de distância. Tank é tank, puxa aggro mesmo se
-	# estiver longe (insect anda até ele). Sem isso, como Claudio segue o player
-	# a ~50px de distância, o player sempre fica mais perto do inseto que se
-	# aproxima e o tank nunca era escolhido como alvo (atrás do player).
+	# Tank_ally tem prioridade incondicional sobre player (mesmo pattern do insect).
 	var nearest_tank: Node2D = null
 	var nearest_tank_dist: float = INF
 	for t in get_tree().get_nodes_in_group("tank_ally"):
@@ -155,12 +174,10 @@ func _pick_target() -> Node2D:
 			nearest_tank_dist = d
 	if nearest_tank != null:
 		return nearest_tank
-	# Sem tank → player se visível (qualquer distância — vai perseguir).
 	var player_alive: bool = player != null and is_instance_valid(player) and not (("is_dead" in player) and player.is_dead)
 	var player_visible: bool = player_alive and not (player as Node).is_in_group("bush_hidden")
 	if player_visible:
 		return player
-	# Sem player + sem tank → procura torre mais próxima.
 	var nearest_tower: Node2D = null
 	var nearest_dist: float = INF
 	for s in get_tree().get_nodes_in_group("structure"):
@@ -177,7 +194,7 @@ func _on_animation_finished() -> void:
 	if sprite.animation == "attack":
 		_fire_projectile()
 		is_attacking = false
-		sprite.play("fly")
+		sprite.play("walk")
 
 
 func _fire_projectile() -> void:
@@ -188,11 +205,13 @@ func _fire_projectile() -> void:
 		proj.damage = proj.damage * damage_mult
 	if "poison_damage_total" in proj and damage_mult != 1.0:
 		proj.poison_damage_total = proj.poison_damage_total * damage_mult
-	# Maldição: inseto convertido marca projétil pra bater em enemies.
 	if is_curse_ally and "is_ally_source" in proj:
 		proj.is_ally_source = true
+	# Skin rosa: projétil + trail + glow + hit effect ficam tintados pra combinar
+	# com o tema da Duskrose (em vez do verde-veneno do inseto).
+	if "pink_skin" in proj:
+		proj.pink_skin = true
 	_get_world().add_child(proj)
-	# Origem nos pés do inseto (+1 pra sortar depois dele); visual sobe internamente.
 	proj.global_position = Vector2(muzzle.global_position.x, global_position.y + 1)
 	if proj.has_method("set_direction"):
 		proj.set_direction(locked_attack_dir)
@@ -225,7 +244,6 @@ func apply_knockback(dir: Vector2, strength: float) -> void:
 
 
 func _play_damage_sound(duration: float = 0.7) -> void:
-	# Inimigo congelado: silencia som de dano (encapsulado em gelo).
 	for c in get_children():
 		if c is FreezeDebuff:
 			return
@@ -236,7 +254,6 @@ func _play_damage_sound(duration: float = 0.7) -> void:
 	p.stream = damage_sound
 	p.volume_db = damage_sound_volume_db
 	p.pitch_scale = 1.15
-	# CHILD do enemy — morre junto no queue_free.
 	add_child(p)
 	p.play()
 	var ref: AudioStreamPlayer2D = p
@@ -282,7 +299,8 @@ func _flash_damage() -> void:
 		return
 	if _flash_tween != null and _flash_tween.is_valid():
 		_flash_tween.kill()
-	var flash_color: Color = CritFeedback.CRIT_FLASH_COLOR if _crit_pending else Color(1.5, 0.3, 0.3, 1.0)
+	# Crit mantém o amarelo padrão; hit normal usa rosa do tema da Duskrose.
+	var flash_color: Color = CritFeedback.CRIT_FLASH_COLOR if _crit_pending else HIT_FLASH_COLOR
 	sprite.modulate = flash_color
 	_flash_tween = create_tween()
 	_flash_tween.tween_property(sprite, "modulate", Color.WHITE, 0.2)
@@ -292,6 +310,9 @@ func _spawn_damage_effect() -> void:
 	if damage_effect_scene == null:
 		return
 	var fx := damage_effect_scene.instantiate()
+	# Tint rosa pra o impacto combinar com o tema (em vez do branco/laranja default).
+	if fx is CanvasItem:
+		(fx as CanvasItem).modulate = HIT_EFFECT_TINT
 	_get_world().add_child(fx)
 	fx.global_position = global_position + BODY_CENTER_OFFSET
 

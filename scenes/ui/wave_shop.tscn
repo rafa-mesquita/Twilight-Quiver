@@ -442,6 +442,8 @@ theme_override_font_sizes/font_size = 28
 text = "SHOP_FIRE_ARROW_DESC"
 horizontal_alignment = 1
 vertical_alignment = 1
+autowrap_mode = 2
+clip_text = true
 
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard1" unique_id=1468004879]
 layout_mode = 0
@@ -522,6 +524,8 @@ theme_override_font_sizes/font_size = 28
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
+autowrap_mode = 2
+clip_text = true
 
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard2" unique_id=538757896]
 layout_mode = 0
@@ -599,6 +603,8 @@ theme_override_font_sizes/font_size = 28
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
+autowrap_mode = 2
+clip_text = true
 
 [node name="PriceLabel" type="Label" parent="Root/AliadoRow/AliadoCard3" unique_id=1791183174]
 layout_mode = 0
@@ -695,6 +701,8 @@ theme_override_font_sizes/font_size = 28
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
+autowrap_mode = 2
+clip_text = true
 
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard1" unique_id=821493539]
 layout_mode = 0
@@ -766,6 +774,8 @@ offset_left = 31.176514
 offset_top = 111.0
 offset_right = 274.8235
 offset_bottom = 280.0
+autowrap_mode = 2
+clip_text = true
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
@@ -846,6 +856,8 @@ offset_left = 30.470581
 offset_top = 111.0
 offset_right = 275.52942
 offset_bottom = 280.0
+autowrap_mode = 2
+clip_text = true
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28

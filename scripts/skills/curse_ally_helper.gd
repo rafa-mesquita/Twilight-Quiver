@@ -92,8 +92,13 @@ static func convert_to_ally(enemy: Node) -> void:
 	# Decay: aliado convertido vive ~12s drenando HP. Sem isso, curse_allies
 	# acumulavam infinitamente entre waves. Anexado APÓS o HP ser restaurado
 	# pra calcular dps com base no max_hp já penalizado (se for boss wave).
-	var decay := CurseAllyDecay.new()
-	enemy.add_child(decay)
+	# Exceção: pet do Mini Mago (grupo "mini_mago_summon") NÃO recebe decay —
+	# é um aliado permanente do upgrade Mini Mago, não um spoils de Maldição.
+	# Mobs convertidos pela Maldição direto + insetos invocados pelo summoner_mage
+	# convertido continuam recebendo decay normalmente.
+	if not enemy.is_in_group("mini_mago_summon"):
+		var decay := CurseAllyDecay.new()
+		enemy.add_child(decay)
 	# Stat: contabiliza aliados feitos pra tela de morte.
 	var p := enemy.get_tree().get_first_node_in_group("player")
 	if p != null and p.has_method("notify_ally_made"):

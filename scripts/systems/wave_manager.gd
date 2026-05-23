@@ -14,6 +14,25 @@ extends Node2D
 @export var ice_mage_scene: PackedScene
 @export var electric_mage_scene: PackedScene
 @export var mage_monkey_scene: PackedScene
+@export var duskrose_scene: PackedScene
+@export var rose_monster_scene: PackedScene
+# Rosa decorativa do mapa da Duskrose (wave 14). 3 variantes (A/B/C) cada uma
+# com seu próprio shadow/scale/alinhamento — wave_manager sorteia uma das 3
+# scene files pra cada rosa spawnada, preservando as customizações específicas
+# de cada cena.
+@export var decorative_rose_scene: PackedScene  # A (variant Random)
+@export var decorative_rose_b_scene: PackedScene  # B (variant locked frame 6)
+@export var decorative_rose_c_scene: PackedScene  # C (variant locked frame 7)
+# Map editável só pra wave 14 — cópia inteira do Map original que você
+# customiza no editor (adiciona rosas posicionadas, muda grama, ajusta tiles,
+# etc.) sem afetar o Map das outras waves. Na wave 14, wave_manager esconde
+# o Map original (via group "map") e instancia este aqui no lugar.
+@export var wave14_map_scene: PackedScene
+const DUSKROSE_DECORATIVE_ROSE_COUNT: int = 40
+# Nodes do main.tscn no grupo "hide_wave14" são escondidos durante a wave 14
+# e restaurados no _finish_wave. Permite "remover" árvores/gramas/props que
+# não combinam com o cenário da Duskrose sem deletar do main.
+const WAVE14_HIDE_GROUP: String = "hide_wave14"
 @export var dark_ball_scene: PackedScene
 @export var spawn_delay: float = 0.5
 @export var inter_wave_delay: float = 2.0
@@ -55,6 +74,8 @@ extends Node2D
 # nas outras waves. Default music = stream original do node Music no main.tscn,
 # capturado no _ready (não precisa hardcoded aqui).
 @export var boss_music: AudioStream = preload("res://audios/musics/monkey mage wave.mp3")
+# Música da wave 14 (Duskrose) — jazz tranquilo, classe.
+@export var duskrose_music: AudioStream = preload("res://audios/musics/duskrose wave.mp3")
 # Trilha alternativa pras waves 4-5-6 e 12-13. Loop forçado em runtime.
 @export var corrupted_void_music: AudioStream = preload("res://audios/musics/Level 4 - 5 -6/Corrupted Void Gate.mp3")
 # Boss redux dropa MAIS gold pra compensar a perda dos drops dos minions
@@ -127,6 +148,8 @@ func _ready() -> void:
 		"ice_mage": {"scene": ice_mage_scene, "group": "ice_mage"},
 		"electric_mage": {"scene": electric_mage_scene, "group": "electric_mage"},
 		"mage_monkey": {"scene": mage_monkey_scene, "group": "mage_monkey"},
+		"duskrose": {"scene": duskrose_scene, "group": "duskrose"},
+		"rose_monster": {"scene": rose_monster_scene, "group": "rose_monster"},
 		"dark_ball": {"scene": dark_ball_scene, "group": "dark_ball"},
 	}
 	var player := get_tree().get_first_node_in_group("player")
@@ -154,11 +177,6 @@ func _spawn_dev_panel() -> void:
 	if panel_scene != null:
 		var panel := panel_scene.instantiate()
 		get_tree().current_scene.add_child(panel)
-	# HUD editor lateral esquerdo pra ajustar HUD ao vivo.
-	var editor_scene: PackedScene = load("res://scenes/ui/hud_editor.tscn")
-	if editor_scene != null:
-		var editor := editor_scene.instantiate()
-		get_tree().current_scene.add_child(editor)
 
 
 func _is_dev_mode() -> bool:
@@ -404,19 +422,14 @@ func _build_wave_config(num: int) -> Dictionary:
 			"ice_mage": {"alive_target": 1, "total": 2},
 			"electric_mage": {"alive_target": 1, "total": 2},
 		}
-	# Wave 14: BOSS REDUX — mesmo setup da wave 7 (1 boss + horda inicial de
-	# magos), porém todos escalam pelo natural da wave 14 + boss_redux_extra_mult
-	# (1.75× extra) → ~2,5×–3× mais forte que os equivalentes da wave 7.
-	# Diferença vs wave 7: minions iniciais TAMBÉM escalam (na wave 7 eles eram
-	# trash mobs sem scaling, aqui são versões mais perigosas).
+	# Wave 14: DUSKROSE — boss novo. Anda no topo do mapa horizontalmente e
+	# invoca Rose Monsters dinamicamente. Setup temático: SÓ boss inicial,
+	# sem rose_monsters pré-spawnados — o boss precisa invocar a 1ª horda
+	# através do sistema de pesos táticos (0 roses vivas → summon priorizado).
+	# Boss escala HP via override fixo no _apply_wave_scaling.
 	if num == boss_redux_wave:
 		return {
-			"mage_monkey": {"alive_target": 1, "total": 1},
-			"mage": {"alive_target": 5, "total": 8},
-			"summoner_mage": {"alive_target": 2, "total": 3},
-			"fire_mage": {"alive_target": 2, "total": 3},
-			"ice_mage": {"alive_target": 1, "total": 2},
-			"electric_mage": {"alive_target": 1, "total": 2},
+			"duskrose": {"alive_target": 1, "total": 1},
 		}
 	# Waves 3+: escala automática + um pouco de aleatoriedade.
 	# Quanto maior o wave_number, mais inimigos vivos e mais total.
@@ -596,7 +609,7 @@ func _spawn_one(type_key: String) -> void:
 	#   Wave 7: minions PULAM scaling (trash mobs com stats base, shield).
 	#   Wave 14: minions ESCALAM normalmente (natural + boss_redux_extra_mult)
 	#            — versões fortes, mas sem drops pra a recompensa ficar no boss.
-	if _is_boss_wave(wave_number) and type_key != "mage_monkey":
+	if _is_boss_wave(wave_number) and type_key != "mage_monkey" and type_key != "duskrose":
 		if "gold_drop_chance" in enemy:
 			enemy.gold_drop_chance = 0.0
 		if "heart_scene" in enemy:
@@ -610,10 +623,14 @@ func _spawn_one(type_key: String) -> void:
 		# normal pra ficar mais forte.
 		if wave_number == 7 and type_key == "mage_monkey" and "max_hp" in enemy:
 			enemy.max_hp = 3000.0
+		# Override pro boss da wave 14 (Duskrose): HP fixo 8500 pra ficar 2,5–3×
+		# mais tough que o boss da wave 7 (3000 HP).
+		if wave_number == boss_redux_wave and type_key == "duskrose" and "max_hp" in enemy:
+			enemy.max_hp = 8500.0
 	# Wave 14 boss (redux): drops escalam pra compensar a perda de drops dos
 	# minions + a dificuldade extra. Multiplicador maior que o normal de
 	# scaling porque tem ~16-18 minions a menos contribuindo gold.
-	if wave_number == boss_redux_wave and type_key == "mage_monkey" and BOSS_REDUX_GOLD_MULT > 1.0:
+	if wave_number == boss_redux_wave and (type_key == "mage_monkey" or type_key == "duskrose") and BOSS_REDUX_GOLD_MULT > 1.0:
 		if "gold_drop_min" in enemy:
 			enemy.gold_drop_min = int(round(float(enemy.gold_drop_min) * BOSS_REDUX_GOLD_MULT))
 		if "gold_drop_max" in enemy:
@@ -722,7 +739,7 @@ func _pick_spawn_for(type_key: String) -> Vector2:
 	# rodam pelos 3 spawn points reservados (não o do player). Outras waves:
 	# comportamento padrão.
 	if _is_boss_wave(wave_number):
-		if type_key == "mage_monkey":
+		if type_key == "mage_monkey" or type_key == "duskrose":
 			return _wave7_boss_center
 		if not _wave7_enemy_spawns.is_empty():
 			var pos: Vector2 = _wave7_enemy_spawns[_wave7_enemy_spawn_idx % _wave7_enemy_spawns.size()]
@@ -773,6 +790,21 @@ func _prepare_wave7_spawn_assignments() -> void:
 	for p in spawn_points:
 		sum += p.global_position
 	_wave7_boss_center = sum / float(spawn_points.size())
+	# Wave 14 (Duskrose): force player no meio-inferior do mapa. Boss patrulha
+	# o topo, então player começa embaixo-centro pra ter espaço de manobra e
+	# distância da boss. X = centro do mapa, Y = baseado nos spawn SW/SE.
+	if wave_number == boss_redux_wave:
+		var south_y: float = 320.0  # default fallback se não houver SW/SE
+		var south_count: int = 0
+		var south_y_sum: float = 0.0
+		for p in spawn_points:
+			# Pega Y dos spawn points "south" (mais abaixo na metade inferior do mapa).
+			if p.global_position.y > _wave7_boss_center.y:
+				south_y_sum += p.global_position.y
+				south_count += 1
+		if south_count > 0:
+			south_y = south_y_sum / float(south_count)
+		_wave7_player_spawn = Vector2(_wave7_boss_center.x, south_y)
 
 
 func _finish_wave() -> void:
@@ -794,6 +826,8 @@ func _finish_wave() -> void:
 	# Torretas do Mecânico Ting também duram só o round — limpa as ativas no fim
 	# da wave pra cada raid começar limpo (o Ting volta a buildar normal).
 	_cleanup_ting_turrets()
+	# Wave 14 (Duskrose): limpa as rosas decorativas espalhadas pelo mapa.
+	_cleanup_duskrose_decoration()
 	# Pity de gold: se a wave rendeu menos que o mínimo garantido, completa
 	# AGORA (antes do magnet sugar pro player). Aplica em qualquer wave.
 	_top_up_min_coins()
@@ -881,6 +915,19 @@ func _cleanup_ting_turrets() -> void:
 	for t in get_tree().get_nodes_in_group("ting_turret"):
 		if is_instance_valid(t):
 			t.queue_free()
+
+
+func _cleanup_duskrose_decoration() -> void:
+	# Rosas decorativas + wave14_map + props extras (group "duskrose_decoration")
+	# são limpos no fim da wave pra não vazarem pras próximas (shop / wave 15+).
+	for r in get_tree().get_nodes_in_group("duskrose_decoration"):
+		if is_instance_valid(r):
+			r.queue_free()
+	# Restaura visibilidade do Map original, dos props decorativos do Entities
+	# (árvores/casas/cercas/etc.) e dos props no group "hide_wave14".
+	_set_main_map_hidden(false)
+	_set_main_entities_props_hidden(false)
+	_set_wave14_props_hidden(false)
 
 
 func _spawn_capivara_starter_mushrooms() -> void:
@@ -1413,11 +1460,14 @@ func _reward_load_card_texture(slot_id: String, category: String, target_level: 
 
 func _music_for_wave(num: int) -> AudioStream:
 	# Seleção da música por wave:
-	#   7, 14         → boss_music (cinematic do mage monkey)
+	#   7              → boss_music (cinematic do mage monkey)
+	#   14             → duskrose_music (jazz tranquilo da Duskrose)
 	#   4, 5, 6, 12, 13 → corrupted_void_music (Level 4-5-6 / Level 12-13)
-	#   resto         → default (stream original do node Music)
-	if num == 7 or num == boss_redux_wave:
+	#   resto          → default (stream original do node Music)
+	if num == 7:
 		return boss_music
+	if num == boss_redux_wave:
+		return duskrose_music
 	if num == 4 or num == 5 or num == 6 or num == 12 or num == 13:
 		return corrupted_void_music
 	return _default_music
@@ -1454,17 +1504,20 @@ func _prespawn_boss_wave_entities() -> void:
 		for i in total:
 			var enemy: Node2D = info["scene"].instantiate()
 			# Boss pula a animação de entrada — cinematic toma o lugar.
-			if type_key == "mage_monkey" and "skip_entrance_animation" in enemy:
+			if (type_key == "mage_monkey" or type_key == "duskrose") and "skip_entrance_animation" in enemy:
 				enemy.skip_entrance_animation = true
 			# Aplica regras de drop/scaling iguais ao _spawn_one normal.
-			if _is_boss_wave(wave_number) and type_key != "mage_monkey":
+			if _is_boss_wave(wave_number) and type_key != "mage_monkey" and type_key != "duskrose":
 				if "gold_drop_chance" in enemy:
 					enemy.gold_drop_chance = 0.0
 				if "heart_scene" in enemy:
 					enemy.heart_scene = null
 			if wave_number != 7 or type_key == "mage_monkey":
 				_apply_wave_scaling(enemy)
-			if wave_number == boss_redux_wave and type_key == "mage_monkey" and BOSS_REDUX_GOLD_MULT > 1.0:
+				# Override pro boss Duskrose (wave 14): HP fixo 8500.
+				if wave_number == boss_redux_wave and type_key == "duskrose" and "max_hp" in enemy:
+					enemy.max_hp = 8500.0
+			if wave_number == boss_redux_wave and (type_key == "mage_monkey" or type_key == "duskrose") and BOSS_REDUX_GOLD_MULT > 1.0:
 				if "gold_drop_min" in enemy:
 					enemy.gold_drop_min = int(round(float(enemy.gold_drop_min) * BOSS_REDUX_GOLD_MULT))
 				if "gold_drop_max" in enemy:
@@ -1475,6 +1528,135 @@ func _prespawn_boss_wave_entities() -> void:
 			enemy.global_position = _pick_spawn_for(type_key)
 			_pause_if_time_frozen(enemy)
 			spawned_this_wave[type_key] = spawned_this_wave.get(type_key, 0) + 1
+	# Wave 14 (Duskrose): troca o Map (esconde original + instancia o wave14_map
+	# editável que já tem as rosas posicionadas estaticamente no .tscn),
+	# esconde props decorativos de Entities (árvores/casas/cercas/postes/poços
+	# do main.tscn que sobrepunham), e esconde props marcados (group
+	# "hide_wave14") — tudo antes da cinematic pra player ver o ambiente
+	# temático quando o overlay preto sumir.
+	if wave_number == boss_redux_wave:
+		_set_main_map_hidden(true)
+		_set_main_entities_props_hidden(true)
+		_spawn_wave14_map(world)
+		_set_wave14_props_hidden(true)
+
+
+func _spawn_duskrose_decorative_roses(world: Node) -> void:
+	# Spawna DUSKROSE_DECORATIVE_ROSE_COUNT rosas em posições aleatórias pelo
+	# mapa. Cada instância usa uma das 3 scene files (A/B/C) sorteada — cada
+	# scene tem seu próprio shadow/scale/alinhamento configurado no editor.
+	# Tag "duskrose_decoration" pra cleanup automático no _finish_wave.
+	# Monta o pool de scenes disponíveis (skipa nulls pra robustez).
+	var pool: Array[PackedScene] = []
+	if decorative_rose_scene != null:
+		pool.append(decorative_rose_scene)
+	if decorative_rose_b_scene != null:
+		pool.append(decorative_rose_b_scene)
+	if decorative_rose_c_scene != null:
+		pool.append(decorative_rose_c_scene)
+	if pool.is_empty():
+		return
+	# Área de spawn: largura inteira do mapa, evita o topo (patrulha da Duskrose
+	# em y=40) e exclusão em raio em torno do spawn do player.
+	var x_min: float = 20.0
+	var x_max: float = 500.0
+	var y_min: float = 60.0
+	var y_max: float = 290.0
+	var player_spawn: Vector2 = _wave7_player_spawn
+	var exclusion_radius_sq: float = 40.0 * 40.0
+	for i in DUSKROSE_DECORATIVE_ROSE_COUNT:
+		var pos: Vector2 = Vector2.ZERO
+		# Re-rola posição se cair no raio do player (até 5 tentativas).
+		for attempt in 5:
+			pos = Vector2(randf_range(x_min, x_max), randf_range(y_min, y_max))
+			if pos.distance_squared_to(player_spawn) > exclusion_radius_sq:
+				break
+		# Sorteia 1 das 3 scenes pra essa instância — preserva customizações
+		# (shadow, scale, alinhamento) específicas de cada cena.
+		var scene: PackedScene = pool.pick_random()
+		var rose: Node2D = scene.instantiate()
+		rose.add_to_group("duskrose_decoration")
+		world.add_child(rose)
+		rose.global_position = pos
+
+
+func _spawn_wave14_map(world: Node) -> void:
+	# Carrega o Map editável da wave 14 (cópia do Map original) e adiciona ao
+	# main scene root. Tudo dentro dele — grass, ground tiles, rosas que você
+	# arrastou no editor, props extras — entra no mapa só pra wave 14.
+	# Cleanup via group "duskrose_decoration".
+	if wave14_map_scene == null:
+		return
+	var map_node: Node = wave14_map_scene.instantiate()
+	if map_node == null:
+		return
+	map_node.add_to_group("duskrose_decoration")
+	var main_root: Node = get_tree().current_scene
+	if main_root == null:
+		main_root = world
+	main_root.add_child(map_node)
+	# Move logo após o Map original pra ficar no mesmo Z-ordering (renderiza
+	# atrás do Entities/player/enemies, igual o Map). Sem isso, o Wave14Map
+	# entra como último filho e renderiza POR CIMA do player.
+	var main_map: Node = get_tree().get_first_node_in_group("map")
+	if main_map != null and main_map.get_parent() == main_root:
+		main_root.move_child(map_node, main_map.get_index() + 1)
+
+
+func _set_main_map_hidden(hide: bool) -> void:
+	# Esconde/mostra o Map original (group "map") do main.tscn. Wave 14 esconde
+	# pra dar lugar ao wave14_map editável. Cleanup no _finish_wave restaura.
+	# IMPORTANTE: também alterna process_mode pra desligar a FÍSICA dos
+	# Boundaries (StaticBody2D filhos). Sem isso, hide só esconde visualmente
+	# mas as paredes do main continuam ativas e sobrepostas com as do wave14_map.
+	var main_map: Node = get_tree().get_first_node_in_group("map")
+	if main_map == null or not is_instance_valid(main_map):
+		return
+	if main_map is CanvasItem:
+		(main_map as CanvasItem).visible = not hide
+	main_map.process_mode = Node.PROCESS_MODE_DISABLED if hide else Node.PROCESS_MODE_INHERIT
+
+
+# Scenes de props decorativos que ficam direto em Entities no main.tscn (não
+# em Map). São escondidos durante a wave 14 pra o wave14_map ficar "limpo"
+# sem árvores/casas/cercas/postes/poços do mapa original sobrepondo.
+const _MAIN_DECORATIVE_PROP_SCENES: Array[String] = [
+	"res://scenes/world/props/arvore.tscn",
+	"res://scenes/world/props/arvore_2.tscn",
+	"res://scenes/world/props/casa.tscn",
+	"res://scenes/world/props/cerca.tscn",
+	"res://scenes/world/props/cerca_cima.tscn",
+	"res://scenes/world/props/cerca_cima_end.tscn",
+	"res://scenes/world/props/poco.tscn",
+	"res://scenes/world/props/poste.tscn",
+]
+
+
+func _set_main_entities_props_hidden(hide: bool) -> void:
+	# Esconde/restaura props decorativos do main.tscn que estão como filhos
+	# diretos de Entities (árvores, casas, cercas, postes, poços). Toggle visual
+	# E process_mode pra desligar a física dos StaticBody2D filhos (cercas têm
+	# collision; sem isso o player esbarra em paredes invisíveis na wave 14).
+	var world: Node = get_tree().get_first_node_in_group("world")
+	if world == null:
+		return
+	for child in world.get_children():
+		if not (child is CanvasItem):
+			continue
+		var path: String = (child as Node).scene_file_path
+		if path in _MAIN_DECORATIVE_PROP_SCENES:
+			(child as CanvasItem).visible = not hide
+			(child as Node).process_mode = Node.PROCESS_MODE_DISABLED if hide else Node.PROCESS_MODE_INHERIT
+
+
+func _set_wave14_props_hidden(hide: bool) -> void:
+	# Esconde/mostra nodes do main.tscn marcados com group "hide_wave14".
+	# Permite "remover" árvores/gramas/props que não combinam com o cenário da
+	# Duskrose sem deletar nada — basta o usuário adicionar o group no Inspector
+	# (Node → Groups → hide_wave14) dos props que ele quer sumir só na wave 14.
+	for n in get_tree().get_nodes_in_group(WAVE14_HIDE_GROUP):
+		if n is CanvasItem and is_instance_valid(n):
+			(n as CanvasItem).visible = not hide
 
 
 # Orquestra a cinematic: trava camera no boss, chama play_boss_intro na HUD,
@@ -1488,11 +1670,22 @@ func _play_boss_intro_cinematic(hud: Node) -> void:
 	# Congela player + enemies pré-spawnados durante a cinematic (não andam,
 	# não atiram). Quando o pan voltar todos estão em pose estática.
 	_freeze_entities(true)
-	# Trava camera no centro do boss durante a cinematic.
+	# Trava camera no centro do boss durante a cinematic. Usa a posição REAL
+	# da boss (após call_deferred do snap_to_patrol que move ela pro topo do
+	# mapa no caso da Duskrose). Pra bosses que têm patrol_y exposto, usa
+	# esse valor diretamente porque o snap ainda não rodou nessa frame.
+	var boss_node := get_tree().get_first_node_in_group("boss") as Node2D
+	var camera_target: Vector2 = _wave7_boss_center
+	if boss_node != null and is_instance_valid(boss_node):
+		var bx: float = boss_node.global_position.x
+		var by: float = boss_node.global_position.y
+		if "patrol_y" in boss_node:
+			by = boss_node.patrol_y
+		camera_target = Vector2(bx, by - 16.0)  # -16 pra mirar no corpo (não nos pés)
 	if camera != null and "cinematic_mode" in camera:
 		camera.cinematic_mode = true
 		if camera is Node2D:
-			(camera as Node2D).global_position = _wave7_boss_center
+			(camera as Node2D).global_position = camera_target
 	# HUD: black overlay + texto + cinematic sprite (16 frames @ 2 fps = 8s).
 	if hud != null and hud.has_method("play_boss_intro"):
 		await hud.play_boss_intro(wave_number)

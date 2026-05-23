@@ -458,28 +458,27 @@ func _pick_target() -> Node2D:
 	# Curse ally: inverte alvo — busca enemies em vez de player.
 	if is_curse_ally:
 		return _pick_curse_ally_target()
-	# Player + tank allies (claudio_druida, mini_arbusto decoy) competem como
-	# alvo primário pela distância. Se o player está em "bush_hidden" (escondido
-	# no Arbusto Carrara), ele fica invisível e mago foca só em tank_ally/torre.
-	var primary: Node2D = null
-	var primary_dist: float = INF
-	var player_alive: bool = player != null and is_instance_valid(player) and not (("is_dead" in player) and player.is_dead)
-	var player_visible: bool = player_alive and not (player as Node).is_in_group("bush_hidden")
-	if player_visible:
-		primary_dist = global_position.distance_to(player.global_position)
-		primary = player
+	# Tank_ally (claudio_druida, mini_arbusto decoy) tem PRIORIDADE INCONDICIONAL
+	# sobre o player — sem gate de distância. Tank é tank, puxa aggro mesmo se
+	# estiver longe (mago anda até ele). Sem isso, como Claudio segue o player
+	# a ~50px, o player sempre fica mais perto do mago e o tank nunca era escolhido.
+	var nearest_tank: Node2D = null
+	var nearest_tank_dist: float = INF
 	for tank in get_tree().get_nodes_in_group("tank_ally"):
 		if not is_instance_valid(tank) or not (tank is Node2D):
 			continue
 		var d: float = global_position.distance_to((tank as Node2D).global_position)
-		if d < primary_dist:
-			primary = tank as Node2D
-			primary_dist = d
-	# Player hidden + tank_ally encontrado → persegue sem distance gate.
-	if not player_visible and primary != null:
-		return primary
-	if primary != null and primary_dist <= tower_target_switch_distance:
-		return primary
+		if d < nearest_tank_dist:
+			nearest_tank = tank as Node2D
+			nearest_tank_dist = d
+	if nearest_tank != null:
+		return nearest_tank
+	# Sem tank → player se visível (qualquer distância — vai perseguir).
+	var player_alive: bool = player != null and is_instance_valid(player) and not (("is_dead" in player) and player.is_dead)
+	var player_visible: bool = player_alive and not (player as Node).is_in_group("bush_hidden")
+	if player_visible:
+		return player
+	# Sem player + sem tank → procura torre mais próxima.
 	var nearest_tower: Node2D = null
 	var nearest_dist: float = INF
 	for s in get_tree().get_nodes_in_group("structure"):
@@ -489,9 +488,7 @@ func _pick_target() -> Node2D:
 		if d < nearest_dist:
 			nearest_tower = s
 			nearest_dist = d
-	if nearest_tower != null:
-		return nearest_tower
-	return player if player_visible else null
+	return nearest_tower
 
 
 func _pick_curse_ally_target() -> Node2D:

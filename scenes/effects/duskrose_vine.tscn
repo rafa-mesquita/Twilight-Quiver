@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/duskrose_vine.gd" id="1_vine"]
+
+[node name="DuskroseVine" type="Area2D"]
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("1_vine")
+z_index = -1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]

@@ -70,6 +70,11 @@ var hp_upgrades: int = 0
 var armor_level: int = 0
 var damage_reduction_pct: float = 0.0
 var slow_resistance_pct: float = 0.0
+# Stun: bloqueia movimento + ataques + força sprite "idle". Usado pelas
+# vinhas da Duskrose. O visual de stun (stun_visual.gd) lê _stun_remaining
+# via reflection — qualquer node com esse campo pode ser stunado igual.
+var _stun_remaining: float = 0.0
+const STUN_VISUAL_SCRIPT: GDScript = preload("res://scripts/effects/stun_visual.gd")
 var damage_upgrades: int = 0
 var perfuracao_level: int = 0  # capa em 4 (níveis 1-4)
 var attack_speed_level: int = 0
@@ -450,6 +455,16 @@ func _apply_birthday_hat() -> void:
 
 func _physics_process(delta: float) -> void:
 	_update_status_effects(delta)
+	# Stun: trava player completamente (sem movimento, sem auto-cast de skills,
+	# sem ataque). Mantém anim "idle" + ícone de stun acima da cabeça. Checa
+	# ANTES dos _update_*_skill pra autocasts não dispararem durante stun.
+	if _stun_remaining > 0.0:
+		velocity = Vector2.ZERO
+		move_and_slide()
+		if sprite != null and sprite.animation != &"idle":
+			sprite.play("idle")
+		_ensure_stun_visual()
+		return
 	_update_dash(delta)
 	_update_esquivando(delta)
 	_update_fire_skill(delta)
@@ -463,6 +478,7 @@ func _physics_process(delta: float) -> void:
 	_check_claudio_druida_respawns(delta)
 	_check_mini_arbusto_respawns(delta)
 	_tick_capivara_buffs(delta)
+	_update_invuln_visual(delta)
 	# Dash trigger lê via polling pra garantir que o cooldown decrementa ANTES
 	# do check, e que múltiplas pressões na mesma frame só viram 1 dash.
 	# Espaço serve dash OU esquivando (mutuamente exclusivos). Esquivando só
@@ -497,6 +513,26 @@ func _physics_process(delta: float) -> void:
 
 	_update_facing(input_vec)
 	_update_animation(input_vec)
+
+
+func apply_stun(duration: float) -> void:
+	# Trava movimento + ataques + força sprite "idle" por `duration` segundos.
+	# Usado pelas vinhas da Duskrose. Mesmo visual usado pelo Claudio nos
+	# macacos — stun_visual.gd anexa ícone acima da cabeça enquanto ativo.
+	if is_dead:
+		return
+	_stun_remaining = maxf(_stun_remaining, duration)
+	_ensure_stun_visual()
+
+
+func _ensure_stun_visual() -> void:
+	# Anexa o ícone de stun se ainda não existe. Stun_visual auto-destroi
+	# quando _stun_remaining zera.
+	for c in get_children():
+		if c is Node and (c as Node).is_in_group("stun_visual"):
+			return
+	var v: Node = STUN_VISUAL_SCRIPT.new()
+	add_child(v)
 
 
 func apply_slow(multiplier: float, duration: float) -> void:
@@ -538,6 +574,8 @@ func apply_poison(total_damage: float, duration: float, source_id: String = "ins
 
 
 func _update_status_effects(delta: float) -> void:
+	if _stun_remaining > 0.0:
+		_stun_remaining = maxf(_stun_remaining - delta, 0.0)
 	if _slow_remaining > 0.0:
 		_slow_remaining -= delta
 		if _slow_remaining <= 0.0:
@@ -593,6 +631,9 @@ func _spawn_poison_number(amount: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if is_dead:
+		return
+	# Stun: bloqueia inputs de ataque + skills + cast. Player só fica olhando.
+	if _stun_remaining > 0.0:
 		return
 	if event.is_action_pressed("attack") and can_attack:
 		_start_attack()
@@ -2445,6 +2486,74 @@ func arbusto_exit_hide() -> void:
 	arbusto_hide_heal_per_hit = 0.0
 
 
+# Visual de invulnerabilidade: bolha protetora estilo "Protect" do Pokémon —
+# domo azul translúcido em volta do player, segue o movimento, leve pulsação
+# de scale pra dar vida. Aparece quando bush_hidden ativo, some quando sai.
+const INVULN_BUBBLE_RADIUS: float = 18.0
+const INVULN_BUBBLE_FILL_COLOR: Color = Color(0.5, 0.8, 1.0, 0.18)
+const INVULN_BUBBLE_RING_COLOR: Color = Color(0.55, 0.85, 1.0, 0.75)
+const INVULN_BUBBLE_PULSE_PERIOD: float = 1.2
+var _invuln_bubble: Node2D = null
+var _invuln_bubble_active: bool = false
+
+
+func _update_invuln_visual(_delta: float) -> void:
+	# Liga/desliga a bolha conforme entrada/saída do bush_hidden. Mantém estado
+	# pra não recriar a bolha toda frame.
+	var hidden: bool = is_in_group("bush_hidden")
+	if hidden and not _invuln_bubble_active:
+		_create_invuln_bubble()
+		_invuln_bubble_active = true
+	elif not hidden and _invuln_bubble_active:
+		_destroy_invuln_bubble()
+		_invuln_bubble_active = false
+
+
+func _create_invuln_bubble() -> void:
+	# Bolha = Node2D root + Polygon2D filled (interior translúcido) + Line2D
+	# fechada (anel de borda mais brilhante). Filho do player, segue movimento.
+	# Pulse de scale 0.95-1.05 em loop pra parecer "viva" sem ficar exagerado.
+	if _invuln_bubble != null and is_instance_valid(_invuln_bubble):
+		_invuln_bubble.queue_free()
+	var root := Node2D.new()
+	root.position = Vector2(0, -10)  # centro do corpo do player
+	root.z_index = 8
+	# Interior translúcido.
+	var fill := Polygon2D.new()
+	var sides: int = 28
+	var points := PackedVector2Array()
+	for i in sides:
+		var ang: float = TAU * float(i) / float(sides)
+		points.append(Vector2(cos(ang), sin(ang)) * INVULN_BUBBLE_RADIUS)
+	fill.polygon = points
+	fill.color = INVULN_BUBBLE_FILL_COLOR
+	root.add_child(fill)
+	# Borda mais brilhante.
+	var ring := Line2D.new()
+	ring.width = 1.5
+	ring.default_color = INVULN_BUBBLE_RING_COLOR
+	ring.closed = true
+	ring.joint_mode = 2
+	ring.points = points
+	root.add_child(ring)
+	add_child(root)
+	_invuln_bubble = root
+	# Pulse loop: scale 0.95 ↔ 1.05, ease in-out, infinito.
+	var t := root.create_tween().set_loops().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	t.tween_property(root, "scale", Vector2(1.05, 1.05), INVULN_BUBBLE_PULSE_PERIOD * 0.5).from(Vector2(0.95, 0.95))
+	t.tween_property(root, "scale", Vector2(0.95, 0.95), INVULN_BUBBLE_PULSE_PERIOD * 0.5)
+
+
+func _destroy_invuln_bubble() -> void:
+	if _invuln_bubble != null and is_instance_valid(_invuln_bubble):
+		# Fade out rápido antes de queue_free pra não sumir bruscamente.
+		var node := _invuln_bubble
+		var fade := node.create_tween()
+		fade.tween_property(node, "modulate:a", 0.0, 0.15)
+		fade.tween_callback(node.queue_free)
+	_invuln_bubble = null
+
+
 func _refresh_arbustos() -> void:
 	# L1: 1 arbusto. L2-L4 TBD — placeholder: continua 1 instância até definir.
 	var target_count: int = 1 if arbusto_level >= 1 else 0
@@ -2891,6 +3000,12 @@ func reset_all_cooldowns() -> void:
 
 func take_damage(amount: float, source_id: String = "") -> void:
 	if is_dead:
+		return
+	# Escondido no Pai do Verde / Verde: invulnerável a TODO dano (direto, AoE,
+	# projétil em voo, DoT/burn/poison/curse já ativos). O aggro já é gerido por
+	# group "bush_hidden" no targeting dos enemies, mas projéteis em voo e DoTs
+	# ativos continuam batendo — esse gate fecha o último vão.
+	if is_in_group("bush_hidden"):
 		return
 	# I-frames do dash: ignora dano (inclui DoT/curse/burn que chamem take_damage).
 	if _iframes_remaining > 0.0:

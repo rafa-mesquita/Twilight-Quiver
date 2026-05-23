@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dyxrcq68kd10p"]
+
+[ext_resource type="Script" path="res://scripts/effects/permanent_thorn_wall.gd" id="1_thorn"]
+
+[node name="PermanentThornWall" type="Area2D"]
+script = ExtResource("1_thorn")

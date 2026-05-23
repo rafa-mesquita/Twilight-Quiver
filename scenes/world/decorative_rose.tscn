@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://b8sm8r8nsg2re"]
+
+[ext_resource type="Script" uid="uid://d3oanlxn7ebd1" path="res://scripts/world/decorative_rose.gd" id="1_dec_rose"]
+[ext_resource type="Texture2D" uid="uid://bpn1m6pumnm28" path="res://assets/enemies/duskrose/duskrose-Sheet.png" id="2_sheet"]
+
+[sub_resource type="AtlasTexture" id="A_rose_default"]
+atlas = ExtResource("2_sheet")
+region = Rect2(200, 0, 40, 40)
+
+[node name="DecorativeRose" type="Node2D" unique_id=1045168064]
+script = ExtResource("1_dec_rose")
+
+[node name="Shadow" type="Polygon2D" parent="." unique_id=749261750]
+position = Vector2(-0.25, -0.85)
+scale = Vector2(0.4642857, 0.425)
+color = Color(0, 0, 0, 0.18)
+polygon = PackedVector2Array(7, 0, 6, 1, 4, 2, 0, 2, -4, 2, -6, 1, -7, 0, -6, -1, -4, -2, 0, -2, 4, -2, 6, -1)
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=636858254]
+texture_filter = 1
+position = Vector2(2, -3.9999995)
+scale = Vector2(0.45, 0.425)
+texture = SubResource("A_rose_default")
+offset = Vector2(0, -10)

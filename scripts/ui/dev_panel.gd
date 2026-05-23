@@ -59,11 +59,11 @@ func _ready() -> void:
 	$Content/Scroll/VBox/EnemySection/EnemyContent/DarkBallBtn.pressed.connect(_spawn.bind("dark_ball"))
 	$Content/Scroll/VBox/EnemySection/EnemyContent/InsectBtn.pressed.connect(_spawn.bind("insect"))
 	$Content/Scroll/VBox/EnemySection/EnemyContent/Burst10MonkeyBtn.pressed.connect(_spawn_burst_monkeys)
-	# Stats (manipulação de player/world).
-	$Content/Scroll/VBox/StatsSection/StatsContent/ResetHpBtn.pressed.connect(_reset_player_hp)
-	$Content/Scroll/VBox/StatsSection/StatsContent/ClearBtn.pressed.connect(_clear_enemies)
-	$Content/Scroll/VBox/StatsSection/StatsContent/AddGoldBtn.pressed.connect(_add_test_gold)
-	$Content/Scroll/VBox/StatsSection/StatsContent/OpenShopBtn.pressed.connect(_open_shop_directly)
+	# Stats (manipulação de player/world) — agora na UtilityBar top-left.
+	$UtilityBar/Row/ResetHpBtn.pressed.connect(_reset_player_hp)
+	$UtilityBar/Row/ClearBtn.pressed.connect(_clear_enemies)
+	$UtilityBar/Row/AddGoldBtn.pressed.connect(_add_test_gold)
+	$UtilityBar/Row/OpenShopBtn.pressed.connect(_open_shop_directly)
 	# Estruturas e pets.
 	$Content/Scroll/VBox/EstruturasSection/EstruturasContent/SpawnTowerBtn.pressed.connect(_spawn_tower_at_player)
 	$Content/Scroll/VBox/EstruturasSection/EstruturasContent/SpawnClaudioDruidaBtn.pressed.connect(_spawn_claudio_druida_at_player)
@@ -72,14 +72,14 @@ func _ready() -> void:
 		var btn := _upgrade_btn(entry["node"]) as Button
 		if btn != null:
 			btn.pressed.connect(_apply_upgrade.bind(entry["id"]))
-	# Controles de wave + simulação de waves específicas (dev).
-	$Content/Scroll/VBox/WavesSection/WavesContent/StartWavesBtn.pressed.connect(_simulate_wave.bind(1))
-	$Content/Scroll/VBox/WavesSection/WavesContent/FinishWaveBtn.pressed.connect(_finish_current_wave)
-	$Content/Scroll/VBox/WavesSection/WavesContent/Wave7Btn.pressed.connect(_simulate_wave.bind(7))
-	$Content/Scroll/VBox/WavesSection/WavesContent/Wave8Btn.pressed.connect(_simulate_wave.bind(8))
-	$Content/Scroll/VBox/WavesSection/WavesContent/Wave14Btn.pressed.connect(_simulate_wave.bind(14))
-	$Content/Scroll/VBox/StatsSection/StatsContent/FlushTelemetryBtn.pressed.connect(_flush_telemetry)
-	$Content/Scroll/VBox/StatsSection/StatsContent/PartyModeBtn.pressed.connect(_toggle_party_mode)
+	# Controles de wave (agora na WaveBar bottom-left, sempre visível).
+	$WaveBar/Row/StartWavesBtn.pressed.connect(_simulate_wave.bind(1))
+	$WaveBar/Row/FinishWaveBtn.pressed.connect(_finish_current_wave)
+	$WaveBar/Row/Wave7Btn.pressed.connect(_simulate_wave.bind(7))
+	$WaveBar/Row/Wave14Btn.pressed.connect(_simulate_wave.bind(14))
+	# Stats secundários na UtilityBar.
+	$UtilityBar/Row/FlushTelemetryBtn.pressed.connect(_flush_telemetry)
+	$UtilityBar/Row/PartyModeBtn.pressed.connect(_toggle_party_mode)
 	_refresh_party_mode_label()
 	$Content/Scroll/VBox/MenuBtn.pressed.connect(_back_to_menu)
 	# Refresh inicial após o player estar pronto pra ler níveis atuais.
@@ -97,10 +97,6 @@ func _ready() -> void:
 		$Content/Scroll/VBox/UpgElementaisSection/UpgElementaisContent/PoderesSubSection/PoderesContent, "Poderes (skills ativas)")
 	_setup_section($Content/Scroll/VBox/EstruturasSection/EstruturasHeader,
 		$Content/Scroll/VBox/EstruturasSection/EstruturasContent, "Estruturas e pets")
-	_setup_section($Content/Scroll/VBox/StatsSection/StatsHeader,
-		$Content/Scroll/VBox/StatsSection/StatsContent, "Stats")
-	_setup_section($Content/Scroll/VBox/WavesSection/WavesHeader,
-		$Content/Scroll/VBox/WavesSection/WavesContent, "Simular Wave")
 	# Sub-seções dos Upgrades padrão por ramo (ARCO/VIDA/MOV).
 	_setup_section($Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoHeader,
 		$Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent, "Arco / Ataque")
@@ -265,9 +261,9 @@ func _toggle_party_mode() -> void:
 
 
 func _refresh_party_mode_label() -> void:
-	var btn := $Content/Scroll/VBox/StatsSection/StatsContent/PartyModeBtn as Button
+	var btn := $UtilityBar/Row/PartyModeBtn as Button
 	if btn != null:
-		btn.text = "🎉 Modo Festa: ON" if BirthdayEvent.dev_force_active else "🎉 Modo Festa: OFF"
+		btn.text = "🎉 Festa: ON" if BirthdayEvent.dev_force_active else "🎉 Festa: OFF"
 
 
 func _spawn_tower_at_player() -> void:

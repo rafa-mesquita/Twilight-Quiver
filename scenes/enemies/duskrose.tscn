@@ -1,0 +1,86 @@
+[gd_scene format=3 uid="uid://ii2r14tjxdlf"]
+
+[ext_resource type="Script" uid="uid://bpc7n8xwbnxxf" path="res://scripts/enemies/duskrose.gd" id="1_duskrose"]
+[ext_resource type="Texture2D" uid="uid://bpn1m6pumnm28" path="res://assets/enemies/duskrose/duskrose-Sheet.png" id="2_sheet"]
+[ext_resource type="PackedScene" uid="uid://i2qhfww2el7v" path="res://scenes/enemies/rose_monster.tscn" id="3_rose"]
+[ext_resource type="PackedScene" path="res://scenes/effects/damage_effect.tscn" id="4_dmg"]
+[ext_resource type="PackedScene" uid="uid://c0fhcseis1qub" path="res://scenes/ui/hp_bar.tscn" id="5_hpbar"]
+[ext_resource type="PackedScene" path="res://scenes/effects/damage_number.tscn" id="6_dmgnum"]
+[ext_resource type="PackedScene" path="res://scenes/effects/kill_effect.tscn" id="7_kill"]
+[ext_resource type="PackedScene" path="res://scenes/effects/summon_effect.tscn" id="8_summon"]
+[ext_resource type="PackedScene" path="res://scenes/pickups/gold.tscn" id="9_gold"]
+[ext_resource type="PackedScene" path="res://scenes/effects/duskrose_smoke.tscn" id="10_smoke"]
+[ext_resource type="PackedScene" path="res://scenes/effects/duskrose_vine.tscn" id="11_vine"]
+
+[sub_resource type="AtlasTexture" id="A_idle_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 40, 40)
+
+[sub_resource type="AtlasTexture" id="A_idle_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(40, 0, 40, 40)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_duskrose"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_idle_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_idle_1")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_duskrose"]
+radius = 11.0
+
+[node name="Duskrose" type="CharacterBody2D" unique_id=826372004]
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_duskrose")
+rose_monster_scene = ExtResource("3_rose")
+summon_effect_scene = ExtResource("8_summon")
+vine_scene = ExtResource("11_vine")
+smoke_scene = ExtResource("10_smoke")
+damage_effect_scene = ExtResource("4_dmg")
+damage_number_scene = ExtResource("6_dmgnum")
+kill_effect_scene = ExtResource("7_kill")
+gold_scene = ExtResource("9_gold")
+
+[node name="Shadow" type="Node2D" parent="." unique_id=1400025478]
+
+[node name="Outer" type="Polygon2D" parent="Shadow" unique_id=414453415]
+position = Vector2(0, -3)
+scale = Vector2(1.5, 1.75)
+color = Color(0, 0, 0, 0.15)
+polygon = PackedVector2Array(11, 0, 10, 1, 7, 2, 0, 2, -7, 2, -10, 1, -11, 0, -10, -1, -7, -2, 0, -2, 7, -2, 10, -1)
+
+[node name="Middle" type="Polygon2D" parent="Shadow" unique_id=1302667517]
+position = Vector2(0, -2.9999995)
+scale = Vector2(2.0000002, 1.5)
+color = Color(0, 0, 0, 0.22)
+polygon = PackedVector2Array(7, 0, 6, 1, 4.9452915, 1.2636757, 2, 2, -2, 2, -6, 1, -7, 0, -6, -1, -2, -2, 2, -2, 6, -1)
+
+[node name="Inner" type="Polygon2D" parent="Shadow" unique_id=1596636945]
+position = Vector2(-4.7683716e-07, -3)
+scale = Vector2(3.1666667, 2)
+color = Color(0, 0, 0, 0.33)
+polygon = PackedVector2Array(3, 0, 2, 1, -2, 1, -3, 0, -2, -1, 2, -1)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1134973555]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_duskrose")
+animation = &"idle"
+autoplay = "idle"
+offset = Vector2(0, -20)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1718901020]
+position = Vector2(0, -18)
+shape = SubResource("CapsuleShape2D_duskrose")
+
+[node name="HpBar" parent="." unique_id=113930220 instance=ExtResource("5_hpbar")]
+position = Vector2(-9, -47)
+fg_color = Color(0.78, 0.21, 0.55, 1)

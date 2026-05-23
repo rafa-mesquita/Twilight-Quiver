@@ -119,6 +119,12 @@ HUD_DEATH_BY_ICE_MAGE,Morto pelo tiro do mago de gelo,Killed by the ice mage's s
 HUD_DEATH_BY_ELECTRIC_MAGE,Morto pelo raio do mago eletrico,Killed by the electric mage's lightning,Muerto por el rayo del mago eléctrico,Tué par l'éclair du mage électrique
 HUD_DEATH_BY_MAGE_MONKEY,Morto pelo tiro do gorila mago,Killed by the mage gorilla's shot,Muerto por el disparo del gorila mago,Tué par le tir du gorille mage
 HUD_DEATH_BY_MAGE_MONKEY_BEAM,Morto pelo raio laser do gorila mago,Killed by the mage gorilla's laser beam,Muerto por el rayo láser del gorila mago,Tué par le rayon laser du gorille mage
+HUD_DEATH_BY_DUSKROSE,Morto pela Duskrose,Killed by Duskrose,Muerto por Duskrose,Tué par Duskrose
+HUD_DEATH_BY_DUSKROSE_SMOKE,Morto pela nuvem de veneno da Duskrose,Killed by Duskrose's poison cloud,Muerto por la nube de veneno de Duskrose,Tué par le nuage de poison de Duskrose
+HUD_DEATH_BY_DUSKROSE_VINE,Morto pelas vinhas espinhosas da Duskrose,Killed by Duskrose's thorny vines,Muerto por las espinas de Duskrose,Tué par les ronces de Duskrose
+HUD_DEATH_BY_DUSKROSE_THORN_WALL,Morto pela barreira de espinhos,Killed by the thorn wall,Muerto por la muralla de espinas,Tué par le mur d'épines
+HUD_DEATH_BY_DUSKROSE_TOXIC,Morto pelo véu tóxico da Duskrose,Killed by Duskrose's toxic veil,Muerto por el velo tóxico de Duskrose,Tué par le voile toxique de Duskrose
+HUD_DEATH_BY_ROSE_MONSTER,Morto pelo cuspe da Rosa Monstro,Killed by Rose Monster's spit,Muerto por el escupitajo de la Rosa Monstruo,Tué par le crachat de Rose Monstre
 HUD_DEATH_RESTART,Jogar Novamente,Play Again,Jugar de nuevo,Rejouer
 HUD_DEATH_MENU,Voltar ao Menu,Back to Menu,Volver al menú,Retour au menu
 HUD_DEATH_STATS,"Tempo: %s
@@ -321,10 +327,42 @@ SHOP_ALLY_CAPIVARA,Capivara Joe,Capybara Joe,Capibara Joe,Capybara Joe
 SHOP_ALLY_TING,Mecânico Ting,Ting the Mechanic,Ting el Mecánico,Ting le Mécanicien
 SHOP_ALLY_MINI_MAGO,Mini Mago,Mini Mage,Mini Mago,Mini Mage
 SHOP_ALLY_ARBUSTO,Pai do verde e verde,Father of green and green,Padre del verde y verde,Père du vert et vert
-SHOP_ARBUSTO_DESC_1,"Esconde o player ao tocar: +12% atk speed, +5 dmg/flecha por 3s","Hides player on touch: +12% atk speed, +5 dmg/arrow for 3s","Esconde al jugador al tocar: +12% atk speed, +5 daño/flecha por 3s","Cache le joueur au contact : +12% vit atk, +5 dmg/flèche pendant 3s"
-SHOP_ARBUSTO_DESC_2,Próximo nível em design,Next level WIP,Próximo nivel en diseño,Niveau suivant en conception
-SHOP_ARBUSTO_DESC_3,Próximo nível em design,Next level WIP,Próximo nivel en diseño,Niveau suivant en conception
-SHOP_ARBUSTO_DESC_4,Próximo nível em design,Next level WIP,Próximo nivel en diseño,Niveau suivant en conception
+SHOP_ARBUSTO_DESC_1,"Esconde + invulnerável
+Perde aggro, zero dano
++12% atk, +5 dmg/flecha
+Mini puxa aggro","Hide + invulnerable
+Loses aggro, zero damage
++12% atk, +5 dmg/arrow
+Mini pulls aggro","Esconde + invulnerable
+Pierde aggro, cero daño
++12% atk, +5 daño/flecha
+Mini atrae aggro","Cache + invulnérable
+Perd l'aggro, zéro dégât
++12% atk, +5 dgt/flèche
+Mini attire l'aggro"
+SHOP_ARBUSTO_DESC_2,"+20% atk speed
++9 dmg/flecha","+20% atk speed
++9 dmg/arrow","+20% atk speed
++9 daño/flecha","+20% vit. atk
++9 dgt/flèche"
+SHOP_ARBUSTO_DESC_3,"2 minis (150 HP cada)
+Big senta mais rápido
+(10s ao invés de 16s)","2 minis (150 HP each)
+Big sits faster
+(10s instead of 16s)","2 minis (150 HP cada)
+Big se sienta más rápido
+(10s en lugar de 16s)","2 minis (150 PV chacun)
+Big s'assoit plus vite
+(10s au lieu de 16s)"
+SHOP_ARBUSTO_DESC_4,"+30% atk speed
++14 dmg/flecha
++5 HP por hit dentro do mato","+30% atk speed
++14 dmg/arrow
++5 HP per hit while hidden","+30% atk speed
++14 daño/flecha
++5 HP por golpe en el mato","+30% vit. atk
++14 dgt/flèche
++5 PV par coup dans le buisson"
 SHOP_MINI_MAGO_DESC_1,Invoca um macaco aliado a cada 8s,Summons an ally monkey every 8s,Invoca un mono aliado cada 8s,Invoque un singe allié toutes les 8s
 SHOP_MINI_MAGO_DESC_2,"Cd 6s, macacos +25% HP/dano/atk speed/vel","Cd 6s, monkeys +25% HP/dmg/atk speed/speed","Cd 6s, monos +25% PV/daño/atk speed/vel","Cd 6s, singes +25% PV/dégâts/vit atk/vit"
 SHOP_MINI_MAGO_DESC_3,"Invoca 2 macacos por cast, mantém buffs","Summons 2 monkeys per cast, keeps buffs","Invoca 2 monos por cast, mantiene buffs","Invoque 2 singes par cast, garde les bonus"

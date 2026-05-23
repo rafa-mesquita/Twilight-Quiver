@@ -24,6 +24,15 @@ const PLAYER_NODE_TARGET_OFFSET: Vector2 = Vector2(0, 12)
 var direction: Vector2 = Vector2.RIGHT
 # Maldição: setado pelo inseto convertido. Inverte alvo (bate em enemy, ignora player/ally).
 var is_ally_source: bool = false
+# Rose monster (boss Duskrose): cuspe rosa. rose_monster.gd seta isto antes
+# de add_child pra projétil + hit effect ganharem tint rosa em vez do verde
+# default do inseto.
+var pink_skin: bool = false
+
+# Cores do tint rosa (sprite/glow/trail/hit) — overbright pra destacar.
+const PINK_PROJ_TINT: Color = Color(1.6, 0.6, 0.95, 1.0)
+const PINK_TRAIL_TIP: Color = Color(1.5, 0.55, 0.85, 0.7)
+const PINK_TRAIL_HEAD: Color = Color(1.5, 0.55, 0.85, 0.0)
 
 
 func _ready() -> void:
@@ -34,6 +43,27 @@ func _ready() -> void:
 	# (que também ficam no layer 4 após conversão) via group check.
 	if is_ally_source:
 		collision_mask = 6  # 4 (enemy/ally body) + 2 (walls)
+	if pink_skin:
+		_apply_pink_skin()
+
+
+func _apply_pink_skin() -> void:
+	# Tinta sprite + glow + trail (com duplicate do gradient pra não vazar pros
+	# projéteis do inseto original).
+	if sprite != null:
+		sprite.modulate = PINK_PROJ_TINT
+	var glow: Node = get_node_or_null("GlowLight")
+	if glow is PointLight2D:
+		(glow as PointLight2D).color = PINK_PROJ_TINT
+	if trail != null:
+		trail.default_color = PINK_PROJ_TINT
+		if trail.gradient != null:
+			var grad: Gradient = trail.gradient.duplicate() as Gradient
+			# Gradient original tem 2 stops verdes. Substitui pelos cores rosa.
+			grad.set_color(0, PINK_TRAIL_HEAD)
+			if grad.get_point_count() > 1:
+				grad.set_color(grad.get_point_count() - 1, PINK_TRAIL_TIP)
+			trail.gradient = grad
 
 
 func set_direction(dir: Vector2) -> void:
@@ -75,6 +105,13 @@ func _on_body_entered(body: Node) -> void:
 	# Inseto original: bate em player E aliados (mini_arbusto, claudio, etc.).
 	# Player recebe damage + slow + poison; aliados recebem só damage (não têm
 	# apply_slow/apply_poison nem geralmente bem com DoT de inseto).
+	# IMPORTANTE: ignora outros inimigos (incluindo o próprio inseto que disparou).
+	# Insetos e aliados compartilham collision_layer 4, então sem este filtro o
+	# projétil morre ao spawnar dentro do corpo do próprio inseto (body_entered
+	# dispara no insect_owner antes do projétil andar 1px, cai no fallback de
+	# parede e _die() imediato — animação de attack sai mas projétil "não aparece").
+	if body.is_in_group("enemy"):
+		return
 	if body.is_in_group("player"):
 		if body.has_method("take_damage"):
 			body.take_damage(damage, "insect")
@@ -127,6 +164,10 @@ func _spawn_hit_effect() -> void:
 	if hit_effect_scene == null:
 		return
 	var fx := hit_effect_scene.instantiate()
+	# Pink skin (rose_monster): aplica modulate rosa no hit também pra coerência
+	# visual. Mesma cor do projétil.
+	if pink_skin and fx is CanvasItem:
+		(fx as CanvasItem).modulate = PINK_PROJ_TINT
 	var world := get_tree().get_first_node_in_group("world")
 	if world == null:
 		world = get_tree().current_scene

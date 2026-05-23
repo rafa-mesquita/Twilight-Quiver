@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://b4bsohp2xeuu3"
+path="res://.godot/imported/vinhas espinhocas cast or hit.mp3-ad68a8a19444969ea7c589665de7833b.mp3str"
+
+[deps]
+
+source_file="res://assets/enemies/duskrose/vinhas espinhocas cast or hit.mp3"
+dest_files=["res://.godot/imported/vinhas espinhocas cast or hit.mp3-ad68a8a19444969ea7c589665de7833b.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

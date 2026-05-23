@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://doj2u841cb0ce"
+path="res://.godot/imported/cast rosa monstro.mp3-c8c4c7949cb90df5b0e9a71177905b56.mp3str"
+
+[deps]
+
+source_file="res://assets/enemies/duskrose/cast rosa monstro.mp3"
+dest_files=["res://.godot/imported/cast rosa monstro.mp3-c8c4c7949cb90df5b0e9a71177905b56.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

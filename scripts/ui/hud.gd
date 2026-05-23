@@ -93,6 +93,7 @@ const ESQUIVANDO_ICON_WIDTH: float = 76.0
 # entrada nesse dict.
 const BOSS_NAMES: Dictionary = {
 	"mage_monkey": "MAGE MONKEY",
+	"duskrose": "DUSKROSE",
 }
 var _current_boss: Node2D = null
 
@@ -340,6 +341,14 @@ func _update_boss_hp_bar() -> void:
 				name_text = BOSS_NAMES[grp]
 				break
 		boss_name_label.text = name_text
+		# Posicionamento: Duskrose fica no TOPO do mapa, então a barra dela
+		# vai pro RODAPÉ pra não sobrepor visualmente. Outros bosses (Mage
+		# Monkey no centro) usam a posição padrão no topo da tela.
+		_position_boss_hp_bar_for(_current_boss as Node)
+		# Sync alpha com o estado atual do fade — se o player já está atrás
+		# da HUD quando a barra aparece, ela já entra translúcida (em vez de
+		# entrar opaca e só atualizar quando o player se mexer).
+		boss_hp_bar.modulate.a = _hud_alpha_target
 		boss_hp_bar.visible = true
 	if not ("hp" in _current_boss) or not ("max_hp" in _current_boss):
 		return
@@ -352,6 +361,33 @@ func _update_boss_hp_bar() -> void:
 	if mat != null:
 		mat.set_shader_parameter("fill_ratio", ratio)
 	boss_hp_label.text = "%d/%d" % [int(round(hp)), int(round(maxhp))]
+
+
+# Anchor presets pra barra de HP do boss. Default = topo da tela (offset
+# positivo do topo). Duskrose anchora no rodapé (offset negativo do bottom).
+# Largura sempre centralizada (anchor_left/right = 0.5).
+const _BOSS_BAR_TOP_OFFSET_TOP: float = 80.0
+const _BOSS_BAR_TOP_OFFSET_BOTTOM: float = 152.0
+const _BOSS_BAR_BOTTOM_OFFSET_TOP: float = -152.0  # 152px acima da base
+const _BOSS_BAR_BOTTOM_OFFSET_BOTTOM: float = -80.0  # 80px acima da base
+
+
+func _position_boss_hp_bar_for(boss: Node) -> void:
+	# Duskrose: anchora no RODAPÉ (boss tá no topo do mapa, não pode sobrepor).
+	# Resto: anchora no TOPO (default — boss tá no centro/bottom do mapa).
+	if boss == null:
+		return
+	var bottom_anchor: bool = boss.is_in_group("duskrose")
+	if bottom_anchor:
+		boss_hp_bar.anchor_top = 1.0
+		boss_hp_bar.anchor_bottom = 1.0
+		boss_hp_bar.offset_top = _BOSS_BAR_BOTTOM_OFFSET_TOP
+		boss_hp_bar.offset_bottom = _BOSS_BAR_BOTTOM_OFFSET_BOTTOM
+	else:
+		boss_hp_bar.anchor_top = 0.0
+		boss_hp_bar.anchor_bottom = 0.0
+		boss_hp_bar.offset_top = _BOSS_BAR_TOP_OFFSET_TOP
+		boss_hp_bar.offset_bottom = _BOSS_BAR_TOP_OFFSET_BOTTOM
 
 
 func _refresh_upgrade_column() -> void:
@@ -663,14 +699,27 @@ func _process(delta: float) -> void:
 	var player_screen: Vector2 = player.get_global_transform_with_canvas().origin
 	var player_size := Vector2(32, 32) * zoom
 	var player_rect := Rect2(player_screen + Vector2(-16, -32) * zoom, player_size)
-	var hud_rect: Rect2 = hud_frame.get_global_rect()
-	var new_target: float = HUD_TRANSPARENT_ALPHA if hud_rect.intersects(player_rect) else HUD_OPAQUE_ALPHA
+	# Considera intersecção com HudFrame, HpBar OU BossHpBar — player atrás de
+	# qualquer um ativa o fade translúcido. BossHpBar é especialmente importante
+	# na wave 14 (Duskrose) onde a barra desce pro rodapé e cobre área jogável.
+	var overlaps: bool = hud_frame.get_global_rect().intersects(player_rect)
+	if not overlaps and hp_bar != null:
+		overlaps = hp_bar.get_global_rect().intersects(player_rect)
+	if not overlaps and boss_hp_bar != null and boss_hp_bar.visible:
+		overlaps = boss_hp_bar.get_global_rect().intersects(player_rect)
+	var new_target: float = HUD_TRANSPARENT_ALPHA if overlaps else HUD_OPAQUE_ALPHA
 	if not is_equal_approx(new_target, _hud_alpha_target):
 		_hud_alpha_target = new_target
 		if _hud_alpha_tween != null and _hud_alpha_tween.is_valid():
 			_hud_alpha_tween.kill()
-		_hud_alpha_tween = create_tween()
+		_hud_alpha_tween = create_tween().set_parallel(true)
 		_hud_alpha_tween.tween_property(hud_frame, "modulate:a", new_target, HUD_ALPHA_FADE)
+		# Aplica o mesmo fade nas barras de HP — player vê através delas quando passar
+		# por cima (canto do mapa, cinematic, ou rodapé na wave 14).
+		if hp_bar != null:
+			_hud_alpha_tween.tween_property(hp_bar, "modulate:a", new_target, HUD_ALPHA_FADE)
+		if boss_hp_bar != null:
+			_hud_alpha_tween.tween_property(boss_hp_bar, "modulate:a", new_target, HUD_ALPHA_FADE)
 
 
 func flash_screen(color: Color = Color(0, 0, 0, 1), peak_alpha: float = 0.95, strobe_duration: float = 2.0, fade_duration: float = 1.0) -> void:
@@ -758,7 +807,17 @@ func play_boss_intro(wave_number: int) -> void:
 	var t1 := create_tween()
 	t1.tween_property(intro_label, "modulate:a", 0.0, 0.3)
 	await t1.finished
-	# Fase 3: cinematic sprite — toca sobre o overlay preto.
+	# Wave 14 (Duskrose): skipa o surgimento do gorila mage. Vai direto pro
+	# fade do overlay revelando a boss (que já tá no topo do mapa). Animação
+	# própria da Duskrose será adicionada quando estiver pronta.
+	if wave_number == 14:
+		var t_fade := create_tween()
+		t_fade.tween_property(intro_overlay, "modulate:a", 0.0, 0.6)
+		await t_fade.finished
+		intro_overlay.visible = false
+		intro_label.modulate.a = 1.0
+		return
+	# Fase 3: cinematic sprite — toca sobre o overlay preto (só wave 7).
 	var cinematic: AnimatedSprite2D = _build_boss_cinematic_sprite()
 	cinematic.play(&"surgimento")
 	var cinematic_duration: float = float(BOSS_CINEMATIC_FRAME_COUNT) / BOSS_CINEMATIC_FPS
@@ -1127,6 +1186,12 @@ const _DEATH_SOURCE_LABELS: Dictionary = {
 	"dark_ball": "HUD_DEATH_BY_DARK_BALL",
 	"dark_ball_burn": "HUD_DEATH_BY_DARK_BALL_BURN",
 	"dark_ball_venom": "HUD_DEATH_BY_DARK_BALL_VENOM",
+	"duskrose": "HUD_DEATH_BY_DUSKROSE",
+	"duskrose_smoke": "HUD_DEATH_BY_DUSKROSE_SMOKE",
+	"duskrose_vine": "HUD_DEATH_BY_DUSKROSE_VINE",
+	"duskrose_permanent_thorn": "HUD_DEATH_BY_DUSKROSE_THORN_WALL",
+	"duskrose_toxic": "HUD_DEATH_BY_DUSKROSE_TOXIC",
+	"rose_monster": "HUD_DEATH_BY_ROSE_MONSTER",
 }
 
 

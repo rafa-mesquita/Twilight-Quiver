@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bsrljdtucctsf"
+path="res://.godot/imported/duskrose dash + atack.mp3-c0ae8891244b1d7ae5300a74d11af8e5.mp3str"
+
+[deps]
+
+source_file="res://assets/enemies/duskrose/duskrose dash + atack.mp3"
+dest_files=["res://.godot/imported/duskrose dash + atack.mp3-c0ae8891244b1d7ae5300a74d11af8e5.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dagbgnf1xht2"
+path="res://.godot/imported/duskrose wave.mp3-d3021e52db41f09f661d56c28fc3ceae.mp3str"
+
+[deps]
+
+source_file="res://audios/musics/duskrose wave.mp3"
+dest_files=["res://.godot/imported/duskrose wave.mp3-d3021e52db41f09f661d56c28fc3ceae.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

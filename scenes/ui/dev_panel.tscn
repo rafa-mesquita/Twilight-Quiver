@@ -16,7 +16,7 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -400.0
-offset_top = -920.0
+offset_top = -720.0
 offset_right = -16.0
 offset_bottom = -64.0
 grow_horizontal = 0
@@ -376,109 +376,6 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 20
 text = "+1 Pai do verde e verde"
 
-[node name="StatsSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
-theme_override_constants/separation = 4
-
-[node name="StatsHeader" type="Button" parent="Content/Scroll/VBox/StatsSection"]
-custom_minimum_size = Vector2(0, 40)
-theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
-text = "[+] Stats"
-alignment = 0
-
-[node name="StatsContent" type="VBoxContainer" parent="Content/Scroll/VBox/StatsSection"]
-visible = false
-theme_override_constants/separation = 4
-
-[node name="ResetHpBtn" type="Button" parent="Content/Scroll/VBox/StatsSection/StatsContent"]
-custom_minimum_size = Vector2(0, 36)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
-text = "Reset HP"
-
-[node name="ClearBtn" type="Button" parent="Content/Scroll/VBox/StatsSection/StatsContent"]
-custom_minimum_size = Vector2(0, 36)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
-text = "Clear Enemies"
-
-[node name="AddGoldBtn" type="Button" parent="Content/Scroll/VBox/StatsSection/StatsContent"]
-custom_minimum_size = Vector2(0, 36)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
-text = "+50 coins"
-
-[node name="OpenShopBtn" type="Button" parent="Content/Scroll/VBox/StatsSection/StatsContent"]
-custom_minimum_size = Vector2(0, 36)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
-text = "Abrir Shop"
-
-[node name="FlushTelemetryBtn" type="Button" parent="Content/Scroll/VBox/StatsSection/StatsContent"]
-custom_minimum_size = Vector2(0, 36)
-theme_override_colors/font_color = Color(0.65, 0.95, 1, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
-text = "Flush Telemetria"
-
-[node name="PartyModeBtn" type="Button" parent="Content/Scroll/VBox/StatsSection/StatsContent"]
-custom_minimum_size = Vector2(0, 36)
-theme_override_colors/font_color = Color(1, 0.55, 0.85, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
-text = "🎉 Modo Festa: OFF"
-
-[node name="WavesSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
-theme_override_constants/separation = 4
-
-[node name="WavesHeader" type="Button" parent="Content/Scroll/VBox/WavesSection"]
-custom_minimum_size = Vector2(0, 40)
-theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
-text = "[+] Simular Wave"
-alignment = 0
-
-[node name="WavesContent" type="VBoxContainer" parent="Content/Scroll/VBox/WavesSection"]
-visible = false
-theme_override_constants/separation = 4
-
-[node name="StartWavesBtn" type="Button" parent="Content/Scroll/VBox/WavesSection/WavesContent"]
-custom_minimum_size = Vector2(0, 36)
-theme_override_colors/font_color = Color(0.7, 1, 0.7, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
-text = "▶ Começar Waves (wave 1)"
-
-[node name="FinishWaveBtn" type="Button" parent="Content/Scroll/VBox/WavesSection/WavesContent"]
-custom_minimum_size = Vector2(0, 36)
-theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
-text = "⏭ Finalizar Wave Atual → Shop"
-
-[node name="Wave7Btn" type="Button" parent="Content/Scroll/VBox/WavesSection/WavesContent"]
-custom_minimum_size = Vector2(0, 36)
-theme_override_colors/font_color = Color(1, 0.55, 0.45, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
-text = "Wave 7 - Boss Mage Monkey"
-
-[node name="Wave8Btn" type="Button" parent="Content/Scroll/VBox/WavesSection/WavesContent"]
-custom_minimum_size = Vector2(0, 36)
-theme_override_colors/font_color = Color(0.6, 1, 0.7, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
-text = "Wave 8 - Torre Grátis"
-
-[node name="Wave14Btn" type="Button" parent="Content/Scroll/VBox/WavesSection/WavesContent"]
-custom_minimum_size = Vector2(0, 36)
-theme_override_colors/font_color = Color(1, 0.55, 0.45, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
-text = "Wave 14 - Boss Redux"
-
 [node name="Sep" type="HSeparator" parent="Content/Scroll/VBox"]
 
 [node name="MenuBtn" type="Button" parent="Content/Scroll/VBox"]
@@ -503,3 +400,94 @@ theme_override_colors/font_color = Color(1, 0.6, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
 text = "DEV MODE ▲"
+
+[node name="WaveBar" type="PanelContainer" parent="."]
+modulate = Color(1, 1, 1, 0.85)
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -72.0
+offset_right = 16.0
+offset_bottom = -16.0
+grow_vertical = 0
+
+[node name="Row" type="HBoxContainer" parent="WaveBar"]
+theme_override_constants/separation = 6
+
+[node name="StartWavesBtn" type="Button" parent="WaveBar/Row"]
+custom_minimum_size = Vector2(0, 40)
+theme_override_colors/font_color = Color(0.7, 1, 0.7, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "▶ Wave 1"
+
+[node name="FinishWaveBtn" type="Button" parent="WaveBar/Row"]
+custom_minimum_size = Vector2(0, 40)
+theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "⏭ Finish Wave"
+
+[node name="Wave7Btn" type="Button" parent="WaveBar/Row"]
+custom_minimum_size = Vector2(0, 40)
+theme_override_colors/font_color = Color(1, 0.55, 0.45, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "Boss W7"
+
+[node name="Wave14Btn" type="Button" parent="WaveBar/Row"]
+custom_minimum_size = Vector2(0, 40)
+theme_override_colors/font_color = Color(1, 0.55, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "Boss W14"
+
+[node name="UtilityBar" type="PanelContainer" parent="."]
+modulate = Color(1, 1, 1, 0.85)
+anchors_preset = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 16.0
+offset_bottom = 16.0
+
+[node name="Row" type="HBoxContainer" parent="UtilityBar"]
+theme_override_constants/separation = 6
+
+[node name="AddGoldBtn" type="Button" parent="UtilityBar/Row"]
+custom_minimum_size = Vector2(0, 36)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "+50 coins"
+
+[node name="OpenShopBtn" type="Button" parent="UtilityBar/Row"]
+custom_minimum_size = Vector2(0, 36)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "Abrir Shop"
+
+[node name="ResetHpBtn" type="Button" parent="UtilityBar/Row"]
+custom_minimum_size = Vector2(0, 36)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "Reset HP"
+
+[node name="ClearBtn" type="Button" parent="UtilityBar/Row"]
+custom_minimum_size = Vector2(0, 36)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "Clear Enemies"
+
+[node name="PartyModeBtn" type="Button" parent="UtilityBar/Row"]
+custom_minimum_size = Vector2(0, 36)
+theme_override_colors/font_color = Color(1, 0.55, 0.85, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "🎉 Festa: OFF"
+
+[node name="FlushTelemetryBtn" type="Button" parent="UtilityBar/Row"]
+custom_minimum_size = Vector2(0, 36)
+theme_override_colors/font_color = Color(0.65, 0.95, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "Flush Telemetria"
