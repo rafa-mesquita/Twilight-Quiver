@@ -144,8 +144,56 @@ func _spawn_mushroom() -> void:
 	var is_damage: bool = lvl >= 2 and (_drop_counter % 2 == 1)
 	if "is_damage_variant" in mush:
 		mush.is_damage_variant = is_damage
-	_get_world().add_child(mush)
-	mush.global_position = global_position
+	# Wave 14: wave14_map é um Node2D y_sort_enabled separado da Entities
+	# (world group). Pra cogumelo y-sort com o poste/cerca/etc. do mapa, ele
+	# precisa ser FILHO do wave14_map. Senão renderiza acima/abaixo do mapa
+	# inteiro (não respeita ordering com props individuais).
+	var spawn_parent: Node = _get_world()
+	for n in get_tree().get_nodes_in_group("duskrose_decoration"):
+		if n is Node2D and (n as Node).scene_file_path == "res://scenes/world/wave14_map.tscn":
+			spawn_parent = n
+			break
+	spawn_parent.add_child(mush)
+	# Posição: tenta a posição da capivara; se cair dentro de fumaça letal da
+	# Duskrose, desloca pro ponto seguro mais próximo (anel de 60px ao redor).
+	mush.global_position = _find_safe_mushroom_position(global_position)
+
+
+# Raio efetivo da nuvem de fumaça (CircleShape2D radius=32 no smoke.tscn) +
+# pequena margem pra cogumelo não pegar dano logo no spawn.
+const _SMOKE_AVOID_RADIUS: float = 38.0
+const _SAFE_SEARCH_OFFSETS: Array[Vector2] = [
+	Vector2(60, 0), Vector2(-60, 0), Vector2(0, 60), Vector2(0, -60),
+	Vector2(42, 42), Vector2(-42, 42), Vector2(42, -42), Vector2(-42, -42),
+	Vector2(90, 0), Vector2(-90, 0), Vector2(0, 90), Vector2(0, -90),
+]
+
+
+func _find_safe_mushroom_position(base: Vector2) -> Vector2:
+	# Coleta todas as fumaças vivas. Se base não está em nenhuma, usa base mesmo.
+	# Senão, varre offsets predefinidos e retorna o primeiro safe.
+	var smokes: Array = get_tree().get_nodes_in_group("duskrose_smoke")
+	if smokes.is_empty():
+		return base
+	if _is_position_safe(base, smokes):
+		return base
+	for off in _SAFE_SEARCH_OFFSETS:
+		var candidate: Vector2 = base + off
+		if _is_position_safe(candidate, smokes):
+			return candidate
+	# Fallback: nenhum spot ao redor está limpo — usa o original (cogumelo
+	# vai tomar dano, mas é melhor que não spawnar nada).
+	return base
+
+
+func _is_position_safe(pos: Vector2, smokes: Array) -> bool:
+	var r_sq: float = _SMOKE_AVOID_RADIUS * _SMOKE_AVOID_RADIUS
+	for s in smokes:
+		if not is_instance_valid(s) or not (s is Node2D):
+			continue
+		if (s as Node2D).global_position.distance_squared_to(pos) <= r_sq:
+			return false
+	return true
 
 
 func _is_wave_active() -> bool:

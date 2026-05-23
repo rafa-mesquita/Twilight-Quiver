@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://brux3207so0gt"
+path="res://.godot/imported/melee atack sound.mp3-ce800f0a7f1096b67361576112bcadf5.mp3str"
+
+[deps]
+
+source_file="res://assets/enemies/duskrose/melee atack sound.mp3"
+dest_files=["res://.godot/imported/melee atack sound.mp3-ce800f0a7f1096b67361576112bcadf5.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

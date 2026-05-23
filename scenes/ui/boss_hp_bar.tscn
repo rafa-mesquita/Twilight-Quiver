@@ -8,8 +8,8 @@
 shader = ExtResource("3_shader")
 shader_parameter/cap_tex = ExtResource("1_frame")
 shader_parameter/cap_uv_scale = Vector2(0.25, 1)
-shader_parameter/fill_color = Color(0.6439456, 0.22354475, 0.8935888, 1)
-shader_parameter/bg_color = Color(0.18, 0.18, 0.2, 1)
+shader_parameter/fill_color = Color(0.6439456, 0.22354475, 0.8935888, 0.55)
+shader_parameter/bg_color = Color(0.18, 0.18, 0.2, 0.45)
 shader_parameter/bar_width = 240.0
 shader_parameter/bar_height = 24.0
 shader_parameter/cap_width = 10.0

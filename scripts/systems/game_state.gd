@@ -9,6 +9,15 @@ const _SETTINGS_PATH: String = "user://settings.cfg"
 # pra o desenvolvedor testar inimigos/upgrades isoladamente.
 var dev_mode: bool = false
 
+# Dev godmode: player ignora todo dano enquanto true (checado em player.take_damage).
+# Persiste entre scene reloads (útil pra testar runs longas sem morrer).
+var dev_godmode: bool = false
+
+# Snapshot de upgrades pra "renascer com os mesmos" (botão do dev panel).
+# Mapa upgrade_id → nível alvo. Aplicado pelo dev_panel após o player carregar
+# na nova run (cena recarregada), depois limpado. Vazio = sem respawn pendente.
+var pending_respawn_upgrades: Dictionary = {}
+
 # Overlay de FPS (criado lazy quando _ensure_fps_overlay roda a primeira vez).
 var _fps_overlay: CanvasLayer = null
 var _fps_label: Label = null

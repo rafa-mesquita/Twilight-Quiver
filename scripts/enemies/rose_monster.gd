@@ -13,7 +13,7 @@ extends CharacterBody2D
 # tank tendo prioridade incondicional (puxa aggro).
 
 @export var speed: float = 25.0
-@export var max_hp: float = 30.0
+@export var max_hp: float = 21.0
 @export var preferred_distance: float = 110.0
 @export var distance_tolerance: float = 12.0
 @export var detection_range: float = 240.0
@@ -34,6 +34,17 @@ const ATTACK_SOUND_PATH: String = "res://assets/enemies/duskrose/atack rosa mosn
 @export var damage_sound: AudioStream
 @export var damage_sound_volume_db: float = -18.0
 @export var knockback_decay: float = 350.0
+# Modificador final aplicado em CIMA do damage_mult da wave — usado pra
+# rebalancear o projétil/poison da rose_monster. 0.56 = 0.7 × 0.8 (nerf de
+# 30% original + outros 20% adicional após playtesting).
+# Multiplica `damage` e `poison_damage_total` do projétil antes de spawnar.
+@export var output_damage_mult: float = 0.56
+# Heart drop (Mestre da Cura): rose_monster é minion do boss então passa
+# pelo BOSS_CONTEXT_DROP_MULTIPLIER do HeartDrop (× 0.75). Adicionalmente
+# rebaixado por `heart_drop_chance_multiplier` pra não virar fountain
+# durante a wave 14 com várias rosas spawnadas por cast.
+@export var heart_scene: PackedScene
+@export var heart_drop_chance_multiplier: float = 0.45
 @export var spawn_in_duration: float = 0.45
 @export var separation_radius: float = 14.0
 @export var separation_strength: float = 25.0
@@ -162,7 +173,14 @@ func _pick_target() -> Node2D:
 				nearest = e
 				best = d
 		return nearest
-	# Tank_ally tem prioridade incondicional sobre player (mesmo pattern do insect).
+	# Rose_monster prioriza PLAYER (Duskrose foca player, minions seguem mesma
+	# lógica). Tank_ally só vira target se player estiver invisível/morto. Isso
+	# difere do insect/mage_enemy padrão que dá prioridade incondicional pro
+	# tank_ally — aqui o player é o alvo número 1.
+	var player_alive: bool = player != null and is_instance_valid(player) and not (("is_dead" in player) and player.is_dead)
+	var player_visible: bool = player_alive and not (player as Node).is_in_group("bush_hidden")
+	if player_visible:
+		return player
 	var nearest_tank: Node2D = null
 	var nearest_tank_dist: float = INF
 	for t in get_tree().get_nodes_in_group("tank_ally"):
@@ -174,10 +192,6 @@ func _pick_target() -> Node2D:
 			nearest_tank_dist = d
 	if nearest_tank != null:
 		return nearest_tank
-	var player_alive: bool = player != null and is_instance_valid(player) and not (("is_dead" in player) and player.is_dead)
-	var player_visible: bool = player_alive and not (player as Node).is_in_group("bush_hidden")
-	if player_visible:
-		return player
 	var nearest_tower: Node2D = null
 	var nearest_dist: float = INF
 	for s in get_tree().get_nodes_in_group("structure"):
@@ -201,10 +215,14 @@ func _fire_projectile() -> void:
 	if projectile_scene == null:
 		return
 	var proj := projectile_scene.instantiate()
-	if "damage" in proj and damage_mult != 1.0:
-		proj.damage = proj.damage * damage_mult
-	if "poison_damage_total" in proj and damage_mult != 1.0:
-		proj.poison_damage_total = proj.poison_damage_total * damage_mult
+	# Combina o damage_mult da wave com o output_damage_mult local
+	# (rebalance de -30%). Aplicado sempre, mesmo quando damage_mult==1.0,
+	# pra o nerf valer também em testes/wave 1.
+	var final_mult: float = damage_mult * output_damage_mult
+	if "damage" in proj:
+		proj.damage = proj.damage * final_mult
+	if "poison_damage_total" in proj:
+		proj.poison_damage_total = proj.poison_damage_total * final_mult
 	if is_curse_ally and "is_ally_source" in proj:
 		proj.is_ally_source = true
 	# Skin rosa: projétil + trail + glow + hit effect ficam tintados pra combinar
@@ -231,11 +249,21 @@ func take_damage(amount: float) -> void:
 	_play_damage_sound(1.5 if died else 0.7)
 	if died:
 		if not is_curse_ally:
+			# Maldição lv2+: chance de virar aliada profana em vez de morrer.
+			# Helper checa CurseDebuff ativo + curse_convert_chance do player.
+			# Se converteu, NÃO faz queue_free nem drops.
+			if CurseAllyHelper.try_convert_on_death(self):
+				return
 			var p2 := get_tree().get_first_node_in_group("player")
 			if p2 != null and p2.has_method("notify_enemy_killed"):
 				p2.notify_enemy_killed()
 		_spawn_kill_effect()
 		_spawn_death_silhouette()
+		# Heart drop com chance reduzida: pré-filtro local pelo multiplier
+		# antes do try_drop fazer seu próprio roll de chance. Curse ally
+		# (rose roxa convertida) não dropa — anti farm.
+		if not is_curse_ally and heart_scene != null and randf() <= heart_drop_chance_multiplier:
+			HeartDrop.try_drop(_get_world(), heart_scene, global_position, self)
 		queue_free()
 
 

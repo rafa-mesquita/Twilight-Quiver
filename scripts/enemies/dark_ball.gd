@@ -42,6 +42,11 @@ const DASH_SOUND_DURATION: float = 2.5
 @export var gold_scene: PackedScene
 @export var gold_drop_chance: float = 0.27
 @export var heart_scene: PackedScene
+# Modificador local da chance de drop de heart — aplicado como pré-roll antes
+# do try_drop (que tem sua própria chance + multiplier de contexto boss).
+# Default 1.0 = sem modificação. Duskrose seta menor (~0.4) pros dark balls
+# invocados não viraram fountain de coração na boss fight.
+@export var heart_drop_chance_multiplier: float = 1.0
 @export var gold_drop_min: int = 1
 @export var gold_drop_max: int = 2
 @export var separation_radius: float = 14.0
@@ -480,7 +485,10 @@ func take_damage(amount: float) -> void:
 		if not is_curse_ally:
 			if CurseAllyHelper.try_convert_on_death(self):
 				return
-			HeartDrop.try_drop(_get_world(), heart_scene, global_position, self)
+			# Pré-roll pelo multiplier local antes do try_drop (que faz seu
+			# próprio roll de chance baseado em life_steal level).
+			if heart_scene != null and randf() <= heart_drop_chance_multiplier:
+				HeartDrop.try_drop(_get_world(), heart_scene, global_position, self)
 			var p2 := get_tree().get_first_node_in_group("player")
 			if p2 != null and p2.has_method("notify_enemy_killed"):
 				p2.notify_enemy_killed()

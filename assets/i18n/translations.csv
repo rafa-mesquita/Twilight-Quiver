@@ -124,7 +124,13 @@ HUD_DEATH_BY_DUSKROSE_SMOKE,Morto pela nuvem de veneno da Duskrose,Killed by Dus
 HUD_DEATH_BY_DUSKROSE_VINE,Morto pelas vinhas espinhosas da Duskrose,Killed by Duskrose's thorny vines,Muerto por las espinas de Duskrose,Tué par les ronces de Duskrose
 HUD_DEATH_BY_DUSKROSE_THORN_WALL,Morto pela barreira de espinhos,Killed by the thorn wall,Muerto por la muralla de espinas,Tué par le mur d'épines
 HUD_DEATH_BY_DUSKROSE_TOXIC,Morto pelo véu tóxico da Duskrose,Killed by Duskrose's toxic veil,Muerto por el velo tóxico de Duskrose,Tué par le voile toxique de Duskrose
+HUD_DEATH_BY_DUSKROSE_PROJECTILE,Morto pelos projéteis da Duskrose,Killed by Duskrose's projectiles,Muerto por los proyectiles de Duskrose,Tué par les projectiles de Duskrose
+HUD_DEATH_BY_DUSKROSE_DASH,Morto pelo investida da Duskrose,Killed by Duskrose's lunge,Muerto por la embestida de Duskrose,Tué par la charge de Duskrose
 HUD_DEATH_BY_ROSE_MONSTER,Morto pelo cuspe da Rosa Monstro,Killed by Rose Monster's spit,Muerto por el escupitajo de la Rosa Monstruo,Tué par le crachat de Rose Monstre
+HUD_HINT_MOVE,Movimentar,Move,Moverse,Se déplacer
+HUD_HINT_ATTACK,Atirar,Shoot,Disparar,Tirer
+HUD_HINT_SKILL_SPACE,Habilidade,Ability,Habilidad,Compétence
+HUD_HINT_SKILL_Q,Habilidade,Ability,Habilidad,Compétence
 HUD_DEATH_RESTART,Jogar Novamente,Play Again,Jugar de nuevo,Rejouer
 HUD_DEATH_MENU,Voltar ao Menu,Back to Menu,Volver al menú,Retour au menu
 HUD_DEATH_STATS,"Tempo: %s
@@ -794,3 +800,4 @@ PLAYER_QUEST_GINGERALE,Mate 3000 inimigos no total,Kill 3000 enemies total,Mata 
 PLAYER_QUEST_BLUEY,Derrote o boss Mage Monkey (raid 7),Defeat the Mage Monkey boss (raid 7),Derrota al jefe Mago Mono (oleada 7),Vainquez le boss Singe Mage (vague 7)
 PLAYER_QUEST_LINKED,Renasça 200 macaquinhos com o disparo profano,Reincarnate 200 monkeys with the unholy shot,Renace 200 monitos con el disparo profano,Faites renaître 200 petits singes avec le tir profane
 PLAYER_QUEST_HAWK,Alcance a raid 20,Reach raid 20,Alcanza el raid 20,Atteignez le raid 20
+PLAYER_QUEST_ROSA_ONYX,Derrote a Duskrose,Defeat Duskrose,Derrota a Duskrose,Vaincre Duskrose

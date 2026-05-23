@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://c0fhcseis1qub" path="res://scenes/ui/hp_bar.tscn" id="5_hpbar"]
 [ext_resource type="PackedScene" path="res://scenes/effects/damage_number.tscn" id="6_dmgnum"]
 [ext_resource type="PackedScene" path="res://scenes/effects/kill_effect.tscn" id="7_kill"]
+[ext_resource type="PackedScene" path="res://scenes/pickups/heart.tscn" id="8_heart"]
 
 [sub_resource type="AtlasTexture" id="A_atk_0"]
 atlas = ExtResource("2_sheet")
@@ -89,6 +90,7 @@ projectile_scene = ExtResource("3_proj")
 damage_effect_scene = ExtResource("4_dmg")
 damage_number_scene = ExtResource("6_dmgnum")
 kill_effect_scene = ExtResource("7_kill")
+heart_scene = ExtResource("8_heart")
 
 [node name="Shadow" type="Node2D" parent="." unique_id=253119133]
 

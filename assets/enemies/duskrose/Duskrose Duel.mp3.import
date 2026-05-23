@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://d0sebwe6ie2kf"
+path="res://.godot/imported/Duskrose Duel.mp3-2bb8263b15fc0aad65a8ee037085aa29.mp3str"
+
+[deps]
+
+source_file="res://assets/enemies/duskrose/Duskrose Duel.mp3"
+dest_files=["res://.godot/imported/Duskrose Duel.mp3-2bb8263b15fc0aad65a8ee037085aa29.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -71,6 +71,10 @@ func _apply_tick() -> void:
 		if bool(crit_d.get("crit", false)):
 			CritFeedback.mark_next_hit_crit(parent)
 	var was_alive: bool = (not ("hp" in parent)) or float(parent.hp) > 0.0
+	# Marca o tick como DoT (alvo lê e pode aplicar modificadores próprios —
+	# Duskrose, por ex, reduz DoT em 30%). Set/remove é atômico no GDScript
+	# single-threaded.
+	parent.set_meta("_dot_damage_pending", true)
 	parent.take_damage(tick_dmg)
 	_notify_player_dmg_kill(tick_dmg, source_id, was_alive, parent)
 	_apply_splash(parent as Node2D, tick_dmg)

@@ -601,6 +601,9 @@ func _apply_poison_tick(amount: float) -> void:
 	# _poison_plays_sound = true (dark_ball), toca damage_audio a cada tick.
 	if is_dead or amount <= 0.0:
 		return
+	# Dev godmode: ignora ticks de poison/burn (mesmo gate da take_damage).
+	if GameState.dev_godmode:
+		return
 	hp = maxf(hp - amount, 0.0)
 	# Mesmo clamp da take_damage — ticks de poison costumam ser fracionários
 	# (dps * tick_interval com float), então sub-1 HP é morte certa.
@@ -3000,6 +3003,9 @@ func reset_all_cooldowns() -> void:
 
 func take_damage(amount: float, source_id: String = "") -> void:
 	if is_dead:
+		return
+	# Dev godmode: ignora dano (toggle no DevPanel). Persiste em GameState.
+	if GameState.dev_godmode:
 		return
 	# Escondido no Pai do Verde / Verde: invulnerável a TODO dano (direto, AoE,
 	# projétil em voo, DoT/burn/poison/curse já ativos). O aggro já é gerido por

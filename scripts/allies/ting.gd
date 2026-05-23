@@ -147,6 +147,14 @@ func _find_combat_spot() -> Vector2:
 	# pelo boss e pra torreta ficar do lado seguro.
 	var boss: Node2D = _find_boss()
 	if boss != null:
+		# Duskrose: patrulha horizontal no topo. Coloca a torre no CENTRO do
+		# patrol_x, abaixo dela em distância tal que o range (180) cubra os dois
+		# extremos da patrulha (~160px de meio-largura). 80px abaixo garante
+		# que mesmo nos cantos da patrulha o boss fica em range.
+		if boss.is_in_group("duskrose") and "patrol_x_min" in boss and "patrol_x_max" in boss and "patrol_y" in boss:
+			var patrol_center_x: float = (float(boss.patrol_x_min) + float(boss.patrol_x_max)) * 0.5
+			var jitter_x: float = randf_range(-15.0, 15.0)
+			return _clamp_to_bounds(Vector2(patrol_center_x + jitter_x, float(boss.patrol_y) + 80.0))
 		var to_player: Vector2 = player_pos - boss.global_position
 		var dir_off: Vector2
 		if to_player.length_squared() < 1.0:

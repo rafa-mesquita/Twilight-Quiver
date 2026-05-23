@@ -75,7 +75,7 @@ const WAVE14_HIDE_GROUP: String = "hide_wave14"
 # capturado no _ready (não precisa hardcoded aqui).
 @export var boss_music: AudioStream = preload("res://audios/musics/monkey mage wave.mp3")
 # Música da wave 14 (Duskrose) — jazz tranquilo, classe.
-@export var duskrose_music: AudioStream = preload("res://audios/musics/duskrose wave.mp3")
+@export var duskrose_music: AudioStream = preload("res://assets/enemies/duskrose/Duskrose Duel.mp3")
 # Trilha alternativa pras waves 4-5-6 e 12-13. Loop forçado em runtime.
 @export var corrupted_void_music: AudioStream = preload("res://audios/musics/Level 4 - 5 -6/Corrupted Void Gate.mp3")
 # Boss redux dropa MAIS gold pra compensar a perda dos drops dos minions
@@ -623,10 +623,10 @@ func _spawn_one(type_key: String) -> void:
 		# normal pra ficar mais forte.
 		if wave_number == 7 and type_key == "mage_monkey" and "max_hp" in enemy:
 			enemy.max_hp = 3000.0
-		# Override pro boss da wave 14 (Duskrose): HP fixo 8500 pra ficar 2,5–3×
-		# mais tough que o boss da wave 7 (3000 HP).
+		# Override pro boss da wave 14 (Duskrose): HP fixo 5500 (ajustado pelo
+		# balance após adicionar dash + double dash + 2× dmg em melee).
 		if wave_number == boss_redux_wave and type_key == "duskrose" and "max_hp" in enemy:
-			enemy.max_hp = 8500.0
+			enemy.max_hp = 5500.0
 	# Wave 14 boss (redux): drops escalam pra compensar a perda de drops dos
 	# minions + a dificuldade extra. Multiplicador maior que o normal de
 	# scaling porque tem ~16-18 minions a menos contribuindo gold.
@@ -1514,9 +1514,9 @@ func _prespawn_boss_wave_entities() -> void:
 					enemy.heart_scene = null
 			if wave_number != 7 or type_key == "mage_monkey":
 				_apply_wave_scaling(enemy)
-				# Override pro boss Duskrose (wave 14): HP fixo 8500.
+				# Override pro boss Duskrose (wave 14): HP fixo 5500.
 				if wave_number == boss_redux_wave and type_key == "duskrose" and "max_hp" in enemy:
-					enemy.max_hp = 8500.0
+					enemy.max_hp = 5500.0
 			if wave_number == boss_redux_wave and (type_key == "mage_monkey" or type_key == "duskrose") and BOSS_REDUX_GOLD_MULT > 1.0:
 				if "gold_drop_min" in enemy:
 					enemy.gold_drop_min = int(round(float(enemy.gold_drop_min) * BOSS_REDUX_GOLD_MULT))

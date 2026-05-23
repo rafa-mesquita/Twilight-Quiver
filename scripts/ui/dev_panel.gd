@@ -80,6 +80,12 @@ func _ready() -> void:
 	# Stats secundários na UtilityBar.
 	$UtilityBar/Row/FlushTelemetryBtn.pressed.connect(_flush_telemetry)
 	$UtilityBar/Row/PartyModeBtn.pressed.connect(_toggle_party_mode)
+	$UtilityBar/Row/RespawnSameUpgradesBtn.pressed.connect(_respawn_same_upgrades)
+	$UtilityBar/Row/GodmodeBtn.pressed.connect(_toggle_godmode)
+	_refresh_godmode_label()
+	# Aplica snapshot de upgrades pendente (se botão "Renascer" foi clicado na
+	# run anterior). Defer pra rodar APÓS o player carregar na nova cena.
+	_apply_pending_respawn_upgrades.call_deferred()
 	_refresh_party_mode_label()
 	$Content/Scroll/VBox/MenuBtn.pressed.connect(_back_to_menu)
 	# Refresh inicial após o player estar pronto pra ler níveis atuais.
@@ -287,6 +293,76 @@ func _spawn_claudio_druida_at_player() -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	if player != null and player.has_method("apply_upgrade"):
 		player.apply_upgrade("claudio_druida")
+
+
+# IDs de todos os upgrades trackados pelo player.get_upgrade_count — usado pra
+# fazer snapshot completo no respawn (inclui claudio_druida que não está em
+# UPGRADE_BTNS porque tem botão de spawn próprio).
+const _ALL_UPGRADE_IDS: Array[String] = [
+	"hp", "armor", "damage", "perfuracao", "attack_speed", "multi_arrow",
+	"double_arrows", "chain_lightning", "move_speed", "life_steal",
+	"fire_arrow", "curse_arrow", "ice_arrow", "claudio_druida", "leno",
+	"capivara_joe", "ting", "arbusto", "mini_mago", "gold_magnet",
+	"dash", "esquivando", "ricochet_arrow", "graviton", "boomerang",
+	"tiger_claws", "critical_chance",
+]
+
+
+func _toggle_godmode() -> void:
+	GameState.dev_godmode = not GameState.dev_godmode
+	_refresh_godmode_label()
+
+
+func _refresh_godmode_label() -> void:
+	var btn: Button = $UtilityBar/Row/GodmodeBtn
+	if btn == null:
+		return
+	if GameState.dev_godmode:
+		btn.text = "Vida Infinita: ON"
+		btn.add_theme_color_override("font_color", Color(0.4, 1.0, 0.5, 1))
+	else:
+		btn.text = "Vida Infinita: OFF"
+		btn.add_theme_color_override("font_color", Color(0.6, 1.0, 0.65, 1))
+
+
+func _respawn_same_upgrades() -> void:
+	# Snapshot dos upgrades atuais do player → guarda em GameState (persiste
+	# entre cenas) → recarrega main.tscn. Dev panel da nova run aplica o
+	# snapshot via _apply_pending_respawn_upgrades.
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not player.has_method("get_upgrade_count"):
+		return
+	var snapshot: Dictionary = {}
+	for upgrade_id in _ALL_UPGRADE_IDS:
+		var lvl: int = player.get_upgrade_count(upgrade_id)
+		if lvl > 0:
+			snapshot[upgrade_id] = lvl
+	GameState.pending_respawn_upgrades = snapshot
+	get_tree().reload_current_scene()
+
+
+func _apply_pending_respawn_upgrades() -> void:
+	if GameState.pending_respawn_upgrades.is_empty():
+		return
+	# Espera o player aparecer no tree (até 60 frames ~= 1s a 60fps). Yield com
+	# await pra não bloquear o frame nem causar loop infinito de call_deferred.
+	var player: Node = null
+	for attempt in 60:
+		player = get_tree().get_first_node_in_group("player")
+		if player != null and player.has_method("apply_upgrade"):
+			break
+		await get_tree().process_frame
+	if player == null or not player.has_method("apply_upgrade"):
+		# Player nunca apareceu — limpa pra não vazar pra próxima run.
+		GameState.pending_respawn_upgrades.clear()
+		return
+	var snapshot: Dictionary = GameState.pending_respawn_upgrades.duplicate()
+	GameState.pending_respawn_upgrades.clear()
+	for upgrade_id in snapshot.keys():
+		var target_level: int = int(snapshot[upgrade_id])
+		for i in target_level:
+			player.apply_upgrade(upgrade_id)
+	_refresh_upgrade_buttons()
 
 
 func _apply_upgrade(upgrade_id: String) -> void:

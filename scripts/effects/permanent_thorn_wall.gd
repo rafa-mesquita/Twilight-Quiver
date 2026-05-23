@@ -29,6 +29,9 @@ extends Area2D
 @export var tick_interval: float = 0.5
 # Stun ao tocar os espinhos (mesma mecânica das vinhas verticais da boss).
 @export var thorn_stun_duration: float = 3.0
+# Tick separado pra aliados (mesma lógica do smoke). Aliados têm layer 0, então
+# precisam de point-in-rect check em vez de Area2D overlap.
+@export var ally_tick_interval: float = 0.2
 # Cores.
 @export var purple_tint: Color = Color(1.5, 0.5, 1.3, 1.0)
 
@@ -55,6 +58,7 @@ var _player_in_toxic: bool = false
 var _player_ref: Node2D = null
 var _thorn_tick_accum: float = 0.0
 var _toxic_tick_accum: float = 0.0
+var _ally_tick_accum: float = 0.0
 
 
 func _ready() -> void:
@@ -171,20 +175,45 @@ func _build_toxic_area() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if _player_ref == null or not is_instance_valid(_player_ref):
-		return
-	if _player_in_thorn:
-		_thorn_tick_accum += delta
-		while _thorn_tick_accum >= tick_interval:
-			_thorn_tick_accum -= tick_interval
-			if _player_ref.has_method("take_damage"):
-				_player_ref.take_damage(thorn_damage_per_tick, "duskrose_permanent_thorn")
-	if _player_in_toxic:
-		_toxic_tick_accum += delta
-		while _toxic_tick_accum >= tick_interval:
-			_toxic_tick_accum -= tick_interval
-			if _player_ref.has_method("take_damage"):
-				_player_ref.take_damage(toxic_damage_per_tick, "duskrose_toxic")
+	# Player ticks (via overlap state).
+	if _player_ref != null and is_instance_valid(_player_ref):
+		if _player_in_thorn:
+			_thorn_tick_accum += delta
+			while _thorn_tick_accum >= tick_interval:
+				_thorn_tick_accum -= tick_interval
+				if _player_ref.has_method("take_damage"):
+					_player_ref.take_damage(thorn_damage_per_tick, "duskrose_permanent_thorn")
+		if _player_in_toxic:
+			_toxic_tick_accum += delta
+			while _toxic_tick_accum >= tick_interval:
+				_toxic_tick_accum -= tick_interval
+				if _player_ref.has_method("take_damage"):
+					_player_ref.take_damage(toxic_damage_per_tick, "duskrose_toxic")
+	# Ally ticks (via group iteration + point-in-rect, mesma técnica do smoke).
+	# Roda independente do player. Pega Claudio, Leno, Capivara, Ting, Mini
+	# Mago + monkey summon (todos no grupo "ally"). Garante que ninguém
+	# atravessa a área restrita da Duskrose sem consequência.
+	_ally_tick_accum += delta
+	while _ally_tick_accum >= ally_tick_interval:
+		_ally_tick_accum -= ally_tick_interval
+		_apply_ally_tick()
+
+
+func _apply_ally_tick() -> void:
+	# Dano por tick escalado pela frequência (mantém DPS equivalente ao do player).
+	var thorn_dmg: float = thorn_damage_per_tick * (ally_tick_interval / tick_interval)
+	var toxic_dmg: float = toxic_damage_per_tick * (ally_tick_interval / tick_interval)
+	# Rects em local coords (mesma origem dos collisions construídos em build_*).
+	var thorn_rect: Rect2 = Rect2(0.0, 0.0, area_width, thorn_collision_height)
+	var toxic_rect: Rect2 = Rect2(0.0, -toxic_extend_up, area_width, toxic_extend_up)
+	for ally in get_tree().get_nodes_in_group("ally"):
+		if not is_instance_valid(ally) or not (ally is Node2D) or not ally.has_method("take_damage"):
+			continue
+		var local_pos: Vector2 = to_local((ally as Node2D).global_position)
+		if thorn_rect.has_point(local_pos):
+			ally.take_damage(thorn_dmg)
+		elif toxic_rect.has_point(local_pos):
+			ally.take_damage(toxic_dmg)
 
 
 func _on_thorn_entered(body: Node) -> void:

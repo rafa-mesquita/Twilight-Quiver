@@ -94,6 +94,12 @@ const SKIN_QUESTS: Dictionary = {
 		"label": "PLAYER_QUEST_HAWK",
 		"hidden": false,
 	},
+	"Rosa_Onyx": {
+		"type": "boss_killed",
+		"value": "duskrose",
+		"label": "PLAYER_QUEST_ROSA_ONYX",
+		"hidden": false,
+	},
 }
 
 # Stats persistentes em [progress]. Chaves usadas pelo sistema.

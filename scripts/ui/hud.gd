@@ -22,6 +22,15 @@ const MOVE_TO_CENTER_DURATION: float = 0.25
 @onready var unlock_name_label: Label = $DeathTopLayer/UnlockPanel/Margin/VBox/UnlockName
 @onready var unlock_quest_label: Label = $DeathTopLayer/UnlockPanel/Margin/VBox/UnlockQuestLabel
 @onready var tower_alert: Control = $TowerAlertIndicator
+@onready var control_hints_container: VBoxContainer = $ControlHintsContainer
+
+# Hints de controle já exibidos nesta run — cada um aparece UMA vez pra não
+# encher a tela em ressubmissões. Reset implícito ao reiniciar o jogo.
+var _control_hints_shown: Dictionary = {
+	"basics": false,   # WASD + Click no início
+	"space": false,    # Dash/Esquivando destravados
+	"q": false,        # Elemental skill destravada (fogo/chain/curse/ice)
+}
 
 # Leaderboard: auto-submit silencioso em build de release. Cliente HTTP é
 # instanciado lazy quando player morre (em release). Em debug, nada é enviado.
@@ -29,6 +38,11 @@ const _LEADERBOARD_CLIENT := preload("res://scripts/systems/leaderboard_client.g
 const _SCORE_CALC := preload("res://scripts/systems/score_calc.gd")
 const _PLAYER_PREVIEW_SCENE: PackedScene = preload("res://scenes/ui/player_preview.tscn")
 const _SETTINGS_PATH: String = "user://settings.cfg"
+const _CONTROL_HINT_SCENE: PackedScene = preload("res://scenes/ui/control_hint.tscn")
+const _CONTROL_TEX_WASD: Texture2D = preload("res://assets/Hud/control_wasd.png")
+const _CONTROL_TEX_CLICK: Texture2D = preload("res://assets/Hud/control_click.png")
+const _CONTROL_TEX_SPACE: Texture2D = preload("res://assets/Hud/control_space.png")
+const _CONTROL_TEX_Q: Texture2D = preload("res://assets/Hud/control_q.png")
 var _leaderboard_client: Node = null
 
 # Tracking pra exibir indicador quando torre sofre ataque off-screen
@@ -45,6 +59,13 @@ const PROGRESS_THRESHOLDS: Array[int] = [0, 2, 20, 40, 50, 65, 75, 85, 100]
 const HUD_TRANSPARENT_ALPHA: float = 0.4
 const HUD_OPAQUE_ALPHA: float = 1.0
 const HUD_ALPHA_FADE: float = 0.15
+# Boss bar ancorada no rodapé (Duskrose) ocupa área jogável. Frame/texto ficam
+# 100% opacos (look HUD normal), só o FILL (preenchimento colorido) é semi-
+# transparente — controlado via shader `fill_color.a` no boss_hp_bar.tscn.
+# Estas constantes aqui mantêm a interface antiga mas resolvem pra 1.0 (sem
+# fade global) — manter pra retrocompatibilidade dos call sites.
+const BOSS_BAR_BOTTOM_OPAQUE_ALPHA: float = 1.0
+const BOSS_BAR_BOTTOM_TRANSPARENT_ALPHA: float = 1.0
 # Scale aplicado em runtime pra HudFrame não ocupar o editor (45×145 nativo).
 # Tunable — se ajustar via HUD editor e fizer "Print Values", trocar este valor aqui.
 const HUD_RUNTIME_SCALE: Vector2 = Vector2(3, 3)
@@ -186,6 +207,7 @@ const BAR_FILL_WIDTH: float = 330.0
 
 var _hud_alpha_target: float = HUD_OPAQUE_ALPHA
 var _hud_alpha_tween: Tween
+var _boss_bar_bottom_anchored: bool = false
 
 # Pause menu (ESC) — overlay procedural, process_mode ALWAYS pra continuar
 # respondendo enquanto get_tree().paused é true.
@@ -319,6 +341,9 @@ func _connect_player_signals() -> void:
 	# Estado inicial — caso já tenha algum upgrade aplicado (free upgrade da wave 1
 	# pode ter rolado antes do HUD conectar).
 	_refresh_upgrade_column()
+	# Tutorial inicial: WASD + Click. Hint aparece com pequeno delay (~1.2s) pra
+	# não competir com o intro overlay da wave 1.
+	_show_basics_hint_if_needed()
 
 
 func _on_upgrade_applied(_id: String, _level: int) -> void:
@@ -348,7 +373,8 @@ func _update_boss_hp_bar() -> void:
 		# Sync alpha com o estado atual do fade — se o player já está atrás
 		# da HUD quando a barra aparece, ela já entra translúcida (em vez de
 		# entrar opaca e só atualizar quando o player se mexer).
-		boss_hp_bar.modulate.a = _hud_alpha_target
+		var player_overlapping: bool = _hud_alpha_target == HUD_TRANSPARENT_ALPHA
+		boss_hp_bar.modulate.a = _boss_bar_alpha_for(player_overlapping)
 		boss_hp_bar.visible = true
 	if not ("hp" in _current_boss) or not ("max_hp" in _current_boss):
 		return
@@ -378,6 +404,7 @@ func _position_boss_hp_bar_for(boss: Node) -> void:
 	if boss == null:
 		return
 	var bottom_anchor: bool = boss.is_in_group("duskrose")
+	_boss_bar_bottom_anchored = bottom_anchor
 	if bottom_anchor:
 		boss_hp_bar.anchor_top = 1.0
 		boss_hp_bar.anchor_bottom = 1.0
@@ -388,6 +415,14 @@ func _position_boss_hp_bar_for(boss: Node) -> void:
 		boss_hp_bar.anchor_bottom = 0.0
 		boss_hp_bar.offset_top = _BOSS_BAR_TOP_OFFSET_TOP
 		boss_hp_bar.offset_bottom = _BOSS_BAR_TOP_OFFSET_BOTTOM
+
+
+func _boss_bar_alpha_for(player_overlapping: bool) -> float:
+	# Duskrose: barra fica no rodapé sobreposta à área jogável — nunca 100% opaca,
+	# e quando player passa por baixo cai mais agressivamente que o resto da HUD.
+	if _boss_bar_bottom_anchored:
+		return BOSS_BAR_BOTTOM_TRANSPARENT_ALPHA if player_overlapping else BOSS_BAR_BOTTOM_OPAQUE_ALPHA
+	return HUD_TRANSPARENT_ALPHA if player_overlapping else HUD_OPAQUE_ALPHA
 
 
 func _refresh_upgrade_column() -> void:
@@ -492,8 +527,48 @@ func _on_player_hp_changed(current: float, maximum: float) -> void:
 	hp_bar_label.text = "%d/%d" % [int(round(current)), int(round(maximum))]
 
 
+func _show_control_hint(icon_texture: Texture2D, label_key: String) -> void:
+	# Instancia um ControlHint no VBoxContainer central. Fade in/hold/fade out
+	# é auto-gerenciado pelo próprio nó. Cada hint queue_free após o ciclo.
+	if control_hints_container == null:
+		return
+	var hint := _CONTROL_HINT_SCENE.instantiate()
+	control_hints_container.add_child(hint)
+	if hint.has_method("setup"):
+		hint.setup(icon_texture, label_key)
+
+
+func _show_basics_hint_if_needed() -> void:
+	# WASD + Click — tutorial inicial. Mostra UMA vez por run, com pequeno
+	# delay pra não sobrepor o intro overlay da wave 1.
+	if _control_hints_shown.get("basics", false):
+		return
+	_control_hints_shown["basics"] = true
+	get_tree().create_timer(1.2).timeout.connect(func() -> void:
+		if not is_inside_tree():
+			return
+		_show_control_hint(_CONTROL_TEX_WASD, "HUD_HINT_MOVE")
+		_show_control_hint(_CONTROL_TEX_CLICK, "HUD_HINT_ATTACK")
+	)
+
+
+func _show_space_hint_if_needed() -> void:
+	if _control_hints_shown.get("space", false):
+		return
+	_control_hints_shown["space"] = true
+	_show_control_hint(_CONTROL_TEX_SPACE, "HUD_HINT_SKILL_SPACE")
+
+
+func _show_q_hint_if_needed() -> void:
+	if _control_hints_shown.get("q", false):
+		return
+	_control_hints_shown["q"] = true
+	_show_control_hint(_CONTROL_TEX_Q, "HUD_HINT_SKILL_Q")
+
+
 func _on_dash_unlocked() -> void:
 	dash_cd_bar.visible = true
+	_show_space_hint_if_needed()
 
 
 # Esquivando: lv1+ mostra o ícone de stacks. Lv2+ também mostra a barra do
@@ -513,6 +588,7 @@ func _on_esquivando_unlocked() -> void:
 		_on_esquivando_stacks_changed(stacks, cap)
 	if "esquivando_level" in player and int(player.esquivando_level) >= 2:
 		dash_cd_bar.visible = true
+		_show_space_hint_if_needed()
 
 
 # Esquivando ocupa o slot do elemental (x=150) quando o player ainda não tem
@@ -583,6 +659,7 @@ func _on_fire_skill_unlocked() -> void:
 	fire_skill_icon.visible = true
 	# Esquivando (se ativo) desloca pra direita pra não sobrepor o ícone do fogo.
 	_update_esquivando_icon_position()
+	_show_q_hint_if_needed()
 
 
 func _on_fire_skill_cooldown_changed(remaining: float, _total: float) -> void:
@@ -599,6 +676,7 @@ func _on_fire_skill_cooldown_changed(remaining: float, _total: float) -> void:
 func _on_chain_lightning_skill_unlocked() -> void:
 	chain_lightning_skill_icon.visible = true
 	_update_esquivando_icon_position()
+	_show_q_hint_if_needed()
 
 
 func _on_chain_lightning_skill_cooldown_changed(remaining: float, _total: float) -> void:
@@ -656,6 +734,7 @@ func _on_ricochet_counter_changed(counter: int, level: int) -> void:
 func _on_curse_skill_unlocked() -> void:
 	curse_skill_icon.visible = true
 	_update_esquivando_icon_position()
+	_show_q_hint_if_needed()
 
 
 func _on_curse_skill_cooldown_changed(remaining: float, _total: float) -> void:
@@ -671,6 +750,7 @@ func _on_curse_skill_cooldown_changed(remaining: float, _total: float) -> void:
 func _on_time_freeze_skill_unlocked() -> void:
 	ice_skill_icon.visible = true
 	_update_esquivando_icon_position()
+	_show_q_hint_if_needed()
 
 
 func _on_time_freeze_skill_cooldown_changed(remaining: float, _total: float) -> void:
@@ -692,11 +772,16 @@ func _process(delta: float) -> void:
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if player == null or not is_instance_valid(player):
 		return
-	# Posição do player na tela (sprite tem offset.y=-16, então corpo vai de origin-32 a origin).
-	# Câmera com zoom: rect do player na tela escala pelo zoom (sprite 32×32 em world → 128×128 com zoom 4×).
+	# Posição do player na tela calculada manualmente via câmera. Não usar
+	# get_global_transform_with_canvas() — em alguns setups (stretch viewport +
+	# CanvasLayer da HUD) ela retorna coords inconsistentes com get_global_rect()
+	# dos Controls da HUD. Com cálculo manual garantimos que ambos estão no mesmo
+	# espaço de pixels do viewport (1920×1080 com stretch viewport).
 	var camera := player.get_viewport().get_camera_2d()
 	var zoom: Vector2 = camera.zoom if camera != null else Vector2.ONE
-	var player_screen: Vector2 = player.get_global_transform_with_canvas().origin
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var camera_world_pos: Vector2 = camera.get_screen_center_position() if camera != null else Vector2.ZERO
+	var player_screen: Vector2 = (player.global_position - camera_world_pos) * zoom + viewport_size * 0.5
 	var player_size := Vector2(32, 32) * zoom
 	var player_rect := Rect2(player_screen + Vector2(-16, -32) * zoom, player_size)
 	# Considera intersecção com HudFrame, HpBar OU BossHpBar — player atrás de
@@ -719,7 +804,8 @@ func _process(delta: float) -> void:
 		if hp_bar != null:
 			_hud_alpha_tween.tween_property(hp_bar, "modulate:a", new_target, HUD_ALPHA_FADE)
 		if boss_hp_bar != null:
-			_hud_alpha_tween.tween_property(boss_hp_bar, "modulate:a", new_target, HUD_ALPHA_FADE)
+			var boss_target: float = _boss_bar_alpha_for(overlaps)
+			_hud_alpha_tween.tween_property(boss_hp_bar, "modulate:a", boss_target, HUD_ALPHA_FADE)
 
 
 func flash_screen(color: Color = Color(0, 0, 0, 1), peak_alpha: float = 0.95, strobe_duration: float = 2.0, fade_duration: float = 1.0) -> void:
@@ -1191,6 +1277,8 @@ const _DEATH_SOURCE_LABELS: Dictionary = {
 	"duskrose_vine": "HUD_DEATH_BY_DUSKROSE_VINE",
 	"duskrose_permanent_thorn": "HUD_DEATH_BY_DUSKROSE_THORN_WALL",
 	"duskrose_toxic": "HUD_DEATH_BY_DUSKROSE_TOXIC",
+	"duskrose_projectile": "HUD_DEATH_BY_DUSKROSE_PROJECTILE",
+	"duskrose_dash": "HUD_DEATH_BY_DUSKROSE_DASH",
 	"rose_monster": "HUD_DEATH_BY_ROSE_MONSTER",
 }
 
@@ -1370,6 +1458,19 @@ func _show_dev_send_buttons(wave_num: int) -> void:
 	score_btn.pressed.connect(func(): _dev_send_score(score_btn))
 	death_top_layer.add_child(score_btn)
 
+	var respawn_btn := Button.new()
+	respawn_btn.name = "DevRespawnSameUpgradesBtn"
+	respawn_btn.text = "[DEV] Renascer (mesmos upgrades)"
+	respawn_btn.set_anchors_preset(Control.PRESET_CENTER)
+	respawn_btn.position = Vector2(-200, 428)
+	respawn_btn.size = Vector2(400, 48)
+	if at01 != null:
+		respawn_btn.add_theme_font_override("font", at01)
+	respawn_btn.add_theme_font_size_override("font_size", 24)
+	respawn_btn.add_theme_color_override("font_color", Color(1, 0.7, 0.95, 1))
+	respawn_btn.pressed.connect(_dev_respawn_same_upgrades)
+	death_top_layer.add_child(respawn_btn)
+
 
 func _dev_send_telemetry(wave_num: int, btn: Button) -> void:
 	_track_run_end(wave_num)
@@ -1383,6 +1484,37 @@ func _dev_send_score(btn: Button) -> void:
 	_auto_submit_score()
 	btn.disabled = true
 	btn.text = "[DEV] Score enviado"
+
+
+# Lista de TODOS os upgrade ids trackados pelo player. Espelha o que tem em
+# dev_panel._ALL_UPGRADE_IDS — duplicado pra evitar dependência da scene em
+# ordem de _ready (HUD pode rodar antes do dev_panel existir).
+const _DEV_RESPAWN_UPGRADE_IDS: Array[String] = [
+	"hp", "armor", "damage", "perfuracao", "attack_speed", "multi_arrow",
+	"double_arrows", "chain_lightning", "move_speed", "life_steal",
+	"fire_arrow", "curse_arrow", "ice_arrow", "claudio_druida", "leno",
+	"capivara_joe", "ting", "arbusto", "mini_mago", "gold_magnet",
+	"dash", "esquivando", "ricochet_arrow", "graviton", "boomerang",
+	"tiger_claws", "critical_chance",
+]
+
+
+func _dev_respawn_same_upgrades() -> void:
+	# Snapshot dos upgrades atuais do player (vivo OU recém-morto) → guarda em
+	# GameState.pending_respawn_upgrades → reload da cena. Dev_panel da nova run
+	# detecta o snapshot e re-aplica via _apply_pending_respawn_upgrades.
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not player.has_method("get_upgrade_count"):
+		return
+	var snapshot: Dictionary = {}
+	for upgrade_id in _DEV_RESPAWN_UPGRADE_IDS:
+		var lvl: int = player.get_upgrade_count(upgrade_id)
+		if lvl > 0:
+			snapshot[upgrade_id] = lvl
+	var gs := get_node_or_null("/root/GameState")
+	if gs != null and "pending_respawn_upgrades" in gs:
+		gs.pending_respawn_upgrades = snapshot
+	get_tree().reload_current_scene()
 
 
 func _track_run_end(wave_num: int) -> void:

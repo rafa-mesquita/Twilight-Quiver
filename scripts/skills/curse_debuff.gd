@@ -114,6 +114,8 @@ func _apply_tick() -> void:
 		if is_crit:
 			CritFeedback.mark_next_hit_crit(parent)
 	var was_alive: bool = (not ("hp" in parent)) or float(parent.hp) > 0.0
+	# Marca como DoT (Duskrose, por ex, reduz dano de DoT em 30%).
+	parent.set_meta("_dot_damage_pending", true)
 	parent.take_damage(amount)
 	_notify_player_dmg_kill(amount, "curse_arrow", was_alive, parent)
 	_spawn_curse_number(amount, is_crit)

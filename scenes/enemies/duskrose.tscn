@@ -9,8 +9,10 @@
 [ext_resource type="PackedScene" path="res://scenes/effects/kill_effect.tscn" id="7_kill"]
 [ext_resource type="PackedScene" path="res://scenes/effects/summon_effect.tscn" id="8_summon"]
 [ext_resource type="PackedScene" path="res://scenes/pickups/gold.tscn" id="9_gold"]
-[ext_resource type="PackedScene" path="res://scenes/effects/duskrose_smoke.tscn" id="10_smoke"]
+[ext_resource type="PackedScene" uid="uid://0mehknlghm76" path="res://scenes/effects/duskrose_smoke.tscn" id="10_smoke"]
 [ext_resource type="PackedScene" path="res://scenes/effects/duskrose_vine.tscn" id="11_vine"]
+[ext_resource type="PackedScene" path="res://scenes/effects/duskrose_projectile.tscn" id="12_proj"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/dark_ball.tscn" id="13_darkball"]
 
 [sub_resource type="AtlasTexture" id="A_idle_0"]
 atlas = ExtResource("2_sheet")
@@ -19,6 +21,26 @@ region = Rect2(0, 0, 40, 40)
 [sub_resource type="AtlasTexture" id="A_idle_1"]
 atlas = ExtResource("2_sheet")
 region = Rect2(40, 0, 40, 40)
+
+[sub_resource type="AtlasTexture" id="A_dash_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(960, 0, 40, 40)
+
+[sub_resource type="AtlasTexture" id="A_dash_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(1000, 0, 40, 40)
+
+[sub_resource type="AtlasTexture" id="A_attack_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(1040, 0, 40, 40)
+
+[sub_resource type="AtlasTexture" id="A_attack_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(1080, 0, 40, 40)
+
+[sub_resource type="AtlasTexture" id="A_attack_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(1120, 0, 40, 40)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_duskrose"]
 animations = [{
@@ -32,12 +54,39 @@ animations = [{
 "loop": true,
 "name": &"idle",
 "speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_dash_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_dash_1")
+}],
+"loop": true,
+"name": &"dash",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("A_attack_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_attack_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("A_attack_2")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 4.3
 }]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_duskrose"]
-radius = 11.0
+radius = 10.624999
+height = 30.999996
 
 [node name="Duskrose" type="CharacterBody2D" unique_id=826372004]
+scale = Vector2(1.6, 1.6)
 collision_layer = 4
 collision_mask = 2
 script = ExtResource("1_duskrose")
@@ -45,22 +94,19 @@ rose_monster_scene = ExtResource("3_rose")
 summon_effect_scene = ExtResource("8_summon")
 vine_scene = ExtResource("11_vine")
 smoke_scene = ExtResource("10_smoke")
+projectile_scene = ExtResource("12_proj")
+dark_ball_scene = ExtResource("13_darkball")
 damage_effect_scene = ExtResource("4_dmg")
 damage_number_scene = ExtResource("6_dmgnum")
 kill_effect_scene = ExtResource("7_kill")
 gold_scene = ExtResource("9_gold")
 
 [node name="Shadow" type="Node2D" parent="." unique_id=1400025478]
-
-[node name="Outer" type="Polygon2D" parent="Shadow" unique_id=414453415]
-position = Vector2(0, -3)
-scale = Vector2(1.5, 1.75)
-color = Color(0, 0, 0, 0.15)
-polygon = PackedVector2Array(11, 0, 10, 1, 7, 2, 0, 2, -7, 2, -10, 1, -11, 0, -10, -1, -7, -2, 0, -2, 7, -2, 10, -1)
+scale = Vector2(1.6, 1.6)
 
 [node name="Middle" type="Polygon2D" parent="Shadow" unique_id=1302667517]
-position = Vector2(0, -2.9999995)
-scale = Vector2(2.0000002, 1.5)
+position = Vector2(-0.35937694, -2.6093748)
+scale = Vector2(1.9486607, 1.6953124)
 color = Color(0, 0, 0, 0.22)
 polygon = PackedVector2Array(7, 0, 6, 1, 4.9452915, 1.2636757, 2, 2, -2, 2, -6, 1, -7, 0, -6, -1, -2, -2, 2, -2, 6, -1)
 
@@ -82,5 +128,5 @@ position = Vector2(0, -18)
 shape = SubResource("CapsuleShape2D_duskrose")
 
 [node name="HpBar" parent="." unique_id=113930220 instance=ExtResource("5_hpbar")]
-position = Vector2(-9, -47)
+position = Vector2(-8.75, -45.624996)
 fg_color = Color(0.78, 0.21, 0.55, 1)
