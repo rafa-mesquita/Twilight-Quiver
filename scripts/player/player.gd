@@ -478,6 +478,7 @@ func _physics_process(delta: float) -> void:
 	_check_claudio_druida_respawns(delta)
 	_check_mini_arbusto_respawns(delta)
 	_tick_capivara_buffs(delta)
+	_tick_post_bush_grace(delta)
 	_update_invuln_visual(delta)
 	# Dash trigger lê via polling pra garantir que o cooldown decrementa ANTES
 	# do check, e que múltiplas pressões na mesma frame só viram 1 dash.
@@ -2487,6 +2488,28 @@ func arbusto_exit_hide() -> void:
 	arbusto_hide_atk_speed_bonus = 0.0
 	arbusto_hide_arrow_bonus_damage = 0.0
 	arbusto_hide_heal_per_hit = 0.0
+
+
+# Janela de iframes pós-saída do bush: buffs já caíram, mas o group
+# bush_hidden persiste por N segundos pro player escapar/reposicionar sem
+# levar dano. Ticka em _process; quando zerar, remove o group.
+var _post_bush_grace_remaining: float = 0.0
+
+
+func arbusto_grant_iframe_grace(seconds: float) -> void:
+	# Garante que o player tá no group (caso tenha saído do bush antes do mini
+	# morrer) e arma o timer. Não acumula — sempre usa o maior valor.
+	if not is_in_group("bush_hidden"):
+		add_to_group("bush_hidden")
+	_post_bush_grace_remaining = maxf(_post_bush_grace_remaining, seconds)
+
+
+func _tick_post_bush_grace(delta: float) -> void:
+	if _post_bush_grace_remaining <= 0.0:
+		return
+	_post_bush_grace_remaining = maxf(_post_bush_grace_remaining - delta, 0.0)
+	if _post_bush_grace_remaining <= 0.0 and is_in_group("bush_hidden"):
+		remove_from_group("bush_hidden")
 
 
 # Visual de invulnerabilidade: bolha protetora estilo "Protect" do Pokémon —

@@ -177,6 +177,11 @@ SHOP_BONUS_PLUS_ONE,BONUS +1!,BONUS +1!,¡BONUS +1!,BONUS +1 !
 SHOP_PLACEMENT_HINT,Escolha um dos 5 pontos para posicionar  -  Aperte Z para voltar,Pick one of the 5 spots to place  -  Press Z to go back,Elige uno de los 5 puntos para colocar  -  Pulsa Z para volver,Choisissez un des 5 emplacements  -  Appuyez sur Z pour revenir
 SHOP_COMING_SOON,Em breve,Coming soon,Próximamente,Bientôt
 SHOP_BLOCKED,Bloqueado,Blocked,Bloqueado,Bloqué
+SHOP_BOSS_NO_STRUCTURES,"Sem estruturas
+no round do boss","No structures
+on boss round","Sin estructuras
+en la ronda del jefe","Pas de structures
+au tour du boss"
 SHOP_FREE_PET,Pet gratis!,Free pet!,¡Mascota gratis!,Animal gratuit !
 SHOP_FREE_PET_DESC,"Recebido nesta
 wave","Received this

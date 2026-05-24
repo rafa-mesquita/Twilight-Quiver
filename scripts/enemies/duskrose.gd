@@ -801,10 +801,14 @@ func _fire_ranged_volley() -> void:
 			proj.damage_mult = damage_mult
 		if "speed" in proj:
 			proj.speed = ranged_projectile_speed
-		world.add_child(proj)
-		proj.global_position = spawn_pos
+		# Position/direction ANTES do add_child: _ready() do projétil inicializa
+		# o trail com o ponto atual de global_position. Se add_child rodar com
+		# global_position=(0,0), o trail fica com um ponto em (0,0) ligando até
+		# spawn_pos — aparece como um rastro fantasma cruzando o mapa.
+		proj.position = spawn_pos
 		if proj.has_method("set_direction"):
 			proj.set_direction(dir)
+		world.add_child(proj)
 
 
 func _cast_dark_ball_summon() -> void:
@@ -816,11 +820,16 @@ func _cast_dark_ball_summon() -> void:
 	_play_one_shot(load(SUMMON_SOUND_PATH) as AudioStream, global_position, summon_sound_volume_db)
 	var world := _get_world()
 	for i in dark_ball_summon_count:
-		var spawn_pos: Vector2 = global_position + Vector2(
-			randf_range(-dark_ball_summon_x_jitter, dark_ball_summon_x_jitter),
-			randf_range(dark_ball_summon_y_min, dark_ball_summon_y_max)
+		# Y usa `patrol_y` como base (não global_position.y) — o summon roda em
+		# paralelo a qualquer fase da boss, e durante dash ela pode estar lá
+		# embaixo perto do player. Sem isso os dark balls saíam fora do mapa.
+		var spawn_pos: Vector2 = Vector2(
+			global_position.x + randf_range(-dark_ball_summon_x_jitter, dark_ball_summon_x_jitter),
+			patrol_y + randf_range(dark_ball_summon_y_min, dark_ball_summon_y_max)
 		)
 		spawn_pos.x = clampf(spawn_pos.x, patrol_x_min - 20.0, patrol_x_max + 20.0)
+		# Garantia extra contra spawn fora da arena (caso patrol_y mude no futuro).
+		spawn_pos.y = clampf(spawn_pos.y, patrol_y + 25.0, 380.0)
 		var db: Node2D = dark_ball_scene.instantiate()
 		if "damage_mult" in db:
 			db.damage_mult = damage_mult
@@ -1051,10 +1060,13 @@ func _spawn_one_vine(world: Node, vx: float) -> void:
 	# Target Y final (até onde a vinha cresce).
 	if "target_bottom_y" in vine:
 		vine.target_bottom_y = vine_target_bottom_y
-	world.add_child(vine)
 	# Spawn em Y FIXO (topo do mapa), não na posição da boss — a vinha cobre
 	# a coluna vertical inteira do mapa independente de onde a boss está.
-	vine.global_position = Vector2(vx, vine_top_y)
+	# IMPORTANTE: position ANTES do add_child. _ready() da vinha calcula o
+	# número de segmentos baseado em (target_bottom_y - global_position.y);
+	# se add_child rodar com position=(0,0), a vinha sai curta.
+	vine.position = Vector2(vx, vine_top_y)
+	world.add_child(vine)
 
 
 func _flash_white(duration: float) -> void:

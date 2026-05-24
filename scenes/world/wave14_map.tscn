@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://c7gfheerosuai" path="res://scenes/world/props/arvore.tscn" id="10_sem2w"]
 [ext_resource type="PackedScene" uid="uid://cnhw87wko5ofq" path="res://scenes/world/props/arvore_2.tscn" id="11_7nrhn"]
 [ext_resource type="PackedScene" uid="uid://cn07phmkuy745" path="res://scenes/world/props/casa.tscn" id="11_n6obe"]
+[ext_resource type="PackedScene" uid="uid://b1tqjmx0me8hl" path="res://scenes/world/props/poco.tscn" id="14_aq2c6"]
 [ext_resource type="PackedScene" path="res://scenes/world/props/grass.tscn" id="15_jkv2x"]
 [ext_resource type="PackedScene" path="res://scenes/world/props/cerca_cima.tscn" id="cerca_cima"]
 [ext_resource type="PackedScene" uid="uid://c3ufhc3l5yvor" path="res://scenes/world/props/cerca_cima_end.tscn" id="cerca_cima_end"]
@@ -391,7 +392,7 @@ collision_layer = 2
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Boundaries/WallBottom" unique_id=703703494]
-position = Vector2(6, 145)
+position = Vector2(6, 146)
 shape = SubResource("RectShape_bound_h")
 
 [node name="WallLeft" type="StaticBody2D" parent="Boundaries" unique_id=1954628471]
@@ -621,12 +622,6 @@ position = Vector2(560.2, 342.1)
 [node name="Rose50" parent="DecorativeRoses" unique_id=1517004163 instance=ExtResource("dec_rose_b")]
 position = Vector2(624.9, 323.2)
 
-[node name="CercaSul1" parent="." unique_id=1537864472 instance=ExtResource("6_7btqu")]
-position = Vector2(-124, 402)
-
-[node name="CercaSul2" parent="." unique_id=1211727244 instance=ExtResource("6_7btqu")]
-position = Vector2(-92, 402)
-
 [node name="CercaSul3" parent="." unique_id=1437432616 instance=ExtResource("6_7btqu")]
 position = Vector2(-60, 402)
 
@@ -689,9 +684,6 @@ position = Vector2(548, 402)
 
 [node name="CercaSul23" parent="." unique_id=1990094488 instance=ExtResource("6_7btqu")]
 position = Vector2(580, 402)
-
-[node name="CercaSul26" parent="." unique_id=1062447435 instance=ExtResource("6_7btqu")]
-position = Vector2(-156, 402)
 
 [node name="CercaSul29" parent="." unique_id=1462339162 instance=ExtResource("6_7btqu")]
 position = Vector2(-60, -83)
@@ -885,12 +877,6 @@ position = Vector2(593, 360)
 [node name="CercaCima_Right_18" parent="VerticalFences" unique_id=1002165409 instance=ExtResource("cerca_cima")]
 position = Vector2(593, 384)
 
-[node name="CercaCima_Left_Extra1" parent="VerticalFences" unique_id=89729839 instance=ExtResource("cerca_cima")]
-position = Vector2(-55, 428)
-
-[node name="CercaCima_Left_Extra2" parent="VerticalFences" unique_id=1947546027 instance=ExtResource("cerca_cima")]
-position = Vector2(-55, 454)
-
 [node name="Arvore2" parent="." unique_id=846606422 instance=ExtResource("10_sem2w")]
 position = Vector2(616, 16)
 
@@ -931,3 +917,10 @@ scale = Vector2(1.3, 1.3)
 [node name="TopBarrier" parent="." unique_id=1343276386 instance=ExtResource("thorn_wall")]
 position = Vector2(-55, 25)
 area_width = 650.0
+
+[node name="Poco" parent="." unique_id=121143123 instance=ExtResource("14_aq2c6")]
+position = Vector2(-134, 334)
+
+[node name="Arvore5B" parent="." unique_id=961502355 instance=ExtResource("10_sem2w")]
+position = Vector2(-73, 410.00003)
+scale = Vector2(1.69, 1.69)

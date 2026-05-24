@@ -51,9 +51,20 @@ func _ready() -> void:
 		hp_bar.set_ratio(1.0)
 		hp_bar.visible = false  # só aparece quando decoy ativo
 	_apply_decoy_collision()
+	_apply_wave14_safe_bounds_if_needed()
 	_pick_new_waypoint()
 	if sprite != null and sprite.sprite_frames != null and sprite.sprite_frames.has_animation("walk"):
 		sprite.play("walk")
+
+
+func _apply_wave14_safe_bounds_if_needed() -> void:
+	# Wave 14 (Duskrose): mini fica restrito à área safe — fora da zona tóxica
+	# do TopBarrier e da cerca. Mesma lógica do big arbusto.
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm == null:
+		return
+	if "wave_number" in wm and "boss_redux_wave" in wm and int(wm.wave_number) == int(wm.boss_redux_wave):
+		wander_bounds = Rect2(5, 60, 510, 320)
 
 
 func _physics_process(delta: float) -> void:

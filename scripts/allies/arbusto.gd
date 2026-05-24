@@ -25,6 +25,10 @@ extends CharacterBody2D
 
 const FIRST_RUN_DURATION: float = 8.0
 const HIDE_ALPHA: float = 0.45
+# Janela de invencibilidade após o último mini morrer. Player continua em
+# bush_hidden por POST_DEATH_GRACE segundos antes do _exit_hidden — dá um
+# "fôlego" pro player escapar quando a horda mata o decoy.
+const POST_DEATH_GRACE: float = 1.3
 # Tabelas por nível do upgrade (index 1..4). Index 0 = sem upgrade (sem efeito).
 # - L2: atk speed e dano dos buffs sobem.
 # - L3: 2 minis + 30 HP extra cada + big senta com menos CD.
@@ -66,8 +70,20 @@ func _ready() -> void:
 	add_to_group("arbusto")
 	hide_zone.body_entered.connect(_on_zone_body_entered)
 	hide_zone.body_exited.connect(_on_zone_body_exited)
+	_apply_wave14_safe_bounds_if_needed()
 	_pick_new_waypoint()
 	_enter_run()
+
+
+func _apply_wave14_safe_bounds_if_needed() -> void:
+	# Wave 14 (Duskrose): arbusto fica restrito à área safe do mapa, longe da
+	# zona tóxica do TopBarrier (y < ~50) e da cerca de baixo (y > ~395). Sem
+	# isso ele anda pra dentro do veneno e morre instantâneo.
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm == null:
+		return
+	if "wave_number" in wm and "boss_redux_wave" in wm and int(wm.wave_number) == int(wm.boss_redux_wave):
+		wander_bounds = Rect2(5, 60, 510, 320)
 
 
 func _physics_process(delta: float) -> void:
@@ -83,7 +99,7 @@ func _physics_process(delta: float) -> void:
 		State.IDLE:
 			_process_idle()
 		State.HIDDEN:
-			_process_hidden()
+			_process_hidden(delta)
 
 
 # --- States ---
@@ -104,8 +120,15 @@ func _process_run(delta: float) -> void:
 	# Run state dura run_duration segundos. Quando chega no waypoint atual,
 	# pega outro e continua correndo até o timer estourar — aí entra em idle.
 	if _state_timer <= 0.0:
-		_enter_idle()
-		return
+		# Anti-grief contra mage_monkey (boss W7/14): se for parar perto do
+		# gorila, segue correndo pra longe — player não pode hidear num spot
+		# em melee range do boss sem ter saída.
+		if _too_close_to_mage_monkey():
+			_state_timer = 4.0
+			_pick_waypoint_away_from_mage_monkey()
+		else:
+			_enter_idle()
+			return
 	var to_wp: Vector2 = _waypoint - global_position
 	var dist: float = to_wp.length()
 	if dist <= arrive_dist:
@@ -169,7 +192,7 @@ func _enter_hidden() -> void:
 	_apply_player_hide(true)
 
 
-func _process_hidden() -> void:
+func _process_hidden(_delta: float) -> void:
 	velocity = Vector2.ZERO
 	move_and_slide()
 	# Limpa refs inválidas (mini morto ou liberado externamente). Só sai do
@@ -200,7 +223,10 @@ func _exit_hidden() -> void:
 		if mini.has_method("set_decoy_active"):
 			mini.set_decoy_active(false)
 	_mini_decoys.clear()
-	_apply_player_hide(false)
+	# Player ganha janela de iframes pós-bush — buffs caem na hora, mas
+	# bush_hidden (invuln) persiste por POST_DEATH_GRACE seg no lado do player.
+	# Bush volta a andar normalmente em paralelo.
+	_apply_player_hide(false, POST_DEATH_GRACE)
 	_enter_run()
 
 
@@ -258,11 +284,15 @@ func _play_bush_sound() -> void:
 
 # --- Player hide buffs ---
 
-func _apply_player_hide(active: bool) -> void:
+func _apply_player_hide(active: bool, grace_iframes: float = 0.0) -> void:
 	# Liga/desliga buffs do hide + group bush_hidden (que faz enemies ignorarem
 	# o player no _pick_target deles). Aggro shield agora é simples: enquanto
 	# o mini estiver vivo, mobs focam o mini (tank_ally) — não importa se tem
 	# macaco dentro do bush ou não.
+	#
+	# grace_iframes (só relevante quando active=false): se > 0, buffs caem na
+	# hora mas o group bush_hidden persiste por N segundos no player (controlado
+	# pelo timer interno dele). Usado na saída por morte do mini pra dar fôlego.
 	#
 	# Valores dos buffs (atk speed, dano flat, heal/hit) escalam por nível.
 	var tree := get_tree()
@@ -283,7 +313,9 @@ func _apply_player_hide(active: bool) -> void:
 	else:
 		if player.has_method("arbusto_exit_hide"):
 			player.arbusto_exit_hide()
-		if player.is_in_group("bush_hidden"):
+		if grace_iframes > 0.0 and player.has_method("arbusto_grant_iframe_grace"):
+			player.arbusto_grant_iframe_grace(grace_iframes)
+		elif player.is_in_group("bush_hidden"):
 			player.remove_from_group("bush_hidden")
 
 
@@ -311,10 +343,11 @@ func _on_zone_body_entered(body: Node) -> void:
 func _on_zone_body_exited(body: Node) -> void:
 	if body.is_in_group("player"):
 		_player_inside = false
-		# Saiu da zona durante HIDDEN: tira os buffs, o aggro shield e o visual
-		# translúcido. Estado continua HIDDEN (bush não anda) até o mini morrer.
+		# Saiu da zona durante HIDDEN: tira os buffs, mas player mantém iframes
+		# por POST_DEATH_GRACE seg pra ter fôlego pra escapar. Estado continua
+		# HIDDEN (bush não anda) até o mini morrer.
 		if _state == State.HIDDEN:
-			_apply_player_hide(false)
+			_apply_player_hide(false, POST_DEATH_GRACE)
 			_apply_hide_visual(false)
 
 
@@ -325,6 +358,45 @@ func _pick_new_waypoint() -> void:
 		randf_range(wander_bounds.position.x, wander_bounds.position.x + wander_bounds.size.x),
 		randf_range(wander_bounds.position.y, wander_bounds.position.y + wander_bounds.size.y)
 	)
+
+
+# Distância mínima em que o arbusto considera "perto demais" do mage_monkey
+# pra parar e virar idle. Player não consegue hidear seguro em melee range do
+# boss, então o bush continua correndo até achar spot longe o suficiente.
+const MAGE_MONKEY_SAFE_DIST: float = 140.0
+
+
+func _too_close_to_mage_monkey() -> bool:
+	for boss in get_tree().get_nodes_in_group("mage_monkey"):
+		if not is_instance_valid(boss) or not (boss is Node2D):
+			continue
+		if global_position.distance_to((boss as Node2D).global_position) < MAGE_MONKEY_SAFE_DIST:
+			return true
+	return false
+
+
+func _pick_waypoint_away_from_mage_monkey() -> void:
+	var boss: Node2D = null
+	for n in get_tree().get_nodes_in_group("mage_monkey"):
+		if is_instance_valid(n) and n is Node2D:
+			boss = n as Node2D
+			break
+	if boss == null:
+		_pick_new_waypoint()
+		return
+	# Sorteia 8 candidatos e pega o mais distante do boss.
+	var best: Vector2 = global_position
+	var best_dist: float = -1.0
+	for i in 8:
+		var candidate := Vector2(
+			randf_range(wander_bounds.position.x, wander_bounds.position.x + wander_bounds.size.x),
+			randf_range(wander_bounds.position.y, wander_bounds.position.y + wander_bounds.size.y)
+		)
+		var d: float = candidate.distance_to(boss.global_position)
+		if d > best_dist:
+			best_dist = d
+			best = candidate
+	_waypoint = best
 
 
 func _is_wave_active() -> bool:

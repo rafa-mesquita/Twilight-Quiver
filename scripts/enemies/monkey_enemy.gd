@@ -34,6 +34,12 @@ const FLANKER_TEXTURE: Texture2D = preload("res://assets/enemies/monkey/enemy mo
 @export var stuck_min_progress: float = 3.0
 # Se player está mais longe que isso (ou morto), inimigo troca pra atacar torre.
 @export var tower_target_switch_distance: float = 220.0
+# Estruturas têm collision body grande (ex: arrow_tower = 54×35) — o macaco
+# não consegue chegar dentro de attack_range (12px) do centro. Esse buffer
+# expande o range só quando o alvo é uma estrutura.
+@export var structure_attack_range_bonus: float = 30.0
+# Estruturas levam dano reduzido — torre/tank não cai em 2 hits pra horda.
+@export var structure_damage_mult: float = 0.4
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var hp_bar: Node2D = $HpBar
@@ -163,8 +169,13 @@ func _physics_process(delta: float) -> void:
 			else:
 				chase_pos = current_target.global_position + _chase_offset
 		var dir_offset: Vector2 = (chase_pos - global_position).normalized()
+		# Estruturas: range maior pra compensar o body grande (collision impede
+		# o monkey de chegar dentro de attack_range padrão do centro da torre).
+		var effective_range: float = attack_range
+		if current_target.is_in_group("structure"):
+			effective_range += structure_attack_range_bonus
 
-		if dist > attack_range:
+		if dist > effective_range:
 			# Direção de movimento — se está em "stuck step", usa direção lateral
 			# pra contornar obstáculos; senão direto pro alvo (com/sem offset).
 			var move_dir: Vector2 = dir_offset
@@ -220,14 +231,24 @@ func _on_frame_changed() -> void:
 		hit_applied = true
 		if current_target != null and is_instance_valid(current_target):
 			var dist: float = global_position.distance_to(current_target.global_position)
-			if dist <= attack_range + 6.0 and current_target.has_method("take_damage"):
+			# Mesmo buffer do chase/attack switch — estruturas precisam de range
+			# maior pra hit conectar (collision body grande do tower etc).
+			var hit_range: float = attack_range + 6.0
+			if current_target.is_in_group("structure"):
+				hit_range += structure_attack_range_bonus
+			if dist <= hit_range and current_target.has_method("take_damage"):
 				# Curse ANTES do take_damage pra contar na conversão se matar.
 				if is_curse_ally:
 					CurseAllyHelper.apply_ally_curse_on_damage(current_target, self)
 				if current_target.is_in_group("player"):
 					current_target.take_damage(damage, "monkey")
 				else:
-					current_target.take_damage(damage)
+					# Estruturas levam 40% do dano (60% redução). Outros alvos
+					# (tank_ally tipo Claudio) levam dano cheio.
+					var dmg: float = damage
+					if current_target.is_in_group("structure"):
+						dmg *= structure_damage_mult
+					current_target.take_damage(dmg)
 					# Macaco convertido pela Maldição: dano vai pro breakdown
 					# "curse_ally" no painel TAB. Macaco invocado pelo Mini Mago
 					# (mesma conversão, mas precede a maldição): atribui a "mini_mago".

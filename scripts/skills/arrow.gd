@@ -531,12 +531,16 @@ func _reparent_to(new_parent: Node) -> void:
 		return
 	var gp := global_position
 	var gr := global_rotation
+	var gs := global_scale
 	var current_parent := get_parent()
 	if current_parent != null:
 		current_parent.remove_child(self)
 	new_parent.add_child(self)
 	global_position = gp
 	global_rotation = gr
+	# Preserva escala global: inimigos com scale != 1 (ex: Duskrose) não devem
+	# esticar a flecha cravada.
+	global_scale = gs
 
 
 func _schedule_fade_out(visible_duration: float) -> void:

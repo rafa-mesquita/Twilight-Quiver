@@ -578,6 +578,12 @@ func _roll_estrutura_slots() -> void:
 	estrutura_slots.clear()
 	# Gate: estruturas só aparecem a partir da wave 8.
 	var wn_struct: int = _current_wave_number()
+	# Wave 14 (Duskrose boss): shop pré-boss não vende estruturas.
+	# Voltam normalmente no shop pós-boss (wn_struct == 14).
+	if wn_struct == 13:
+		for i in 2:
+			estrutura_slots.append({"id": "locked", "name": "SHOP_BOSS_NO_STRUCTURES", "desc": "", "price": 0, "available": false})
+		return
 	if wn_struct < 8:
 		var turns_to_8: int = max(8 - wn_struct, 1)
 		var msg8: String = _build_lock_title(turns_to_8)

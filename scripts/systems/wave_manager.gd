@@ -350,7 +350,12 @@ func _start_next_wave() -> void:
 	else:
 		_player_gold_at_wave_start = 0
 	# Renasce torres/aliados destruídos na wave anterior na mesma posição.
-	_respawn_owned_structures()
+	# Wave 14 (Duskrose): luta acontece em arena temática; estruturas compradas
+	# ficam "estocadas" e voltam automaticamente no próximo round.
+	if wave_number == boss_redux_wave:
+		_clear_alive_structures_for_boss_wave()
+	else:
+		_respawn_owned_structures()
 
 	# Música da wave: boss / corrupted void / default — escolhida pelo número
 	# da wave (ver _music_for_wave).
@@ -623,10 +628,10 @@ func _spawn_one(type_key: String) -> void:
 		# normal pra ficar mais forte.
 		if wave_number == 7 and type_key == "mage_monkey" and "max_hp" in enemy:
 			enemy.max_hp = 3000.0
-		# Override pro boss da wave 14 (Duskrose): HP fixo 5500 (ajustado pelo
+		# Override pro boss da wave 14 (Duskrose): HP fixo 6500 (ajustado pelo
 		# balance após adicionar dash + double dash + 2× dmg em melee).
 		if wave_number == boss_redux_wave and type_key == "duskrose" and "max_hp" in enemy:
-			enemy.max_hp = 5500.0
+			enemy.max_hp = 6500.0
 	# Wave 14 boss (redux): drops escalam pra compensar a perda de drops dos
 	# minions + a dificuldade extra. Multiplicador maior que o normal de
 	# scaling porque tem ~16-18 minions a menos contribuindo gold.
@@ -1094,6 +1099,9 @@ func _check_structure_respawns(delta: float) -> void:
 	# atinge STRUCTURE_RESPAWN_DELAY, spawna nova instância na última posição.
 	if owned_structures.is_empty():
 		return
+	# Wave 14 (Duskrose): estruturas não existem na arena, então não respawnam.
+	if wave_number == boss_redux_wave:
+		return
 	var world := get_tree().get_first_node_in_group("world")
 	if world == null:
 		return
@@ -1122,6 +1130,23 @@ func _check_structure_respawns(delta: float) -> void:
 		inst.global_position = pos
 		entry["instance"] = inst
 		entry["dead_for"] = 0.0
+
+
+func _clear_alive_structures_for_boss_wave() -> void:
+	# Wave 14 (Duskrose): free qualquer instância viva mas preserva a entry
+	# (scene_path + position) pra respawnar normal no round seguinte. Sem isso,
+	# torres/aliados ficariam na arena do boss em posições do mapa original.
+	for entry in owned_structures:
+		var inst_ref: Variant = entry.get("instance", null)
+		if inst_ref != null and is_instance_valid(inst_ref) and inst_ref is Node:
+			(inst_ref as Node).queue_free()
+		entry["instance"] = null
+		entry["dead_for"] = 0.0
+	# Catch-all: free qualquer nó no grupo "structure" que ainda esteja vivo
+	# (mesmo que não esteja em owned_structures, ex: bug de tracking).
+	for n in get_tree().get_nodes_in_group("structure"):
+		if is_instance_valid(n):
+			(n as Node).queue_free()
 
 
 func _respawn_owned_structures() -> void:
@@ -1514,9 +1539,9 @@ func _prespawn_boss_wave_entities() -> void:
 					enemy.heart_scene = null
 			if wave_number != 7 or type_key == "mage_monkey":
 				_apply_wave_scaling(enemy)
-				# Override pro boss Duskrose (wave 14): HP fixo 5500.
+				# Override pro boss Duskrose (wave 14): HP fixo 6500.
 				if wave_number == boss_redux_wave and type_key == "duskrose" and "max_hp" in enemy:
-					enemy.max_hp = 5500.0
+					enemy.max_hp = 6500.0
 			if wave_number == boss_redux_wave and (type_key == "mage_monkey" or type_key == "duskrose") and BOSS_REDUX_GOLD_MULT > 1.0:
 				if "gold_drop_min" in enemy:
 					enemy.gold_drop_min = int(round(float(enemy.gold_drop_min) * BOSS_REDUX_GOLD_MULT))

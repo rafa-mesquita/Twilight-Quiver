@@ -279,12 +279,19 @@ func _spawn_tower_at_player() -> void:
 	var world := get_tree().get_first_node_in_group("world")
 	if world == null:
 		return
-	var tower_scene: PackedScene = load("res://scenes/world/structures/arrow_tower.tscn")
+	const TOWER_SCENE_PATH: String = "res://scenes/world/structures/arrow_tower.tscn"
+	var tower_scene: PackedScene = load(TOWER_SCENE_PATH)
 	if tower_scene == null:
 		return
 	var tower := tower_scene.instantiate()
 	world.add_child(tower)
 	tower.global_position = player.global_position + Vector2(48, 0)
+	# Registra no wave_manager pra que a torre seja rastreada igual uma comprada
+	# no shop: respawna entre waves, é estocada na wave 14 (Duskrose) e volta
+	# automaticamente na wave 15.
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm != null and wm.has_method("register_structure"):
+		wm.register_structure(TOWER_SCENE_PATH, tower.global_position, tower)
 
 
 func _spawn_claudio_druida_at_player() -> void:
