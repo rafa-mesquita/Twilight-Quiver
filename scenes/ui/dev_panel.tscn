@@ -466,6 +466,13 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 20
 text = "Abrir Shop"
 
+[node name="OpenShopJokerBtn" type="Button" parent="UtilityBar/Row"]
+custom_minimum_size = Vector2(0, 36)
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "Shop c/ Joker"
+
 [node name="ResetHpBtn" type="Button" parent="UtilityBar/Row"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")

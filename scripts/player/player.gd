@@ -156,6 +156,12 @@ const FIRE_SKILL_DURATION: float = 6.0
 const FIRE_SKILL_PROJECTILE_SCENE: PackedScene = preload("res://scenes/skills/fire_skill_projectile.tscn")
 var _fire_skill_cd_remaining: float = 0.0
 
+# Último Desejo (joker card do shop): uso único por run. Filtra a carta do
+# pool depois que o player usar uma vez. Setado pelo wave_shop quando o
+# player escolhe um upgrade no modal pós-compra. Resetado por new run via
+# reset dos demais campos do player na criação do node.
+var joker_used: bool = false
+
 # Chain Lightning lv3: skill ativa que invoca um raio (lightning_bolt do
 # electric_mage) no ponto alvo. Cast instantâneo na posição do cursor.
 # Lv4 buffa o dano do raio em +20%.

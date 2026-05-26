@@ -452,6 +452,13 @@ func _build_wave_config(num: int) -> Dictionary:
 		reduction = 0.66
 	elif num == 6:
 		reduction = 0.62
+	elif num == 10 or num == 11:
+		# Wave 10 acumula: milestone scaling (+20% HP / +15% dmg / +8% spd),
+		# estreia do electric mage, fire/ice subindo de 2/3 pra 3/4, e stone
+		# cubes voltando depois de respiro. Reduz horda de monkey/mage nas
+		# 10-11 pra absorver o stack. Wave 11 herda o mesmo alívio (sem stone
+		# cubes mas com milestone scaling ainda ativo).
+		reduction = 0.78
 	var scale: float = (1.0 + (num - 1) * 0.35) * reduction
 	var monkey_alive: int = int(round(5 * scale + randf_range(-1.0, 2.0)))
 	var monkey_total: int = int(round(15 * scale + randf_range(0.0, 4.0)))
@@ -521,6 +528,12 @@ func _build_wave_config(num: int) -> Dictionary:
 		var elec_step: int = (num - 10) / 2
 		elec_alive = mini(2 + elec_step, 4)
 		elec_total = mini(3 + elec_step, 6)
+		# Debut suavizado: nas waves 10-11 (estreia), entra com 1 alive / 2 total
+		# pra não empilhar com o milestone scaling + outros elementais. Volta ao
+		# count normal (2/3) na wave 12 e escala dali pra frente.
+		if num == 10 or num == 11:
+			elec_alive = 1
+			elec_total = 2
 	# Dark Ball cadência:
 	#   Wave 6: estreia (20% dos macacos).
 	#   Wave 9, 12, 15, 18...: a cada 3 waves (também 20%).

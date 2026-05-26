@@ -14,10 +14,16 @@ extends MageEnemy
 @export var field_dps: float = 12.0
 @export var field_duration: float = 6.0
 @export var field_scale: float = 1.0
+# Tempo de voo da bola de fogo (s). Player usa 1.05; mago é mais lento pra
+# dar tempo de esquivar com o indicador branco no chão telegrafando o pouso.
+@export var projectile_arc_duration: float = 1.45
 
 # Skin: textura própria do fire mage (mesmas regiões do sheet base do mage,
 # layout 32×32 com walk[3] + attack[3]).
 const FIRE_MAGE_TEXTURE: Texture2D = preload("res://assets/enemies/mage/fire-mage-export.png")
+
+# Som tocado uma vez quando o mago lança a bola de fogo (cast).
+const CAST_SOUND: AudioStream = preload("res://audios/mago de fogo/fogo lançando magia.mp3")
 
 
 func _ready() -> void:
@@ -82,9 +88,26 @@ func _fire_projectile() -> void:
 	# qualquer FireField do player.
 	if "is_enemy_source" in proj:
 		proj.is_enemy_source = not is_curse_ally
+	if "arc_duration" in proj:
+		proj.arc_duration = projectile_arc_duration
+	if "show_landing_indicator" in proj:
+		proj.show_landing_indicator = true
 	_get_world().add_child(proj)
 	# Spawn na posição do mago (cabeça/cima), mira no centro do corpo do alvo.
 	var spawn_pos: Vector2 = global_position + Vector2(0, -16)
 	var target_pos: Vector2 = target.global_position + Vector2(0, -10)
 	if proj.has_method("setup"):
 		proj.setup(spawn_pos, target_pos)
+	_play_cast_sound()
+
+
+func _play_cast_sound() -> void:
+	# AudioStreamPlayer2D como filho do mago — morre junto no queue_free. Não
+	# loopa (one-shot do cast). Auto-free no finished pra não acumular nodes.
+	var p := AudioStreamPlayer2D.new()
+	p.bus = &"SFX"
+	p.stream = CAST_SOUND
+	p.volume_db = -10.0
+	add_child(p)
+	p.finished.connect(p.queue_free)
+	p.play()

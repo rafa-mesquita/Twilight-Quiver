@@ -13,6 +13,11 @@ var dev_mode: bool = false
 # Persiste entre scene reloads (útil pra testar runs longas sem morrer).
 var dev_godmode: bool = false
 
+# Força a carta "Último Desejo" a aparecer no próximo roll do shop, ignorando
+# weight e wave 5+. Resetado pelo wave_shop ao consumir o flag. Setado pelo
+# dev_panel pra testar a feature sem depender de RNG.
+var dev_force_joker_next_shop: bool = false
+
 # Snapshot de upgrades pra "renascer com os mesmos" (botão do dev panel).
 # Mapa upgrade_id → nível alvo. Aplicado pelo dev_panel após o player carregar
 # na nova run (cena recarregada), depois limpado. Vazio = sem respawn pendente.

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://b7pwv66qtfj7c"
+path="res://.godot/imported/fogo lançando magia.mp3-4353ae7d866a448ec0d76f2e14e1e550.mp3str"
+
+[deps]
+
+source_file="res://audios/mago de fogo/fogo lançando magia.mp3"
+dest_files=["res://.godot/imported/fogo lançando magia.mp3-4353ae7d866a448ec0d76f2e14e1e550.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

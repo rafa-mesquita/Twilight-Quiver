@@ -15,10 +15,12 @@ extends Area2D
 # desconhecida" no death screen.
 @export var source_id: String = ""
 const TICK_INTERVAL: float = 0.5
+const BURNING_SOUND: AudioStream = preload("res://audios/mago de fogo/fogo queimando.mp3")
 
 var _enemies_inside: Array[Node] = []
 var _life_remaining: float = 0.0
 var _tick_accum: float = 0.0
+var _burning_player: AudioStreamPlayer2D = null
 
 
 func _ready() -> void:
@@ -33,6 +35,12 @@ func _ready() -> void:
 			if fc > 1:
 				sp.frame = randi() % fc
 				sp.frame_progress = randf()
+	# Fogo de inimigo (fire_mage) vira vermelho/carmim pra player diferenciar
+	# visualmente do próprio fogo (laranja-amarelo). Modulate é multiplicado
+	# pelo modulate do root (self.modulate.a controla o fade), então usamos
+	# nos filhos pra não atropelar o tween de fade-out.
+	if is_enemy_source:
+		_apply_enemy_tint()
 	# Captura bodies já sobrepostos no spawn (overlap inicial). Deferred pro
 	# physics step ter populado get_overlapping_bodies — sem isso só pega quem
 	# entra DEPOIS via body_entered, atrasando o primeiro hit.
@@ -44,6 +52,46 @@ func _ready() -> void:
 	var tw := create_tween()
 	tw.tween_interval(duration - fade_duration)
 	tw.tween_property(self, "modulate:a", 0.0, fade_duration)
+	_start_burning_audio()
+
+
+func _start_burning_audio() -> void:
+	# Loop posicional do fogo queimando. Como é filho do FireField, é freed
+	# automático quando o campo some — sem fire fields ativos = sem som.
+	# Loop forçado em runtime (mp3 .import vem com loop=false default).
+	var stream: AudioStream = BURNING_SOUND
+	if stream is AudioStreamMP3:
+		(stream as AudioStreamMP3).loop = true
+	_burning_player = AudioStreamPlayer2D.new()
+	_burning_player.bus = &"SFX"
+	_burning_player.stream = stream
+	_burning_player.volume_db = -14.0
+	# Atenuação por proximidade ao listener (a Camera2D segue o player).
+	# Viewport 1920x1080 com zoom 3.5x → área visível ~548x308; half-diagonal
+	# ~314px. max_distance=350 garante silêncio assim que o campo sai da tela.
+	# attenuation=1.5 mantém volume razoável perto e cai rápido na borda.
+	_burning_player.max_distance = 350.0
+	_burning_player.attenuation = 1.5
+	add_child(_burning_player)
+	_burning_player.play()
+	# Fade do áudio acompanha o fade visual do campo nos últimos segundos.
+	var atw := create_tween()
+	atw.tween_interval(duration - fade_duration)
+	atw.tween_property(_burning_player, "volume_db", -40.0, fade_duration)
+
+
+func _apply_enemy_tint() -> void:
+	# Flames: shift do laranja-amarelo pra vermelho-carmim (mais R, menos G/B).
+	# Shadow: vermelho mais escuro pra sombra também ler como "fogo do inimigo".
+	# GlowLight: cor do light fica vermelha (modulate não afeta Light2D).
+	for child in get_children():
+		if child is AnimatedSprite2D:
+			(child as AnimatedSprite2D).modulate = Color(1.15, 0.35, 0.45, 1.0)
+		elif child is Polygon2D:
+			(child as Polygon2D).color = Color(0.55, 0.05, 0.08, 0.45)
+	var glow := get_node_or_null("GlowLight") as PointLight2D
+	if glow != null:
+		glow.color = Color(1.0, 0.25, 0.3, 1.0)
 
 
 func _capture_initial_overlaps() -> void:

@@ -174,6 +174,15 @@ SHOP_STAT_MOVE_SPEED,Vel. Mov.,Move,Vel. Mov.,Mvt.
 SHOP_STAT_ATTACK_SPEED,Vel. Atk.,Atk Speed,Vel. Atk.,Vit. Atq.
 SHOP_STAT_ARMOR,Armadura,Armor,Armadura,Armure
 SHOP_BONUS_PLUS_ONE,BONUS +1!,BONUS +1!,¡BONUS +1!,BONUS +1 !
+SHOP_JOKER_NAME,Ultimo Desejo,Last Wish,Último Deseo,Dernier Souhait
+SHOP_JOKER_TOOLTIP_HEADER,Ultimo Desejo,Last Wish,Último Deseo,Dernier Souhait
+SHOP_JOKER_TOOLTIP_BODY,"Sobe +1 nivel em qualquer status, pet ou upgrade que voce ja tenha.","Levels up +1 any status, pet or upgrade you already own.","Sube +1 nivel en cualquier estado, mascota o mejora que ya tengas.","Augmente de +1 niveau n'importe quel statut, allié ou amélioration que vous possédez déjà."
+SHOP_JOKER_TOOLTIP_RARE,Carta rara · uso unico por run,Rare card · one use per run,Carta rara · un solo uso por partida,Carte rare · un seul usage par partie
+SHOP_JOKER_MODAL_TITLE,Ultimo Desejo — escolha o que upar,Last Wish — pick what to level up,Último Deseo — elige qué subir,Dernier Souhait — choisissez quoi améliorer
+SHOP_JOKER_MODAL_SECTION_STATUS,STATUS,STATUS,ESTADO,STATS
+SHOP_JOKER_MODAL_SECTION_PETS,ALIADOS,ALLIES,ALIADOS,ALLIÉS
+SHOP_JOKER_MODAL_SECTION_UPGRADES,UPGRADES,UPGRADES,MEJORAS,AMÉLIORATIONS
+SHOP_JOKER_MODAL_EMPTY,Nada upgradavel disponivel,Nothing upgradable available,Nada mejorable disponible,Rien à améliorer
 SHOP_PLACEMENT_HINT,Escolha um dos 5 pontos para posicionar  -  Aperte Z para voltar,Pick one of the 5 spots to place  -  Press Z to go back,Elige uno de los 5 puntos para colocar  -  Pulsa Z para volver,Choisissez un des 5 emplacements  -  Appuyez sur Z pour revenir
 SHOP_COMING_SOON,Em breve,Coming soon,Próximamente,Bientôt
 SHOP_BLOCKED,Bloqueado,Blocked,Bloqueado,Bloqué
@@ -803,6 +812,6 @@ SHOP_UPG_MOVE_SPEED,Velocidade de Movimento,Move Speed,Velocidad de Movimiento,V
 SHOP_UPG_ARMOR,Armadura,Armor,Armadura,Armure
 PLAYER_QUEST_GINGERALE,Mate 3000 inimigos no total,Kill 3000 enemies total,Mata 3000 enemigos en total,Tuez 3000 ennemis au total
 PLAYER_QUEST_BLUEY,Derrote o boss Mage Monkey (raid 7),Defeat the Mage Monkey boss (raid 7),Derrota al jefe Mago Mono (oleada 7),Vainquez le boss Singe Mage (vague 7)
-PLAYER_QUEST_LINKED,Renasça 200 macaquinhos com o disparo profano,Reincarnate 200 monkeys with the unholy shot,Renace 200 monitos con el disparo profano,Faites renaître 200 petits singes avec le tir profane
+PLAYER_QUEST_LINKED,Renasça 200 macaquinhos como aliados,Reincarnate 200 monkeys as allies,Renace 200 monitos como aliados,Faites renaître 200 petits singes en alliés
 PLAYER_QUEST_HAWK,Alcance a raid 20,Reach raid 20,Alcanza el raid 20,Atteignez le raid 20
 PLAYER_QUEST_ROSA_ONYX,Derrote a Duskrose,Defeat Duskrose,Derrota a Duskrose,Vaincre Duskrose

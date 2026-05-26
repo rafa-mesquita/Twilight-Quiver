@@ -64,6 +64,7 @@ func _ready() -> void:
 	$UtilityBar/Row/ClearBtn.pressed.connect(_clear_enemies)
 	$UtilityBar/Row/AddGoldBtn.pressed.connect(_add_test_gold)
 	$UtilityBar/Row/OpenShopBtn.pressed.connect(_open_shop_directly)
+	$UtilityBar/Row/OpenShopJokerBtn.pressed.connect(_open_shop_with_joker)
 	# Estruturas e pets.
 	$Content/Scroll/VBox/EstruturasSection/EstruturasContent/SpawnTowerBtn.pressed.connect(_spawn_tower_at_player)
 	$Content/Scroll/VBox/EstruturasSection/EstruturasContent/SpawnClaudioDruidaBtn.pressed.connect(_spawn_claudio_druida_at_player)
@@ -225,6 +226,18 @@ func _open_shop_directly() -> void:
 			if is_instance_valid(shop):
 				shop.queue_free()
 		)
+
+
+func _open_shop_with_joker() -> void:
+	# Força a carta "Último Desejo" a aparecer no próximo roll de upgrade slots
+	# e abre o shop. Reset do joker_used pra carta poder ser comprada mesmo se
+	# o player já usou nesta run. Útil pra testar a feature sem depender de RNG
+	# ou de ter itens compráveis na shop atual.
+	GameState.dev_force_joker_next_shop = true
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null and "joker_used" in player:
+		player.joker_used = false
+	_open_shop_directly()
 
 
 func _add_test_gold() -> void:

@@ -251,6 +251,19 @@ const TIGER_CLAWS_DESCS: Array[String] = [
 	"SHOP_TIGER_CLAWS_DESC_4",
 ]
 
+# Carta "Último Desejo" (joker do shop): uso único por run. Substitui 1 dos 3
+# slots de upgrade com baixa probabilidade quando o player tem itens pra upar
+# (a partir da wave 5). Quando comprada, abre modal pós-"Next Wave" pra player
+# escolher 1 status/pet/upgrade já owned pra subir +1 nível.
+const JOKER_ID: String = "joker"
+const JOKER_PRICE: int = 10
+const JOKER_FIRST_WAVE: int = 5
+const JOKER_WEIGHT: float = 0.20  # ~20% da chance de uma carta normal por slot
+# IDs que contam como "status" pro modal de seleção do joker (escala infinita).
+const _JOKER_STATUS_IDS: Array[String] = ["hp", "damage", "attack_speed", "move_speed", "armor"]
+# IDs de pets/aliados pro modal (top 4 cap).
+const _JOKER_PET_IDS: Array[String] = ["claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto"]
+
 @onready var gold_label: Label = $Root/GoldLabel
 @onready var continue_btn: Button = $Root/ContinueBtn
 @onready var placement_hint: Label = $PlacementHint
@@ -916,8 +929,23 @@ func _roll_upg_slots() -> void:
 	upg_slots.clear()
 	var player := _get_player()
 	var already_picked_ids: Array[String] = []
+	# Bias pra upgrades já comprados a partir da wave 5: +10% de chance relativa
+	# (peso 1.10 vs 1.00). Facilita escalar builds existentes em vez de receber
+	# sempre opções totalmente novas no mid/late-game.
+	var _wn_for_bias: int = _current_wave_number()
+	var owned_weight: float = 1.10 if _wn_for_bias >= 5 else 1.0
+	# Joker ("Último Desejo"): wave 5+, não usado ainda, e player tem algo
+	# upgradável (senão a carta é inútil). Dev flag força aparecer ignorando
+	# TODOS os gates (wave, used, has_target) — útil pra testar o card antes
+	# da wave 5 e independente do estado da run.
+	var dev_force: bool = GameState.dev_force_joker_next_shop
+	var joker_eligible: bool = dev_force or _joker_can_appear(player)
+	var force_joker: bool = dev_force
+	if force_joker:
+		GameState.dev_force_joker_next_shop = false
 	for i in 3:
 		var pool: Array = []
+		var weights: Array[float] = []
 		for u in UPGRADE_POOL:
 			var id: String = u["id"]
 			var max_level: int = u.get("max_level", 999)
@@ -952,12 +980,50 @@ func _roll_upg_slots() -> void:
 				if req_lvl <= 0:
 					continue
 			pool.append(u)
+			# Owned (current >= 1) ganha peso extra a partir da wave 5.
+			weights.append(owned_weight if current >= 1 else 1.0)
+		# Joker entra no pool com weight baixo. Filtra após já ter sido pickeado
+		# nesta shop (evita 2 jokers ao mesmo tempo nos 3 slots).
+		if joker_eligible and not (JOKER_ID in already_picked_ids):
+			pool.append(_make_joker_entry())
+			weights.append(JOKER_WEIGHT)
 		if pool.is_empty():
 			upg_slots.append({"id": "none", "name": "—", "desc": "—", "price": 0, "available": false})
 			continue
-		var picked: Dictionary = pool[randi() % pool.size()]
+		# Force-joker (dev): primeiro slot vira joker direto. Demais slots rolam normal.
+		var picked: Dictionary
+		if force_joker and i == 0:
+			picked = _make_joker_entry()
+		else:
+			# Pick ponderado: roll uniforme em [0, total_weight) e caminha no acumulado.
+			# Fallback no último entry cobre edge case de arredondamento float.
+			var total_w: float = 0.0
+			for w in weights:
+				total_w += w
+			var roll: float = randf() * total_w
+			picked = pool[pool.size() - 1]
+			var acc: float = 0.0
+			for j in pool.size():
+				acc += weights[j]
+				if roll < acc:
+					picked = pool[j]
+					break
 		already_picked_ids.append(picked["id"])
 		var picked_id: String = picked["id"]
+		var is_joker_pick: bool = bool(picked.get("is_joker", false))
+		# Joker: target_level cosmético = 1 (não escala via current_level — só
+		# pode ser comprado uma vez por run). Preço fixo, desc vazio (só tooltip).
+		if is_joker_pick:
+			upg_slots.append({
+				"id": picked_id,
+				"name": picked["name"],
+				"desc": "",
+				"price": JOKER_PRICE,
+				"available": true,
+				"target_level": 1,
+				"is_joker": true,
+			})
+			continue
 		var current_level: int = 0
 		if player != null and player.has_method("get_upgrade_count"):
 			current_level = player.get_upgrade_count(picked_id)
@@ -974,6 +1040,8 @@ func _roll_upg_slots() -> void:
 
 
 func _get_upgrade_price(id: String, player_current_level: int) -> int:
+	if id == JOKER_ID:
+		return JOKER_PRICE
 	if id in UPGRADE_PRICE_OVERRIDES:
 		return int(UPGRADE_PRICE_OVERRIDES[id])
 	if player_current_level < 0:
@@ -981,6 +1049,53 @@ func _get_upgrade_price(id: String, player_current_level: int) -> int:
 	if player_current_level >= PRICE_TABLE.size():
 		return PRICE_TABLE[PRICE_TABLE.size() - 1]
 	return PRICE_TABLE[player_current_level]
+
+
+# Entry "fake" do joker pra entrar no pool de _roll_upg_slots como um upgrade
+# normal. is_joker=true sinaliza pro resto do pipeline tratar diferente.
+func _make_joker_entry() -> Dictionary:
+	return {
+		"id": JOKER_ID,
+		"name": "SHOP_JOKER_NAME",
+		"max_level": 1,
+		"is_joker": true,
+	}
+
+
+# Joker pode aparecer? Precisa: wave 5+, não usado ainda, e player tem algum
+# item upgradável (senão a carta é inútil — gasta 10g e o modal abre vazio).
+func _joker_can_appear(player: Node) -> bool:
+	var wn: int = _current_wave_number()
+	if wn < JOKER_FIRST_WAVE:
+		return false
+	if player == null:
+		return false
+	if "joker_used" in player and bool(player.joker_used):
+		return false
+	return _joker_has_any_target(player)
+
+
+# Retorna true se o player tem ao menos 1 item que o joker pode upar:
+# - Qualquer status com lvl >= 1 (sem cap)
+# - Qualquer pet com lvl >= 1 e < 4
+# - Qualquer upgrade gameplay com lvl >= 1 e < 4
+func _joker_has_any_target(player: Node) -> bool:
+	if player == null or not player.has_method("get_upgrade_count"):
+		return false
+	for sid in _JOKER_STATUS_IDS:
+		if int(player.get_upgrade_count(sid)) >= 1:
+			return true
+	for pid in _JOKER_PET_IDS:
+		var lvl: int = int(player.get_upgrade_count(pid))
+		if lvl >= 1 and lvl < 4:
+			return true
+	for u in UPGRADE_POOL:
+		var uid: String = String(u["id"])
+		var max_lvl: int = int(u.get("max_level", 4))
+		var ulvl: int = int(player.get_upgrade_count(uid))
+		if ulvl >= 1 and ulvl < max_lvl:
+			return true
+	return false
 
 
 func _get_upgrade_descs_array(id: String) -> Array:
@@ -1139,6 +1254,14 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 		if desc_label != null:
 			desc_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			desc_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	# Joker: sem texto visual na carta (só price + tooltip on hover).
+	# Restaurado pra visible=true pelos próximos rebuilds do card via os labels
+	# acima recebendo .text — visible só fica false enquanto este slot é joker.
+	var is_joker_card: bool = bool(slot.get("is_joker", false))
+	if title_label != null:
+		title_label.visible = not is_joker_card
+	if desc_label != null:
+		desc_label.visible = not is_joker_card
 
 
 # IDs de upgrade cujo título + desc devem ser centralizados horizontal e
@@ -1264,6 +1387,8 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	# double_arrows compartilha a arte do multi_arrow (mesma família — marrom).
 	# Quando tiver arte própria, trocar pra "res://assets/Hud/shop/upgrade/double_arrows.png".
 	"double_arrows": "res://assets/Hud/shop/upgrade/multi_arrow.png",
+	# Carta "Último Desejo" (joker): subpasta dedicada, sem desc na arte.
+	"joker": "res://assets/Hud/shop/upgrade/carta coringa/carta coringa.png",
 }
 # Cor única pros aliados (todos compartilham por enquanto).
 const ALIADO_TEXT_COLOR: Color = Color(0x2c / 255.0, 0x1f / 255.0, 0x1f / 255.0)  # #2c1f1f
@@ -1796,13 +1921,26 @@ func _commit_aliado_no_placement() -> void:
 
 func _commit_upgrades_and_close() -> void:
 	var player := _get_player()
+	var joker_bought: bool = false
 	if player != null:
 		for idx in _selected_upgrade_idxs:
 			var slot: Dictionary = upg_slots[idx]
+			if bool(slot.get("is_joker", false)):
+				# Joker: paga gold + marca usada, mas APLICAÇÃO é adiada pro modal
+				# de seleção. Se spend_gold falhar (não deveria — _buy_upgrade já
+				# garantiu), skip.
+				if player.spend_gold(int(slot.get("price", 0))):
+					if "joker_used" in player:
+						player.joker_used = true
+					joker_bought = true
+				continue
 			if not player.spend_gold(int(slot.get("price", 0))):
 				continue
 			if player.has_method("apply_upgrade"):
 				player.apply_upgrade(slot["id"])
+	if joker_bought:
+		_open_joker_modal()
+		return
 	closed.emit()
 
 
@@ -2433,6 +2571,10 @@ func _show_card_tooltip(card: Control) -> void:
 	# Cards placeholder/locked/free não têm desc multi-nível — tooltip pulado.
 	if card_id == "" or card_id == "none" or card_id == "soon" or card_id == "locked" or card_id == "free_pet":
 		return
+	# Joker: tooltip dedicado (a carta não tem descs por nível — é one-shot).
+	if card_id == JOKER_ID:
+		_show_joker_tooltip(card)
+		return
 	var descs: Array = _get_upgrade_descs_array(card_id)
 	if descs.is_empty():
 		return  # Estrutura/Tower sem array de descs — tooltip não aplicável.
@@ -2482,6 +2624,324 @@ func _show_card_tooltip(card: Control) -> void:
 		# Card no lado direito — tooltip à esquerda.
 		pos = Vector2(card_rect.position.x - tip_size.x - 16.0, card_rect.position.y)
 	# Clamp pra não sair da tela.
+	pos.x = clampf(pos.x, 16.0, 1920.0 - tip_size.x - 16.0)
+	pos.y = clampf(pos.y, 16.0, 1080.0 - tip_size.y - 16.0)
+	_augment_tooltip.position = pos
+
+
+# ---------- Joker modal ----------
+
+var _joker_modal: Panel = null
+# Estado da seleção (mesmo padrão do shop principal: clica, fica roxo, pode
+# trocar, só commita no botão Confirmar).
+var _joker_selected_id: String = ""
+# Lista dos chips renderizados pra poder atualizar overlay quando seleção muda.
+# Cada entry: {"id": String, "btn": Button, "overlay": ColorRect}
+var _joker_chips: Array = []
+var _joker_confirm_btn: Button = null
+
+
+func _open_joker_modal() -> void:
+	# Fade visual do shop pra dar foco no modal (sem fechá-lo — vamos voltar
+	# pra closed.emit() depois do confirm).
+	if root_panel != null:
+		root_panel.modulate = Color(1, 1, 1, 0.35)
+	_joker_selected_id = ""
+	_joker_chips.clear()
+	_joker_modal = Panel.new()
+	_joker_modal.anchor_left = 0.5
+	_joker_modal.anchor_top = 0.5
+	_joker_modal.anchor_right = 0.5
+	_joker_modal.anchor_bottom = 0.5
+	_joker_modal.offset_left = -560
+	_joker_modal.offset_top = -340
+	_joker_modal.offset_right = 560
+	_joker_modal.offset_bottom = 340
+	_joker_modal.z_index = 50
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.09, 0.06, 0.13, 0.97)
+	sb.border_color = Color(0.85, 0.65, 0.20, 1.0)  # dourado: destaque do joker
+	sb.border_width_left = 3
+	sb.border_width_top = 3
+	sb.border_width_right = 3
+	sb.border_width_bottom = 3
+	sb.corner_radius_top_left = 6
+	sb.corner_radius_top_right = 6
+	sb.corner_radius_bottom_left = 6
+	sb.corner_radius_bottom_right = 6
+	_joker_modal.add_theme_stylebox_override("panel", sb)
+	add_child(_joker_modal)
+	var vbox := VBoxContainer.new()
+	vbox.anchor_right = 1.0
+	vbox.anchor_bottom = 1.0
+	vbox.offset_left = 24.0
+	vbox.offset_top = 18.0
+	vbox.offset_right = -24.0
+	vbox.offset_bottom = -18.0
+	vbox.add_theme_constant_override("separation", 14)
+	_joker_modal.add_child(vbox)
+	var title := Label.new()
+	title.text = tr("SHOP_JOKER_MODAL_TITLE")
+	var byte_font: Font = load("res://font/ByteBounce.ttf")
+	if byte_font != null:
+		title.add_theme_font_override("font", byte_font)
+	title.add_theme_font_size_override("font_size", 36)
+	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.30, 1.0))
+	title.add_theme_color_override("font_outline_color", Color.BLACK)
+	title.add_theme_constant_override("outline_size", 3)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+	var player := _get_player()
+	var hud := get_tree().get_first_node_in_group("hud")
+	var status_targets: Array[String] = _collect_joker_status_targets(player)
+	var pet_targets: Array[String] = _collect_joker_pet_targets(player)
+	var upgrade_targets: Array[String] = _collect_joker_upgrade_targets(player)
+	_add_joker_section(vbox, "SHOP_JOKER_MODAL_SECTION_STATUS", status_targets, player, hud)
+	_add_joker_section(vbox, "SHOP_JOKER_MODAL_SECTION_PETS", pet_targets, player, hud)
+	_add_joker_section(vbox, "SHOP_JOKER_MODAL_SECTION_UPGRADES", upgrade_targets, player, hud)
+	# Edge case: player não tem nada upgradável. Mostra mensagem e auto-fecha
+	# (não há o que selecionar nem confirmar).
+	if status_targets.is_empty() and pet_targets.is_empty() and upgrade_targets.is_empty():
+		var empty_lbl := Label.new()
+		empty_lbl.text = tr("SHOP_JOKER_MODAL_EMPTY")
+		empty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		empty_lbl.add_theme_font_size_override("font_size", 24)
+		empty_lbl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.90, 1.0))
+		vbox.add_child(empty_lbl)
+		get_tree().create_timer(1.2).timeout.connect(_close_joker_modal_and_emit)
+		return
+	# Botão Confirmar — habilitado só quando _joker_selected_id != "".
+	var confirm_row := HBoxContainer.new()
+	confirm_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(confirm_row)
+	_joker_confirm_btn = Button.new()
+	_joker_confirm_btn.text = tr("SHOP_NEXT_WAVE")
+	_joker_confirm_btn.custom_minimum_size = Vector2(240, 56)
+	_joker_confirm_btn.focus_mode = Control.FOCUS_NONE
+	if byte_font != null:
+		_joker_confirm_btn.add_theme_font_override("font", byte_font)
+	_joker_confirm_btn.add_theme_font_size_override("font_size", 28)
+	_joker_confirm_btn.add_theme_color_override("font_color", Color(1.0, 0.92, 0.55, 1.0))
+	_joker_confirm_btn.add_theme_color_override("font_color_disabled", Color(0.55, 0.50, 0.55, 1.0))
+	var btn_sb := StyleBoxFlat.new()
+	btn_sb.bg_color = Color(0.32, 0.22, 0.10, 1.0)
+	btn_sb.border_color = Color(0.85, 0.65, 0.20, 1.0)
+	btn_sb.border_width_left = 2
+	btn_sb.border_width_top = 2
+	btn_sb.border_width_right = 2
+	btn_sb.border_width_bottom = 2
+	btn_sb.corner_radius_top_left = 4
+	btn_sb.corner_radius_top_right = 4
+	btn_sb.corner_radius_bottom_left = 4
+	btn_sb.corner_radius_bottom_right = 4
+	var btn_hover_sb: StyleBoxFlat = btn_sb.duplicate()
+	btn_hover_sb.bg_color = Color(0.46, 0.32, 0.14, 1.0)
+	var btn_disabled_sb: StyleBoxFlat = btn_sb.duplicate()
+	btn_disabled_sb.bg_color = Color(0.15, 0.12, 0.14, 1.0)
+	btn_disabled_sb.border_color = Color(0.35, 0.30, 0.35, 1.0)
+	_joker_confirm_btn.add_theme_stylebox_override("normal", btn_sb)
+	_joker_confirm_btn.add_theme_stylebox_override("hover", btn_hover_sb)
+	_joker_confirm_btn.add_theme_stylebox_override("pressed", btn_hover_sb)
+	_joker_confirm_btn.add_theme_stylebox_override("disabled", btn_disabled_sb)
+	_joker_confirm_btn.disabled = true
+	_joker_confirm_btn.pressed.connect(_on_joker_confirm)
+	confirm_row.add_child(_joker_confirm_btn)
+
+
+func _collect_joker_status_targets(player: Node) -> Array[String]:
+	var out: Array[String] = []
+	if player == null or not player.has_method("get_upgrade_count"):
+		return out
+	for sid in _JOKER_STATUS_IDS:
+		if int(player.get_upgrade_count(sid)) >= 1:
+			out.append(sid)
+	return out
+
+
+func _collect_joker_pet_targets(player: Node) -> Array[String]:
+	var out: Array[String] = []
+	if player == null or not player.has_method("get_upgrade_count"):
+		return out
+	for pid in _JOKER_PET_IDS:
+		var lvl: int = int(player.get_upgrade_count(pid))
+		if lvl >= 1 and lvl < 4:
+			out.append(pid)
+	return out
+
+
+func _collect_joker_upgrade_targets(player: Node) -> Array[String]:
+	var out: Array[String] = []
+	if player == null or not player.has_method("get_upgrade_count"):
+		return out
+	for u in UPGRADE_POOL:
+		var uid: String = String(u["id"])
+		var max_lvl: int = int(u.get("max_level", 4))
+		var ulvl: int = int(player.get_upgrade_count(uid))
+		if ulvl >= 1 and ulvl < max_lvl:
+			out.append(uid)
+	return out
+
+
+func _add_joker_section(parent: VBoxContainer, title_key: String, ids: Array[String], player: Node, hud: Node) -> void:
+	if ids.is_empty():
+		return
+	var section_label := Label.new()
+	section_label.text = tr(title_key)
+	var byte_font: Font = load("res://font/ByteBounce.ttf")
+	if byte_font != null:
+		section_label.add_theme_font_override("font", byte_font)
+	section_label.add_theme_font_size_override("font_size", 22)
+	section_label.add_theme_color_override("font_color", Color(0.78, 0.68, 0.95, 1.0))
+	parent.add_child(section_label)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	parent.add_child(row)
+	for id in ids:
+		row.add_child(_build_joker_chip(id, player, hud))
+
+
+const _JOKER_CHIP_SIZE: Vector2 = Vector2(96, 110)
+
+
+func _build_joker_chip(id: String, player: Node, hud: Node) -> Control:
+	var btn := Button.new()
+	btn.custom_minimum_size = _JOKER_CHIP_SIZE
+	btn.flat = true
+	btn.focus_mode = Control.FOCUS_NONE
+	var chip_bg := StyleBoxFlat.new()
+	chip_bg.bg_color = Color(0.14, 0.10, 0.18, 1.0)
+	chip_bg.border_color = Color(0.45, 0.35, 0.60, 1.0)
+	chip_bg.border_width_left = 2
+	chip_bg.border_width_top = 2
+	chip_bg.border_width_right = 2
+	chip_bg.border_width_bottom = 2
+	chip_bg.corner_radius_top_left = 4
+	chip_bg.corner_radius_top_right = 4
+	chip_bg.corner_radius_bottom_left = 4
+	chip_bg.corner_radius_bottom_right = 4
+	btn.add_theme_stylebox_override("normal", chip_bg)
+	var hover_bg: StyleBoxFlat = chip_bg.duplicate()
+	hover_bg.bg_color = Color(0.20, 0.14, 0.26, 1.0)
+	hover_bg.border_color = Color(0.95, 0.75, 0.25, 1.0)
+	btn.add_theme_stylebox_override("hover", hover_bg)
+	btn.add_theme_stylebox_override("pressed", hover_bg)
+	# Icon (atlas do HUD).
+	var lvl: int = int(player.get_upgrade_count(id)) if player != null and player.has_method("get_upgrade_count") else 0
+	var icon := TextureRect.new()
+	if hud != null and hud.has_method("_get_upgrade_icon_atlas"):
+		icon.texture = hud._get_upgrade_icon_atlas(id, lvl)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.anchor_right = 1.0
+	icon.offset_left = 6.0
+	icon.offset_top = 6.0
+	icon.offset_right = -6.0
+	icon.offset_bottom = 70.0
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	btn.add_child(icon)
+	# Level transition label.
+	var lvl_label := Label.new()
+	lvl_label.text = "%d → %d" % [lvl, lvl + 1]
+	var byte_font: Font = load("res://font/ByteBounce.ttf")
+	if byte_font != null:
+		lvl_label.add_theme_font_override("font", byte_font)
+	lvl_label.add_theme_font_size_override("font_size", 18)
+	lvl_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.30, 1.0))
+	lvl_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	lvl_label.add_theme_constant_override("outline_size", 2)
+	lvl_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lvl_label.anchor_top = 1.0
+	lvl_label.anchor_right = 1.0
+	lvl_label.anchor_bottom = 1.0
+	lvl_label.offset_top = -36.0
+	lvl_label.offset_left = 0.0
+	lvl_label.offset_right = 0.0
+	lvl_label.offset_bottom = -2.0
+	lvl_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	btn.add_child(lvl_label)
+	# Overlay roxo de seleção — mesma cor do shop principal (SELECTION_OVERLAY_COLOR).
+	# Começa invisível; vira visível quando esse chip é o selecionado.
+	var overlay := ColorRect.new()
+	overlay.color = SELECTION_OVERLAY_COLOR
+	overlay.anchor_right = 1.0
+	overlay.anchor_bottom = 1.0
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.visible = false
+	btn.add_child(overlay)
+	btn.pressed.connect(_on_joker_chip_clicked.bind(id))
+	_joker_chips.append({"id": id, "btn": btn, "overlay": overlay})
+	return btn
+
+
+func _on_joker_chip_clicked(id: String) -> void:
+	# Toggle behavior: clique no chip selecionado desfaz a seleção. Clicar em
+	# outro chip troca. Confirm fica disabled enquanto nada selecionado.
+	if _joker_selected_id == id:
+		_joker_selected_id = ""
+	else:
+		_joker_selected_id = id
+	_play_buy_sound()
+	_refresh_joker_chip_overlays()
+	if _joker_confirm_btn != null:
+		_joker_confirm_btn.disabled = _joker_selected_id == ""
+
+
+func _refresh_joker_chip_overlays() -> void:
+	for entry in _joker_chips:
+		var overlay: ColorRect = entry["overlay"]
+		if overlay == null or not is_instance_valid(overlay):
+			continue
+		overlay.visible = String(entry["id"]) == _joker_selected_id
+
+
+func _on_joker_confirm() -> void:
+	if _joker_selected_id == "":
+		return
+	var picked_id: String = _joker_selected_id
+	var player := _get_player()
+	if player != null and player.has_method("apply_upgrade"):
+		player.apply_upgrade(picked_id)
+	if has_node("/root/Telemetry"):
+		var wm := get_tree().get_first_node_in_group("wave_manager")
+		var wave_num: int = int(wm.wave_number) if wm != null and "wave_number" in wm else 0
+		get_node("/root/Telemetry").track("joker_used", {
+			"wave": wave_num,
+			"picked_id": picked_id,
+		})
+	_play_next_wave_sound()
+	_close_joker_modal_and_emit()
+
+
+func _close_joker_modal_and_emit() -> void:
+	if _joker_modal != null and is_instance_valid(_joker_modal):
+		_joker_modal.queue_free()
+		_joker_modal = null
+	_joker_chips.clear()
+	_joker_confirm_btn = null
+	_joker_selected_id = ""
+	if root_panel != null:
+		root_panel.modulate = Color.WHITE
+	closed.emit()
+
+
+func _show_joker_tooltip(card: Control) -> void:
+	_ensure_augment_tooltip()
+	var header: String = "[b]%s[/b]  [color=#ffd757]★[/color]" % tr("SHOP_JOKER_TOOLTIP_HEADER")
+	var body_line: String = "[color=#bfd4e8]%s[/color]" % tr("SHOP_JOKER_TOOLTIP_BODY")
+	var rare_line: String = "[color=#a890c8][i]%s[/i][/color]" % tr("SHOP_JOKER_TOOLTIP_RARE")
+	_augment_tooltip_label.text = header + "\n\n" + body_line + "\n\n" + rare_line
+	_augment_tooltip.visible = true
+	# Posicionamento mesmo padrão do tooltip normal.
+	await get_tree().process_frame
+	var card_rect: Rect2 = card.get_global_rect()
+	var tip_size: Vector2 = _augment_tooltip.size
+	var pos: Vector2
+	var card_center_x: float = card_rect.position.x + card_rect.size.x / 2.0
+	if card_center_x < 960.0:
+		pos = Vector2(card_rect.position.x + card_rect.size.x + 16.0, card_rect.position.y)
+	else:
+		pos = Vector2(card_rect.position.x - tip_size.x - 16.0, card_rect.position.y)
 	pos.x = clampf(pos.x, 16.0, 1920.0 - tip_size.x - 16.0)
 	pos.y = clampf(pos.y, 16.0, 1080.0 - tip_size.y - 16.0)
 	_augment_tooltip.position = pos
