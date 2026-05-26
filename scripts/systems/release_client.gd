@@ -21,17 +21,21 @@ func _ready() -> void:
 
 func fetch_latest() -> void:
 	if not _CONFIG.is_configured():
+		print("[release-notes] api not configured — skip fetch")
 		latest_fetched.emit({})
 		return
 	var url: String = _CONFIG.API_BASE_URL + _CONFIG.RELEASES_ENDPOINT
 	var headers: PackedStringArray = _CONFIG.build_headers()
+	print("[release-notes] GET ", url)
 	var err: Error = _http.request(url, headers, HTTPClient.METHOD_GET)
 	if err != OK:
+		print("[release-notes] HTTPRequest.request() error: ", err)
 		fetch_failed.emit("Request error: " + str(err))
 		latest_fetched.emit({})
 
 
 func _on_response(result: int, code: int, _hdrs: PackedStringArray, body: PackedByteArray) -> void:
+	print("[release-notes] response result=", result, " code=", code, " body_len=", body.size())
 	if result != HTTPRequest.RESULT_SUCCESS or code < 200 or code >= 300:
 		fetch_failed.emit("HTTP %d" % code)
 		latest_fetched.emit({})
@@ -50,4 +54,5 @@ func _on_response(result: int, code: int, _hdrs: PackedStringArray, body: Packed
 			break
 	if latest.is_empty() and not releases.is_empty() and typeof(releases[0]) == TYPE_DICTIONARY:
 		latest = releases[0]
+	print("[release-notes] parsed ", releases.size(), " releases; latest version=", latest.get("version", "<none>"))
 	latest_fetched.emit(latest)

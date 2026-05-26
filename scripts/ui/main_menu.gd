@@ -74,16 +74,23 @@ func _maybe_show_release_notes() -> void:
 
 func _on_release_latest_fetched(release: Dictionary) -> void:
 	if release.is_empty():
+		print("[release-notes] empty release dict — modal skipped")
 		return
 	var version: String = String(release.get("version", ""))
 	if version.is_empty():
+		print("[release-notes] release has no version field — modal skipped")
 		return
 	var notes: String = String(release.get("notes", ""))
 	if notes.is_empty():
+		print("[release-notes] release ", version, " has empty notes — modal skipped")
 		return
 	# Compara com a última versão que o user já dispensou. Se for igual, skip.
-	if _RELEASE_NOTES_MODAL_SCRIPT.load_last_seen() == version:
+	var last_seen: String = _RELEASE_NOTES_MODAL_SCRIPT.load_last_seen()
+	print("[release-notes] last_seen=", last_seen, " server_version=", version)
+	if last_seen == version:
+		print("[release-notes] already dismissed — modal skipped")
 		return
+	print("[release-notes] showing modal for ", version)
 	var modal: Control = _RELEASE_NOTES_MODAL.instantiate()
 	add_child(modal)
 	modal.show_release(version, notes)
