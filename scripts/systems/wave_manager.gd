@@ -79,9 +79,9 @@ const WAVE14_HIDE_GROUP: String = "hide_wave14"
 # Trilha alternativa pras waves 4-5-6 e 12-13. Loop forçado em runtime.
 @export var corrupted_void_music: AudioStream = preload("res://audios/musics/Level 4 - 5 -6/Corrupted Void Gate.mp3")
 # Boss redux dropa MAIS gold pra compensar a perda dos drops dos minions
-# (que ficam zerados nas waves de boss). 3.5× sobre o base 9-12 → 32-42 coins.
-# Equivale (com folga) ao gold que viria dos ~16 minions na wave 14.
-const BOSS_REDUX_GOLD_MULT: float = 3.5
+# (que ficam zerados nas waves de boss). 2.45× sobre o base 9-12 → 22-29 coins
+# (nerf -30% do antigo 3.5× pra compensar o free-upgrade pós-boss 14).
+const BOSS_REDUX_GOLD_MULT: float = 2.45
 # Tempo (s) que a camera fica parada no boss depois do overlay preto sumir,
 # antes de começar o pan pro player. Dá tempo do jogador ver o boss em defense
 # + a horda ao redor antes do round começar.
@@ -266,6 +266,7 @@ func _process(delta: float) -> void:
 		return
 	_check_structure_respawns(delta)
 	_emit_progress()
+	_update_last_enemies_indicator()
 	spawn_cooldown = maxf(spawn_cooldown - delta, 0.0)
 	if spawn_cooldown > 0.0:
 		return
@@ -280,6 +281,35 @@ func _process(delta: float) -> void:
 	# Nenhum tipo precisando spawnar — wave acaba quando todos os inimigos morrerem.
 	if _total_alive() == 0:
 		_finish_wave()
+
+
+# === Indicador dos últimos inimigos ===
+# Quando restam <= 2 inimigos vivos NA FASE FINAL da wave (todos já spawnados),
+# delega pro HUD desenhar setas na borda da tela apontando pros inimigos
+# off-screen — mesmo padrão do TowerAlertIndicator.
+const _LAST_ENEMY_MARKER_THRESHOLD: int = 2
+
+
+func _update_last_enemies_indicator() -> void:
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud == null or not hud.has_method("update_last_enemies_indicator"):
+		return
+	var enemies: Array = get_tree().get_nodes_in_group("enemy")
+	var count: int = enemies.size()
+	var show: bool = _all_enemies_spawned() and count > 0 and count <= _LAST_ENEMY_MARKER_THRESHOLD
+	if show:
+		hud.update_last_enemies_indicator(enemies)
+	else:
+		hud.update_last_enemies_indicator([])
+
+
+func _all_enemies_spawned() -> bool:
+	if wave_config.is_empty():
+		return false
+	for k: String in wave_config.keys():
+		if int(spawned_this_wave.get(k, 0)) < int(wave_config[k]["total"]):
+			return false
+	return true
 
 
 func _start_next_wave() -> void:
@@ -328,6 +358,10 @@ func _start_next_wave() -> void:
 		# aleatória do mapa.
 		if _is_boss_wave(wave_number) and player is Node2D:
 			(player as Node2D).global_position = _wave7_player_spawn
+			# Reposiciona claudios vivos pra perto do novo player_spawn. Sem isso,
+			# eles ficam fora da arena (especialmente wave 14, mapa diferente).
+			if player.has_method("reposition_claudio_druidas_near_player"):
+				player.reposition_claudio_druidas_near_player()
 		if player.has_method("reset_perf_counter"):
 			player.reset_perf_counter()
 		if player.has_method("reset_ricochet_counter"):
@@ -459,6 +493,11 @@ func _build_wave_config(num: int) -> Dictionary:
 		# 10-11 pra absorver o stack. Wave 11 herda o mesmo alívio (sem stone
 		# cubes mas com milestone scaling ainda ativo).
 		reduction = 0.78
+	elif num == 15 or num == 16:
+		# Pós-boss da Duskrose (wave 14): player chega sem heal nem upgrade,
+		# e a curva natural já tá em scale ~5+. Aliviar 15-16 evita que o
+		# pico pós-boss seja punitivo demais antes da wave 19+ (pace acelerado).
+		reduction = 0.68
 	var scale: float = (1.0 + (num - 1) * 0.35) * reduction
 	var monkey_alive: int = int(round(5 * scale + randf_range(-1.0, 2.0)))
 	var monkey_total: int = int(round(15 * scale + randf_range(0.0, 4.0)))
@@ -641,10 +680,10 @@ func _spawn_one(type_key: String) -> void:
 		# normal pra ficar mais forte.
 		if wave_number == 7 and type_key == "mage_monkey" and "max_hp" in enemy:
 			enemy.max_hp = 3000.0
-		# Override pro boss da wave 14 (Duskrose): HP fixo 6500 (ajustado pelo
-		# balance após adicionar dash + double dash + 2× dmg em melee).
+		# Override pro boss da wave 14 (Duskrose): HP fixo 8500 (buff geral pra
+		# acompanhar o ritmo encurtado de poderes 3-5s).
 		if wave_number == boss_redux_wave and type_key == "duskrose" and "max_hp" in enemy:
-			enemy.max_hp = 6500.0
+			enemy.max_hp = 8500.0
 	# Wave 14 boss (redux): drops escalam pra compensar a perda de drops dos
 	# minions + a dificuldade extra. Multiplicador maior que o normal de
 	# scaling porque tem ~16-18 minions a menos contribuindo gold.
@@ -1009,6 +1048,13 @@ func _cleanup_curse_allies() -> void:
 		await _grant_free_random_pet()
 		if stopped:
 			return
+	# Pós-boss da Duskrose (wave 14): presenteia +1 level em um upgrade que o
+	# player JÁ TEM. Recompensa que reforça a build atual em vez de diluir com
+	# algo novo. Compensa o nerf de gold do boss.
+	if wave_number == boss_redux_wave:
+		await _grant_free_owned_upgrade()
+		if stopped:
+			return
 	# Loja pós-wave: 1 estrutura + 1 upgrade max.
 	await _open_shop()
 	if stopped:
@@ -1324,6 +1370,30 @@ const FREE_REWARD_ALIADO_IDS: Array[String] = ["claudio_druida", "leno", "capiva
 const FREE_REWARD_STATUS_IDS: Array[String] = ["hp", "damage", "attack_speed", "move_speed", "armor"]
 
 
+func _grant_free_owned_upgrade() -> void:
+	# Sorteia entre os upgrades que o player JÁ TEM (level >= 1) e ainda não
+	# maxou (< 4). Aplica +1 level. Se nenhum candidato (todos maxados ou nada
+	# possuído), sai silenciosamente. Mesmo popup de card do _grant_free_random_upgrade.
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not player.has_method("apply_upgrade") or not player.has_method("get_upgrade_count"):
+		return
+	var pool: Array[Dictionary] = []
+	for entry in FREE_UPGRADE_POOL:
+		var id: String = entry["id"]
+		var cur: int = int(player.get_upgrade_count(id))
+		if cur <= 0:
+			continue
+		if cur >= 4:
+			continue
+		pool.append(entry)
+	if pool.is_empty():
+		return
+	var pick: Dictionary = pool[randi() % pool.size()]
+	player.apply_upgrade(pick["id"])
+	var lvl: int = int(player.get_upgrade_count(pick["id"]))
+	await _show_card_reward_popup(pick["id"], lvl, "HUD_FREE_UPGRADE_TITLE", pick["name"])
+
+
 func _grant_free_random_pet() -> void:
 	# Sorteia entre os pets ainda não maxados (4 = max). Espelha a lógica antiga
 	# de wave_shop._grant_free_random_pet — agora roda em wave_manager pra usar
@@ -1552,9 +1622,9 @@ func _prespawn_boss_wave_entities() -> void:
 					enemy.heart_scene = null
 			if wave_number != 7 or type_key == "mage_monkey":
 				_apply_wave_scaling(enemy)
-				# Override pro boss Duskrose (wave 14): HP fixo 6500.
+				# Override pro boss Duskrose (wave 14): HP fixo 8500.
 				if wave_number == boss_redux_wave and type_key == "duskrose" and "max_hp" in enemy:
-					enemy.max_hp = 6500.0
+					enemy.max_hp = 8500.0
 			if wave_number == boss_redux_wave and (type_key == "mage_monkey" or type_key == "duskrose") and BOSS_REDUX_GOLD_MULT > 1.0:
 				if "gold_drop_min" in enemy:
 					enemy.gold_drop_min = int(round(float(enemy.gold_drop_min) * BOSS_REDUX_GOLD_MULT))

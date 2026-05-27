@@ -11,7 +11,7 @@ COMMON_LOCKED,Bloqueada,Locked,Bloqueada,Verrouillée
 MENU_TITLE,TWILIGHT QUIVER,TWILIGHT QUIVER,TWILIGHT QUIVER,TWILIGHT QUIVER
 MENU_SUBTITLE,top-down archer roguelike,top-down archer roguelike,roguelike de arquero top-down,roguelike d'archer en vue de dessus
 MENU_START,Start Game,Start Game,Empezar,Commencer
-MENU_PLAYER,Player,Player,Personaje,Personnage
+MENU_PLAYER,Skins,Skins,Skins,Skins
 MENU_LEADERBOARD,Leaderboard,Leaderboard,Clasificación,Classement
 MENU_SETTINGS,Configuracoes,Settings,Ajustes,Paramètres
 MENU_DEV_MODE,Dev Mode,Dev Mode,Modo Dev,Mode Dev
@@ -74,7 +74,7 @@ PLAYER_STAT_RUNS,Runs,Runs,Partidas,Parties
 PLAYER_QUEST_RED_VELVET,Alcance a raid 10,Reach raid 10,Alcanza el raid 10,Atteignez le raid 10
 HUD_DASH_READY,Pronto,Ready,Listo,Prêt
 HUD_RAID_INTRO,Raid %d,Raid %d,Raid %d,Raid %d
-HUD_WAVE_CLEARED,Wave %d Limpa,Raid %d Cleared,Raid %d Limpio,Raid %d Nettoyé
+HUD_WAVE_CLEARED,%d° horda concluída,Raid %d cleared,Raid %d completado,Raid %d terminé
 HUD_DODGE_MISS,MISS,MISS,FALLÓ,RATÉ
 DMG_PANEL_TITLE,DANO NA WAVE,WAVE DAMAGE,DAÑO DEL RAID,DÉGÂTS DU RAID
 DMG_PANEL_TOTAL,Total: %d,Total: %d,Total: %d,Total : %d

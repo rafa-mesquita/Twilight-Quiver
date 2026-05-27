@@ -283,18 +283,18 @@ var _graviton_shot_counter: int = 0
 # a cada CD do nível. L3 = 2 boomerangs (alvo + oposto). L4 = 4 boomerangs
 # (alvo + oposto + 2 perpendiculares).
 const BOOMERANG_SCENE: PackedScene = preload("res://scenes/skills/boomerang.tscn")
-const BOOMERANG_CD_BY_LEVEL: Array[float] = [5.0, 4.0, 4.0, 4.0]
+const BOOMERANG_CD_BY_LEVEL: Array[float] = [5.0, 4.0, 3.4, 3.0]
 # Garras de Tigre: autocast que dá 2 arranhadas em N inimigos aleatórios
 # dentro de TIGER_CLAWS_RADIUS. Cada arranhada aplica damage_per_scratch.
 const TIGER_CLAWS_VFX_SCENE: PackedScene = preload("res://scenes/skills/tiger_claws_vfx.tscn")
-const TIGER_CLAWS_CD_BY_LEVEL: Array[float] = [0.0, 7.0, 7.0, 5.5, 5.5]
-const TIGER_CLAWS_TARGETS_BY_LEVEL: Array[int] = [0, 1, 2, 2, 3]
-const TIGER_CLAWS_DMG_PER_SCRATCH_BY_LEVEL: Array[float] = [0.0, 25.0, 27.0, 35.0, 35.0]
+const TIGER_CLAWS_CD_BY_LEVEL: Array[float] = [0.0, 7.0, 7.0, 4.8, 4.0]
+const TIGER_CLAWS_TARGETS_BY_LEVEL: Array[int] = [0, 1, 2, 3, 4]
+const TIGER_CLAWS_DMG_PER_SCRATCH_BY_LEVEL: Array[float] = [0.0, 25.0, 27.0, 40.0, 48.0]
 const TIGER_CLAWS_RADIUS: float = 180.0
 var tiger_claws_level: int = 0
 var _tiger_claws_cd_remaining: float = 0.0
-const BOOMERANG_DAMAGE_BY_LEVEL: Array[float] = [15.0, 20.0, 25.0, 30.0]
-const BOOMERANG_RANGE_BY_LEVEL: Array[float] = [140.0, 140.0, 140.0, 140.0]
+const BOOMERANG_DAMAGE_BY_LEVEL: Array[float] = [15.0, 20.0, 32.0, 42.0]
+const BOOMERANG_RANGE_BY_LEVEL: Array[float] = [140.0, 140.0, 160.0, 180.0]
 var boomerang_level: int = 0
 var _boomerang_cd_remaining: float = 0.0
 # Flecha Crítica (4 níveis). Aplica em flechas + skills (skill Q de fogo, chain
@@ -2912,6 +2912,21 @@ func _spawn_claudio_druida_portal_fx(pos: Vector2) -> void:
 	var fx: Node2D = CLAUDIO_DRUIDA_SPAWN_FX_SCENE.instantiate()
 	_get_world().add_child(fx)
 	fx.global_position = pos
+
+
+func reposition_claudio_druidas_near_player() -> void:
+	# Chamado pelo wave_manager em boss waves DEPOIS do player ser teleportado.
+	# Sem isso, claudios vivos ficavam parados na arena anterior (no caso da wave
+	# 14, fora do wave14_map que tem bounds diferentes do main map). Move vivos
+	# pra perto do player e atualiza last_pos pra respawns futuros caírem aqui.
+	for entry in _claudio_druidas:
+		var new_pos: Vector2 = global_position + Vector2(randf_range(-32.0, 32.0), randf_range(-16.0, 16.0))
+		entry["last_pos"] = new_pos
+		var inst: Variant = entry.get("instance")
+		if inst == null or not is_instance_valid(inst):
+			continue
+		if inst is Node2D:
+			(inst as Node2D).global_position = new_pos
 
 
 func reset_claudio_druidas_hp() -> void:

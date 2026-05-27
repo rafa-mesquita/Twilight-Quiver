@@ -51,6 +51,15 @@ const TOWER_ALERT_EDGE_MARGIN: float = 80.0
 var _tower_alert_target: Node2D = null
 var _tower_alert_timer: float = 0.0
 
+# Indicadores dos últimos inimigos vivos da wave (lazy-criados).
+# Setas amarelas na borda da tela apontando pra cada inimigo off-screen — mesmo
+# padrão visual do TowerAlertIndicator. Pool fixo de 2 (threshold do wave_manager).
+const LAST_ENEMY_INDICATOR_COUNT: int = 2
+const LAST_ENEMY_EDGE_MARGIN: float = 60.0
+const LAST_ENEMY_ARROW_COLOR: Color = Color(1.0, 0.25, 0.25, 1.0)
+const LAST_ENEMY_OUTLINE_COLOR: Color = Color(0.15, 0.05, 0.05, 0.85)
+var _last_enemy_indicators: Array[Control] = []
+
 # Spritesheet do HUD: 9 frames de 45x145, mapeados pra cortes de progresso da wave.
 const HUD_FRAME_WIDTH: int = 45
 const HUD_FRAME_HEIGHT: int = 145
@@ -1803,6 +1812,70 @@ func _update_tower_alert(delta: float) -> void:
 	tower_alert.position = pos
 	tower_alert.rotation = dir.angle()
 	tower_alert.visible = true
+
+
+# ---------- Indicadores dos últimos inimigos vivos ----------
+
+func update_last_enemies_indicator(enemies: Array) -> void:
+	# Chamado pelo wave_manager a cada frame quando restam <= 2 inimigos e todos
+	# já spawnaram. Pra cada inimigo off-screen, posiciona uma seta na borda
+	# da tela apontando pra ele. Lista vazia = esconde tudo.
+	if _last_enemy_indicators.is_empty() and not enemies.is_empty():
+		_build_last_enemy_indicator_pool()
+	var camera := get_viewport().get_camera_2d() if is_inside_tree() else null
+	var view_size: Vector2 = get_viewport().get_visible_rect().size if is_inside_tree() else Vector2.ZERO
+	var canvas_xform: Transform2D = get_viewport().get_canvas_transform() if is_inside_tree() else Transform2D.IDENTITY
+	for i in _last_enemy_indicators.size():
+		var indicator: Control = _last_enemy_indicators[i]
+		if indicator == null:
+			continue
+		var enemy: Node = enemies[i] if i < enemies.size() else null
+		if enemy == null or not is_instance_valid(enemy) or not (enemy is Node2D) or camera == null:
+			indicator.visible = false
+			continue
+		var enemy_screen: Vector2 = canvas_xform * (enemy as Node2D).global_position
+		var on_screen: bool = enemy_screen.x >= 0 and enemy_screen.x <= view_size.x \
+			and enemy_screen.y >= 0 and enemy_screen.y <= view_size.y
+		if on_screen:
+			indicator.visible = false
+			continue
+		var center: Vector2 = view_size * 0.5
+		var dir: Vector2 = (enemy_screen - center).normalized()
+		var max_x: float = view_size.x * 0.5 - LAST_ENEMY_EDGE_MARGIN
+		var max_y: float = view_size.y * 0.5 - LAST_ENEMY_EDGE_MARGIN
+		var t_to_x: float = max_x / max(absf(dir.x), 0.0001)
+		var t_to_y: float = max_y / max(absf(dir.y), 0.0001)
+		var t: float = minf(t_to_x, t_to_y)
+		indicator.position = center + dir * t
+		indicator.rotation = dir.angle()
+		indicator.visible = true
+
+
+func _build_last_enemy_indicator_pool() -> void:
+	# Cria N controles com Arrow + ArrowOutline (mesma geometria do
+	# TowerAlertIndicator, cor amarela). Anexa direto ao HUD root.
+	for i in LAST_ENEMY_INDICATOR_COUNT:
+		var holder := Control.new()
+		holder.name = "LastEnemyIndicator%d" % i
+		holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		holder.visible = false
+		var outline := Polygon2D.new()
+		outline.name = "ArrowOutline"
+		outline.show_behind_parent = true
+		outline.color = LAST_ENEMY_OUTLINE_COLOR
+		outline.polygon = PackedVector2Array([Vector2(34, 0), Vector2(-18, -22), Vector2(-18, 22)])
+		holder.add_child(outline)
+		var arrow := Polygon2D.new()
+		arrow.name = "Arrow"
+		arrow.color = LAST_ENEMY_ARROW_COLOR
+		arrow.polygon = PackedVector2Array([Vector2(28, 0), Vector2(-14, -18), Vector2(-14, 18)])
+		holder.add_child(arrow)
+		add_child(holder)
+		# Pulse de alpha contínuo pra chamar atenção.
+		var tw := holder.create_tween().set_loops()
+		tw.tween_property(holder, "modulate:a", 0.45, 0.5)
+		tw.tween_property(holder, "modulate:a", 1.0, 0.5)
+		_last_enemy_indicators.append(holder)
 
 
 func _on_restart_pressed() -> void:

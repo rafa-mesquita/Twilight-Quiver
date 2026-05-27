@@ -484,8 +484,13 @@ func _do_summon_horde() -> void:
 	if not is_inside_tree():
 		return
 	_horde_count += 1
-	var horde_hp_mult: float = 1.0 + horde_hp_growth * float(_horde_count - 1)
-	var horde_dmg_mult: float = 1.0 + horde_damage_growth * float(_horde_count - 1)
+	# Growth piecewise: hordas 1-3 usam taxa cheia (1.0/1.2/1.4 HP, 1.0/1.15/1.30 dmg).
+	# Horda 4+ usa METADE da taxa por horda — leve nerf pra o snowball pós-cast 3 não
+	# tornar a wave 7 punitiva demais se o player demorar a fechar o boss.
+	var steps_below: float = float(mini(_horde_count - 1, 2))
+	var steps_above: float = float(maxi(_horde_count - 3, 0))
+	var horde_hp_mult: float = 1.0 + horde_hp_growth * steps_below + horde_hp_growth * 0.5 * steps_above
+	var horde_dmg_mult: float = 1.0 + horde_damage_growth * steps_below + horde_damage_growth * 0.5 * steps_above
 	# Cada invocação subsequente adiciona +1 minion aleatório (escalada de
 	# pressão). Horda 1 = minion_horde_size, horda 2 = +1, horda 3 = +2, ...
 	var current_horde_size: int = minion_horde_size + (_horde_count - 1)

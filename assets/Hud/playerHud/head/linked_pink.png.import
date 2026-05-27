@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dvlyrg4iag0sh"
-path="res://.godot/imported/linked.png-17eaf22d0dc724be1f91ad535f87f250.ctex"
+uid="uid://3shrc1dyq5wo"
+path="res://.godot/imported/linked_pink.png-60ccad3a21a2faac6a50577d7c479071.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/Hud/playerHud/head/linked.png"
-dest_files=["res://.godot/imported/linked.png-17eaf22d0dc724be1f91ad535f87f250.ctex"]
+source_file="res://assets/Hud/playerHud/head/linked_pink.png"
+dest_files=["res://.godot/imported/linked_pink.png-60ccad3a21a2faac6a50577d7c479071.ctex"]
 
 [params]
 

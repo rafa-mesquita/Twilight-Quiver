@@ -36,8 +36,8 @@ extends CharacterBody2D
 # Range maior pra variação de ritmo (~4-7s) — poderes não saem em cadência
 # fixa, dá sensação de aleatoriedade orgânica. Overlap ainda acontece porque
 # smoke dura 5s e vines duram 6s.
-@export var power_cooldown_min: float = 4.0
-@export var power_cooldown_max: float = 7.0
+@export var power_cooldown_min: float = 3.0
+@export var power_cooldown_max: float = 5.0
 # Delay inicial antes do primeiro poder (deixa player se posicionar).
 @export var initial_attack_delay: float = 4.0
 # Primeiro cast SEMPRE invocação com count especial pra encher o mapa

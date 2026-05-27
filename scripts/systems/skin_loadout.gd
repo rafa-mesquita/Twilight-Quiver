@@ -45,6 +45,21 @@ const DEFAULT_PREFERENCES: Dictionary = {
 	&"bow":    "Default",
 }
 
+# Override do body slot por kit (display_name da skin). Quando o player equipa
+# o kit "Linked" ou "Rosa_Onyx", o body resolve pro PNG "Linked_Pink" em vez
+# de buscar um body com o mesmo display_name do kit. Permite skins partilharem
+# o mesmo tom de pele sem precisar duplicar o PNG.
+const KIT_BODY_OVERRIDE: Dictionary = {
+	"Linked": "Linked_Pink",
+	"Rosa_Onyx": "Linked_Pink",
+}
+
+# Migração de body display_names antigos pra novos. Saves anteriores a
+# Linked_Pink tinham "Linked" salvo em [skin] body= — converte ao carregar.
+const BODY_NAME_MIGRATIONS: Dictionary = {
+	"Linked": "Linked_Pink",
+}
+
 # ---------- Quest config ----------
 # Cada chave é o display_name da skin (PNG filename sem extensão).
 # Skins não listadas aqui NÃO têm quest = sempre desbloqueadas.
@@ -130,6 +145,9 @@ static func load_loadout() -> Dictionary:
 		var saved: String = str(cfg.get_value(_SECTION, String(slot), ""))
 		if saved.is_empty():
 			continue
+		# Migração: body "Linked" virou "Linked_Pink" (compartilhado com Rosa_Onyx).
+		if slot == &"body" and BODY_NAME_MIGRATIONS.has(saved):
+			saved = String(BODY_NAME_MIGRATIONS[saved])
 		var parts: Array = by_slot.get(slot, [])
 		# Match em 2 etapas pra compat: 1º tenta display_name (formato novo,
 		# estável entre builds); 2º tenta resource_path (formato legado pré-fix).
@@ -419,13 +437,16 @@ static func record_run(run_stats: Dictionary) -> Array:
 
 
 # Retorna { slot -> SkinPart } pra todas as peças com o display_name dado.
+# Body slot respeita KIT_BODY_OVERRIDE — kits podem partilhar tom de pele.
 static func get_parts_by_skin_name(skin_name: String) -> Dictionary:
 	var by_slot: Dictionary = scan_available_parts()
 	var result: Dictionary = {}
+	var body_target: String = String(KIT_BODY_OVERRIDE.get(skin_name, skin_name))
 	for slot in by_slot.keys():
+		var target_name: String = body_target if slot == &"body" else skin_name
 		for p in by_slot[slot]:
 			var part: SkinPart = p
-			if part.display_name == skin_name:
+			if part.display_name == target_name:
 				result[slot] = part
 				break
 	return result

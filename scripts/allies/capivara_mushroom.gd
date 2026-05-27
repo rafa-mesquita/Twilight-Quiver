@@ -18,7 +18,7 @@ extends Area2D
 # Threshold de HP pra escolher cura vs speed.
 @export var heal_threshold_pct: float = 0.50
 # Cura fixa do cogumelo (HP) — usada quando o player está abaixo do threshold.
-@export var heal_amount: float = 36.75
+@export var heal_amount: float = 29.0
 # Som tocado quando o player coleta (mesmo do coração do Life Steal).
 @export var pickup_sound: AudioStream
 # Som tocado quando o inimigo pisa no cogumelo de dano.
@@ -79,6 +79,11 @@ func _apply_buff_to_player(player: Node) -> void:
 	# L3+: dá os DOIS efeitos sempre + atk speed buff.
 	if lvl >= 3:
 		should_heal = true
+		should_speed = true
+	# Boss waves (7 e 14): nerf grande — capivara só dá SPEED, nunca cura.
+	# Atk speed do L3+ permanece (mantém utilidade do upgrade no boss).
+	if _is_boss_wave():
+		should_heal = false
 		should_speed = true
 	if should_heal and player.has_method("heal"):
 		player.heal(heal_amount)
@@ -174,3 +179,11 @@ func _player_hp_ratio(player: Node) -> float:
 	if "max_hp" in player and "hp" in player and float(player.max_hp) > 0.0:
 		return float(player.hp) / float(player.max_hp)
 	return 1.0
+
+
+func _is_boss_wave() -> bool:
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm == null:
+		return false
+	var w: int = int(wm.get("wave_number"))
+	return w == 7 or w == 14
