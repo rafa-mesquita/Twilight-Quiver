@@ -294,7 +294,7 @@ const TIGER_CLAWS_RADIUS: float = 180.0
 var tiger_claws_level: int = 0
 var _tiger_claws_cd_remaining: float = 0.0
 const BOOMERANG_DAMAGE_BY_LEVEL: Array[float] = [15.0, 20.0, 32.0, 42.0]
-const BOOMERANG_RANGE_BY_LEVEL: Array[float] = [140.0, 140.0, 160.0, 180.0]
+const BOOMERANG_RANGE_BY_LEVEL: Array[float] = [140.0, 140.0, 160.0, 160.0]
 var boomerang_level: int = 0
 var _boomerang_cd_remaining: float = 0.0
 # Flecha Crítica (4 níveis). Aplica em flechas + skills (skill Q de fogo, chain
