@@ -29,6 +29,7 @@ const UPGRADE_BTNS: Array = [
 	{"id": "fire_arrow", "node": "UpgFireArrowBtn", "max": 4, "base_text": "+1 Flecha de Fogo"},
 	{"id": "curse_arrow", "node": "UpgCurseArrowBtn", "max": 4, "base_text": "+1 Disparo Profano"},
 	{"id": "ice_arrow", "node": "UpgIceArrowBtn", "max": 4, "base_text": "+1 Fica Frio"},
+	{"id": "stone_arrow", "node": "UpgStoneArrowBtn", "max": 4, "base_text": "+1 Disparo de Pedra"},
 	{"id": "ricochet_arrow", "node": "UpgRicochetBtn", "max": 4, "base_text": "+1 Flecha Ricochete"},
 	{"id": "graviton", "node": "UpgGravitonBtn", "max": 4, "base_text": "+1 Graviton"},
 	{"id": "boomerang", "node": "UpgBoomerangBtn", "max": 4, "base_text": "+1 Boomerang Veloz"},
@@ -321,7 +322,7 @@ func _spawn_claudio_druida_at_player() -> void:
 const _ALL_UPGRADE_IDS: Array[String] = [
 	"hp", "armor", "damage", "perfuracao", "attack_speed", "multi_arrow",
 	"double_arrows", "chain_lightning", "move_speed", "life_steal",
-	"fire_arrow", "curse_arrow", "ice_arrow", "claudio_druida", "leno",
+	"fire_arrow", "curse_arrow", "ice_arrow", "stone_arrow", "claudio_druida", "leno",
 	"capivara_joe", "ting", "arbusto", "mini_mago", "gold_magnet",
 	"dash", "esquivando", "ricochet_arrow", "graviton", "boomerang",
 	"tiger_claws", "critical_chance",

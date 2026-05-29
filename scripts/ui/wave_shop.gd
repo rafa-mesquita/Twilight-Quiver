@@ -69,6 +69,7 @@ const UPGRADE_POOL: Array = [
 	{"id": "fire_arrow", "name": "SHOP_UPG_FIRE_ARROW", "max_level": 4},
 	{"id": "curse_arrow", "name": "SHOP_UPG_CURSE_ARROW", "max_level": 4},
 	{"id": "ice_arrow", "name": "SHOP_UPG_ICE_ARROW", "max_level": 4},
+	{"id": "stone_arrow", "name": "SHOP_UPG_STONE_ARROW", "max_level": 4},
 	{"id": "boomerang", "name": "SHOP_UPG_BOOMERANG", "max_level": 4},
 	{"id": "critical_chance", "name": "SHOP_UPG_CRITICAL_CHANCE", "max_level": 4},
 	{"id": "tiger_claws", "name": "SHOP_UPG_TIGER_CLAWS", "max_level": 4},
@@ -82,8 +83,8 @@ const UPGRADE_PRICE_OVERRIDES: Dictionary = {}
 # - Perfuração ↔ Flecha Ricochete (mesmo "slot" no design — flecha modifica o
 #   comportamento ao bater, escolha uma)
 const EXCLUSIVE_PAIRS: Array = [
-	# Elementais: só 1 por run (fogo / maldição / cadeia de raios / sangue frio).
-	["fire_arrow", "curse_arrow", "chain_lightning", "ice_arrow"],
+	# Elementais: só 1 por run (fogo / maldição / cadeia de raios / sangue frio / pedra).
+	["fire_arrow", "curse_arrow", "chain_lightning", "ice_arrow", "stone_arrow"],
 	# Tipo de flecha (modifier on-hit): perfuração ou ricochete.
 	["perfuracao", "ricochet_arrow"],
 	# Salva de flechas: multi (leque 30°) ou duplas (chance + apertado).
@@ -231,6 +232,12 @@ const ICE_ARROW_DESCS: Array[String] = [
 	"SHOP_ICE_ARROW_DESC_2",
 	"SHOP_ICE_ARROW_DESC_3",
 	"SHOP_ICE_ARROW_DESC_4",
+]
+const STONE_ARROW_DESCS: Array[String] = [
+	"SHOP_STONE_ARROW_DESC_1",
+	"SHOP_STONE_ARROW_DESC_2",
+	"SHOP_STONE_ARROW_DESC_3",
+	"SHOP_STONE_ARROW_DESC_4",
 ]
 const BOOMERANG_DESCS: Array[String] = [
 	"SHOP_BOOMERANG_DESC_1",
@@ -929,11 +936,11 @@ func _roll_upg_slots() -> void:
 	upg_slots.clear()
 	var player := _get_player()
 	var already_picked_ids: Array[String] = []
-	# Bias pra upgrades já comprados a partir da wave 5: +10% de chance relativa
-	# (peso 1.10 vs 1.00). Facilita escalar builds existentes em vez de receber
+	# Bias pra upgrades já comprados a partir da wave 5: +15% de chance relativa
+	# (peso 1.15 vs 1.00). Facilita escalar builds existentes em vez de receber
 	# sempre opções totalmente novas no mid/late-game.
 	var _wn_for_bias: int = _current_wave_number()
-	var owned_weight: float = 1.10 if _wn_for_bias >= 5 else 1.0
+	var owned_weight: float = 1.15 if _wn_for_bias >= 5 else 1.0
 	# Joker ("Último Desejo"): wave 5+, não usado ainda, e player tem algo
 	# upgradável (senão a carta é inútil). Dev flag força aparecer ignorando
 	# TODOS os gates (wave, used, has_target) — útil pra testar o card antes
@@ -1116,6 +1123,7 @@ func _get_upgrade_descs_array(id: String) -> Array:
 		"fire_arrow": return FIRE_ARROW_DESCS
 		"curse_arrow": return CURSE_ARROW_DESCS
 		"ice_arrow": return ICE_ARROW_DESCS
+		"stone_arrow": return STONE_ARROW_DESCS
 		"boomerang": return BOOMERANG_DESCS
 		"critical_chance": return CRITICAL_CHANCE_DESCS
 		"tiger_claws": return TIGER_CLAWS_DESCS
@@ -1146,6 +1154,7 @@ const UPGRADE_CATEGORIES: Dictionary = {
 	"curse_arrow": "SHOP_UPG_CAT_ELEMENTAL",
 	"chain_lightning": "SHOP_UPG_CAT_ELEMENTAL",
 	"ice_arrow": "SHOP_UPG_CAT_ELEMENTAL",
+	"stone_arrow": "SHOP_UPG_CAT_ELEMENTAL",
 	"perfuracao": "SHOP_UPG_CAT_ARROW_MOD",
 	"ricochet_arrow": "SHOP_UPG_CAT_ARROW_MOD",
 	"multi_arrow": "SHOP_UPG_CAT_ARROW_VOLLEY",
@@ -1326,6 +1335,7 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 	"fire_arrow": Color(0x77 / 255.0, 0x20 / 255.0, 0x00 / 255.0),  # #772000
 	"curse_arrow": Color(0x45 / 255.0, 0x14 / 255.0, 0x58 / 255.0),  # #451458
 	"ice_arrow": Color(0x1b / 255.0, 0x31 / 255.0, 0x6c / 255.0),  # #1b316c (azul escuro — combina com a arte do card)
+	"stone_arrow": Color(0x4a / 255.0, 0x3a / 255.0, 0x2a / 255.0),  # #4a3a2a (marrom-pedra; placeholder até a arte do card)
 	"leno": Color(0xfc / 255.0, 0xb4 / 255.0, 0xcc / 255.0),  # #fcb4cc
 	"claudio_druida": Color(0x5d / 255.0, 0x80 / 255.0, 0x5a / 255.0),  # #5d805a
 	"ting": Color.WHITE,  # branco — alto contraste no fundo laranja
@@ -1376,6 +1386,8 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	"fire_arrow": "res://assets/Hud/shop/upgrade/fire_arrow2.png",
 	# Sangue Frio: sheet 4 frames (1 por nível), na subpasta "ice arrow".
 	"ice_arrow": "res://assets/Hud/shop/upgrade/ice arrow/sangue frio card design-Sheet.png",
+	# Disparo de Pedra: sheet 4 frames (1 por nível), mesma dim do card de gelo.
+	"stone_arrow": "res://assets/Hud/shop/upgrade/disparo do pedra/disparo de pedra card-Sheet.png",
 	"boomerang": "res://assets/Hud/shop/upgrade/boomerang/boomerang card design.png",
 	"critical_chance": "res://assets/Hud/shop/upgrade/flechas criticas/felchas criticas card design.png",
 	"tiger_claws": "res://assets/Hud/shop/upgrade/garras de tigre/garras de tigre hud-Sheet.png",
@@ -2998,6 +3010,7 @@ func _augment_title_for(id: String) -> String:
 		"fire_arrow": return "SHOP_UPG_FIRE_ARROW"
 		"curse_arrow": return "SHOP_UPG_CURSE_ARROW"
 		"ice_arrow": return "SHOP_UPG_ICE_ARROW"
+		"stone_arrow": return "SHOP_UPG_STONE_ARROW"
 		"boomerang": return "SHOP_UPG_BOOMERANG"
 		"critical_chance": return "SHOP_UPG_CRITICAL_CHANCE"
 		"tiger_claws": return "SHOP_UPG_TIGER_CLAWS"

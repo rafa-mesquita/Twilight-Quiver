@@ -408,6 +408,7 @@ func _start_next_wave() -> void:
 		return
 	wave_active = true
 	_spawn_capivara_starter_mushrooms()
+	_spawn_stone_cube_allies()
 	_emit_progress()
 
 
@@ -945,6 +946,13 @@ const CAPIVARA_STARTER_DAMAGE_COUNT: int = 2
 # Capivara Joe — mantém o espalhamento dentro do mapa jogável).
 const CAPIVARA_STARTER_BOUNDS: Rect2 = Rect2(5, 8, 510, 284)
 
+# Disparo de Pedra L3: 3 Stone Cubes aliados no início de cada round.
+const STONE_CUBE_ENEMY_SCENE: PackedScene = preload("res://scenes/enemies/stone_cube_enemy.tscn")
+const STONE_ALLY_COUNT: int = 2
+const STONE_ALLY_HP: float = 160.0  # > cubo original (90)
+const STONE_ALLY_DAMAGE: float = 40.0  # > cubo original (25)
+const STONE_ALLY_SPAWN_RADIUS: float = 44.0  # nascem em volta do player
+
 
 func _cleanup_capivara_mushrooms() -> void:
 	# Limpa TODOS os cogumelos no fim do round (buff e damage variants). Não
@@ -1018,6 +1026,44 @@ func _spawn_starter_mushroom(world: Node, is_damage: bool) -> void:
 		randf_range(b.position.x, b.position.x + b.size.x),
 		randf_range(b.position.y, b.position.y + b.size.y)
 	)
+
+
+func _spawn_stone_cube_allies() -> void:
+	# Disparo de Pedra L3: começa o round com 3 Stone Cubes aliados perto do
+	# player. Não decaem e não renascem no round; somem no cleanup de curse_ally
+	# no fim da wave (3 frescos no round seguinte, inclusive boss).
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not player.has_method("get_upgrade_count"):
+		return
+	if int(player.get_upgrade_count("stone_arrow")) < 3:
+		return
+	if not (player is Node2D):
+		return
+	var world: Node = get_tree().get_first_node_in_group("world")
+	if world == null:
+		world = get_tree().current_scene
+	if world == null:
+		return
+	var center: Vector2 = (player as Node2D).global_position
+	for i in STONE_ALLY_COUNT:
+		var ang: float = TAU * float(i) / float(STONE_ALLY_COUNT)
+		_spawn_stone_cube_ally(world, center + Vector2(cos(ang), sin(ang)) * STONE_ALLY_SPAWN_RADIUS)
+
+
+func _spawn_stone_cube_ally(world: Node, pos: Vector2) -> void:
+	var cube: Node = STONE_CUBE_ENEMY_SCENE.instantiate()
+	# Stats maiores que o cubo original. Setados ANTES do add_child pra o _ready
+	# (hp = max_hp) já usar o HP novo.
+	if "max_hp" in cube:
+		cube.max_hp = STONE_ALLY_HP
+	if "damage" in cube:
+		cube.damage = STONE_ALLY_DAMAGE
+	world.add_child(cube)
+	if cube is Node2D:
+		(cube as Node2D).global_position = pos
+	# Vira aliado SEM decay, SEM tint roxo e SEM penalty de boss (forte e
+	# permanente no round). Fica no grupo curse_ally → limpo no fim da wave.
+	CurseAllyHelper.convert_to_ally(cube, false, false, false)
 
 
 func _cleanup_curse_allies() -> void:

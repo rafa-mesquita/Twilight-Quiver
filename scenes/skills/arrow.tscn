@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=20 format=3]
 
 [ext_resource type="Script" path="res://scripts/skills/arrow.gd" id="1_arrow"]
 [ext_resource type="Texture2D" path="res://assets/projectiles/arrow.png" id="2_arrow_tex"]
@@ -7,6 +7,7 @@
 [ext_resource type="AudioStream" path="res://audios/effects/player arrow/enemy impact.mp3" id="5_impact_sfx"]
 [ext_resource type="AudioStream" path="res://audios/effects/player arrow/impact object.mp3" id="6_obj_impact_sfx"]
 [ext_resource type="Texture2D" path="res://assets/effects/fire arrow-Sheet.png" id="7_fire_tex"]
+[ext_resource type="Texture2D" path="res://assets/effects/Rock Arrow/rock arrow-Sheet.png" id="8_stone_tex"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_arrow"]
 radius = 2.0
@@ -30,6 +31,33 @@ animations = [{
 "loop": true,
 "name": &"default",
 "speed": 12.0
+}]
+
+[sub_resource type="AtlasTexture" id="A_stone_0"]
+atlas = ExtResource("8_stone_tex")
+region = Rect2(0, 0, 16, 8)
+
+[sub_resource type="AtlasTexture" id="A_stone_1"]
+atlas = ExtResource("8_stone_tex")
+region = Rect2(16, 0, 16, 8)
+
+[sub_resource type="AtlasTexture" id="A_stone_2"]
+atlas = ExtResource("8_stone_tex")
+region = Rect2(32, 0, 16, 8)
+
+[sub_resource type="AtlasTexture" id="A_stone_3"]
+atlas = ExtResource("8_stone_tex")
+region = Rect2(48, 0, 16, 8)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_stone_arrow"]
+animations = [{
+"frames": [{"duration": 1.0, "texture": SubResource("A_stone_0")},
+{"duration": 1.0, "texture": SubResource("A_stone_1")},
+{"duration": 1.0, "texture": SubResource("A_stone_2")},
+{"duration": 1.0, "texture": SubResource("A_stone_3")}],
+"loop": true,
+"name": &"default",
+"speed": 14.0
 }]
 
 [node name="Arrow" type="Area2D"]
@@ -60,6 +88,13 @@ texture = ExtResource("2_arrow_tex")
 visible = false
 texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_fire_arrow")
+animation = &"default"
+autoplay = "default"
+
+[node name="StoneSprite" type="AnimatedSprite2D" parent="."]
+visible = false
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_stone_arrow")
 animation = &"default"
 autoplay = "default"
 

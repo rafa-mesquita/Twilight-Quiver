@@ -17,20 +17,38 @@ var overview_mode: bool = false
 var cinematic_mode: bool = false
 var _saved_zoom: Vector2 = Vector2.ONE
 var _transition_tween: Tween
+# Screen shake (ex: Terremoto da Pedra). Offset random somado ao follow,
+# decaindo linearmente até o fim da duração.
+var _shake_remaining: float = 0.0
+var _shake_duration: float = 0.0
+var _shake_strength: float = 0.0
 
 
 func _ready() -> void:
 	make_current()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if overview_mode or cinematic_mode:
 		return
 	if player == null or not is_instance_valid(player):
 		player = get_tree().get_first_node_in_group("player") as Node2D
 		if player == null:
 			return
-	global_position = player.global_position + follow_offset
+	var pos: Vector2 = player.global_position + follow_offset
+	if _shake_remaining > 0.0:
+		_shake_remaining -= delta
+		var amt: float = _shake_strength * (_shake_remaining / _shake_duration) if _shake_duration > 0.0 else 0.0
+		pos += Vector2(randf_range(-amt, amt), randf_range(-amt, amt))
+	global_position = pos
+
+
+func shake(duration: float, strength: float) -> void:
+	# Dispara (ou reforça) um tremor de tela. Pega o maior dos dois pra não
+	# cortar um shake mais forte já em andamento.
+	_shake_duration = maxf(duration, 0.01)
+	_shake_remaining = maxf(_shake_remaining, duration)
+	_shake_strength = maxf(_shake_strength, strength)
 
 
 # Pan suave da câmera pra uma posição mundo (usado no fim da cinematic do

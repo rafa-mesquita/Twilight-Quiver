@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dv57c7udyi4e"
+path="res://.godot/imported/terremoto sismico.mp3-3e75d8701d90b1310bd353c3ff41328b.mp3str"
+
+[deps]
+
+source_file="res://assets/effects/Rock Arrow/terremoto sismico.mp3"
+dest_files=["res://.godot/imported/terremoto sismico.mp3-3e75d8701d90b1310bd353c3ff41328b.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

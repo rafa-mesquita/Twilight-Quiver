@@ -29,6 +29,10 @@ signal curse_skill_cooldown_changed(remaining: float, total: float)
 # Ice Time Freeze Skill (lv4 do elemental Gelo): pausa mundo inteiro 3s, cd 30s.
 signal time_freeze_skill_unlocked
 signal time_freeze_skill_cooldown_changed(remaining: float, total: float)
+# Stone Earthquake (lv4 da Pedra): treme a tela, stuna todos os mobs vivos e
+# causa grande dano em área em volta do player.
+signal stone_skill_unlocked
+signal stone_skill_cooldown_changed(remaining: float, total: float)
 # Perfuração: HUD mostra contador 1/2/3 (próximo tiro perfurante a cada 3 ataques
 # nos lv1-3; sempre ativo no lv4). Emitido em cada release_arrow e no apply_upgrade.
 signal perfuracao_counter_changed(counter: int, level: int)
@@ -86,6 +90,7 @@ var life_steal_level: int = 0  # cada stack +5% chance e +10% heal nos drops de 
 var fire_arrow_level: int = 0  # elemental Fogo (excalidraw lv1-4)
 var curse_arrow_level: int = 0  # elemental Maldição (excalidraw lv1, escala lv1-4)
 var ice_arrow_level: int = 0  # elemental Gelo / "Fica Frio" (excalidraw lv1-4)
+var stone_arrow_level: int = 0  # elemental Pedra / "Disparo de Pedra" (lv1-4)
 # Referência à Frostwisp spawnada no L3 (1 só por run).
 const FROSTWISP_SCENE: PackedScene = preload("res://scenes/allies/frostwisp.tscn")
 var _frostwisp: Node2D = null
@@ -186,6 +191,21 @@ const CURSE_SKILL_RANGE: float = 1000.0
 const CURSE_SKILL_DAMAGE_PER_TICK: float = 8.0
 const CURSE_BEAM_SCENE: PackedScene = preload("res://scenes/skills/curse_beam.tscn")
 var _curse_skill_cd_remaining: float = 0.0
+# Stone Earthquake (Q a partir do lv4 da Pedra): treme a tela, stuna TODOS os
+# mobs vivos no momento e causa grande dano em área em volta do player (onda
+# sísmica saindo do player). Alto cooldown.
+const STONE_SKILL_COOLDOWN: float = 28.0
+const STONE_QUAKE_RADIUS: float = 150.0
+const STONE_QUAKE_DAMAGE: float = 80.0
+const STONE_QUAKE_STUN: float = 2.5
+const STONE_QUAKE_KNOCKBACK: float = 120.0
+const STONE_QUAKE_SHAKE_DURATION: float = 0.6
+const STONE_QUAKE_SHAKE_STRENGTH: float = 7.0
+const STONE_AOE_QUAKE_SCRIPT: GDScript = preload("res://scripts/skills/stone_aoe.gd")
+const STONE_QUAKE_STUN_VISUAL: GDScript = preload("res://scripts/effects/stun_visual.gd")
+const STONE_QUAKE_SOUND: AudioStream = preload("res://assets/effects/Rock Arrow/terremoto sismico.mp3")
+const STONE_QUAKE_VOLUME_DB: float = -6.0
+var _stone_skill_cd_remaining: float = 0.0
 # Ice Time Freeze (Q a partir do lv4 do Gelo): pausa todos os inimigos, aliados
 # e projéteis por 3s. Player continua se movendo/atirando normal. Overlay azul
 # em tela inteira pra reforçar a sensação de "tudo congelado".
@@ -480,6 +500,7 @@ func _physics_process(delta: float) -> void:
 	_tick_replay_recorder(delta)
 	_update_curse_skill(delta)
 	_update_time_freeze(delta)
+	_update_stone_skill(delta)
 	_update_player_fire_trail()
 	_check_claudio_druida_respawns(delta)
 	_check_mini_arbusto_respawns(delta)
@@ -662,6 +683,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_cast_curse_beam()
 		elif ice_arrow_level >= 4:
 			_trigger_time_freeze()
+		elif stone_arrow_level >= 4:
+			_cast_earthquake()
 	elif event.is_action_pressed("lightning_cast"):
 		# E é atalho alternativo específico pra Chain Lightning (lv3+).
 		if chain_lightning_level >= 3:
@@ -860,7 +883,9 @@ func _build_double_arrows_volley(primary: Vector2) -> Array:
 	elif count >= 3:
 		burst_bonus = 1.15
 	# Delay entre flechas extras (burst rápido pra cada uma ser distinta no spawn).
-	const DELAY_PER_EXTRA: float = 0.04
+	# Com a Pedra, o delay é maior — a 2ª flecha sai mais separada (dois estouros
+	# pesados saindo colados ficava estranho).
+	var DELAY_PER_EXTRA: float = 0.14 if stone_arrow_level > 0 else 0.04
 	# Ângulos APERTADOS: 1° de diferença entre flechas adjacentes — quase a mesma
 	# mira, mas separação suficiente pra não sobrepor visualmente no spawn.
 	if count == 1:
@@ -981,6 +1006,38 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 				arrow.ice_area_slow_factor = _ice_area_slow_factor()
 			if "ice_area_lifetime" in arrow:
 				arrow.ice_area_lifetime = _ice_area_lifetime()
+	if stone_arrow_level > 0:
+		if "is_stone" in arrow:
+			arrow.is_stone = true
+		# Range curto E lento (pedra "pesada"). COM perfuração o range vira longo
+		# (atravessa a tela) — combo full-power que proca AoE+stun em cada inimigo.
+		if "speed" in arrow:
+			arrow.speed = _stone_speed()
+		if "lifetime" in arrow:
+			if is_pierce:
+				arrow.lifetime = _stone_pierce_lifetime()
+			elif is_primary:
+				arrow.lifetime = _stone_lifetime()
+			else:
+				# 2ª flecha (Flechas Duplas / extras do Multi): range um pouco maior.
+				arrow.lifetime = _stone_extra_lifetime()
+		# +dano direto da pedra (aplicado sobre o damage já calculado acima).
+		if "damage" in arrow:
+			arrow.damage *= _stone_direct_dmg_mult()
+		if "stone_aoe_radius" in arrow:
+			arrow.stone_aoe_radius = _stone_radius()
+		# Referência de dano do AoE = o dano direto da flecha (já inclui o +dano
+		# direto da pedra E a redução das flechas extras do Multi Arrow). O AoE
+		# aplica uma % disso por gatilho: 50% splash no hit direto / 80% em todos
+		# quando cai no fim do range ou bate em estrutura/parede.
+		if "stone_aoe_damage" in arrow:
+			arrow.stone_aoe_damage = arrow.damage
+		if "stone_aoe_knockback" in arrow:
+			arrow.stone_aoe_knockback = _stone_knockback()
+		if "stone_stun_duration" in arrow:
+			arrow.stone_stun_duration = _stone_stun_duration()
+		if "stone_size_scale" in arrow:
+			arrow.stone_size_scale = _stone_size_scale()
 	if is_ricochet:
 		if "is_ricochet" in arrow:
 			arrow.is_ricochet = true
@@ -1220,6 +1277,72 @@ func _ice_freeze_dps() -> float:
 		return 0.0
 	var base: float = 8.0 if ice_arrow_level >= 2 else 4.0
 	return _apply_dmg_pct_to_dps(base)
+
+
+# ---------- Pedra (Disparo de Pedra) ----------
+# Range curto E lento; +dano direto; AoE (dano + knockback + stun) no impacto/
+# queda/estrutura. Com perfuração o range vira longo e o AoE proca em cada
+# inimigo perfurado. (Lv3 skill Q e Lv4 escombros vêm na próxima etapa.)
+
+func _stone_speed() -> float:
+	# "Pesada" — bem mais devagar que a flecha normal (220). Dá pra ver vindo.
+	return 150.0
+
+
+func _stone_lifetime() -> float:
+	# 150 × 0.7 ≈ 105px de alcance (flecha normal = 330px → ~-68%).
+	return 0.7
+
+
+func _stone_extra_lifetime() -> float:
+	# 2ª flecha / extras (Flechas Duplas / Multi): range um pouco maior (150 ×
+	# 0.9 ≈ 135px) pra não cair em cima da primeira.
+	return 0.9
+
+
+func _stone_pierce_lifetime() -> float:
+	# Com perfuração o alcance vira longo (atravessa a tela): 150 × 5 = 750px.
+	return 5.0
+
+
+func _stone_direct_dmg_mult() -> float:
+	# +dano direto da pedra (sobre o dano da flecha). Escala por nível.
+	match stone_arrow_level:
+		1: return 1.50
+		2: return 1.65
+		3: return 1.80
+		4: return 2.00
+	return 1.0
+
+
+func _stone_radius() -> float:
+	# +5px na área do stun a partir do L2.
+	match stone_arrow_level:
+		1: return 31.0
+		2: return 36.0
+		3: return 36.0
+		4: return 36.0
+	return 31.0
+
+
+func _stone_size_scale() -> float:
+	# L2+: pedra maior (visual + hitbox) — fica mais fácil de acertar.
+	return 1.35 if stone_arrow_level >= 2 else 1.0
+
+
+func _stone_knockback() -> float:
+	return 70.0
+
+
+func _stone_stun_duration() -> float:
+	# Mesmo tempo do freeze do Gelo (2.0s) no Lv1; escala suave por nível.
+	# (Crítico ainda multiplica em cima disso no impacto.)
+	match stone_arrow_level:
+		1: return 2.0
+		2: return 2.3
+		3: return 2.6
+		4: return 3.0
+	return 2.0
 
 
 func _spawn_frostwisp() -> void:
@@ -1653,6 +1776,74 @@ func _update_curse_skill(delta: float) -> void:
 	if _curse_skill_cd_remaining > 0.0:
 		_curse_skill_cd_remaining = maxf(_curse_skill_cd_remaining - delta, 0.0)
 		curse_skill_cooldown_changed.emit(_curse_skill_cd_remaining, CURSE_SKILL_TOTAL_CYCLE)
+
+
+# ---------- Stone Earthquake (Q a partir do lv4 da Pedra) ----------
+
+func _cast_earthquake() -> void:
+	if _stone_skill_cd_remaining > 0.0:
+		return
+	_play_earthquake_sound()
+	# Treme a tela.
+	var cam := get_viewport().get_camera_2d()
+	if cam != null and cam.has_method("shake"):
+		cam.shake(STONE_QUAKE_SHAKE_DURATION, STONE_QUAKE_SHAKE_STRENGTH)
+	# Stun em TODOS os mobs vivos no momento (cc_immune — boss/cubo — resistem
+	# via apply_stun próprio, mas ainda levam o dano da área se estiverem nela).
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not is_instance_valid(e):
+			continue
+		if e.has_method("apply_stun"):
+			e.apply_stun(STONE_QUAKE_STUN)
+			_ensure_quake_stun_visual(e)
+	# Grande dano + knockback + onda sísmica em volta do player (reusa o StoneAoE
+	# com raio grande, centrado no player). damage_pct 1.0 = dano cheio.
+	var quake: Node2D = STONE_AOE_QUAKE_SCRIPT.new()
+	quake.radius = STONE_QUAKE_RADIUS
+	quake.damage = STONE_QUAKE_DAMAGE * arrow_damage_multiplier
+	quake.damage_pct = 1.0
+	quake.knockback_strength = STONE_QUAKE_KNOCKBACK
+	quake.stun_duration = STONE_QUAKE_STUN
+	quake.source = self
+	quake.origin = global_position
+	_get_world().add_child(quake)
+	_stone_skill_cd_remaining = STONE_SKILL_COOLDOWN
+	stone_skill_cooldown_changed.emit(_stone_skill_cd_remaining, STONE_SKILL_COOLDOWN)
+
+
+func _ensure_quake_stun_visual(target: Node) -> void:
+	if not is_instance_valid(target):
+		return
+	if not ("_stun_remaining" in target) or float(target._stun_remaining) <= 0.0:
+		return
+	for c in target.get_children():
+		if c is Node and (c as Node).is_in_group("stun_visual"):
+			return
+	target.add_child(STONE_QUAKE_STUN_VISUAL.new())
+
+
+func _update_stone_skill(delta: float) -> void:
+	if _stone_skill_cd_remaining > 0.0:
+		_stone_skill_cd_remaining = maxf(_stone_skill_cd_remaining - delta, 0.0)
+		stone_skill_cooldown_changed.emit(_stone_skill_cd_remaining, STONE_SKILL_COOLDOWN)
+
+
+func _play_earthquake_sound() -> void:
+	# Não-posicional (AudioStreamPlayer): sai centralizado/igual nos dois lados,
+	# como um terremoto. Adicionado ao world pra sobreviver mesmo se o player sair.
+	if STONE_QUAKE_SOUND == null:
+		return
+	var snd := AudioStreamPlayer.new()
+	snd.bus = &"SFX"
+	snd.stream = STONE_QUAKE_SOUND
+	snd.volume_db = STONE_QUAKE_VOLUME_DB
+	_get_world().add_child(snd)
+	snd.play()
+	var ref: AudioStreamPlayer = snd
+	snd.finished.connect(func() -> void:
+		if is_instance_valid(ref):
+			ref.queue_free()
+	)
 
 
 # ---------- Ice Time Freeze (Q a partir do lv4 do Gelo) ----------
@@ -2250,6 +2441,17 @@ func apply_upgrade(upgrade_id: String) -> void:
 				_time_freeze_cd_remaining = 0.0
 				time_freeze_skill_unlocked.emit()
 				time_freeze_skill_cooldown_changed.emit(0.0, TIME_FREEZE_COOLDOWN)
+		"stone_arrow":
+			# Elemental Pedra ("Disparo de Pedra"). Lv1: pedra (range curto+lento)
+			# + AoE dano/knockback/stun. Lv2: mais dano + pedra/stun maiores.
+			# Lv3: começa o round com 3 Stone Cubes aliados (wave_manager).
+			# Lv4: skill Q "Terremoto" (treme tela + stun em todos + dano em área).
+			var was_below_4_stone: bool = stone_arrow_level < 4
+			stone_arrow_level = mini(stone_arrow_level + 1, 4)
+			if was_below_4_stone and stone_arrow_level >= 4:
+				_stone_skill_cd_remaining = 0.0
+				stone_skill_unlocked.emit()
+				stone_skill_cooldown_changed.emit(0.0, STONE_SKILL_COOLDOWN)
 		"leno":
 			leno_level = mini(leno_level + 1, 4)
 			_refresh_lenos()
@@ -2364,6 +2566,7 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"fire_arrow": return fire_arrow_level
 		"curse_arrow": return curse_arrow_level
 		"ice_arrow": return ice_arrow_level
+		"stone_arrow": return stone_arrow_level
 		"claudio_druida": return claudio_druida_level
 		"leno": return leno_level
 		"capivara_joe": return capivara_joe_level

@@ -247,6 +247,7 @@ SHOP_UPG_GRAVITON,Graviton,Graviton,Gravitón,Graviton
 SHOP_UPG_FIRE_ARROW,Flecha de Fogo,Fire Arrow,Flecha de Fuego,Flèche de Feu
 SHOP_UPG_CURSE_ARROW,Disparo Profano,Profane Shot,Disparo Profano,Tir Profane
 SHOP_UPG_ICE_ARROW,Fica Frio,Stay Frosty,Mantente Fresco,Reste Calme
+SHOP_UPG_STONE_ARROW,Disparo de Pedra,Stone Shot,Disparo de Piedra,Tir de Pierre
 SHOP_UPG_BOOMERANG,Boomerang Veloz,Swift Boomerang,Bumerán Veloz,Boomerang Rapide
 SHOP_UPG_CRITICAL_CHANCE,Flechas Criticas,Critical Arrows,Flechas Críticas,Flèches Critiques
 SHOP_CRITICAL_CHANCE_DESC_1,"30% chance critico
@@ -783,6 +784,26 @@ cd 28s (só movimento)","Q: time freeze 3s
 28s cd (move only)","Q: pausa el tiempo 3s
 cd 28s (solo mover)","Q : gèle le temps 3s
 cd 28s (déplace seulement)"
+SHOP_STONE_ARROW_DESC_1,"Pedra: alcance curto, +50% dano
+Estoura em área + atordoa","Stone: short range, +50% dmg
+Bursts in an area + stuns","Piedra: corto alcance, +50% daño
+Estalla en área + aturde","Pierre : courte portée, +50% dégâts
+Explose en zone + étourdit"
+SHOP_STONE_ARROW_DESC_2,"Área e atordoamento maiores
++ dano da explosão","Bigger area and stun
++ blast damage","Mayor área y aturdimiento
++ daño de explosión","Zone et étourdissement accrus
++ dégâts d'explosion"
+SHOP_STONE_ARROW_DESC_3,"Q: Avalanche de pedregulhos
+atordoa em área","Q: Boulder avalanche
+stuns in an area","Q: Avalancha de rocas
+aturde en área","Q : Avalanche de rochers
+étourdit en zone"
+SHOP_STONE_ARROW_DESC_4,"+dano de área e raio
+deixa escombros que reduzem velocidade","+area damage and radius
+leaves debris that slows","+daño de área y radio
+deja escombros que ralentizan","+dégâts de zone et rayon
+laisse des débris qui ralentissent"
 SHOP_CD_MAX,Max (4/4) atingido,Max (4/4) reached,Máx (4/4) alcanzado,Max (4/4) atteint
 SHOP_CD_DESC_1,"Aliado tank: +20% HP
 stun em área, sem dano","Tank ally: +20% HP

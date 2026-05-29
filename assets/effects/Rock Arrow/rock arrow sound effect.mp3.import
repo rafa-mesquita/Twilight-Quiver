@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bynvydmi6mg47"
+path="res://.godot/imported/rock arrow sound effect.mp3-86bbbc305334ca0f3b2e9f70f7da16c2.mp3str"
+
+[deps]
+
+source_file="res://assets/effects/Rock Arrow/rock arrow sound effect.mp3"
+dest_files=["res://.godot/imported/rock arrow sound effect.mp3-86bbbc305334ca0f3b2e9f70f7da16c2.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

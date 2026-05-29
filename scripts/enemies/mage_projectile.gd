@@ -29,6 +29,10 @@ var player: Node2D
 # quando NÃO for o player — ex: mini_arbusto decoy), o projétil persegue
 # esse alvo em vez do player. Mantém o player como default pro caso normal.
 var target_override: Node2D = null
+# True quando o projétil foi lançado mirando num aliado (não-player) via
+# set_target. Se esse alvo morre em voo, congelamos a direção em vez de virar
+# bruscamente pro player (vira de até 90° era pouco intuitivo).
+var had_override_target: bool = false
 var spawn_position: Vector2 = Vector2.ZERO
 var halfway_distance: float = -1.0
 var has_redirected_halfway: bool = false
@@ -78,6 +82,7 @@ func set_target(target_node: Node2D) -> void:
 	# (ex: mini_arbusto decoy). Sem isso o projétil sempre redireciona pro player
 	# mesmo que o mago tenha mirado em outro alvo.
 	target_override = target_node
+	had_override_target = target_node != null
 
 
 func _target_node() -> Node2D:
@@ -102,6 +107,12 @@ func _physics_process(delta: float) -> void:
 			while trail.get_point_count() > trail_max_points:
 				trail.remove_point(0)
 		return
+	# Alvo era um aliado (não-player) que morreu em voo: congela a direção atual
+	# em vez de virar bruscamente pro player. Sem isso o redirect abaixo cairia no
+	# fallback _target_node() -> player e puxaria o tiro em até 90°.
+	if had_override_target and (target_override == null or not is_instance_valid(target_override)):
+		has_redirected_halfway = true
+		has_redirected_final = true
 	if not has_redirected_halfway and halfway_distance > 0.0:
 		if spawn_position.distance_to(global_position) >= halfway_distance:
 			has_redirected_halfway = true

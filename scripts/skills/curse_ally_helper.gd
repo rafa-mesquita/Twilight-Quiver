@@ -40,14 +40,17 @@ static func try_convert_on_death(enemy: Node) -> bool:
 	return true
 
 
-static func convert_to_ally(enemy: Node) -> void:
+static func convert_to_ally(enemy: Node, apply_decay: bool = true, tint: bool = true, boss_penalty: bool = true) -> void:
 	# Restaura full HP, switches grupos, tinta sprite roxo, seta flag.
 	# Wave_manager rastreia via grupo "curse_ally" pra cleanup no fim da horda.
-	# Wave de boss: aliados convertidos saem 50% mais fracos (HP + dano) pra
-	# não trivializar a boss fight via build de Maldição.
+	# Params (default = comportamento da Maldição):
+	#  - apply_decay: anexa CurseAllyDecay (aliado drena HP em ~12s). false =
+	#    permanente no round (ex: Stone Cubes aliados do Disparo de Pedra L3).
+	#  - tint: tinta roxo + summon effect lilás. false = mantém o visual original.
+	#  - boss_penalty: HP/dano × 0.5 em wave de boss. false = full em boss.
 	var boss_node: Node = enemy.get_tree().get_first_node_in_group("mage_monkey")
 	var on_boss_wave: bool = boss_node != null and boss_node != enemy
-	if on_boss_wave:
+	if on_boss_wave and boss_penalty:
 		if "max_hp" in enemy:
 			enemy.max_hp = float(enemy.max_hp) * BOSS_WAVE_CONVERT_PENALTY
 		if "damage_mult" in enemy:
@@ -74,9 +77,10 @@ static func convert_to_ally(enemy: Node) -> void:
 			(child as AudioStreamPlayer2D).stop()
 			child.queue_free()
 	# Tint sprite roxo (multiplicativo). Procura AnimatedSprite2D ou Sprite2D no subtree.
-	var sprite: Node2D = _find_sprite_in(enemy)
-	if sprite is CanvasItem:
-		(sprite as CanvasItem).modulate = PURPLE_ALLY_TINT
+	if tint:
+		var sprite: Node2D = _find_sprite_in(enemy)
+		if sprite is CanvasItem:
+			(sprite as CanvasItem).modulate = PURPLE_ALLY_TINT
 	# HP bar: troca cor pro verde de aliado (mesmo do claudio_druida/torre) e refresca.
 	if enemy.has_node("HpBar"):
 		var bar: Node = enemy.get_node("HpBar")
@@ -87,8 +91,9 @@ static func convert_to_ally(enemy: Node) -> void:
 			(fg as Polygon2D).color = ALLY_HP_COLOR
 		if bar.has_method("set_ratio"):
 			bar.set_ratio(1.0)
-	# Anima conversão com o mesmo summon effect lilás do summoner mage.
-	_spawn_summon_effect(enemy)
+	# Anima conversão com o mesmo summon effect lilás do summoner mage (curse-themed).
+	if tint:
+		_spawn_summon_effect(enemy)
 	# Decay: aliado convertido vive ~12s drenando HP. Sem isso, curse_allies
 	# acumulavam infinitamente entre waves. Anexado APÓS o HP ser restaurado
 	# pra calcular dps com base no max_hp já penalizado (se for boss wave).
@@ -96,7 +101,7 @@ static func convert_to_ally(enemy: Node) -> void:
 	# é um aliado permanente do upgrade Mini Mago, não um spoils de Maldição.
 	# Mobs convertidos pela Maldição direto + insetos invocados pelo summoner_mage
 	# convertido continuam recebendo decay normalmente.
-	if not enemy.is_in_group("mini_mago_summon"):
+	if apply_decay and not enemy.is_in_group("mini_mago_summon"):
 		var decay := CurseAllyDecay.new()
 		enemy.add_child(decay)
 	# Stat: contabiliza aliados feitos pra tela de morte.

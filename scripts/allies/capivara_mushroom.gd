@@ -80,13 +80,12 @@ func _apply_buff_to_player(player: Node) -> void:
 	if lvl >= 3:
 		should_heal = true
 		should_speed = true
-	# Boss waves (7 e 14): nerf grande — capivara só dá SPEED, nunca cura.
-	# Atk speed do L3+ permanece (mantém utilidade do upgrade no boss).
-	if _is_boss_wave():
-		should_heal = false
-		should_speed = true
+	# Boss waves (7 e 14): a cura VOLTA a funcionar, mas com 50% a menos que nos
+	# rounds normais. O resto da lógica (heal/speed por HP, L3+ dá os dois,
+	# atk speed) continua igual.
+	var heal_mult: float = 0.5 if _is_boss_wave() else 1.0
 	if should_heal and player.has_method("heal"):
-		player.heal(heal_amount)
+		player.heal(heal_amount * heal_mult)
 	if should_speed and player.has_method("apply_capivara_speed_buff"):
 		player.apply_capivara_speed_buff(buff_speed_amount, buff_duration)
 	if lvl >= 3 and player.has_method("apply_capivara_atk_speed_buff"):

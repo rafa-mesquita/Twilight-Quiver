@@ -96,6 +96,8 @@ const HUD_RUNTIME_SCALE: Vector2 = Vector2(3, 3)
 @onready var curse_skill_cd_label: Label = $CurseSkillIcon/CdLabel
 @onready var ice_skill_icon: Control = $IceSkillIcon
 @onready var ice_skill_cd_label: Label = $IceSkillIcon/CdLabel
+@onready var stone_skill_icon: Control = $StoneSkillIcon
+@onready var stone_skill_cd_label: Label = $StoneSkillIcon/CdLabel
 @onready var esquivando_skill_icon: Control = $EsquivandoSkillIcon
 @onready var esquivando_stack_label: Label = $EsquivandoSkillIcon/StackLabel
 @onready var perfurante_counter_icon: Control = $PerfuranteCounterIcon
@@ -133,7 +135,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 	"hp", "armor", "damage", "attack_speed", "move_speed",
 	# Upgrades de gameplay
 	"perfuracao", "ricochet_arrow", "multi_arrow", "double_arrows", "chain_lightning",
-	"fire_arrow", "curse_arrow", "ice_arrow", "graviton", "boomerang", "critical_chance", "life_steal", "dash", "esquivando",
+	"fire_arrow", "curse_arrow", "ice_arrow", "stone_arrow", "graviton", "boomerang", "critical_chance", "life_steal", "dash", "esquivando",
 	"gold_magnet",
 	"tiger_claws",
 	# Aliados
@@ -142,7 +144,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 # Caps onde "MAX" substitui "Lx" no badge (status escala infinito → sem cap).
 const _UPG_CAPS: Dictionary = {
 	"perfuracao": 4, "ricochet_arrow": 4, "multi_arrow": 4, "double_arrows": 4, "chain_lightning": 4,
-	"fire_arrow": 4, "curse_arrow": 4, "ice_arrow": 4, "graviton": 4, "boomerang": 4, "critical_chance": 4, "life_steal": 4,
+	"fire_arrow": 4, "curse_arrow": 4, "ice_arrow": 4, "stone_arrow": 4, "graviton": 4, "boomerang": 4, "critical_chance": 4, "life_steal": 4,
 	"dash": 4, "esquivando": 4, "gold_magnet": 4, "tiger_claws": 4,
 	"claudio_druida": 4, "leno": 4, "capivara_joe": 4, "ting": 4, "mini_mago": 4, "arbusto": 4,
 }
@@ -155,6 +157,7 @@ const _UPG_PATHS: Dictionary = {
 	"fire_arrow": "res://assets/Hud/shop/upgrade/fire_arrow2.png",
 	"curse_arrow": "res://assets/Hud/shop/upgrade/curse_arrow.png",
 	"ice_arrow": "res://assets/Hud/shop/upgrade/ice arrow/sangue frio card design-Sheet.png",
+	"stone_arrow": "res://assets/Hud/shop/upgrade/disparo do pedra/disparo de pedra card-Sheet.png",
 	"multi_arrow": "res://assets/Hud/shop/upgrade/multi_arrow.png",
 	"double_arrows": "res://assets/Hud/shop/upgrade/multi_arrow.png",  # compartilha arte do multi_arrow (mesma família marrom)
 	"chain_lightning": "res://assets/Hud/shop/upgrade/chain_lightning.png",
@@ -249,7 +252,7 @@ func _ready() -> void:
 	# (separados, não tocados aqui).
 	for control_path in [
 		"HudFrame", "HpBar", "DashCdBar", "FireSkillIcon", "ChainLightningSkillIcon", "CurseSkillIcon",
-		"IceSkillIcon", "EsquivandoSkillIcon", "PerfuranteCounterIcon", "GoldDisplay", "TowerAlertIndicator",
+		"IceSkillIcon", "StoneSkillIcon", "EsquivandoSkillIcon", "PerfuranteCounterIcon", "GoldDisplay", "TowerAlertIndicator",
 	]:
 		var n := get_node_or_null(control_path)
 		if n != null:
@@ -332,6 +335,13 @@ func _connect_player_signals() -> void:
 		player.time_freeze_skill_cooldown_changed.connect(_on_time_freeze_skill_cooldown_changed)
 	if "ice_arrow_level" in player and int(player.ice_arrow_level) >= 4:
 		_on_time_freeze_skill_unlocked()
+	# Stone (Terremoto) skill icon — aparece quando player chega na Pedra lv4.
+	if player.has_signal("stone_skill_unlocked") and not player.stone_skill_unlocked.is_connected(_on_stone_skill_unlocked):
+		player.stone_skill_unlocked.connect(_on_stone_skill_unlocked)
+	if player.has_signal("stone_skill_cooldown_changed") and not player.stone_skill_cooldown_changed.is_connected(_on_stone_skill_cooldown_changed):
+		player.stone_skill_cooldown_changed.connect(_on_stone_skill_cooldown_changed)
+	if "stone_arrow_level" in player and int(player.stone_arrow_level) >= 4:
+		_on_stone_skill_unlocked()
 	# Contador da flecha perfurante — visível a partir do lv1.
 	if player.has_signal("perfuracao_counter_changed") and not player.perfuracao_counter_changed.is_connected(_on_perfuracao_counter_changed):
 		player.perfuracao_counter_changed.connect(_on_perfuracao_counter_changed)
@@ -770,6 +780,21 @@ func _on_time_freeze_skill_cooldown_changed(remaining: float, _total: float) -> 
 	else:
 		ice_skill_cd_label.text = "%d" % int(ceilf(remaining))
 		ice_skill_icon.modulate = Color(0.55, 0.65, 0.78, 1.0)
+
+
+func _on_stone_skill_unlocked() -> void:
+	stone_skill_icon.visible = true
+	_update_esquivando_icon_position()
+	_show_q_hint_if_needed()
+
+
+func _on_stone_skill_cooldown_changed(remaining: float, _total: float) -> void:
+	if remaining <= 0.001:
+		stone_skill_cd_label.text = ""
+		stone_skill_icon.modulate = Color.WHITE
+	else:
+		stone_skill_cd_label.text = "%d" % int(ceilf(remaining))
+		stone_skill_icon.modulate = Color(0.6, 0.55, 0.45, 1.0)
 
 
 func _process(delta: float) -> void:

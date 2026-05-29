@@ -89,6 +89,41 @@ var graviton_lifetime: float = 3.0
 var graviton_slow_factor: float = 0.7
 var graviton_explosion_damage: float = 0.0
 const GRAVITON_PULSE_SCENE: PackedScene = preload("res://scenes/skills/graviton_pulse.tscn")
+# Elemental Pedra (Disparo de Pedra): troca o sprite por uma pedra, range curto
+# E lento, +dano direto, e estoura um AoE (dano + knockback + stun) ao acertar
+# inimigo / cravar em estrutura / cair no fim do range. Setado pelo player.
+# Com perfuração o range vira longo (atravessa a tela) e o AoE proca em CADA
+# inimigo perfurado. Crítico aumenta a duração do stun.
+var is_stone: bool = false
+var stone_aoe_radius: float = 55.0
+# Referência de dano do AoE = dano direto da flecha. O AoE aplica uma % disso:
+# splash no hit direto vs. dano em todos quando cai/bate em superfície.
+var stone_aoe_damage: float = 25.0
+var stone_aoe_knockback: float = 70.0
+var stone_stun_duration: float = 2.0
+# Escala do tamanho da pedra (visual + hitbox), L2+. 1.0 = original.
+var stone_size_scale: float = 1.0
+# % do dano de referência aplicada pelo AoE por gatilho.
+const STONE_SPLASH_PCT: float = 0.5  # hit direto: 50% nos OUTROS (alvo já levou 100%)
+const STONE_LAND_PCT: float = 0.8    # cair no range / estrutura / parede: 80% em todos
+# Range do quique do ricochete (lifetime): um pouco maior que o ataque base
+# (150 × 1.0 = 150px vs ~105px base). Aplicado via maxf (não compõe entre quiques).
+const STONE_RICOCHET_LIFETIME: float = 1.0
+const STONE_AOE_SCRIPT: GDScript = preload("res://scripts/skills/stone_aoe.gd")
+const STUN_VISUAL_SCRIPT: GDScript = preload("res://scripts/effects/stun_visual.gd")
+const STONE_SHOOT_SOUND: AudioStream = preload("res://assets/effects/Rock Arrow/rock arrow sound effect.mp3")
+# Pula os 0.6s iniciais do mp3 (silêncio/delay de ataque) — pedido do design.
+const STONE_SHOOT_SOUND_OFFSET: float = 0.6
+# Som de impacto da pedra (estouro do AoE). Arquivo já trimado/equalizado no
+# Audacity — toca do início e inteiro (sem offset nem corte por duração).
+const STONE_IMPACT_SOUND: AudioStream = preload("res://assets/effects/Rock Arrow/flecha pedra impacto_01.mp3")
+const STONE_IMPACT_START: float = 0.0
+const STONE_IMPACT_DURATION: float = 0.0  # 0 = toca o arquivo inteiro, libera no `finished`
+# Mais alto que o resto das flechas (-18) — estouro precisa de presença.
+const STONE_IMPACT_VOLUME_DB: float = -9.0
+const STONE_IMPACT_PITCH: float = 1.0  # arquivo já tratado — toca como autorado
+const STONE_IMPACT_FADE_IN: float = 0.0
+const STONE_IMPACT_FADE_OUT: float = 0.0
 # Fogo lv2: rastro de chamas no caminho da flecha (DPS area).
 var fire_trail_enabled: bool = false
 var fire_trail_dps: float = 4.0
@@ -127,6 +162,10 @@ var _pierce_hits: int = 0  # quantos targets a flecha perfurante já atravessou
 # Subsequentes (hops > 0) atribuem dano à fonte "ricochet". Clones de split
 # nascem com hops_used = 1 pra a primeira batida deles já contar como ricochete.
 var _ricochet_hops_used: int = 0
+# Geração do timer de lifetime. Rearmar (ex: no quique da pedra, pra cada
+# segmento ter o range cheio do ataque) incrementa isso e o callback do timer
+# antigo é ignorado.
+var _life_gen: int = 0
 # Esquivando: id da volley que disparou essa flecha + flag de "essa flecha já
 # gerou stack". Setado pelo player no _spawn_arrow. Lv1-3 do Esquivando: só a
 # 1ª flecha da volley + 1º hit dela contam. Lv4: cada hit conta (player ignora
@@ -143,7 +182,7 @@ const PIERCE_LATE_DMG_MULT: float = 0.85
 func _ready() -> void:
 	rotation = direction.angle()
 	body_entered.connect(_on_hit)
-	get_tree().create_timer(lifetime).timeout.connect(_on_lifetime_expired)
+	_arm_lifetime()
 	# Defer pra detachar/tocar o som DEPOIS do spawner setar a posição da flecha.
 	if shoot_sound != null:
 		if play_shoot_sound:
@@ -162,9 +201,54 @@ func _ready() -> void:
 		_apply_ice_visuals()
 	if is_ricochet:
 		_apply_ricochet_visuals()
+	# Pedra por último: esconde o sprite normal e mostra a pedra (vence o tint
+	# de perfuração/ricochete — flecha-pedra deve parecer pedra).
+	if is_stone:
+		_apply_stone_visuals()
 
 
 const PIERCING_BASE_SCALE: float = 1.1
+
+
+func _apply_stone_visuals() -> void:
+	# Esconde a flecha normal, mostra o sprite da pedra (StoneSprite, 4 frames
+	# rolando) e troca o trail por um rastro de poeira terroso.
+	var normal_sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if normal_sprite != null:
+		normal_sprite.visible = false
+	var fire_sprite := get_node_or_null("FireSprite") as AnimatedSprite2D
+	if fire_sprite != null:
+		fire_sprite.visible = false
+	var stone_sprite := get_node_or_null("StoneSprite") as AnimatedSprite2D
+	if stone_sprite != null:
+		stone_sprite.visible = true
+		stone_sprite.modulate = Color.WHITE
+		# Garante a pedra renderizando ACIMA do rastro (senão a cabeça opaca do
+		# trail fica "em cima" do sprite).
+		stone_sprite.z_index = 1
+		# L2+: pedra maior (visual + hitbox).
+		if stone_size_scale != 1.0:
+			stone_sprite.scale = Vector2(stone_size_scale, stone_size_scale)
+			var col := get_node_or_null("CollisionShape2D")
+			if col is Node2D:
+				(col as Node2D).scale = (col as Node2D).scale * stone_size_scale
+	if trail != null:
+		var grad := Gradient.new()
+		grad.offsets = PackedFloat32Array([0.0, 1.0])
+		grad.colors = PackedColorArray([
+			Color(0.55, 0.47, 0.38, 0.0),  # cauda: poeira transparente
+			Color(0.74, 0.66, 0.56, 0.55)  # cabeça: poeira terrosa (atrás da pedra)
+		])
+		trail.gradient = grad
+		trail.default_color = Color.WHITE
+		# Cabeça ~altura da pedra (8px), afunilando até uma cauda fininha.
+		trail.width = 7.0
+		var wc := Curve.new()
+		wc.add_point(Vector2(0.0, 0.12))  # cauda: bem fina
+		wc.add_point(Vector2(1.0, 1.0))   # cabeça: largura cheia (junto da pedra)
+		trail.width_curve = wc
+		# Rastro curto (~ tamanho do sprite na velocidade lenta da pedra).
+		trail_max_points = 7
 
 
 func _apply_piercing_visuals() -> void:
@@ -384,11 +468,17 @@ func _on_hit(body: Node) -> void:
 	# Estrutura estática aliada (torre tem "structure" + "ally" mas NÃO tank_ally):
 	# bloqueia flecha como parede (não causa dano).
 	if target != null and target.is_in_group("structure"):
-		_play_oneshot(object_impact_sound, global_position, sound_volume_db, 0.7)
+		if is_stone:
+			_play_stone_impact(global_position)
+		else:
+			_play_oneshot(object_impact_sound, global_position, sound_volume_db, 0.7)
 		# Graviton: pulso ao bater na estrutura. Com perfuração também procca em
 		# cada estrutura atravessada (a flecha continua e pode bater em outra).
 		if is_graviton:
 			_spawn_graviton_pulse()
+		# Pedra: cravar em estrutura também estoura o AoE (pega todos no raio).
+		if is_stone:
+			_spawn_stone_aoe(null, STONE_LAND_PCT)
 		if is_piercing:
 			_pierce_hits += 1
 			_spawn_pierce_hit_effect(_pierce_hits == 3)
@@ -397,6 +487,10 @@ func _on_hit(body: Node) -> void:
 		if is_ricochet and ricochet_hops_remaining > 0:
 			if _perform_ricochet(target):
 				return
+		# Pedra estilhaça (não crava) — feedback é a anim de impacto do AoE.
+		if is_stone:
+			_die()
+			return
 		_stick_in_place(stick_surface_duration)
 		return
 	# Outros aliados (futuros, ex: aliados convertidos pela maldição): passa também.
@@ -446,7 +540,10 @@ func _on_hit(body: Node) -> void:
 			if bool(crit_info.get("crit", false)) and p_arrow_crit != null and p_arrow_crit.has_method("crit_knockback_mult"):
 				knock *= float(p_arrow_crit.crit_knockback_mult())
 			target.apply_knockback(direction, knock)
-		_play_oneshot(impact_sound, global_position, sound_volume_db, 0.7)
+		if is_stone:
+			_play_stone_impact(global_position)
+		else:
+			_play_oneshot(impact_sound, global_position, sound_volume_db, 0.7)
 		_proc_chain_lightning(target)
 		if is_fire and is_instance_valid(target):
 			_apply_burn_to(target)
@@ -456,6 +553,16 @@ func _on_hit(body: Node) -> void:
 			# pra não cobrir a tela inteira com multi-arrow).
 			if ice_area_enabled and is_primary_arrow:
 				_spawn_ice_slow_area_at(global_position)
+		# Pedra: stun no alvo direto (crit aumenta a duração) + AoE no ponto de
+		# impacto. O alvo direto fica excluído do dano splash (já tomou o hit
+		# cheio). Com perfuração, isso roda em CADA inimigo perfurado.
+		if is_stone:
+			var stone_stun: float = stone_stun_duration
+			if bool(crit_info.get("crit", false)):
+				stone_stun *= float(crit_info.get("mult", 1.0))
+			_apply_stone_stun(target, stone_stun)
+			# Hit direto: alvo já levou 100% (take_damage acima); splash 50% nos outros.
+			_spawn_stone_aoe(target, STONE_SPLASH_PCT)
 		# Graviton: pulso no ponto de impacto. Com perfuração: spawna apenas se o
 		# enemy morreu nesse hit (spec — "inimigos que morrerem"). Sem perfuração:
 		# spawna sempre que cravar (caso normal abaixo, antes do _stick_in_body).
@@ -474,14 +581,25 @@ func _on_hit(body: Node) -> void:
 		if is_ricochet and ricochet_hops_remaining > 0:
 			if _perform_ricochet(target):
 				return
+		# Pedra estilhaça no impacto (não crava na cabeça do inimigo). O feedback
+		# é a anim de impacto do AoE; evita a pedra "rolando" cravada no inimigo.
+		if is_stone:
+			_die()
+			return
 		_stick_in_body(body, stick_enemy_duration)
 	else:
 		# Superfície sólida sem take_damage (parede, tronco).
-		_play_oneshot(object_impact_sound, global_position, sound_volume_db, 0.7)
+		if is_stone:
+			_play_stone_impact(global_position)
+		else:
+			_play_oneshot(object_impact_sound, global_position, sound_volume_db, 0.7)
 		# Graviton: pulso ao bater na parede. Com perfuração, procca em CADA
 		# objeto atravessado (flecha continua viva).
 		if is_graviton:
 			_spawn_graviton_pulse()
+		# Pedra: bater em parede/objeto também estoura o AoE.
+		if is_stone:
+			_spawn_stone_aoe(null, STONE_LAND_PCT)
 		if is_piercing:
 			_pierce_hits += 1
 			_spawn_pierce_hit_effect(_pierce_hits == 3)
@@ -490,6 +608,10 @@ func _on_hit(body: Node) -> void:
 		if is_ricochet and ricochet_hops_remaining > 0:
 			if _perform_ricochet(null):
 				return
+		# Pedra estilhaça (não crava) — feedback é a anim de impacto do AoE.
+		if is_stone:
+			_die()
+			return
 		_stick_in_place(stick_surface_duration)
 
 
@@ -598,9 +720,61 @@ func _get_world() -> Node:
 	return w if w != null else get_tree().current_scene
 
 
+func _apply_stone_stun(target: Node, duration: float) -> void:
+	# Stun no alvo direto da pedra (mesmo ícone/efeito do Claudio Druida).
+	# cc_immune (boss/stone_cube) ignoram via apply_stun próprio.
+	if target == null or not is_instance_valid(target):
+		return
+	if not target.has_method("apply_stun"):
+		return
+	target.apply_stun(duration)
+	_ensure_stun_visual(target)
+
+
+func _ensure_stun_visual(target: Node) -> void:
+	if not is_instance_valid(target):
+		return
+	if not ("_stun_remaining" in target) or float(target._stun_remaining) <= 0.0:
+		return
+	for c in target.get_children():
+		if c is Node and (c as Node).is_in_group("stun_visual"):
+			return
+	target.add_child(STUN_VISUAL_SCRIPT.new())
+
+
+func _spawn_stone_aoe(exclude_target: Node, dmg_pct: float) -> void:
+	var aoe: Node2D = STONE_AOE_SCRIPT.new()
+	aoe.radius = stone_aoe_radius
+	aoe.damage = stone_aoe_damage
+	aoe.damage_pct = dmg_pct
+	aoe.knockback_strength = stone_aoe_knockback
+	aoe.stun_duration = stone_stun_duration
+	aoe.source = source
+	aoe.exclude = exclude_target
+	# Posição ANTES do add_child: o AoE aplica dano no _ready a partir de `origin`.
+	aoe.origin = global_position
+	_get_world().add_child(aoe)
+
+
+func _arm_lifetime() -> void:
+	# (Re)arma o timer de lifetime. Cada chamada invalida o anterior via _life_gen,
+	# então o quique da pedra pode resetar o range pra "cheio" a partir do quique.
+	_life_gen += 1
+	var gen: int = _life_gen
+	get_tree().create_timer(lifetime).timeout.connect(func() -> void:
+		if gen == _life_gen:
+			_on_lifetime_expired()
+	)
+
+
 func _on_lifetime_expired() -> void:
 	# Se já cravou, ignora — o stick timer cuida da remoção.
 	if not is_stuck:
+		# Pedra: "cai" no fim do range → toca o som de impacto + estoura o AoE
+		# onde aterrissou (sem isso, só o estouro por superfície tinha som).
+		if is_stone:
+			_play_stone_impact(global_position)
+			_spawn_stone_aoe(null, STONE_LAND_PCT)
 		_die()
 
 
@@ -620,7 +794,12 @@ func _setup_shoot_sound() -> void:
 	_get_world().add_child(shoot_sound)
 	shoot_sound.global_position = sound_global_pos
 	shoot_sound.volume_db = sound_volume_db
-	shoot_sound.play()
+	# Pedra: troca o som de disparo pelo som da pedra e pula os 0.2s iniciais.
+	if is_stone:
+		shoot_sound.stream = STONE_SHOOT_SOUND
+		shoot_sound.play(STONE_SHOOT_SOUND_OFFSET)
+	else:
+		shoot_sound.play()
 	# Lambda captura o ref direto — sobrevive mesmo se a flecha for liberada cedo
 	# (ex: inimigo morre e a flecha some como filha dele antes dos 0.7s).
 	var sound_ref: AudioStreamPlayer2D = shoot_sound
@@ -759,6 +938,11 @@ func _perform_ricochet(hit_target: Node = null) -> bool:
 	global_position += new_dir * RICOCHET_PUSH
 	direction = new_dir
 	rotation = direction.angle()
+	# Pedra: rearma o lifetime pra o quique ter um range um pouco MAIOR que o
+	# ataque base, fresco a partir daqui (sem isso usaria só o tempo restante).
+	if is_stone:
+		lifetime = maxf(lifetime, STONE_RICOCHET_LIFETIME)
+		_arm_lifetime()
 	# Limpa trail pra novo segmento sair limpo da posição atual.
 	if trail != null:
 		trail.clear_points()
@@ -834,6 +1018,19 @@ func _spawn_ricochet_clone(target: Node2D, hops: int, splits: int) -> void:
 		clone.chain_count = chain_count
 		clone.chain_dmg_pct = chain_dmg_pct
 		clone.chain_bonus_chance = chain_bonus_chance
+	if "is_stone" in clone:
+		# Bounce também é pedra: explode em cada quique. Referência do AoE = dano
+		# do clone (clone.damage já leva o falloff de -20%/quique do ricochete).
+		clone.is_stone = is_stone
+		if is_stone:
+			# Quique-clone com range um pouco maior que o ataque base (mesmo do
+			# quique da flecha principal), fresco a partir do ponto do quique.
+			clone.speed = speed
+			clone.lifetime = maxf(lifetime, STONE_RICOCHET_LIFETIME)
+		clone.stone_aoe_radius = stone_aoe_radius
+		clone.stone_aoe_damage = clone.damage
+		clone.stone_aoe_knockback = stone_aoe_knockback
+		clone.stone_stun_duration = stone_stun_duration
 	if "is_ricochet" in clone:
 		clone.is_ricochet = true
 		clone.ricochet_hops_remaining = hops
@@ -1014,20 +1211,52 @@ func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, 
 			p.notify_kill_by_source(source_id)
 
 
-func _play_oneshot(stream: AudioStream, pos: Vector2, vol_db: float, max_duration: float) -> void:
+func _play_stone_impact(pos: Vector2) -> void:
+	# Arquivo inteiro (já trimado/equalizado no Audacity), NÃO-posicional
+	# (positional=false): sai igual nos dois ouvidos, sem pan por lado da tela.
+	_play_oneshot(STONE_IMPACT_SOUND, pos, STONE_IMPACT_VOLUME_DB, STONE_IMPACT_DURATION, STONE_IMPACT_START, STONE_IMPACT_PITCH, STONE_IMPACT_FADE_IN, STONE_IMPACT_FADE_OUT, false)
+
+
+func _play_oneshot(stream: AudioStream, pos: Vector2, vol_db: float, max_duration: float, start_offset: float = 0.0, pitch: float = 1.0, fade_in: float = 0.0, fade_out: float = 0.0, positional: bool = true) -> void:
 	if stream == null:
 		return
-	var player := AudioStreamPlayer2D.new()
+	# positional=false → AudioStreamPlayer (não-posicional): sai igual nos dois
+	# ouvidos, sem pan L/R por posição na tela (usado no estouro da pedra).
+	var player  # Variant: AudioStreamPlayer2D ou AudioStreamPlayer
+	if positional:
+		player = AudioStreamPlayer2D.new()
+	else:
+		player = AudioStreamPlayer.new()
 	player.bus = &"SFX"
 	player.stream = stream
+	player.pitch_scale = pitch
 	player.volume_db = vol_db
 	_get_world().add_child(player)
-	player.global_position = pos
-	player.play()
+	if player is AudioStreamPlayer2D:
+		(player as AudioStreamPlayer2D).global_position = pos
+	player.play(start_offset)
+	# Fade-in curto: mata o clique de começar no meio da onda (start_offset).
+	if fade_in > 0.0:
+		player.volume_db = vol_db - 40.0
+		player.create_tween().tween_property(player, "volume_db", vol_db, fade_in)
+	# Fade-out curto antes do stop: mata o "estalo" do corte seco no fim.
+	if fade_out > 0.0 and max_duration > fade_out:
+		var ref_fo = player  # Variant (pode ser 2D ou não-posicional)
+		get_tree().create_timer(max_duration - fade_out).timeout.connect(func() -> void:
+			if is_instance_valid(ref_fo):
+				ref_fo.create_tween().tween_property(ref_fo, "volume_db", vol_db - 40.0, fade_out)
+		)
 	if max_duration > 0.0:
-		var ref: AudioStreamPlayer2D = player
+		var ref = player  # Variant (pode ser 2D ou não-posicional)
 		get_tree().create_timer(max_duration).timeout.connect(func() -> void:
 			if is_instance_valid(ref):
 				ref.stop()
 				ref.queue_free()
+		)
+	else:
+		# Sem duração fixa: toca o arquivo inteiro e libera quando acabar.
+		var ref_done = player
+		player.finished.connect(func() -> void:
+			if is_instance_valid(ref_done):
+				ref_done.queue_free()
 		)
