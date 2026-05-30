@@ -1620,6 +1620,7 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 		"kills": kills,
 		"allies": allies,
 		"monkeys_cursed": monkeys_cursed,
+		"stun_seconds": int(round(float(p.get("stats_stun_seconds")))) if p != null and "stats_stun_seconds" in p else 0,
 		"dmg_dealt": dmg_dealt,
 		"dmg_taken": dmg_taken,
 		"dmg_taken_by_source": dmg_by_src,

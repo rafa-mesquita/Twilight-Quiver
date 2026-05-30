@@ -124,6 +124,11 @@ const STONE_IMPACT_VOLUME_DB: float = -9.0
 const STONE_IMPACT_PITCH: float = 1.0  # arquivo já tratado — toca como autorado
 const STONE_IMPACT_FADE_IN: float = 0.0
 const STONE_IMPACT_FADE_OUT: float = 0.0
+# Throttle GLOBAL do som de impacto: quando muitos estouros procam juntos
+# (volley multi/duplas + perfuração + ricochete), só 1 som toca por janela —
+# o AoE/visual de cada estouro continua, só evita a parede de som empilhada.
+const STONE_IMPACT_SFX_THROTTLE: float = 0.08
+static var _stone_impact_sfx_until: float = 0.0
 # Fogo lv2: rastro de chamas no caminho da flecha (DPS area).
 var fire_trail_enabled: bool = false
 var fire_trail_dps: float = 4.0
@@ -845,6 +850,11 @@ func _apply_curse_to(target: Node) -> void:
 func _apply_freeze_to(target: Node) -> void:
 	# Re-aplica freeze existente (refresh duração + dps) ou cria novo FreezeDebuff.
 	# cc_immune é tratado dentro do _ready do debuff.
+	# Freeze conta como stun pro unlock da skin Terracota (pula cc_immune — resistem).
+	if not target.is_in_group("cc_immune"):
+		var _p_frz := get_tree().get_first_node_in_group("player")
+		if _p_frz != null and _p_frz.has_method("notify_stun_applied"):
+			_p_frz.notify_stun_applied(freeze_duration)
 	for child in target.get_children():
 		if child is FreezeDebuff:
 			(child as FreezeDebuff).refresh(freeze_duration, freeze_dps)
@@ -1212,6 +1222,12 @@ func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, 
 
 
 func _play_stone_impact(pos: Vector2) -> void:
+	# Throttle global: evita empilhar vários sons de estouro quando muitos procam
+	# juntos (volley + perfuração + ricochete). O AoE/visual já aconteceu à parte.
+	var now: float = Time.get_ticks_msec() / 1000.0
+	if now < _stone_impact_sfx_until:
+		return
+	_stone_impact_sfx_until = now + STONE_IMPACT_SFX_THROTTLE
 	# Arquivo inteiro (já trimado/equalizado no Audacity), NÃO-posicional
 	# (positional=false): sai igual nos dois ouvidos, sem pan por lado da tela.
 	_play_oneshot(STONE_IMPACT_SOUND, pos, STONE_IMPACT_VOLUME_DB, STONE_IMPACT_DURATION, STONE_IMPACT_START, STONE_IMPACT_PITCH, STONE_IMPACT_FADE_IN, STONE_IMPACT_FADE_OUT, false)

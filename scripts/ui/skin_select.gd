@@ -52,7 +52,8 @@ const _THUMBNAIL_SIZE: Vector2 = Vector2(140, 140)
 const _TAB_BUTTON_SIZE: Vector2 = Vector2(0, 52)
 
 @onready var preview: Node2D = $Center/Panel/Margin/VBox/Body/LeftCol/PreviewSection/PlayerPreview
-@onready var stats_vbox: VBoxContainer = $Center/Panel/Margin/VBox/Body/LeftCol/StatsPanel/Margin/VBox
+@onready var shop_face: Node2D = $Center/Panel/Margin/VBox/Body/LeftCol/ShopFaceSection/PlayerFace
+@onready var stats_vbox: VBoxContainer = $StatsOverlay
 @onready var tabs_container: HBoxContainer = $Center/Panel/Margin/VBox/Body/EditSection/Tabs
 @onready var empty_label: Label = $Center/Panel/Margin/VBox/Body/EditSection/EmptyLabel
 @onready var cards_scroll: ScrollContainer = $Center/Panel/Margin/VBox/Body/EditSection/CardsScroll
@@ -76,6 +77,7 @@ func _ready() -> void:
 	_available = SkinLoadout.scan_available_parts()
 	_current = SkinLoadout.load_loadout()
 	_apply_to_preview()
+	_refresh_shop_face()
 	var preview_body: AnimatedSprite2D = preview.get_node("Body")
 	if preview_body != null and preview_body.sprite_frames != null and preview_body.sprite_frames.has_animation("walk"):
 		preview_body.play("walk")
@@ -100,6 +102,12 @@ func _apply_to_preview() -> void:
 		skin.set_part(slot, part)
 
 
+# Atualiza o retrato do shop (rosto) com o loadout em edição — preview ao vivo.
+func _refresh_shop_face() -> void:
+	if shop_face != null and shop_face.has_method("apply_loadout"):
+		shop_face.apply_loadout(_current)
+
+
 func _first_slot_with_parts() -> StringName:
 	for slot in SkinLoadout.SLOTS:
 		if (_available.get(slot, []) as Array).size() > 0:
@@ -112,14 +120,14 @@ func _first_slot_with_parts() -> StringName:
 func _build_stats_panel() -> void:
 	for child in stats_vbox.get_children():
 		child.queue_free()
-	# Header
+	# Header — discreto, fora do painel (margem esquerda da tela).
 	var header := Label.new()
 	header.text = "PLAYER_PROGRESS_HEADER"
-	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	if _font != null:
 		header.add_theme_font_override("font", _font)
-	header.add_theme_font_size_override("font_size", 26)
-	header.add_theme_color_override("font_color", Color(1, 0.85, 0.45, 1))
+	header.add_theme_font_size_override("font_size", 17)
+	header.add_theme_color_override("font_color", Color(0.62, 0.55, 0.74, 1))
 	stats_vbox.add_child(header)
 	# Linhas
 	for entry in _STAT_DISPLAY:
@@ -135,16 +143,16 @@ func _make_stat_row(label_text: String, value: int) -> HBoxContainer:
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if _font != null:
 		name_label.add_theme_font_override("font", _font)
-	name_label.add_theme_font_size_override("font_size", 22)
-	name_label.add_theme_color_override("font_color", Color(0.85, 0.82, 0.95, 1))
+	name_label.add_theme_font_size_override("font_size", 15)
+	name_label.add_theme_color_override("font_color", Color(0.55, 0.52, 0.64, 1))
 	row.add_child(name_label)
 	var value_label := Label.new()
 	value_label.text = _format_number(value)
 	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	if _font != null:
 		value_label.add_theme_font_override("font", _font)
-	value_label.add_theme_font_size_override("font_size", 22)
-	value_label.add_theme_color_override("font_color", Color(1, 0.92, 0.55, 1))
+	value_label.add_theme_font_size_override("font_size", 15)
+	value_label.add_theme_color_override("font_color", Color(0.72, 0.66, 0.82, 1))
 	row.add_child(value_label)
 	return row
 
@@ -293,14 +301,10 @@ func _make_kit_card(kit_name: String) -> Control:
 		var def: SkinPart = _default_part_for_slot(slot)
 		if def != null:
 			preview_parts[slot] = def
-	# Lock flag vem do body (ou primeira peça do kit) — todas as peças do
-	# mesmo display_name compartilham a mesma quest.
-	var first_kit_part: SkinPart = kit_parts.get(&"body")
-	if first_kit_part == null:
-		for slot in kit_parts.keys():
-			first_kit_part = kit_parts[slot]
-			break
-	var is_unlocked: bool = first_kit_part == null or SkinLoadout.is_unlocked(first_kit_part)
+	# Lock do kit vem da QUEST do NOME do kit — NÃO da peça body. O body de
+	# Linked/Rosa_Onyx é sobrescrito pra "Linked_Pink" (sem quest), então checar
+	# pela peça desbloqueava esses kits sem cumprir o desafio.
+	var is_unlocked: bool = SkinLoadout.is_kit_unlocked(kit_name)
 	var is_selected: bool = _is_kit_currently_selected(kit_parts)
 
 	var btn := Button.new()
@@ -432,6 +436,7 @@ func _on_kit_picked(kit_name: String) -> void:
 			elif SkinLoadout.REMOVABLE_SLOTS.has(slot):
 				_current[slot] = null
 	_apply_to_preview()
+	_refresh_shop_face()
 	_build_cards_for_slot(_KIT_SLOT)
 	status_label.text = ""
 
@@ -533,6 +538,7 @@ func _on_card_picked(slot: StringName, part: SkinPart) -> void:
 	var skin: Node = preview.get_node("Skin")
 	if skin != null and skin.has_method("set_part"):
 		skin.set_part(slot, part)
+	_refresh_shop_face()
 	_build_cards_for_slot(slot)
 	status_label.text = ""
 

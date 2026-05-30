@@ -1,10 +1,12 @@
-[gd_scene load_steps=10 format=3 uid="uid://csh7n4kxvjt8b"]
+[gd_scene load_steps=14 format=3 uid="uid://csh7n4kxvjt8b"]
 
 [ext_resource type="Script" path="res://scripts/ui/skin_select.gd" id="1_skin"]
 [ext_resource type="FontFile" path="res://font/ByteBounce.ttf" id="2_font"]
 [ext_resource type="PackedScene" uid="uid://b8tw1gv0vqlbl" path="res://scenes/ui/version_label.tscn" id="3_version"]
 [ext_resource type="PackedScene" path="res://scenes/player/cursor.tscn" id="4_cursor"]
 [ext_resource type="PackedScene" uid="uid://drv5fwt92gxqc" path="res://scenes/ui/player_preview.tscn" id="5_preview"]
+[ext_resource type="Script" path="res://scripts/ui/shop_player_face.gd" id="6_pface"]
+[ext_resource type="Texture2D" path="res://assets/Hud/playerHud/border.png" id="7_border"]
 
 [sub_resource type="StyleBoxFlat" id="SBF_btn_normal"]
 bg_color = Color(0.13, 0.1, 0.18, 1)
@@ -40,6 +42,14 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.3, 0.22, 0.42, 1)
+
+[sub_resource type="AtlasTexture" id="ATX_border_back"]
+atlas = ExtResource("7_border")
+region = Rect2(0, 0, 66, 66)
+
+[sub_resource type="AtlasTexture" id="ATX_border_front"]
+atlas = ExtResource("7_border")
+region = Rect2(0, 66, 66, 66)
 
 [node name="SkinSelect" type="Control"]
 texture_filter = 1
@@ -101,34 +111,48 @@ size_flags_vertical = 3
 theme_override_constants/separation = 14
 
 [node name="PreviewSection" type="Panel" parent="Center/Panel/Margin/VBox/Body/LeftCol"]
-custom_minimum_size = Vector2(380, 380)
+custom_minimum_size = Vector2(380, 240)
 layout_mode = 2
 size_flags_vertical = 3
 clip_contents = true
 theme_override_styles/panel = SubResource("SBF_preview_bg")
 
 [node name="PlayerPreview" parent="Center/Panel/Margin/VBox/Body/LeftCol/PreviewSection" instance=ExtResource("5_preview")]
-position = Vector2(190, 320)
+position = Vector2(190, 250)
 scale = Vector2(6, 6)
 
-[node name="StatsPanel" type="Panel" parent="Center/Panel/Margin/VBox/Body/LeftCol"]
-custom_minimum_size = Vector2(380, 200)
+[node name="ShopFaceSection" type="Panel" parent="Center/Panel/Margin/VBox/Body/LeftCol"]
+custom_minimum_size = Vector2(380, 240)
 layout_mode = 2
+size_flags_vertical = 3
+clip_contents = true
 theme_override_styles/panel = SubResource("SBF_preview_bg")
 
-[node name="Margin" type="MarginContainer" parent="Center/Panel/Margin/VBox/Body/LeftCol/StatsPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 12
+[node name="PlayerFace" type="Node2D" parent="Center/Panel/Margin/VBox/Body/LeftCol/ShopFaceSection"]
+texture_filter = 1
+position = Vector2(190, 140)
+scale = Vector2(3.7, 3.7)
+script = ExtResource("6_pface")
 
-[node name="VBox" type="VBoxContainer" parent="Center/Panel/Margin/VBox/Body/LeftCol/StatsPanel/Margin"]
-layout_mode = 2
-theme_override_constants/separation = 6
+[node name="BorderBack" type="Sprite2D" parent="Center/Panel/Margin/VBox/Body/LeftCol/ShopFaceSection/PlayerFace"]
+texture_filter = 1
+texture = SubResource("ATX_border_back")
+
+[node name="Cape" type="AnimatedSprite2D" parent="Center/Panel/Margin/VBox/Body/LeftCol/ShopFaceSection/PlayerFace"]
+texture_filter = 1
+
+[node name="Head" type="AnimatedSprite2D" parent="Center/Panel/Margin/VBox/Body/LeftCol/ShopFaceSection/PlayerFace"]
+texture_filter = 1
+
+[node name="Shirt" type="AnimatedSprite2D" parent="Center/Panel/Margin/VBox/Body/LeftCol/ShopFaceSection/PlayerFace"]
+texture_filter = 1
+
+[node name="Hair" type="AnimatedSprite2D" parent="Center/Panel/Margin/VBox/Body/LeftCol/ShopFaceSection/PlayerFace"]
+texture_filter = 1
+
+[node name="BorderFront" type="Sprite2D" parent="Center/Panel/Margin/VBox/Body/LeftCol/ShopFaceSection/PlayerFace"]
+texture_filter = 1
+texture = SubResource("ATX_border_front")
 
 [node name="EditSection" type="VBoxContainer" parent="Center/Panel/Margin/VBox/Body"]
 layout_mode = 2
@@ -196,6 +220,18 @@ theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/pressed = SubResource("SBF_btn_pressed")
 text = "COMMON_SAVE"
+
+[node name="StatsOverlay" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 40.0
+offset_top = -120.0
+offset_right = 296.0
+offset_bottom = 120.0
+mouse_filter = 2
+theme_override_constants/separation = 4
 
 [node name="VersionLabel" parent="." instance=ExtResource("3_version")]
 

@@ -229,11 +229,11 @@ SHOP_HP_PLUS_25,+25 HP,+25 HP,+25 HP,+25 PV
 SHOP_DAMAGE,+24% dano,+24% dmg,+24% daño,+24% dégâts
 SHOP_ATTACK_SPEED,+23% atk speed,+23% atk speed,+23% vel. ataque,+23% vit. attaque
 SHOP_MOVE_SPEED,+10% move speed,+10% move speed,+10% vel. movimiento,+10% vit. déplacement
-SHOP_ARMOR_12,(12%- dano e 6% tenc.),(12%- dmg & 6% tena.),(12%- daño y 6% tena.),(12%- dégâts & 6% ténac.)
-SHOP_ARMOR_18,(18%- dano e 9% tenc.),(18%- dmg & 9% tena.),(18%- daño y 9% tena.),(18%- dégâts & 9% ténac.)
-SHOP_ARMOR_22,(22%- dano e 11% tenc.),(22%- dmg & 11% tena.),(22%- daño y 11% tena.),(22%- dégâts & 11% ténac.)
-SHOP_ARMOR_25,(25%- dano e 12.5% tenc.),(25%- dmg & 12.5% tena.),(25%- daño y 12.5% tena.),(25%- dégâts & 12.5% ténac.)
-SHOP_ARMOR_3,(3%- dano e 1.5% tenc.),(3%- dmg & 1.5% tena.),(3%- daño y 1.5% tena.),(3%- dégâts & 1.5% ténac.)
+SHOP_ARMOR_12,(-12% dano e slow),(-12% dmg & slow),(-12% daño y slow),(-12% dégâts & slow)
+SHOP_ARMOR_18,(-18% dano e slow),(-18% dmg & slow),(-18% daño y slow),(-18% dégâts & slow)
+SHOP_ARMOR_22,(-22% dano e slow),(-22% dmg & slow),(-22% daño y slow),(-22% dégâts & slow)
+SHOP_ARMOR_25,(-25% dano e slow),(-25% dmg & slow),(-25% daño y slow),(-25% dégâts & slow)
+SHOP_ARMOR_3,(-3% dano e slow),(-3% dmg & slow),(-3% daño y slow),(-3% dégâts & slow)
 SHOP_UPG_PERFURACAO,Perfuracao,Piercing,Perforación,Perforation
 SHOP_UPG_MULTI_ARROW,Multiplas Flechas,Multiple Arrows,Flechas Múltiples,Flèches Multiples
 SHOP_UPG_DOUBLE_ARROWS,Flechas Duplas,Double Arrows,Flechas Dobles,Flèches Doubles
@@ -392,30 +392,30 @@ SHOP_HP_DESC_1,+18 HP maximo,+18 max HP,+18 HP máximo,+18 PV max
 SHOP_HP_DESC_2,+20 HP maximo,+20 max HP,+20 HP máximo,+20 PV max
 SHOP_HP_DESC_3,+22 HP maximo,+22 max HP,+22 HP máximo,+22 PV max
 SHOP_HP_DESC_4,+25 HP maximo,+25 max HP,+25 HP máximo,+25 PV max
-SHOP_ARMOR_DESC_1,"-12% dano
--6% slow","-12% damage
--6% slow","-12% daño
--6% slow","-12% dégâts
--6% slow"
-SHOP_ARMOR_DESC_2,"-18% dano
--9% slow","-18% damage
--9% slow","-18% daño
--9% slow","-18% dégâts
--9% slow"
-SHOP_ARMOR_DESC_3,"-22% dano
--11% slow","-22% damage
--11% slow","-22% daño
--11% slow","-22% dégâts
--11% slow"
-SHOP_ARMOR_DESC_4,"-25% dano
--12.5% slow","-25% damage
--12.5% slow","-25% daño
--12.5% slow","-25% dégâts
--12.5% slow"
-SHOP_ARMOR_DESC_5,"-3% dano / -1.5% slow
-por compra","-3% damage / -1.5% slow
-per purchase","-3% daño / -1.5% slow
-por compra","-3% dégâts / -1.5% slow
+SHOP_ARMOR_DESC_1,"-12% dano e slow
+sofridos","-12% dmg & slow
+taken","-12% daño y slow
+recibidos","-12% dégâts & slow
+subis"
+SHOP_ARMOR_DESC_2,"-18% dano e slow
+sofridos","-18% dmg & slow
+taken","-18% daño y slow
+recibidos","-18% dégâts & slow
+subis"
+SHOP_ARMOR_DESC_3,"-22% dano e slow
+sofridos","-22% dmg & slow
+taken","-22% daño y slow
+recibidos","-22% dégâts & slow
+subis"
+SHOP_ARMOR_DESC_4,"-25% dano e slow
+sofridos","-25% dmg & slow
+taken","-25% daño y slow
+recibidos","-25% dégâts & slow
+subis"
+SHOP_ARMOR_DESC_5,"-3% dano e slow
+por compra","-3% dmg & slow
+per purchase","-3% daño y slow
+por compra","-3% dégâts & slow
 par achat"
 SHOP_DAMAGE_DESC,+24% dano da flecha,+24% arrow damage,+24% daño de flecha,+24% dégâts de flèche
 SHOP_PERFURACAO_DESC_1,"A cada 3 ataques flecha
@@ -836,3 +836,4 @@ PLAYER_QUEST_BLUEY,Derrote o boss Mage Monkey (raid 7),Defeat the Mage Monkey bo
 PLAYER_QUEST_LINKED,Renasça 200 macaquinhos como aliados,Reincarnate 200 monkeys as allies,Renace 200 monitos como aliados,Faites renaître 200 petits singes en alliés
 PLAYER_QUEST_HAWK,Alcance a raid 20,Reach raid 20,Alcanza el raid 20,Atteignez le raid 20
 PLAYER_QUEST_ROSA_ONYX,Derrote a Duskrose,Defeat Duskrose,Derrota a Duskrose,Vaincre Duskrose
+PLAYER_QUEST_TERRACOTA,Cause 750s de stun no total,Deal 750s of stun total,Causa 750s de stun en total,Infligez 750s d'étourdissement au total

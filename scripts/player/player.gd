@@ -70,7 +70,7 @@ var gold: int = 0
 # Upgrade tracking — incrementa ao comprar na shop pós-wave.
 var hp_upgrades: int = 0
 # Armor (status): reduz % do dano recebido E % do slow recebido (resistência).
-# Computado de armor_level. Slow reduction é metade da damage reduction.
+# Computado de armor_level. Slow reduction = damage reduction (igualadas).
 var armor_level: int = 0
 var damage_reduction_pct: float = 0.0
 var slow_resistance_pct: float = 0.0
@@ -426,6 +426,8 @@ var stats_allies_made: int = 0
 # Macaquinhos (grupo "monkey") convertidos pelo disparo profano — desbloqueia
 # a skin Linked aos 200 totais acumulados entre runs.
 var stats_monkeys_cursed: int = 0
+# Segundos de stun causados em inimigos nesta run (unlock da skin Terracota).
+var stats_stun_seconds: float = 0.0
 var stats_damage_dealt: float = 0.0
 var stats_damage_taken: float = 0.0
 # Breakdown de dano recebido por tipo de fonte (source_id passado em take_damage).
@@ -631,6 +633,11 @@ func _apply_poison_tick(amount: float) -> void:
 		return
 	# Dev godmode: ignora ticks de poison/burn (mesmo gate da take_damage).
 	if GameState.dev_godmode:
+		return
+	# Escondido no Pai do Verde / Verde: invulnerável a TODO dano, incluindo
+	# ticks de poison/burn já ativos (mesmo gate da take_damage). Sem isso o
+	# veneno do mosquito furava a invencibilidade do arbusto.
+	if is_in_group("bush_hidden"):
 		return
 	hp = maxf(hp - amount, 0.0)
 	# Mesmo clamp da take_damage — ticks de poison costumam ser fracionários
@@ -2375,7 +2382,8 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"armor":
 			armor_level += 1
 			damage_reduction_pct = _compute_damage_reduction(armor_level)
-			slow_resistance_pct = damage_reduction_pct * 0.5
+			# Slow resistance IGUAL à redução de dano (equalizado) — antes era metade.
+			slow_resistance_pct = damage_reduction_pct
 		"damage":
 			damage_upgrades += 1
 			# +24% no dano da flecha por stack (equalizado com atk_speed pra DPS
@@ -3541,6 +3549,13 @@ func notify_ally_made() -> void:
 
 func notify_monkey_cursed() -> void:
 	stats_monkeys_cursed += 1
+
+
+# Segundos de stun que o player causou em inimigos nesta run (qualquer fonte:
+# claudio druida, pedra, terremoto, gelo). Acumula pro unlock da skin Terracota.
+func notify_stun_applied(duration: float) -> void:
+	if duration > 0.0:
+		stats_stun_seconds += duration
 
 
 func notify_damage_dealt(amount: float) -> void:

@@ -1276,7 +1276,7 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 # IDs de upgrade cujo título + desc devem ser centralizados horizontal e
 # verticalmente (em vez do layout default que deixa o título encostado à
 # direita pra dar espaço pra arte à esquerda).
-const CENTERED_TEXT_IDS: Array[String] = ["gold_magnet", "life_steal"]
+const CENTERED_TEXT_IDS: Array[String] = ["gold_magnet", "life_steal", "stone_arrow"]
 
 
 # Tamanho do frame por categoria (paisagem vs retrato).
@@ -1335,7 +1335,7 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 	"fire_arrow": Color(0x77 / 255.0, 0x20 / 255.0, 0x00 / 255.0),  # #772000
 	"curse_arrow": Color(0x45 / 255.0, 0x14 / 255.0, 0x58 / 255.0),  # #451458
 	"ice_arrow": Color(0x1b / 255.0, 0x31 / 255.0, 0x6c / 255.0),  # #1b316c (azul escuro — combina com a arte do card)
-	"stone_arrow": Color(0x4a / 255.0, 0x3a / 255.0, 0x2a / 255.0),  # #4a3a2a (marrom-pedra; placeholder até a arte do card)
+	"stone_arrow": Color.WHITE,  # texto branco no card da Pedra
 	"leno": Color(0xfc / 255.0, 0xb4 / 255.0, 0xcc / 255.0),  # #fcb4cc
 	"claudio_druida": Color(0x5d / 255.0, 0x80 / 255.0, 0x5a / 255.0),  # #5d805a
 	"ting": Color.WHITE,  # branco — alto contraste no fundo laranja
@@ -2703,6 +2703,13 @@ func _open_joker_modal() -> void:
 	title.add_theme_constant_override("outline_size", 3)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
+	# Aviso de uso único (reusa a key do tooltip da carta) — reforça na hora de usar.
+	var subtitle := Label.new()
+	subtitle.text = tr("SHOP_JOKER_TOOLTIP_RARE")
+	subtitle.add_theme_font_size_override("font_size", 18)
+	subtitle.add_theme_color_override("font_color", Color(0.72, 0.62, 0.85, 1.0))
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(subtitle)
 	var player := _get_player()
 	var hud := get_tree().get_first_node_in_group("hud")
 	var status_targets: Array[String] = _collect_joker_status_targets(player)

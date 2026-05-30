@@ -115,6 +115,12 @@ const SKIN_QUESTS: Dictionary = {
 		"label": "PLAYER_QUEST_ROSA_ONYX",
 		"hidden": false,
 	},
+	"Terracota": {
+		"type": "stun_seconds",
+		"value": 750,
+		"label": "PLAYER_QUEST_TERRACOTA",
+		"hidden": false,
+	},
 }
 
 # Stats persistentes em [progress]. Chaves usadas pelo sistema.
@@ -127,6 +133,9 @@ const STAT_BOSSES_KILLED_TOTAL: StringName = &"bosses_killed_total"
 # Macaquinhos (grupo "monkey") convertidos pelo disparo profano. Acumula
 # entre runs — unlock da skin Linked aos 200.
 const STAT_MONKEYS_CURSED: StringName = &"monkeys_cursed_total"
+# Segundos de stun que o player causa em inimigos, acumulados entre runs
+# (qualquer fonte: claudio druida, pedra, terremoto, gelo). Unlock da Terracota.
+const STAT_STUN_SECONDS: StringName = &"stun_seconds_total"
 # Set de boss IDs já abatidos (persistente entre runs). Armazenado como string
 # CSV no settings.cfg porque ConfigFile só aceita primitivos.
 const _KEY_BOSSES_KILLED_SET: String = "bosses_killed_set"
@@ -327,6 +336,8 @@ static func _is_quest_satisfied(quest: Dictionary) -> bool:
 			return has_killed_boss(String(raw_value))
 		"monkeys_cursed":
 			return get_stat(STAT_MONKEYS_CURSED) >= int(raw_value)
+		"stun_seconds":
+			return get_stat(STAT_STUN_SECONDS) >= int(raw_value)
 	return true  # type desconhecido: assume desbloqueada (não bloqueia o jogo).
 
 
@@ -371,6 +382,20 @@ static func get_quest_for(display_name: String) -> Dictionary:
 	return SKIN_QUESTS.get(display_name, {})
 
 
+static func is_kit_unlocked(kit_name: String) -> bool:
+	# Unlock de um KIT inteiro pela quest do NOME do kit. Necessário porque o
+	# body de alguns kits é sobrescrito (KIT_BODY_OVERRIDE → "Linked_Pink"), e
+	# checar o unlock pela peça body resolveria a quest errada: a peça partilhada
+	# "Linked_Pink" não tem quest, então Linked/Rosa_Onyx desbloqueavam sem o
+	# desafio. Aqui a quest é buscada pelo nome do kit (que casa com SKIN_QUESTS).
+	if OS.is_debug_build():
+		return true
+	var quest: Dictionary = SKIN_QUESTS.get(kit_name, {})
+	if quest.is_empty():
+		return true
+	return _is_quest_satisfied(quest)
+
+
 # Skin "hidden lock" = quest tem `hidden=true` E ainda está locked.
 # UI usa pra esconder o card completamente (vs mostrar como "?" / lockada).
 static func is_hidden_locked(part: SkinPart) -> bool:
@@ -399,6 +424,7 @@ static func record_run(run_stats: Dictionary) -> Array:
 	var run_dmg_dealt: int = int(run_stats.get("dmg_dealt", 0))
 	var run_dmg_taken: int = int(run_stats.get("dmg_taken", 0))
 	var run_monkeys_cursed: int = int(run_stats.get("monkeys_cursed", 0))
+	var run_stun_seconds: int = int(run_stats.get("stun_seconds", 0))
 
 	if run_wave > get_stat(STAT_MAX_WAVE):
 		set_stat(STAT_MAX_WAVE, run_wave)
@@ -408,6 +434,8 @@ static func record_run(run_stats: Dictionary) -> Array:
 		set_stat(STAT_DMG_DEALT, get_stat(STAT_DMG_DEALT) + run_dmg_dealt)
 	if run_monkeys_cursed > 0:
 		set_stat(STAT_MONKEYS_CURSED, get_stat(STAT_MONKEYS_CURSED) + run_monkeys_cursed)
+	if run_stun_seconds > 0:
+		set_stat(STAT_STUN_SECONDS, get_stat(STAT_STUN_SECONDS) + run_stun_seconds)
 	set_stat(STAT_RUNS_COMPLETED, get_stat(STAT_RUNS_COMPLETED) + 1)
 	if run_dmg_taken == 0 and run_wave >= 1:
 		set_stat(STAT_RUNS_NO_DAMAGE, get_stat(STAT_RUNS_NO_DAMAGE) + 1)

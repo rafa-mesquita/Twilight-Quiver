@@ -27,7 +27,13 @@ const _LAYERS: Array[Dictionary] = [
 
 
 func _ready() -> void:
-	var loadout: Dictionary = SkinLoadout.load_loadout()
+	apply_loadout(SkinLoadout.load_loadout())
+
+
+# Reconstrói a face a partir de um loadout arbitrário. A shop chama no _ready com
+# o loadout salvo; a tela Player chama a cada troca de peça com o loadout em edição
+# (preview ao vivo de como a skin fica no shop).
+func apply_loadout(loadout: Dictionary) -> void:
 	for layer in _LAYERS:
 		var node_name: String = String(layer["node"])
 		var sprite: AnimatedSprite2D = get_node_or_null(node_name) as AnimatedSprite2D
@@ -38,6 +44,7 @@ func _ready() -> void:
 		if tex == null:
 			sprite.visible = false
 			continue
+		sprite.visible = true
 		sprite.sprite_frames = _build_frames_for(tex)
 		sprite.animation = &"idle"
 		sprite.play("idle")
