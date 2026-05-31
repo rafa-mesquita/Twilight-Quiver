@@ -88,6 +88,9 @@ const WAVE14_HIDE_GROUP: String = "hide_wave14"
 # (que ficam zerados nas waves de boss). 2.45× sobre o base 9-12 → 22-29 coins
 # (nerf -30% do antigo 3.5× pra compensar o free-upgrade pós-boss 14).
 const BOSS_REDUX_GOLD_MULT: float = 2.45
+# Wave 21 (boss duplo): cada boss dropa ~60% do boss solo da wave 14 (são dois,
+# então a soma fica generosa sem dobrar). Tunável.
+const BOSS_DUAL_GOLD_MULT: float = 1.5
 # Tempo (s) que a camera fica parada no boss depois do overlay preto sumir,
 # antes de começar o pan pro player. Dá tempo do jogador ver o boss em defense
 # + a horda ao redor antes do round começar.
@@ -1699,13 +1702,24 @@ func _prespawn_boss_wave_entities() -> void:
 				# Override pro boss Duskrose (wave 14): HP fixo 8500.
 				if wave_number == boss_redux_wave and type_key == "duskrose" and "max_hp" in enemy:
 					enemy.max_hp = 8500.0
-			if wave_number == boss_redux_wave and (type_key == "mage_monkey" or type_key == "duskrose") and BOSS_REDUX_GOLD_MULT > 1.0:
+				# Wave 21 (boss duplo): HP fixo Gorilla 6000 / Duskrose 8000.
+				if wave_number == boss_dual_wave and "max_hp" in enemy:
+					if type_key == "mage_monkey":
+						enemy.max_hp = 6000.0
+					elif type_key == "duskrose":
+						enemy.max_hp = 8000.0
+			var gold_mult: float = 0.0
+			if wave_number == boss_redux_wave:
+				gold_mult = BOSS_REDUX_GOLD_MULT
+			elif wave_number == boss_dual_wave:
+				gold_mult = BOSS_DUAL_GOLD_MULT
+			if gold_mult > 1.0 and (type_key == "mage_monkey" or type_key == "duskrose"):
 				if "gold_drop_min" in enemy:
-					enemy.gold_drop_min = int(round(float(enemy.gold_drop_min) * BOSS_REDUX_GOLD_MULT))
+					enemy.gold_drop_min = int(round(float(enemy.gold_drop_min) * gold_mult))
 				if "gold_drop_max" in enemy:
-					enemy.gold_drop_max = int(round(float(enemy.gold_drop_max) * BOSS_REDUX_GOLD_MULT))
+					enemy.gold_drop_max = int(round(float(enemy.gold_drop_max) * gold_mult))
 				if "gold_drop_pivot" in enemy:
-					enemy.gold_drop_pivot = int(round(float(enemy.gold_drop_pivot) * BOSS_REDUX_GOLD_MULT))
+					enemy.gold_drop_pivot = int(round(float(enemy.gold_drop_pivot) * gold_mult))
 			world.add_child(enemy)
 			enemy.global_position = _pick_spawn_for(type_key)
 			_pause_if_time_frozen(enemy)
