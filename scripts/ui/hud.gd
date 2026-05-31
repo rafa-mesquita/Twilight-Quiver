@@ -121,6 +121,13 @@ const ESQUIVANDO_ICON_WIDTH: float = 76.0
 @onready var boss_hp_fill: ColorRect = $BossHpBar/ArtScale/Fill
 @onready var boss_hp_label: Label = $BossHpBar/Label
 @onready var boss_name_label: Label = $BossHpBar/NameLabel
+# Segunda barra de boss (wave 21 boss duplo): duas barras menores na base.
+@onready var boss_hp_bar2: Control = $BossHpBar2
+@onready var boss_hp_fill2: ColorRect = $BossHpBar2/ArtScale/Fill
+@onready var boss_hp_label2: Label = $BossHpBar2/Label
+@onready var boss_name_label2: Label = $BossHpBar2/NameLabel
+# Layout das barras duplas já aplicado? (aplica 1× ao entrar no modo duplo).
+var _dual_bars_laid_out: bool = false
 # Mapeamento de grupos de boss → nome a exibir. Mais bosses futuros: adicionar
 # entrada nesse dict.
 const BOSS_NAMES: Dictionary = {
@@ -370,6 +377,24 @@ func _on_upgrade_applied(_id: String, _level: int) -> void:
 
 
 func _update_boss_hp_bar() -> void:
+	# Conta bosses vivos. 2+ → modo barra dupla (wave 21). Uma vez no modo duplo,
+	# permanece nele enquanto houver ≥1 boss (a barra do sobrevivente fica onde
+	# está; a do morto some). Só sai quando não há mais boss.
+	var bosses: Array = []
+	for b in get_tree().get_nodes_in_group("boss"):
+		if is_instance_valid(b) and b is Node2D:
+			bosses.append(b)
+	if bosses.size() >= 2 or (_dual_bars_laid_out and bosses.size() >= 1):
+		_update_dual_boss_bars(bosses)
+		return
+	# Sem bosses (ou nunca entrou no duplo): limpa o estado duplo e cai no single.
+	if _dual_bars_laid_out:
+		_dual_bars_laid_out = false
+		_current_boss = null
+		boss_hp_bar.scale = Vector2.ONE
+		boss_hp_bar2.scale = Vector2.ONE
+	if boss_hp_bar2.visible:
+		boss_hp_bar2.visible = false
 	# Polling: procura primeiro node em grupo "boss" e mostra a barra com seus
 	# dados. Sem boss vivo → esconde. Roda em _process pq spawna mid-wave.
 	if _current_boss == null or not is_instance_valid(_current_boss):
@@ -442,6 +467,67 @@ func _boss_bar_alpha_for(player_overlapping: bool) -> float:
 	if _boss_bar_bottom_anchored:
 		return BOSS_BAR_BOTTOM_TRANSPARENT_ALPHA if player_overlapping else BOSS_BAR_BOTTOM_OPAQUE_ALPHA
 	return HUD_TRANSPARENT_ALPHA if player_overlapping else HUD_OPAQUE_ALPHA
+
+
+# Wave 21: duas barras menores lado a lado na BASE. Gorilla à esquerda, Duskrose
+# à direita (por grupo). Boss morto → barra dele some, a do outro permanece.
+func _update_dual_boss_bars(bosses: Array) -> void:
+	if not _dual_bars_laid_out:
+		_apply_dual_bar_layout()
+		_dual_bars_laid_out = true
+	var gorilla: Node2D = null
+	var dusk: Node2D = null
+	for b in bosses:
+		if (b as Node).is_in_group("mage_monkey"):
+			gorilla = b
+		elif (b as Node).is_in_group("duskrose"):
+			dusk = b
+	_fill_boss_bar(boss_hp_bar, boss_hp_fill, boss_hp_label, boss_name_label, gorilla, "MAGE MONKEY")
+	_fill_boss_bar(boss_hp_bar2, boss_hp_fill2, boss_hp_label2, boss_name_label2, dusk, "DUSKROSE")
+
+
+# Posiciona as duas barras menores lado a lado na base (1× ao entrar no modo
+# duplo). Larguras/escala/offsets tunáveis.
+func _apply_dual_bar_layout() -> void:
+	for bar in [boss_hp_bar, boss_hp_bar2]:
+		bar.scale = Vector2(0.62, 0.62)  # ~62% do tamanho cheio
+		bar.anchor_top = 1.0
+		bar.anchor_bottom = 1.0
+		bar.modulate.a = 1.0
+		bar.visible = true
+	_boss_bar_bottom_anchored = true
+	# Barra esquerda (Gorilla): metade esquerda da base.
+	boss_hp_bar.anchor_left = 0.0
+	boss_hp_bar.anchor_right = 0.0
+	boss_hp_bar.offset_left = 120.0
+	boss_hp_bar.offset_right = 120.0 + 446.0
+	boss_hp_bar.offset_top = _BOSS_BAR_BOTTOM_OFFSET_TOP
+	boss_hp_bar.offset_bottom = _BOSS_BAR_BOTTOM_OFFSET_BOTTOM
+	# Barra direita (Duskrose): metade direita da base (ancorada à direita).
+	boss_hp_bar2.anchor_left = 1.0
+	boss_hp_bar2.anchor_right = 1.0
+	boss_hp_bar2.offset_left = -120.0 - 446.0  # ~largura escalada (720×0.62)
+	boss_hp_bar2.offset_right = -120.0
+	boss_hp_bar2.offset_top = _BOSS_BAR_BOTTOM_OFFSET_TOP
+	boss_hp_bar2.offset_bottom = _BOSS_BAR_BOTTOM_OFFSET_BOTTOM
+
+
+# Preenche uma barra de boss (fill ratio + nome + label). null → esconde a barra.
+func _fill_boss_bar(bar: Control, fill: ColorRect, label: Label, name_label: Label, boss: Node2D, name_text: String) -> void:
+	if boss == null or not is_instance_valid(boss):
+		bar.visible = false
+		return
+	bar.visible = true
+	name_label.text = name_text
+	if not ("hp" in boss) or not ("max_hp" in boss):
+		return
+	var hp: float = float(boss.hp)
+	var maxhp: float = float(boss.max_hp)
+	var ratio: float = 0.0 if maxhp <= 0.0 else clampf(hp / maxhp, 0.0, 1.0)
+	var mat: ShaderMaterial = fill.material as ShaderMaterial
+	if mat != null:
+		mat.set_shader_parameter("fill_ratio", ratio)
+	label.text = "%d/%d" % [int(round(hp)), int(round(maxhp))]
 
 
 func _refresh_upgrade_column() -> void:
