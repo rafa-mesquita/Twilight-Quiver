@@ -834,6 +834,14 @@ func _uses_duskrose_arena(num: int) -> bool:
 	return num == boss_redux_wave or num == boss_dual_wave
 
 
+# Wave 21 (boss duplo): moedas dropadas pelos bosses ficam travadas (não expiram
+# nem são coletáveis) até o último boss morrer. O magnet de fim de wave
+# (_magnet_remaining_gold, em _finish_wave) libera todas de uma vez — chuva de
+# moedas. Lido pelo gold.gd no _ready de cada moeda.
+func boss_coins_locked() -> bool:
+	return wave_number == boss_dual_wave and wave_active
+
+
 func is_boss_wave_now() -> bool:
 	return _is_boss_wave(wave_number)
 

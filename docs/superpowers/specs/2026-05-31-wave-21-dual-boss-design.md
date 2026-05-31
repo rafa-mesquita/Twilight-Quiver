@@ -52,7 +52,8 @@ Adicionar uma nova wave de boss (wave 21) onde o jogador enfrenta **os dois boss
 - A wave **só termina quando OS DOIS bosses morrem**. Se um morre antes, o outro continua normalmente (a wave não encerra).
 - **Morte do Gorilla** limpa os magos dele (como na wave 7, onde a morte do boss remove os minions).
 - **Morte da Duskrose** limpa os Rose Monsters/vinhas dela.
-- **Drops:** cada boss dropa gold escalado (regra de boss wave). Default: **~60% do drop solo cada** (soma generosa para o confronto duplo, sem dobrar). Tunável.
+- **Drops:** cada boss dropa gold escalado (regra de boss wave). Default: **~60% do drop solo cada** (`BOSS_DUAL_GOLD_MULT = 1.5`, soma generosa para o confronto duplo, sem dobrar). Tunável.
+- **Coins recebidas só depois do ÚLTIMO boss morrer (chuva de moedas):** as moedas dropadas pelos bosses na wave 21 ficam **travadas** — não expiram e não são coletáveis (nem por contato, nem por fenda, nem pelo magnet-upgrade) durante a luta. Quando o último boss morre, o magnet de fim de wave (`_magnet_remaining_gold`, em `_finish_wave`, que só roda com `_total_alive()==0`) libera todas de uma vez, voando pro player. Implementação: flag `_locked` no `gold.gd` (setado no `_ready` via `wave_manager.boss_coins_locked()`); `magnet_to_player` ignora o flag (é a liberação intencional).
 
 ### 6. Tuning do escudo do Gorilla (ponto de atenção de balance)
 - Como o escudo fica ativo enquanto há mago vivo **e** o Gorilla re-invoca, é preciso uma cadência/cap de magos que permita ao jogador limpar os magos e "abrir" o Gorilla mesmo sob pressão da Duskrose.

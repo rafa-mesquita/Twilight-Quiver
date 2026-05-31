@@ -30,6 +30,9 @@ const SILHOUETTE_SHADER: Shader = preload("res://shaders/silhouette.gdshader")
 var _elapsed: float = 0.0
 var _bob_phase: float = 0.0
 var _picked: bool = false
+# Travada (wave 21 boss duplo): não expira nem é coletável até o magnet de fim
+# de wave liberar. magnet_to_player ignora isso — é a liberação intencional.
+var _locked: bool = false
 var _silhouette_mat: ShaderMaterial
 # Cache lazy do player pra checar `has_gold_magnet` sem buscar no group todo frame.
 var _player_ref: Node2D = null
@@ -70,6 +73,12 @@ func _ready() -> void:
 			lifetime *= 1.25
 		if lvl >= 2:
 			lifetime *= 2.0
+	# Wave 21 (boss duplo): as moedas dos bosses ficam TRAVADAS — não expiram e
+	# não são coletáveis durante a luta. Só o magnet de fim de wave (quando o
+	# último boss morre) as libera, voando todas pro player (chuva de moedas).
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm != null and wm.has_method("boss_coins_locked") and wm.boss_coins_locked():
+		_locked = true
 
 
 # Pequena bolinha dourada pulsante ACIMA da moeda, com z_index alto pra
@@ -138,6 +147,12 @@ func _magnet_finalize() -> void:
 
 func _process(delta: float) -> void:
 	if _picked:
+		return
+	# Travada: só faz o bobbing parada — sem expirar, sem magnet-upgrade, sem
+	# coleta. Fica no chão até o magnet de fim de wave liberar (chuva de moedas).
+	if _locked:
+		_bob_phase += delta * bob_speed
+		visual.position.y = VISUAL_OFFSET_Y + sin(_bob_phase) * bob_amplitude
 		return
 	_elapsed += delta
 
@@ -217,6 +232,25 @@ func _on_body_entered(body: Node) -> void:
 	if _picked:
 		return
 	if not body.is_in_group("player"):
+		return
+	if not body.has_method("add_gold"):
+		return
+	# Fenda Crepuscular: durante o blink o player atravessa as moedas no caminho.
+	# NÃO coleta em trânsito — só as do destino (varridas no fim do blink por
+	# player._fenda_collect_destination_coins). Sem isso a fenda sugaria a linha
+	# A→B inteira, ficando forte demais.
+	if body.get("_fenda_teleporting") == true:
+		return
+	collect(body)
+
+
+# Coleta efetiva da moeda (gold + som + efeitos + anim). Chamada pelo overlap
+# normal (_on_body_entered) e pelo sweep de destino da Fenda Crepuscular.
+func collect(body: Node) -> void:
+	if _picked:
+		return
+	# Travada (wave 21): não coleta por contato/fenda — só o magnet de fim de wave.
+	if _locked:
 		return
 	if not body.has_method("add_gold"):
 		return
