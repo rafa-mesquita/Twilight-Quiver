@@ -908,25 +908,38 @@ func _prepare_wave7_spawn_assignments() -> void:
 		if south_count > 0:
 			south_y = south_y_sum / float(south_count)
 		_wave7_player_spawn = Vector2(_wave7_boss_center.x, south_y)
-	# Wave 21 (boss duplo): player no canto inferior-ESQUERDO da arena (Gorilla
-	# no centro, Duskrose no topo). X = menor X entre os spawn points; Y = média
-	# dos spawn points "south" (metade inferior do mapa).
+	# Wave 21 (boss duplo): player num spawn point REAL no canto inferior-ESQUERDO
+	# (markers ficam DENTRO da área jogável — o player nasce dentro, sem ser
+	# chutado pela wall invisível). Pega o mais à esquerda entre os da metade SUL.
 	if wave_number == boss_dual_wave:
-		var min_x: float = INF
+		var pl_sp: Marker2D = null
 		for p in spawn_points:
-			if p.global_position.x < min_x:
-				min_x = p.global_position.x
-		var south_y2: float = 320.0
-		var south_count2: int = 0
-		var south_y_sum2: float = 0.0
+			if p.global_position.y <= _wave7_boss_center.y:
+				continue  # só os do sul (metade inferior)
+			if pl_sp == null or p.global_position.x < pl_sp.global_position.x:
+				pl_sp = p
+		# Fallback: nenhum no sul → o mais à esquerda geral.
+		if pl_sp == null:
+			for p in spawn_points:
+				if pl_sp == null or p.global_position.x < pl_sp.global_position.x:
+					pl_sp = p
+		if pl_sp != null:
+			_wave7_player_spawn = pl_sp.global_position
+		# Magos da 1ª horda no lado OPOSTO ao player: recomputa os 2 spawn points
+		# mais LONGES da posição final do player (o cálculo geral acima usou um
+		# ponto aleatório, podendo cair perto do player).
+		var rest21: Array[Marker2D] = []
 		for p in spawn_points:
-			if p.global_position.y > _wave7_boss_center.y:
-				south_y_sum2 += p.global_position.y
-				south_count2 += 1
-		if south_count2 > 0:
-			south_y2 = south_y_sum2 / float(south_count2)
-		if min_x != INF:
-			_wave7_player_spawn = Vector2(min_x, south_y2)
+			if p == pl_sp:
+				continue
+			rest21.append(p)
+		rest21.sort_custom(func(a: Marker2D, b: Marker2D) -> bool:
+			return a.global_position.distance_squared_to(_wave7_player_spawn) > b.global_position.distance_squared_to(_wave7_player_spawn)
+		)
+		_wave7_enemy_spawns = []
+		for i in mini(2, rest21.size()):
+			_wave7_enemy_spawns.append(rest21[i].global_position)
+		_wave7_enemy_spawn_idx = 0
 
 
 func _finish_wave() -> void:
