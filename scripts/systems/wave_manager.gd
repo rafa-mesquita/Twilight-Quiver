@@ -95,9 +95,10 @@ const BOSS_DUAL_GOLD_MULT: float = 1.5
 # antes de começar o pan pro player. Dá tempo do jogador ver o boss em defense
 # + a horda ao redor antes do round começar.
 const BOSS_INTRO_HOLD_ON_BOSS: float = 2.5
-# Wave 21: tempo parado em cada boss no cinematic de intro (Duskrose, depois
-# Gorilla) + duração do pan entre eles. Tunável.
-const BOSS_DUAL_INTRO_HOLD: float = 1.5
+# Wave 21: tempo parado em cada boss no cinematic de intro + duração do pan
+# entre eles. Tunável.
+const BOSS_DUAL_INTRO_HOLD_DUSK: float = 1.5    # Duskrose (1º foco)
+const BOSS_DUAL_INTRO_HOLD_GORILLA: float = 1.0  # Gorilla (2º foco)
 const BOSS_DUAL_INTRO_PAN: float = 1.6
 # Duração do pan suave da camera boss → player. Movimento dramático.
 const BOSS_INTRO_PAN_DURATION: float = 2.0
@@ -2030,7 +2031,7 @@ func _play_dual_boss_intro_cinematic(hud: Node, camera: Node, player: Node2D) ->
 		_end_dual_cinematic(camera)
 		return
 	# 1) Segura na Duskrose.
-	await get_tree().create_timer(BOSS_DUAL_INTRO_HOLD).timeout
+	await get_tree().create_timer(BOSS_DUAL_INTRO_HOLD_DUSK).timeout
 	if stopped:
 		_end_dual_cinematic(camera)
 		return
@@ -2039,7 +2040,7 @@ func _play_dual_boss_intro_cinematic(hud: Node, camera: Node, player: Node2D) ->
 		var t1: Tween = camera.pan_to(gorilla_target, BOSS_DUAL_INTRO_PAN)
 		if t1 != null:
 			await t1.finished
-	await get_tree().create_timer(BOSS_DUAL_INTRO_HOLD).timeout
+	await get_tree().create_timer(BOSS_DUAL_INTRO_HOLD_GORILLA).timeout
 	if stopped:
 		_end_dual_cinematic(camera)
 		return
