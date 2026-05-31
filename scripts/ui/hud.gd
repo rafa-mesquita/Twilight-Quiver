@@ -489,27 +489,29 @@ func _update_dual_boss_bars(bosses: Array) -> void:
 # Posiciona as duas barras menores lado a lado na base (1× ao entrar no modo
 # duplo). Larguras/escala/offsets tunáveis.
 func _apply_dual_bar_layout() -> void:
+	# Duas barras MAIORES, centralizadas como par (ancoradas no centro horizontal),
+	# simétricas em volta do meio da tela, na base. Tunáveis: BAR_SCALE / GAP.
+	var BAR_SCALE: float = 0.85   # tamanho das barras (era 0.62)
+	var BAR_W: float = 720.0      # largura base do BossHpBar (pré-scale)
+	var GAP: float = 50.0         # espaço entre as duas barras
+	var scaled_w: float = BAR_W * BAR_SCALE
 	for bar in [boss_hp_bar, boss_hp_bar2]:
-		bar.scale = Vector2(0.62, 0.62)  # ~62% do tamanho cheio
+		bar.scale = Vector2(BAR_SCALE, BAR_SCALE)
+		bar.anchor_left = 0.5
+		bar.anchor_right = 0.5
 		bar.anchor_top = 1.0
 		bar.anchor_bottom = 1.0
+		bar.offset_top = _BOSS_BAR_BOTTOM_OFFSET_TOP
+		bar.offset_bottom = _BOSS_BAR_BOTTOM_OFFSET_BOTTOM
 		bar.modulate.a = 1.0
 		bar.visible = true
 	_boss_bar_bottom_anchored = true
-	# Barra esquerda (Gorilla): metade esquerda da base.
-	boss_hp_bar.anchor_left = 0.0
-	boss_hp_bar.anchor_right = 0.0
-	boss_hp_bar.offset_left = 120.0
-	boss_hp_bar.offset_right = 120.0 + 446.0
-	boss_hp_bar.offset_top = _BOSS_BAR_BOTTOM_OFFSET_TOP
-	boss_hp_bar.offset_bottom = _BOSS_BAR_BOTTOM_OFFSET_BOTTOM
-	# Barra direita (Duskrose): metade direita da base (ancorada à direita).
-	boss_hp_bar2.anchor_left = 1.0
-	boss_hp_bar2.anchor_right = 1.0
-	boss_hp_bar2.offset_left = -120.0 - 446.0  # ~largura escalada (720×0.62)
-	boss_hp_bar2.offset_right = -120.0
-	boss_hp_bar2.offset_top = _BOSS_BAR_BOTTOM_OFFSET_TOP
-	boss_hp_bar2.offset_bottom = _BOSS_BAR_BOTTOM_OFFSET_BOTTOM
+	# Barra esquerda (Gorilla): termina GAP/2 à esquerda do centro.
+	boss_hp_bar.offset_left = -GAP * 0.5 - scaled_w
+	boss_hp_bar.offset_right = boss_hp_bar.offset_left + BAR_W
+	# Barra direita (Duskrose): começa GAP/2 à direita do centro.
+	boss_hp_bar2.offset_left = GAP * 0.5
+	boss_hp_bar2.offset_right = boss_hp_bar2.offset_left + BAR_W
 
 
 # Preenche uma barra de boss (fill ratio + nome + label). null → esconde a barra.

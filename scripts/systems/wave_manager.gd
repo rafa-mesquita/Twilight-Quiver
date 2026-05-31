@@ -97,7 +97,7 @@ const BOSS_DUAL_GOLD_MULT: float = 1.5
 const BOSS_INTRO_HOLD_ON_BOSS: float = 2.5
 # Wave 21: tempo parado em cada boss no cinematic de intro (Duskrose, depois
 # Gorilla) + duração do pan entre eles. Tunável.
-const BOSS_DUAL_INTRO_HOLD: float = 3.0
+const BOSS_DUAL_INTRO_HOLD: float = 1.5
 const BOSS_DUAL_INTRO_PAN: float = 1.6
 # Duração do pan suave da camera boss → player. Movimento dramático.
 const BOSS_INTRO_PAN_DURATION: float = 2.0
