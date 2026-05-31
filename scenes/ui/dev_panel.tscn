@@ -455,6 +455,13 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 25
 text = "Boss W14"
 
+[node name="Wave21Btn" type="Button" parent="WaveBar/Row"]
+custom_minimum_size = Vector2(0, 40)
+theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 25
+text = "Boss W21"
+
 [node name="UtilityBar" type="PanelContainer" parent="."]
 modulate = Color(1, 1, 1, 0.85)
 anchors_preset = 0

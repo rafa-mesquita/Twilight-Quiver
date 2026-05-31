@@ -70,6 +70,12 @@ const WAVE14_HIDE_GROUP: String = "hide_wave14"
 # ~2.53× dmg comparado ao boss da wave 7 — dentro do range pedido.
 @export var boss_redux_wave: int = 14
 @export var boss_redux_extra_mult: float = 1.75
+# Wave 21 (boss duplo): Gorilla (Mage Monkey) no centro + Duskrose no topo, na
+# arena da Duskrose. Reusa a maquinaria de boss da wave 14 via _uses_duskrose_arena.
+@export var boss_dual_wave: int = 21
+# Trilha da wave 21: sequência de 2 faixas em loop (faixa 1 → faixa 2 → faixa 1…).
+@export var boss_dual_music_1: AudioStream = preload("res://audios/musics/Boss 21 wave.mp3")
+@export var boss_dual_music_2: AudioStream = preload("res://audios/musics/Boss Wve 21 - 2.mp3")
 # Música das waves de boss (wave 7 e boss_redux_wave). Restaura a track default
 # nas outras waves. Default music = stream original do node Music no main.tscn,
 # capturado no _ready (não precisa hardcoded aqui).
@@ -386,7 +392,7 @@ func _start_next_wave() -> void:
 	# Renasce torres/aliados destruídos na wave anterior na mesma posição.
 	# Wave 14 (Duskrose): luta acontece em arena temática; estruturas compradas
 	# ficam "estocadas" e voltam automaticamente no próximo round.
-	if wave_number == boss_redux_wave:
+	if _uses_duskrose_arena(wave_number):
 		_clear_alive_structures_for_boss_wave()
 	else:
 		_respawn_owned_structures()
@@ -470,6 +476,16 @@ func _build_wave_config(num: int) -> Dictionary:
 	if num == boss_redux_wave:
 		return {
 			"duskrose": {"alive_target": 1, "total": 1},
+		}
+	# Wave 21: BOSS DUPLO — Gorilla (Mage Monkey) no centro + Duskrose no topo.
+	# Gorilla mantém o escudo (invulnerável enquanto tiver mago vivo); horda
+	# inicial pequena pra abrir ele ser viável sob pressão da Duskrose. Duskrose
+	# invoca Rose Monsters dinamicamente (config só o boss inicial dela).
+	if num == boss_dual_wave:
+		return {
+			"mage_monkey": {"alive_target": 1, "total": 1},
+			"duskrose": {"alive_target": 1, "total": 1},
+			"mage": {"alive_target": 3, "total": 4},
 		}
 	# Waves 3+: escala automática + um pouco de aleatoriedade.
 	# Quanto maior o wave_number, mais inimigos vivos e mais total.
@@ -807,7 +823,12 @@ func _pick_spawn_for(type_key: String) -> Vector2:
 
 
 func _is_boss_wave(num: int) -> bool:
-	return num == 7 or num == boss_redux_wave
+	return num == 7 or num == boss_redux_wave or num == boss_dual_wave
+
+
+# Waves que rodam na arena temática da Duskrose (swap de mapa, sem estruturas).
+func _uses_duskrose_arena(num: int) -> bool:
+	return num == boss_redux_wave or num == boss_dual_wave
 
 
 func is_boss_wave_now() -> bool:
@@ -1204,8 +1225,9 @@ func _check_structure_respawns(delta: float) -> void:
 	# atinge STRUCTURE_RESPAWN_DELAY, spawna nova instância na última posição.
 	if owned_structures.is_empty():
 		return
-	# Wave 14 (Duskrose): estruturas não existem na arena, então não respawnam.
-	if wave_number == boss_redux_wave:
+	# Wave 14 (Duskrose) e wave 21 (boss duplo): estruturas não existem na arena,
+	# então não respawnam.
+	if _uses_duskrose_arena(wave_number):
 		return
 	var world := get_tree().get_first_node_in_group("world")
 	if world == null:
@@ -1694,7 +1716,7 @@ func _prespawn_boss_wave_entities() -> void:
 	# do main.tscn que sobrepunham), e esconde props marcados (group
 	# "hide_wave14") — tudo antes da cinematic pra player ver o ambiente
 	# temático quando o overlay preto sumir.
-	if wave_number == boss_redux_wave:
+	if _uses_duskrose_arena(wave_number):
 		_set_main_map_hidden(true)
 		_set_main_entities_props_hidden(true)
 		_spawn_wave14_map(world)

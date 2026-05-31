@@ -80,6 +80,7 @@ func _ready() -> void:
 	$WaveBar/Row/FinishWaveBtn.pressed.connect(_finish_current_wave)
 	$WaveBar/Row/Wave7Btn.pressed.connect(_simulate_wave.bind(7))
 	$WaveBar/Row/Wave14Btn.pressed.connect(_simulate_wave.bind(14))
+	$WaveBar/Row/Wave21Btn.pressed.connect(_simulate_wave.bind(21))
 	# Stats secundários na UtilityBar.
 	$UtilityBar/Row/FlushTelemetryBtn.pressed.connect(_flush_telemetry)
 	$UtilityBar/Row/PartyModeBtn.pressed.connect(_toggle_party_mode)
