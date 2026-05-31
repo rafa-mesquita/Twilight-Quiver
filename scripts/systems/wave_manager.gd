@@ -115,6 +115,10 @@ var _boss_died_this_wave: bool = false  # setado por notify_boss_died → atrasa
 # Stream original do node Music (default track) capturado no _ready pra
 # restaurar depois das waves de boss.
 var _default_music: AudioStream = null
+# Sequenciador de música da wave 21 (2 faixas em loop). _dual_music_active diz
+# se o handler do sinal `finished` está conectado.
+var _dual_music_active: bool = false
+var _dual_music_index: int = 0
 # Wave 7 (boss) overrides: spawn fixo do player numa extremidade, magos nas
 # outras 3, boss no centro. Setado em _start_next_wave quando wave_number == 7.
 var _wave7_player_spawn: Vector2 = Vector2.ZERO
@@ -401,8 +405,12 @@ func _start_next_wave() -> void:
 		_respawn_owned_structures()
 
 	# Música da wave: boss / corrupted void / default — escolhida pelo número
-	# da wave (ver _music_for_wave).
-	_swap_music_to(_music_for_wave(wave_number))
+	# da wave (ver _music_for_wave). Wave 21: sequência de 2 faixas em loop.
+	_stop_dual_music_sequence()
+	if wave_number == boss_dual_wave:
+		_start_dual_music_sequence()
+	else:
+		_swap_music_to(_music_for_wave(wave_number))
 	# Wave de boss: cinematic especial — boss + horda inicial são pré-spawnados,
 	# camera trava no boss, cinematic toca, camera pan pro player.
 	var hud := get_tree().get_first_node_in_group("hud")
@@ -1697,6 +1705,48 @@ func _swap_music_to(stream: AudioStream) -> void:
 		(stream as AudioStreamMP3).loop = true
 	music_node.stream = stream
 	music_node.play()
+
+
+func _start_dual_music_sequence() -> void:
+	# Wave 21: toca faixa 1 inteira → faixa 2 inteira → faixa 1… em loop. Cada
+	# faixa SEM loop nativo; o encadeamento é via o sinal `finished` do player.
+	var music_node := get_tree().get_first_node_in_group("music") as AudioStreamPlayer
+	if music_node == null:
+		return
+	if boss_dual_music_1 == null or boss_dual_music_2 == null:
+		_swap_music_to(_default_music)
+		return
+	if boss_dual_music_1 is AudioStreamMP3:
+		(boss_dual_music_1 as AudioStreamMP3).loop = false
+	if boss_dual_music_2 is AudioStreamMP3:
+		(boss_dual_music_2 as AudioStreamMP3).loop = false
+	_dual_music_index = 0
+	_dual_music_active = true
+	if not music_node.finished.is_connected(_on_dual_music_finished):
+		music_node.finished.connect(_on_dual_music_finished)
+	music_node.stream = boss_dual_music_1
+	music_node.play()
+
+
+func _on_dual_music_finished() -> void:
+	if not _dual_music_active:
+		return
+	var music_node := get_tree().get_first_node_in_group("music") as AudioStreamPlayer
+	if music_node == null:
+		return
+	# Alterna 0 → 1 → 0 → … em loop.
+	_dual_music_index = (_dual_music_index + 1) % 2
+	music_node.stream = boss_dual_music_2 if _dual_music_index == 1 else boss_dual_music_1
+	music_node.play()
+
+
+func _stop_dual_music_sequence() -> void:
+	if not _dual_music_active:
+		return
+	_dual_music_active = false
+	var music_node := get_tree().get_first_node_in_group("music") as AudioStreamPlayer
+	if music_node != null and music_node.finished.is_connected(_on_dual_music_finished):
+		music_node.finished.disconnect(_on_dual_music_finished)
 
 
 # Pré-spawna boss + horda inicial ANTES da cinematic (pra quando o overlay
