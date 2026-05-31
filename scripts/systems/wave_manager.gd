@@ -601,7 +601,7 @@ func _build_wave_config(num: int) -> Dictionary:
 	# ball bate com a quota original de monkey.
 	var dark_alive: int = 0
 	var dark_total: int = 0
-	var dark_ball_wave: bool = num == 6 or (num >= 9 and num % 3 == 0)
+	var dark_ball_wave: bool = (num == 6 or (num >= 9 and num % 3 == 0)) and not _is_boss_wave(num)
 	if dark_ball_wave and monkey_total > 0:
 		var dark_pct: float = 0.20
 		dark_alive = int(round(float(monkey_alive) * dark_pct))
@@ -895,6 +895,25 @@ func _prepare_wave7_spawn_assignments() -> void:
 		if south_count > 0:
 			south_y = south_y_sum / float(south_count)
 		_wave7_player_spawn = Vector2(_wave7_boss_center.x, south_y)
+	# Wave 21 (boss duplo): player no canto inferior-ESQUERDO da arena (Gorilla
+	# no centro, Duskrose no topo). X = menor X entre os spawn points; Y = média
+	# dos spawn points "south" (metade inferior do mapa).
+	if wave_number == boss_dual_wave:
+		var min_x: float = INF
+		for p in spawn_points:
+			if p.global_position.x < min_x:
+				min_x = p.global_position.x
+		var south_y2: float = 320.0
+		var south_count2: int = 0
+		var south_y_sum2: float = 0.0
+		for p in spawn_points:
+			if p.global_position.y > _wave7_boss_center.y:
+				south_y_sum2 += p.global_position.y
+				south_count2 += 1
+		if south_count2 > 0:
+			south_y2 = south_y_sum2 / float(south_count2)
+		if min_x != INF:
+			_wave7_player_spawn = Vector2(min_x, south_y2)
 
 
 func _finish_wave() -> void:
