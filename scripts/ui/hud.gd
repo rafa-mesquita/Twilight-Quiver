@@ -1018,7 +1018,9 @@ func play_boss_intro(wave_number: int) -> void:
 	# Wave 14 (Duskrose): skipa o surgimento do gorila mage. Vai direto pro
 	# fade do overlay revelando a boss (que já tá no topo do mapa). Animação
 	# própria da Duskrose será adicionada quando estiver pronta.
-	if wave_number == 14:
+	# Wave 21 (boss duplo) usa o mesmo path: fade do overlay revelando a cena,
+	# sem o sprite "surgimento" do Gorilla (a câmera coreografa os 2 bosses).
+	if wave_number == 14 or wave_number == 21:
 		var t_fade := create_tween()
 		t_fade.tween_property(intro_overlay, "modulate:a", 0.0, 0.6)
 		await t_fade.finished

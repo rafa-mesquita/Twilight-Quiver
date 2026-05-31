@@ -95,6 +95,10 @@ const BOSS_DUAL_GOLD_MULT: float = 1.5
 # antes de começar o pan pro player. Dá tempo do jogador ver o boss em defense
 # + a horda ao redor antes do round começar.
 const BOSS_INTRO_HOLD_ON_BOSS: float = 2.5
+# Wave 21: tempo parado em cada boss no cinematic de intro (Duskrose, depois
+# Gorilla) + duração do pan entre eles. Tunável.
+const BOSS_DUAL_INTRO_HOLD: float = 3.0
+const BOSS_DUAL_INTRO_PAN: float = 1.6
 # Duração do pan suave da camera boss → player. Movimento dramático.
 const BOSS_INTRO_PAN_DURATION: float = 2.0
 
@@ -1946,6 +1950,10 @@ func _play_boss_intro_cinematic(hud: Node) -> void:
 	# Congela player + enemies pré-spawnados durante a cinematic (não andam,
 	# não atiram). Quando o pan voltar todos estão em pose estática.
 	_freeze_entities(true)
+	# Wave 21: cinematic de 2 alvos (Duskrose → Gorilla → player).
+	if wave_number == boss_dual_wave:
+		await _play_dual_boss_intro_cinematic(hud, camera, player)
+		return
 	# Trava camera no centro do boss durante a cinematic. Usa a posição REAL
 	# da boss (após call_deferred do snap_to_patrol que move ela pro topo do
 	# mapa no caso da Duskrose). Pra bosses que têm patrol_y exposto, usa
@@ -1985,6 +1993,65 @@ func _play_boss_intro_cinematic(hud: Node) -> void:
 		if pan_tween != null:
 			await pan_tween.finished
 	# Libera camera + descongela tudo.
+	if camera != null and "cinematic_mode" in camera:
+		camera.cinematic_mode = false
+	_freeze_entities(false)
+
+
+func _play_dual_boss_intro_cinematic(hud: Node, camera: Node, player: Node2D) -> void:
+	# Acha os dois bosses por grupo.
+	var dusk: Node2D = null
+	var gorilla: Node2D = null
+	for b in get_tree().get_nodes_in_group("boss"):
+		if not is_instance_valid(b):
+			continue
+		if (b as Node).is_in_group("duskrose"):
+			dusk = b
+		elif (b as Node).is_in_group("mage_monkey"):
+			gorilla = b
+	# Alvos de câmera (corpo, não os pés). Duskrose usa patrol_y (snap ainda não
+	# rodou nesta frame).
+	var dusk_target: Vector2 = _wave7_boss_center
+	if dusk != null:
+		var dy: float = dusk.patrol_y if "patrol_y" in dusk else dusk.global_position.y
+		dusk_target = Vector2(dusk.global_position.x, dy - 16.0)
+	var gorilla_target: Vector2 = _wave7_boss_center
+	if gorilla != null:
+		gorilla_target = Vector2(gorilla.global_position.x, gorilla.global_position.y - 16.0)
+	# Trava câmera na Duskrose pro reveal do overlay.
+	if camera != null and "cinematic_mode" in camera:
+		camera.cinematic_mode = true
+		if camera is Node2D:
+			(camera as Node2D).global_position = dusk_target
+	# Overlay "Raid 21" + fade (path da Duskrose no HUD, sem sprite do Gorilla).
+	if hud != null and hud.has_method("play_boss_intro"):
+		await hud.play_boss_intro(wave_number)
+	if stopped:
+		_end_dual_cinematic(camera)
+		return
+	# 1) Segura na Duskrose.
+	await get_tree().create_timer(BOSS_DUAL_INTRO_HOLD).timeout
+	if stopped:
+		_end_dual_cinematic(camera)
+		return
+	# 2) Pan pro Gorilla + segura.
+	if camera != null and camera.has_method("pan_to"):
+		var t1: Tween = camera.pan_to(gorilla_target, BOSS_DUAL_INTRO_PAN)
+		if t1 != null:
+			await t1.finished
+	await get_tree().create_timer(BOSS_DUAL_INTRO_HOLD).timeout
+	if stopped:
+		_end_dual_cinematic(camera)
+		return
+	# 3) Pan pro player (canto inferior-esquerdo).
+	if camera != null and camera.has_method("pan_to") and player != null:
+		var t2: Tween = camera.pan_to(player.global_position + Vector2(0, -16), BOSS_INTRO_PAN_DURATION)
+		if t2 != null:
+			await t2.finished
+	_end_dual_cinematic(camera)
+
+
+func _end_dual_cinematic(camera: Node) -> void:
 	if camera != null and "cinematic_mode" in camera:
 		camera.cinematic_mode = false
 	_freeze_entities(false)
