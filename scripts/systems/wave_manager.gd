@@ -1699,6 +1699,9 @@ func _prespawn_boss_wave_entities() -> void:
 			# Boss pula a animação de entrada — cinematic toma o lugar.
 			if (type_key == "mage_monkey" or type_key == "duskrose") and "skip_entrance_animation" in enemy:
 				enemy.skip_entrance_animation = true
+			# Wave 21: a Duskrose não invoca dark balls (requisito do design).
+			if wave_number == boss_dual_wave and type_key == "duskrose" and "dark_ball_summon_enabled" in enemy:
+				enemy.dark_ball_summon_enabled = false
 			# Aplica regras de drop/scaling iguais ao _spawn_one normal.
 			if _is_boss_wave(wave_number) and type_key != "mage_monkey" and type_key != "duskrose":
 				if "gold_drop_chance" in enemy:

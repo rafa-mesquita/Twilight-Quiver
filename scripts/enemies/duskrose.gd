@@ -59,6 +59,8 @@ extends CharacterBody2D
 @export var dark_ball_summon_x_jitter: float = 140.0
 @export var dark_ball_summon_y_min: float = 90.0
 @export var dark_ball_summon_y_max: float = 230.0
+# Wave 21 (boss duplo): dark balls são desligados (setado pelo wave_manager).
+var dark_ball_summon_enabled: bool = true
 # Casts subsequentes invocam 4-5 roses (randi_range). Primeiro cast usa
 # `initial_summon_count` (6, definido abaixo) e bypass do random.
 @export var summon_count_min: int = 4
@@ -815,6 +817,9 @@ func _cast_dark_ball_summon() -> void:
 	# Spawna N dark balls em posições aleatórias abaixo da boss. Cada um passa
 	# pelo `damage_mult` e `hp_mult` da Duskrose (escala com a wave).
 	# Independente da rotação de poderes — não consome cast slot.
+	# Wave 21 (boss duplo): desligado — nenhum dark ball nessa wave.
+	if not dark_ball_summon_enabled:
+		return
 	if dark_ball_scene == null:
 		return
 	_play_one_shot(load(SUMMON_SOUND_PATH) as AudioStream, global_position, summon_sound_volume_db)
