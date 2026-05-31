@@ -274,17 +274,22 @@ func _collect_existing_minions() -> void:
 	# Adopta como minion qualquer enemy vivo que NÃO seja o próprio boss. Isso
 	# inclui os magos pré-spawnados pelo wave_manager + os que o boss invoca,
 	# e qualquer mago novo que o wave_manager adicione ao longo da wave.
+	# EXCEÇÃO (wave 21 boss duplo): NÃO adota a Duskrose nem os Rose Monsters dela
+	# — senão o escudo do Gorilla ficaria preso pelos súditos do outro boss.
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e):
 			continue
-		if e == self or (e as Node).is_in_group("mage_monkey"):
+		var en := e as Node
+		if e == self or en.is_in_group("mage_monkey"):
+			continue
+		if en.is_in_group("boss") or en.is_in_group("duskrose") or en.is_in_group("rose_monster"):
 			continue
 		if e in _minions:
 			continue
 		_minions.append(e)
 		# Marca no grupo boss_minion pra outros sistemas (ex: cleanup) reconhecerem.
-		if not (e as Node).is_in_group("boss_minion"):
-			(e as Node).add_to_group("boss_minion")
+		if not en.is_in_group("boss_minion"):
+			en.add_to_group("boss_minion")
 
 
 # ---------- Skill 1: volley de tiros ----------
