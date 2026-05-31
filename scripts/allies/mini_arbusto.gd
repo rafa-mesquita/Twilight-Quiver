@@ -201,11 +201,29 @@ func _apply_decoy_collision() -> void:
 	collision_layer = 4 if _decoy_active else 0
 
 
+# Quando decoy ativo, prefere waypoints LONGE do player: leva os inimigos pra
+# longe do esconderijo e o mini sobrevive mais (não morre tão rápido no swarm).
 func _pick_new_waypoint() -> void:
-	_waypoint = Vector2(
-		randf_range(wander_bounds.position.x, wander_bounds.position.x + wander_bounds.size.x),
-		randf_range(wander_bounds.position.y, wander_bounds.position.y + wander_bounds.size.y)
-	)
+	var rand_wp := func() -> Vector2:
+		return Vector2(
+			randf_range(wander_bounds.position.x, wander_bounds.position.x + wander_bounds.size.x),
+			randf_range(wander_bounds.position.y, wander_bounds.position.y + wander_bounds.size.y)
+		)
+	# Modo decoy: sorteia vários candidatos e pega o mais distante do player
+	# (mínimo DECOY_MIN_DIST_FROM_PLAYER). Fora do decoy: aleatório simples.
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if _decoy_active and player != null and is_instance_valid(player):
+		var best: Vector2 = rand_wp.call()
+		var best_d: float = best.distance_squared_to(player.global_position)
+		for _i in 5:
+			var c: Vector2 = rand_wp.call()
+			var d: float = c.distance_squared_to(player.global_position)
+			if d > best_d:
+				best_d = d
+				best = c
+		_waypoint = best
+	else:
+		_waypoint = rand_wp.call()
 
 
 func _is_wave_active() -> bool:

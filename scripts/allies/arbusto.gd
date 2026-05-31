@@ -353,11 +353,27 @@ func _on_zone_body_exited(body: Node) -> void:
 
 # --- Utils ---
 
+# Raio máximo que o Pai do Verde se afasta do player. Sem isso ele vagueava o
+# mapa inteiro e o player tinha que correr longe pra se esconder. Tunável.
+const MAX_DIST_FROM_PLAYER: float = 200.0
+
+
 func _pick_new_waypoint() -> void:
-	_waypoint = Vector2(
+	var wp := Vector2(
 		randf_range(wander_bounds.position.x, wander_bounds.position.x + wander_bounds.size.x),
 		randf_range(wander_bounds.position.y, wander_bounds.position.y + wander_bounds.size.y)
 	)
+	# Mantém o waypoint dentro de um raio máximo do player (estava indo longe
+	# demais). Se cair além, puxa pro círculo de raio MAX em volta do player e
+	# re-clampa nos bounds do mapa.
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player != null and is_instance_valid(player):
+		var from_player: Vector2 = wp - player.global_position
+		if from_player.length() > MAX_DIST_FROM_PLAYER:
+			wp = player.global_position + from_player.normalized() * MAX_DIST_FROM_PLAYER
+			wp.x = clampf(wp.x, wander_bounds.position.x, wander_bounds.position.x + wander_bounds.size.x)
+			wp.y = clampf(wp.y, wander_bounds.position.y, wander_bounds.position.y + wander_bounds.size.y)
+	_waypoint = wp
 
 
 # Distância mínima em que o arbusto considera "perto demais" do mage_monkey

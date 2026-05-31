@@ -1818,6 +1818,13 @@ func _prespawn_boss_wave_entities() -> void:
 					enemy.gold_drop_max = int(round(float(enemy.gold_drop_max) * gold_mult))
 				if "gold_drop_pivot" in enemy:
 					enemy.gold_drop_pivot = int(round(float(enemy.gold_drop_pivot) * gold_mult))
+			# Wave 14 (Duskrose): drop final FIXO entre 40 e 60 (nerf do gold do
+			# round) — sobrescreve o mult acima.
+			if wave_number == boss_redux_wave and type_key == "duskrose":
+				if "gold_drop_min" in enemy:
+					enemy.gold_drop_min = 40
+				if "gold_drop_max" in enemy:
+					enemy.gold_drop_max = 60
 			world.add_child(enemy)
 			enemy.global_position = _pick_spawn_for(type_key)
 			_pause_if_time_frozen(enemy)

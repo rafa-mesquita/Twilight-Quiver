@@ -17,12 +17,12 @@ extends Node2D
 @export var attack_cycle_interval: float = 16.0
 @export var attack_duration: float = 5.0
 @export var projectile_spawn_interval: float = 0.08  # tempestade densa: ~62 projeteis em 5s
-@export var projectile_damage: float = 4.0  # baixo, mas muita frequência = burst alto
+@export var projectile_damage: float = 5.0  # +25% (era 4.0); baixo mas muita frequência = burst alto
 @export var projectile_slow_factor: float = 0.55
 @export var projectile_slow_duration: float = 1.5
 @export var projectile_scene: PackedScene
 @export var field_scene: PackedScene
-@export var field_dps: float = 8.0  # dano contínuo do FrostwispField (8 dps × 5s = 40 base)
+@export var field_dps: float = 10.0  # +25% (era 8.0); dano contínuo do FrostwispField
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
