@@ -1,7 +1,7 @@
 [gd_scene load_steps=10 format=3 uid="uid://dxk3jq5h1nmpo"]
 
 [ext_resource type="Script" path="res://scripts/ui/settings_menu.gd" id="1_settings"]
-[ext_resource type="FontFile" path="res://font/ByteBounce.ttf" id="2_font"]
+[ext_resource type="FontFile" path="res://font/Silver.ttf" id="2_font"]
 [ext_resource type="PackedScene" uid="uid://b8tw1gv0vqlbl" path="res://scenes/ui/version_label.tscn" id="3_version"]
 [ext_resource type="PackedScene" path="res://scenes/player/cursor.tscn" id="4_cursor"]
 [ext_resource type="PackedScene" uid="uid://b3xwf12pa9hd5" path="res://scenes/ui/custom_select.tscn" id="5_select"]
@@ -91,7 +91,7 @@ theme_override_constants/separation = 16
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 56
+theme_override_font_sizes/font_size = 60
 text = "SETTINGS_TITLE"
 horizontal_alignment = 1
 
@@ -99,7 +99,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 35
 text = "SETTINGS_HEADER_DISPLAY"
 
 [node name="DisplayModeRow" type="HBoxContainer" parent="Center/Panel/Margin/Scroll/VBox"]
@@ -111,7 +111,7 @@ custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "SETTINGS_DISPLAY_MODE"
 vertical_alignment = 1
 
@@ -129,7 +129,7 @@ custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "SETTINGS_RESOLUTION"
 vertical_alignment = 1
 
@@ -142,7 +142,7 @@ size_flags_horizontal = 3
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 35
 text = "SETTINGS_HEADER_AUDIO"
 
 [node name="MasterRow" type="HBoxContainer" parent="Center/Panel/Margin/Scroll/VBox"]
@@ -154,7 +154,7 @@ custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "SETTINGS_AUDIO_MASTER"
 vertical_alignment = 1
 
@@ -172,7 +172,7 @@ custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 29
 text = "80"
 horizontal_alignment = 2
 vertical_alignment = 1
@@ -186,7 +186,7 @@ custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "SETTINGS_AUDIO_MUSIC"
 vertical_alignment = 1
 
@@ -204,7 +204,7 @@ custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 29
 text = "60"
 horizontal_alignment = 2
 vertical_alignment = 1
@@ -218,7 +218,7 @@ custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "SETTINGS_AUDIO_SFX"
 vertical_alignment = 1
 
@@ -236,7 +236,7 @@ custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 29
 text = "80"
 horizontal_alignment = 2
 vertical_alignment = 1
@@ -245,7 +245,7 @@ vertical_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 35
 text = "SETTINGS_HEADER_VIDEO"
 
 [node name="VsyncRow" type="HBoxContainer" parent="Center/Panel/Margin/Scroll/VBox"]
@@ -257,7 +257,7 @@ custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "SETTINGS_VSYNC"
 vertical_alignment = 1
 
@@ -266,7 +266,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 29
 
 [node name="FpsCapRow" type="HBoxContainer" parent="Center/Panel/Margin/Scroll/VBox"]
 layout_mode = 2
@@ -277,7 +277,7 @@ custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "SETTINGS_FPS_CAP"
 vertical_alignment = 1
 
@@ -295,7 +295,7 @@ custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "SETTINGS_SHOW_FPS"
 vertical_alignment = 1
 
@@ -304,13 +304,13 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 29
 
 [node name="LocaleHeader" type="Label" parent="Center/Panel/Margin/Scroll/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 35
 text = "SETTINGS_HEADER_LOCALE"
 
 [node name="LocaleRow" type="HBoxContainer" parent="Center/Panel/Margin/Scroll/VBox"]
@@ -322,7 +322,7 @@ custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "SETTINGS_LOCALE"
 vertical_alignment = 1
 
@@ -343,7 +343,7 @@ theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 35
 theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/pressed = SubResource("SBF_btn_pressed")
@@ -358,7 +358,7 @@ theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/pressed = SubResource("SBF_btn_pressed")

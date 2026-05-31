@@ -616,7 +616,7 @@ func apply_knockback(dir: Vector2, strength: float) -> void:
 
 func apply_stun(duration: float) -> void:
 	_stun_remaining = maxf(_stun_remaining, duration)
-	# Contabiliza segundos de stun causados pelo player (unlock skin Terracota).
+	# Contabiliza segundos de stun causados pelo player (unlock skin Earthy).
 	var _p_stun := get_tree().get_first_node_in_group("player")
 	if _p_stun != null and _p_stun.has_method("notify_stun_applied"):
 		_p_stun.notify_stun_applied(duration)

@@ -109,10 +109,10 @@ func _on_version_filter_changed(idx: int) -> void:
 func _add_cell(text: String, is_header: bool = false) -> void:
 	var label := Label.new()
 	label.text = text
-	var font: Font = load("res://font/ByteBounce.ttf")
+	var font: Font = load("res://font/Silver.ttf")
 	if font != null:
 		label.add_theme_font_override("font", font)
-	label.add_theme_font_size_override("font_size", 28 if is_header else 22)
+	label.add_theme_font_size_override("font_size", 30 if is_header else 25)
 	if is_header:
 		label.add_theme_color_override("font_color", Color(1, 0.85, 0.45, 1))
 	else:

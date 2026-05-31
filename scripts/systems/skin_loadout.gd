@@ -45,19 +45,34 @@ const DEFAULT_PREFERENCES: Dictionary = {
 	&"bow":    "Default",
 }
 
-# Override do body slot por kit (display_name da skin). Quando o player equipa
-# o kit "Linked" ou "Rosa_Onyx", o body resolve pro PNG "Linked_Pink" em vez
-# de buscar um body com o mesmo display_name do kit. Permite skins partilharem
-# o mesmo tom de pele sem precisar duplicar o PNG.
-const KIT_BODY_OVERRIDE: Dictionary = {
-	"Linked": "Linked_Pink",
-	"Rosa_Onyx": "Linked_Pink",
+# Override de peça por kit + slot. Permite kits partilharem peças idênticas sem
+# duplicar PNGs. Formato: { kit_display_name: { slot: part_display_name } }.
+#  - body de "Linked"/"Rosa_Onyx" resolve pra "Linked_Pink" (mesmo tom de pele).
+#  - arco+aljava de "Hawk"/"Skeleton" resolvem pra "Hawk_Skeleton" — peça única,
+#    aparece como UM card nas abas Arco/Aljava em vez de dois iguais.
+const KIT_PART_OVERRIDE: Dictionary = {
+	"Linked":    {&"body": "Linked_Pink"},
+	"Rosa_Onyx": {&"body": "Linked_Pink"},
+	"Hawk":      {&"bow": "Hawk_Skeleton", &"quiver": "Hawk_Skeleton"},
+	"Skeleton":  {&"bow": "Hawk_Skeleton", &"quiver": "Hawk_Skeleton"},
 }
 
-# Migração de body display_names antigos pra novos. Saves anteriores a
-# Linked_Pink tinham "Linked" salvo em [skin] body= — converte ao carregar.
-const BODY_NAME_MIGRATIONS: Dictionary = {
-	"Linked": "Linked_Pink",
+# Peças PARTILHADAS entre kits (resolvidas via KIT_PART_OVERRIDE), NÃO kits
+# próprios. Mesmo ocupando >= _KIT_MIN_SLOTS slots, não listam como card de kit.
+const SHARED_PART_NAMES: Array[String] = ["Hawk_Skeleton"]
+
+# Migração de display_names salvos (saves antigos) → nome atual, por slot.
+#  - body "Linked" virou "Linked_Pink".
+#  - arco/aljava "Hawk" e "Skeleton" viraram a peça partilhada "Hawk_Skeleton".
+#  - "Terracota" foi renomeada pra "Earthy" (todas as peças do kit).
+const PART_NAME_MIGRATIONS: Dictionary = {
+	&"body":   {"Linked": "Linked_Pink", "Terracota": "Earthy"},
+	&"legs":   {"Terracota": "Earthy"},
+	&"shirt":  {"Terracota": "Earthy"},
+	&"cape":   {"Terracota": "Earthy"},
+	&"quiver": {"Hawk": "Hawk_Skeleton", "Skeleton": "Hawk_Skeleton", "Terracota": "Earthy"},
+	&"hair":   {"Terracota": "Earthy"},
+	&"bow":    {"Hawk": "Hawk_Skeleton", "Skeleton": "Hawk_Skeleton", "Terracota": "Earthy"},
 }
 
 # ---------- Quest config ----------
@@ -115,13 +130,32 @@ const SKIN_QUESTS: Dictionary = {
 		"label": "PLAYER_QUEST_ROSA_ONYX",
 		"hidden": false,
 	},
-	"Terracota": {
+	"Earthy": {
 		"type": "stun_seconds",
-		"value": 750,
-		"label": "PLAYER_QUEST_TERRACOTA",
+		"value": 1000,
+		"label": "PLAYER_QUEST_EARTHY",
+		"hidden": false,
+	},
+	"Skeleton": {
+		"type": "elemental_l4",
+		"value": 1,
+		"label": "PLAYER_QUEST_SKELETON",
+		"hidden": false,
+	},
+	"Urban": {
+		# Usar skills ativáveis (Q elemental OU espaço: dash/esquivando) 500 vezes.
+		"type": "active_skills_used",
+		"value": 500,
+		"label": "PLAYER_QUEST_URBAN",
 		"hidden": false,
 	},
 }
+
+# DEV: skins que ficam BLOQUEADAS mesmo em debug build, pra testar a UI de skin
+# bloqueada (nome vermelho, "!", tooltip de unlock no hover, preview com filtro
+# vermelho leve, botão Salvar travado). Esvaziar ([]) pra desbloquear tudo em
+# debug como antes. IGNORADO em release — lá vale a quest real de cada skin.
+const DEV_FORCE_LOCKED: Array[String] = ["Skeleton"]
 
 # Stats persistentes em [progress]. Chaves usadas pelo sistema.
 const STAT_MAX_WAVE: StringName = &"max_wave_reached"
@@ -134,8 +168,14 @@ const STAT_BOSSES_KILLED_TOTAL: StringName = &"bosses_killed_total"
 # entre runs — unlock da skin Linked aos 200.
 const STAT_MONKEYS_CURSED: StringName = &"monkeys_cursed_total"
 # Segundos de stun que o player causa em inimigos, acumulados entre runs
-# (qualquer fonte: claudio druida, pedra, terremoto, gelo). Unlock da Terracota.
+# (qualquer fonte: claudio druida, pedra, terremoto, gelo). Unlock da Earthy.
 const STAT_STUN_SECONDS: StringName = &"stun_seconds_total"
+# Flag (0/1): jogador já chegou ao Lv4 de QUALQUER elemental (fogo/maldição/
+# gelo/pedra) em alguma run. Unlock da skin Skeleton.
+const STAT_ELEMENTAL_L4: StringName = &"elemental_l4_reached"
+# Quantas skills ativáveis (Q elemental ou espaço: dash/esquivando) o player
+# usou no total entre runs. Unlock da skin Urban.
+const STAT_ACTIVE_SKILLS: StringName = &"active_skills_used_total"
 # Set de boss IDs já abatidos (persistente entre runs). Armazenado como string
 # CSV no settings.cfg porque ConfigFile só aceita primitivos.
 const _KEY_BOSSES_KILLED_SET: String = "bosses_killed_set"
@@ -154,9 +194,10 @@ static func load_loadout() -> Dictionary:
 		var saved: String = str(cfg.get_value(_SECTION, String(slot), ""))
 		if saved.is_empty():
 			continue
-		# Migração: body "Linked" virou "Linked_Pink" (compartilhado com Rosa_Onyx).
-		if slot == &"body" and BODY_NAME_MIGRATIONS.has(saved):
-			saved = String(BODY_NAME_MIGRATIONS[saved])
+		# Migração de saves antigos: nomes renomeados → atuais (por slot).
+		var slot_migrations: Dictionary = PART_NAME_MIGRATIONS.get(slot, {})
+		if slot_migrations.has(saved):
+			saved = String(slot_migrations[saved])
 		var parts: Array = by_slot.get(slot, [])
 		# Match em 2 etapas pra compat: 1º tenta display_name (formato novo,
 		# estável entre builds); 2º tenta resource_path (formato legado pré-fix).
@@ -338,6 +379,10 @@ static func _is_quest_satisfied(quest: Dictionary) -> bool:
 			return get_stat(STAT_MONKEYS_CURSED) >= int(raw_value)
 		"stun_seconds":
 			return get_stat(STAT_STUN_SECONDS) >= int(raw_value)
+		"elemental_l4":
+			return get_stat(STAT_ELEMENTAL_L4) >= int(raw_value)
+		"active_skills_used":
+			return get_stat(STAT_ACTIVE_SKILLS) >= int(raw_value)
 	return true  # type desconhecido: assume desbloqueada (não bloqueia o jogo).
 
 
@@ -369,9 +414,10 @@ static func is_unlocked(part: SkinPart) -> bool:
 	if part == null:
 		return true
 	# Debug build (editor + debug export) libera tudo — facilita testar skins
-	# sem precisar grindar quests. Release build mantém unlock real.
+	# sem precisar grindar quests. Exceção: DEV_FORCE_LOCKED fica travado pra
+	# testar a UI de bloqueio. Release build mantém unlock real.
 	if OS.is_debug_build():
-		return true
+		return not DEV_FORCE_LOCKED.has(part.display_name)
 	var quest: Dictionary = SKIN_QUESTS.get(part.display_name, {})
 	if quest.is_empty():
 		return true
@@ -384,12 +430,12 @@ static func get_quest_for(display_name: String) -> Dictionary:
 
 static func is_kit_unlocked(kit_name: String) -> bool:
 	# Unlock de um KIT inteiro pela quest do NOME do kit. Necessário porque o
-	# body de alguns kits é sobrescrito (KIT_BODY_OVERRIDE → "Linked_Pink"), e
+	# body de alguns kits é sobrescrito (KIT_PART_OVERRIDE → "Linked_Pink"), e
 	# checar o unlock pela peça body resolveria a quest errada: a peça partilhada
 	# "Linked_Pink" não tem quest, então Linked/Rosa_Onyx desbloqueavam sem o
 	# desafio. Aqui a quest é buscada pelo nome do kit (que casa com SKIN_QUESTS).
 	if OS.is_debug_build():
-		return true
+		return not DEV_FORCE_LOCKED.has(kit_name)
 	var quest: Dictionary = SKIN_QUESTS.get(kit_name, {})
 	if quest.is_empty():
 		return true
@@ -425,6 +471,7 @@ static func record_run(run_stats: Dictionary) -> Array:
 	var run_dmg_taken: int = int(run_stats.get("dmg_taken", 0))
 	var run_monkeys_cursed: int = int(run_stats.get("monkeys_cursed", 0))
 	var run_stun_seconds: int = int(run_stats.get("stun_seconds", 0))
+	var run_active_skills: int = int(run_stats.get("active_skills_used", 0))
 
 	if run_wave > get_stat(STAT_MAX_WAVE):
 		set_stat(STAT_MAX_WAVE, run_wave)
@@ -436,6 +483,11 @@ static func record_run(run_stats: Dictionary) -> Array:
 		set_stat(STAT_MONKEYS_CURSED, get_stat(STAT_MONKEYS_CURSED) + run_monkeys_cursed)
 	if run_stun_seconds > 0:
 		set_stat(STAT_STUN_SECONDS, get_stat(STAT_STUN_SECONDS) + run_stun_seconds)
+	if run_active_skills > 0:
+		set_stat(STAT_ACTIVE_SKILLS, get_stat(STAT_ACTIVE_SKILLS) + run_active_skills)
+	# Flag persistente: chegou ao Lv4 de algum elemental nesta run (unlock Skeleton).
+	if bool(run_stats.get("elemental_l4_reached", false)) and get_stat(STAT_ELEMENTAL_L4) < 1:
+		set_stat(STAT_ELEMENTAL_L4, 1)
 	set_stat(STAT_RUNS_COMPLETED, get_stat(STAT_RUNS_COMPLETED) + 1)
 	if run_dmg_taken == 0 and run_wave >= 1:
 		set_stat(STAT_RUNS_NO_DAMAGE, get_stat(STAT_RUNS_NO_DAMAGE) + 1)
@@ -465,13 +517,14 @@ static func record_run(run_stats: Dictionary) -> Array:
 
 
 # Retorna { slot -> SkinPart } pra todas as peças com o display_name dado.
-# Body slot respeita KIT_BODY_OVERRIDE — kits podem partilhar tom de pele.
+# Slots com override em KIT_PART_OVERRIDE resolvem pra outra peça (kits podem
+# partilhar tom de pele e arco/aljava sem duplicar PNG).
 static func get_parts_by_skin_name(skin_name: String) -> Dictionary:
 	var by_slot: Dictionary = scan_available_parts()
 	var result: Dictionary = {}
-	var body_target: String = String(KIT_BODY_OVERRIDE.get(skin_name, skin_name))
+	var overrides: Dictionary = KIT_PART_OVERRIDE.get(skin_name, {})
 	for slot in by_slot.keys():
-		var target_name: String = body_target if slot == &"body" else skin_name
+		var target_name: String = String(overrides.get(slot, skin_name))
 		for p in by_slot[slot]:
 			var part: SkinPart = p
 			if part.display_name == target_name:

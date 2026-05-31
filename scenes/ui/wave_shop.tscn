@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bgolhqff1gjro"]
 
 [ext_resource type="Script" uid="uid://cnx1m6f4kyovt" path="res://scripts/ui/wave_shop.gd" id="1_shop"]
-[ext_resource type="FontFile" uid="uid://bw54fcmefpqf1" path="res://font/ByteBounce.ttf" id="2_font"]
+[ext_resource type="FontFile" uid="uid://dypftyuvk0wlo" path="res://font/Silver.ttf" id="2_font"]
 [ext_resource type="Texture2D" uid="uid://pbobd2sl3nlo" path="res://assets/Hud/shop/card_status.png" id="3_card_wide"]
 [ext_resource type="Texture2D" uid="uid://biljghc02e8hc" path="res://assets/Hud/shop/reroll.png" id="5_reroll"]
 [ext_resource type="Texture2D" uid="uid://bnwjkrs8uv2an" path="res://assets/Hud/shop/upgrade/placeholder.png" id="6_upg_ph"]
@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://b8tw1gv0vqlbl" path="res://scenes/ui/version_label.tscn" id="9_version"]
 [ext_resource type="Script" uid="uid://d4mqu1a2m3a0v" path="res://scripts/ui/shop_player_face.gd" id="10_pface_script"]
 [ext_resource type="Texture2D" uid="uid://b8o6bfs2v2rmo" path="res://assets/Hud/playerHud/border.png" id="11_pface_border"]
+[ext_resource type="FontFile" uid="uid://bw54fcmefpqf1" path="res://font/ByteBounce.ttf" id="13_bytefont"]
 
 [sub_resource type="AtlasTexture" id="ATX_coin"]
 atlas = ExtResource("8_coin")
@@ -102,7 +103,7 @@ offset_right = 1860.0
 offset_bottom = 80.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 39
 text = "0"
 horizontal_alignment = 2
 vertical_alignment = 1
@@ -114,8 +115,8 @@ offset_top = 460.0
 offset_right = 489.0
 offset_bottom = 500.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 48
+theme_override_fonts/font = ExtResource("13_bytefont")
+theme_override_font_sizes/font_size = 52
 text = "SHOP_HEADER_STRUCTURES"
 vertical_alignment = 1
 
@@ -143,7 +144,7 @@ offset_right = 450.0
 offset_bottom = 109.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 31
 text = "SHOP_HP_TITLE"
 vertical_alignment = 1
 
@@ -155,7 +156,7 @@ offset_right = 508.0
 offset_bottom = 94.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 39
 text = "5"
 vertical_alignment = 1
 
@@ -206,7 +207,7 @@ offset_right = 450.0
 offset_bottom = 109.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 31
 text = "—"
 vertical_alignment = 1
 
@@ -218,7 +219,7 @@ offset_right = 508.0
 offset_bottom = 94.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 39
 text = "—"
 vertical_alignment = 1
 
@@ -252,8 +253,8 @@ offset_top = 90.0
 offset_right = 489.0
 offset_bottom = 130.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 48
+theme_override_fonts/font = ExtResource("13_bytefont")
+theme_override_font_sizes/font_size = 52
 text = "SHOP_HEADER_STATUS"
 vertical_alignment = 1
 
@@ -281,7 +282,7 @@ offset_right = 450.0
 offset_bottom = 109.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 31
 text = "—"
 vertical_alignment = 1
 
@@ -293,7 +294,7 @@ offset_right = 508.0
 offset_bottom = 94.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 39
 text = "—"
 vertical_alignment = 1
 
@@ -344,7 +345,7 @@ offset_right = 450.0
 offset_bottom = 109.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 31
 text = "—"
 vertical_alignment = 1
 
@@ -356,7 +357,7 @@ offset_right = 508.0
 offset_bottom = 94.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 39
 text = "—"
 vertical_alignment = 1
 
@@ -390,8 +391,8 @@ offset_top = 460.0
 offset_right = 1330.0
 offset_bottom = 500.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 42
+theme_override_fonts/font = ExtResource("13_bytefont")
+theme_override_font_sizes/font_size = 46
 text = "SHOP_HEADER_ALLIES"
 vertical_alignment = 1
 
@@ -425,7 +426,7 @@ offset_right = 299.0
 offset_bottom = 101.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 25
+theme_override_font_sizes/font_size = 38
 text = "SHOP_FIRE_ARROW_NAME"
 vertical_alignment = 1
 autowrap_mode = 2
@@ -438,7 +439,7 @@ offset_right = 274.7647
 offset_bottom = 257.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "SHOP_FIRE_ARROW_DESC"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -453,16 +454,16 @@ offset_right = 192.0
 offset_bottom = 272.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 39
 text = "5"
 
 [node name="CoinIcon" type="TextureRect" parent="Root/AliadoRow/AliadoCard1" unique_id=1759985670]
 texture_filter = 1
 layout_mode = 0
 offset_left = 99.0
-offset_top = 233.0
+offset_top = 241.23529
 offset_right = 123.0
-offset_bottom = 257.0
+offset_bottom = 265.2353
 mouse_filter = 2
 texture = SubResource("ATX_coin")
 expand_mode = 1
@@ -507,7 +508,7 @@ offset_right = 299.0
 offset_bottom = 101.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 25
+theme_override_font_sizes/font_size = 38
 text = "—"
 vertical_alignment = 1
 autowrap_mode = 2
@@ -520,7 +521,7 @@ offset_right = 274.82336
 offset_bottom = 256.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -535,16 +536,16 @@ offset_right = 192.0
 offset_bottom = 281.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 39
 text = "—"
 
 [node name="CoinIcon" type="TextureRect" parent="Root/AliadoRow/AliadoCard2" unique_id=715277621]
 texture_filter = 1
 layout_mode = 0
 offset_left = 99.0
-offset_top = 233.0
+offset_top = 241.23529
 offset_right = 123.0
-offset_bottom = 257.0
+offset_bottom = 265.2353
 mouse_filter = 2
 texture = SubResource("ATX_coin")
 expand_mode = 1
@@ -586,7 +587,7 @@ offset_right = 299.0
 offset_bottom = 101.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 25
+theme_override_font_sizes/font_size = 38
 text = "—"
 vertical_alignment = 1
 autowrap_mode = 2
@@ -599,7 +600,7 @@ offset_right = 277.52942
 offset_bottom = 256.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -614,16 +615,16 @@ offset_right = 192.0
 offset_bottom = 281.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 39
 text = "—"
 
 [node name="CoinIcon" type="TextureRect" parent="Root/AliadoRow/AliadoCard3" unique_id=2131756513]
 texture_filter = 1
 layout_mode = 0
 offset_left = 99.0
-offset_top = 233.0
+offset_top = 241.23529
 offset_right = 123.0
-offset_bottom = 257.0
+offset_bottom = 265.2353
 mouse_filter = 2
 texture = SubResource("ATX_coin")
 expand_mode = 1
@@ -649,8 +650,8 @@ offset_top = 90.0
 offset_right = 1330.0
 offset_bottom = 130.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 42
+theme_override_fonts/font = ExtResource("13_bytefont")
+theme_override_font_sizes/font_size = 46
 text = "SHOP_HEADER_UPGRADES"
 vertical_alignment = 1
 
@@ -684,7 +685,7 @@ offset_right = 299.0
 offset_bottom = 108.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 25
+theme_override_font_sizes/font_size = 38
 text = "SHOP_UPG_CURSE_ARROW"
 vertical_alignment = 1
 autowrap_mode = 2
@@ -697,7 +698,7 @@ offset_right = 275.29413
 offset_bottom = 280.0
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -712,16 +713,16 @@ offset_right = 213.0
 offset_bottom = 329.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 39
 text = "50"
 
 [node name="CoinIcon" type="TextureRect" parent="Root/UpgRow/UpgCard1" unique_id=94889478]
 texture_filter = 1
 layout_mode = 0
 offset_left = 120.0
-offset_top = 285.0
+offset_top = 293.2353
 offset_right = 144.0
-offset_bottom = 309.0
+offset_bottom = 317.2353
 mouse_filter = 2
 texture = SubResource("ATX_coin")
 expand_mode = 1
@@ -763,7 +764,7 @@ offset_right = 299.0
 offset_bottom = 108.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 25
+theme_override_font_sizes/font_size = 38
 text = "—"
 vertical_alignment = 1
 autowrap_mode = 2
@@ -774,14 +775,14 @@ offset_left = 31.176514
 offset_top = 111.0
 offset_right = 274.8235
 offset_bottom = 280.0
-autowrap_mode = 2
-clip_text = true
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
+autowrap_mode = 2
+clip_text = true
 
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard2" unique_id=47973896]
 layout_mode = 0
@@ -791,16 +792,16 @@ offset_right = 213.0
 offset_bottom = 333.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 39
 text = "—"
 
 [node name="CoinIcon" type="TextureRect" parent="Root/UpgRow/UpgCard2" unique_id=968311531]
 texture_filter = 1
 layout_mode = 0
 offset_left = 120.0
-offset_top = 285.0
+offset_top = 293.2353
 offset_right = 144.0
-offset_bottom = 309.0
+offset_bottom = 317.2353
 mouse_filter = 2
 texture = SubResource("ATX_coin")
 expand_mode = 1
@@ -845,7 +846,7 @@ offset_right = 299.0
 offset_bottom = 108.0
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 25
+theme_override_font_sizes/font_size = 38
 text = "—"
 vertical_alignment = 1
 autowrap_mode = 2
@@ -856,14 +857,14 @@ offset_left = 30.470581
 offset_top = 111.0
 offset_right = 275.52942
 offset_bottom = 280.0
-autowrap_mode = 2
-clip_text = true
 theme_override_colors/font_color = Color(0.75, 0.7, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "—"
 horizontal_alignment = 1
 vertical_alignment = 1
+autowrap_mode = 2
+clip_text = true
 
 [node name="PriceLabel" type="Label" parent="Root/UpgRow/UpgCard3" unique_id=9334886]
 layout_mode = 0
@@ -873,16 +874,16 @@ offset_right = 213.0
 offset_bottom = 333.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 39
 text = "—"
 
 [node name="CoinIcon" type="TextureRect" parent="Root/UpgRow/UpgCard3" unique_id=1787553477]
 texture_filter = 1
 layout_mode = 0
 offset_left = 120.0
-offset_top = 285.0
+offset_top = 293.2353
 offset_right = 144.0
-offset_bottom = 309.0
+offset_bottom = 317.2353
 mouse_filter = 2
 texture = SubResource("ATX_coin")
 expand_mode = 1
@@ -908,7 +909,7 @@ offset_top = 990.0
 offset_right = 540.0
 offset_bottom = 1050.0
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 35
 theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/disabled = SubResource("SBF_btn_disabled")
@@ -942,7 +943,7 @@ offset_right = 320.0
 offset_bottom = 100.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 52
+theme_override_font_sizes/font_size = 56
 text = "3"
 vertical_alignment = 1
 
@@ -950,9 +951,9 @@ vertical_alignment = 1
 texture_filter = 1
 layout_mode = 0
 offset_left = 178.0
-offset_top = 50.0
+offset_top = 57.1427
 offset_right = 202.0
-offset_bottom = 74.0
+offset_bottom = 81.1427
 mouse_filter = 2
 texture = SubResource("ATX_coin")
 expand_mode = 1
@@ -1013,7 +1014,7 @@ offset_right = 460.0
 offset_bottom = 600.0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 29
 text = "SHOP_HEADER_UPGRADES"
 horizontal_alignment = 1
 
@@ -1035,7 +1036,7 @@ offset_right = 226.0
 offset_bottom = 754.0
 theme_override_colors/font_color = Color(0.78, 0.78, 0.92, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 25
 text = "SHOP_HEADER_ALLIES"
 horizontal_alignment = 1
 
@@ -1047,7 +1048,7 @@ offset_right = 444.0
 offset_bottom = 754.0
 theme_override_colors/font_color = Color(0.78, 0.78, 0.92, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 25
 text = "SHOP_HEADER_STRUCTURES"
 horizontal_alignment = 1
 
@@ -1082,7 +1083,7 @@ offset_right = 400.0
 offset_bottom = -40.0
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "SHOP_PLACEMENT_HINT"
 horizontal_alignment = 1
 vertical_alignment = 1

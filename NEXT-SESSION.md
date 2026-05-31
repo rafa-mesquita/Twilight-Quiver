@@ -1,20 +1,20 @@
 # Próxima Sessão
 
 > Última atualização: 2026-05-30
-> Sessão anterior: v0.7.1 — skin Terracota (+cicatriz na HUD), preview do rosto na tela de Personagem, e correção dos bugs de export da HUD de skin
+> Sessão anterior: v0.7.1 — skin Earthy (+cicatriz na HUD), preview do rosto na tela de Personagem, e correção dos bugs de export da HUD de skin
 
 ## Estado atual
 
 - **v0.7.1 publicada, pushada e deployada** (`pre-alpha-0.7.1` em [project.godot](project.godot) + [export_presets.cfg](export_presets.cfg)). Branch `main` clean, working tree limpo. Deploy do GitHub Pages **concluiu com sucesso**. Release: https://github.com/rafa-mesquita/Twilight-Quiver/releases/tag/pre-alpha-0.7.1
 - **🎮 No ar:** https://rafa-mesquita.github.io/Twilight-Quiver/ — auto-deploy a cada push pro `main`.
-- **Disparo de Pedra** (elemental L1-L4) shipou na **0.7.0**. A **0.7.1** trouxe: skin **Terracota** (marrom terroso + cicatriz, unlock por stun acumulado), **preview do rosto do shop na tela de Personagem** (ao vivo, ao lado do modelo), e uma leva de fixes.
+- **Disparo de Pedra** (elemental L1-L4) shipou na **0.7.0**. A **0.7.1** trouxe: skin **Earthy** (marrom terroso + cicatriz, unlock por stun acumulado), **preview do rosto do shop na tela de Personagem** (ao vivo, ao lado do modelo), e uma leva de fixes.
 - ⚠️ **A tela de Personagem nova NÃO foi validada com Godot rodando** (não há binário no ambiente). O build/export passou no CI, mas o layout/UX renderizado não foi visto. **Conferir in-game.**
 
 ## Por onde começar
 
 1. **Validar a tela de Personagem (Player) renderizada** — abrir o jogo (editor ou site) e conferir: os dois quadros (modelo do mundo + rosto do shop) do mesmo tamanho, lado a lado na esquerda; stats de progresso pequenos/discretos na margem esquerda FORA do painel; cards em 4 colunas; o rosto atualizando ao vivo ao trocar corpo/capa/camisa/cabelo. Ajustes em [scenes/ui/skin_select.tscn](scenes/ui/skin_select.tscn) (posições/escala) + [scripts/ui/skin_select.gd](scripts/ui/skin_select.gd).
-2. **Adicionar a cicatriz da Terracota no WORLD skin** — hoje a cicatriz só existe na HUD do shop (decisão do user: "por enquanto só na HUD, depois na skin"). A layer `Cicatriz` está em `assets/Hud/playerHud/Terracota.aseprite`. Pro mundo, adicionar/recolorir nos sprites de `assets/player/skin/Terracota.png` (32×32, grid 6×8).
-3. **Playtest do balance da Terracota** — unlock exige **750s de stun acumulado** (qualquer fonte: claudio, pedra, gelo, etc.). Ver se é muito/pouco; ajustar em `SKIN_QUESTS["Terracota"].value` no skin_loadout.gd.
+2. **Adicionar a cicatriz da Earthy no WORLD skin** — hoje a cicatriz só existe na HUD do shop (decisão do user: "por enquanto só na HUD, depois na skin"). A layer `Cicatriz` está em `assets/Hud/playerHud/Earthy.aseprite`. Pro mundo, adicionar/recolorir nos sprites de `assets/player/skin/Earthy.png` (32×32, grid 6×8).
+3. **Playtest do balance da Earthy** — unlock exige **750s de stun acumulado** (qualquer fonte: claudio, pedra, gelo, etc.). Ver se é muito/pouco; ajustar em `SKIN_QUESTS["Earthy"].value` no skin_loadout.gd.
 4. **Próxima feature** — possíveis: meta-progressão entre runs, mais skins/quests, wave 20+ / próximo boss, polish de UX.
 
 ## Contexto crítico
@@ -40,8 +40,8 @@
 ## Pendências conhecidas
 
 - [ ] Validar tela de Personagem renderizada (build passou no CI, runtime não testado)
-- [ ] Cicatriz da Terracota no world skin (hoje só na HUD do shop)
-- [ ] Conferir balance do unlock da Terracota (750s de stun acumulado)
+- [ ] Cicatriz da Earthy no world skin (hoje só na HUD do shop)
+- [ ] Conferir balance do unlock da Earthy (750s de stun acumulado)
 - [ ] (Stale check) A memória `feature_stone_arrow` diz "Lv3/Lv4 pendentes", mas o Disparo de Pedra shipou L1-L4 na 0.7.0 — confirmar in-game e atualizar a memória
 
 ## Arquivos / locais relevantes
@@ -51,10 +51,10 @@
 - [scripts/ui/skin_select.gd](scripts/ui/skin_select.gd) — `_refresh_shop_face()` no `_ready` + em `_on_card_picked`/`_on_kit_picked`; `stats_vbox = $StatsOverlay`
 - [scripts/ui/shop_player_face.gd](scripts/ui/shop_player_face.gd) — `apply_loadout(loadout)`
 
-### Skin Terracota
-- World: `assets/player/{skin,legs,shirt,cape,hair,quiver}/Terracota.png` + `bow/Terracota_{front,back}.png`
-- HUD: `assets/Hud/playerHud/{head,hair,cape,shirt}/terracota.png` + source `assets/Hud/playerHud/Terracota.aseprite` (7 layers; ordem back→front: FUNDO, Rosto+Olho, Cicatriz, Cabelo, Mask, Roupa, Borda)
-- [scripts/systems/skin_loadout.gd](scripts/systems/skin_loadout.gd) — `SKIN_QUESTS["Terracota"]` type `stun_seconds` value 750; unlock de kit via `is_kit_unlocked(kit_name)`
+### Skin Earthy
+- World: `assets/player/{skin,legs,shirt,cape,hair,quiver}/Earthy.png` + `bow/Earthy_{front,back}.png`
+- HUD: `assets/Hud/playerHud/{head,hair,cape,shirt}/earthy.png` + source `assets/Hud/playerHud/Earthy.aseprite` (7 layers; ordem back→front: FUNDO, Rosto+Olho, Cicatriz, Cabelo, Mask, Roupa, Borda)
+- [scripts/systems/skin_loadout.gd](scripts/systems/skin_loadout.gd) — `SKIN_QUESTS["Earthy"]` type `stun_seconds` value 750; unlock de kit via `is_kit_unlocked(kit_name)`
 
 ### Sistemas globais
 - [scripts/systems/wave_manager.gd](scripts/systems/wave_manager.gd) — wave config, boss overrides

@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dctrlhint001"]
 
 [ext_resource type="Script" path="res://scripts/ui/control_hint.gd" id="1_hint"]
-[ext_resource type="FontFile" uid="uid://bw54fcmefpqf1" path="res://font/ByteBounce.ttf" id="2_font"]
+[ext_resource type="FontFile" uid="uid://dypftyuvk0wlo" path="res://font/Silver.ttf" id="2_font"]
 
 [node name="ControlHint" type="HBoxContainer"]
 script = ExtResource("1_hint")
@@ -19,6 +19,6 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
 theme_override_constants/outline_size = 4
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 38
+theme_override_font_sizes/font_size = 42
 vertical_alignment = 1
 text = "Move"

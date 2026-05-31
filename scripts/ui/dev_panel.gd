@@ -42,6 +42,7 @@ const UPGRADE_BTNS: Array = [
 	{"id": "arbusto", "node": "UpgArbustoBtn", "max": 4, "base_text": "+1 Pai do verde e verde"},
 	{"id": "dash", "node": "UpgDashBtn", "max": 4, "base_text": "+1 Deslizando"},
 	{"id": "esquivando", "node": "UpgEsquivandoBtn", "max": 4, "base_text": "+1 Esquivando"},
+	{"id": "fenda", "node": "UpgFendaBtn", "max": 4, "base_text": "+1 Fenda"},
 ]
 
 
@@ -324,7 +325,7 @@ const _ALL_UPGRADE_IDS: Array[String] = [
 	"double_arrows", "chain_lightning", "move_speed", "life_steal",
 	"fire_arrow", "curse_arrow", "ice_arrow", "stone_arrow", "claudio_druida", "leno",
 	"capivara_joe", "ting", "arbusto", "mini_mago", "gold_magnet",
-	"dash", "esquivando", "ricochet_arrow", "graviton", "boomerang",
+	"dash", "esquivando", "fenda", "ricochet_arrow", "graviton", "boomerang",
 	"tiger_claws", "critical_chance",
 ]
 

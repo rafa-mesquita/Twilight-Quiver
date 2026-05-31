@@ -254,6 +254,36 @@ var _iframes_remaining: float = 0.0
 var has_dash_auto_attack: bool = false
 var has_dash_double_arrow: bool = false
 
+# ---------- Fenda Crepuscular (mobilidade, mutex com dash/esquivando) ----------
+# L1: teleporta pro cursor (CD 20s). L2: corte no caminho percorrido (25 dano
+# em quem o corte tocar). L3: após teleportar, janela de 0.5s pra reteleportar
+# (até 3 pontos → o corte rasga várias vezes, pode acertar o mesmo inimigo
+# repetido). L4: CD 15s e dano 50. Reusa a barra de mobilidade (sinais dash_*).
+const FENDA_LEVEL_MAX: int = 4
+const FENDA_COOLDOWNS_BY_LEVEL: Array[float] = [20.0, 18.0, 16.0, 14.0]
+const FENDA_CUT_DAMAGE_BY_LEVEL: Array[float] = [0.0, 25.0, 25.0, 50.0]
+const FENDA_CUT_WIDTH: float = 26.0  # distância máx do inimigo à linha do corte
+const FENDA_TELEPORT_DURATION: float = 0.22  # tempo do "blink dash" até o cursor
+const FENDA_CUT_CAST_TIME: float = 0.5  # o corte fica visível 0.5s; dano entra no fim
+const FENDA_COMBO_WINDOW: float = 0.8  # L3+: janela pra reteleportar (2º cast)
+const FENDA_COMBO_MAX_POINTS: int = 2  # L3+: máx de teleportes encadeados (2 → 3 pontos de corte)
+const FENDA_SOUND: AudioStream = preload("res://audios/effects/fenda sound.mp3")
+const FENDA_SOUND_VOLUME_DB: float = -10.0
+# Som tocado UMA vez quando o corte acerta pelo menos um inimigo no cast.
+const FENDA_HIT_SOUND: AudioStream = preload("res://audios/effects/hit fenda.mp3")
+const FENDA_HIT_SOUND_VOLUME_DB: float = -8.0
+# Sprite do corte (3 frames de 32×32: 0=surge, 1=dano, 2=fade). O eixo vertical
+# do sprite (sul→norte) é tileado/rotacionado pra unir os dois pontos do corte.
+const FENDA_FX_TEX: Texture2D = preload("res://assets/effects/fenda crepuscular.png")
+var fenda_level: int = 0
+var _fenda_cd_remaining: float = 0.0
+var _fenda_combo_remaining: float = 0.0
+var _fenda_combo_points: int = 0
+# Durante o "blink" a colisão é desligada (atravessa objetos) e o player fica
+# imune a dano (i-frames) E stun (pra atravessar vinhas da Duskrose).
+var _fenda_teleporting: bool = false
+var _fenda_saved_mask: int = 0
+
 # === Esquivando (mutuamente exclusivo com dash — compartilham slot de mov.) ===
 # Lv1: primeira flecha do volley que acerta inimigo dá +5% atk speed e +5% move
 #   speed por 2s. Cap 3 stacks. 2% dodge.
@@ -426,8 +456,11 @@ var stats_allies_made: int = 0
 # Macaquinhos (grupo "monkey") convertidos pelo disparo profano — desbloqueia
 # a skin Linked aos 200 totais acumulados entre runs.
 var stats_monkeys_cursed: int = 0
-# Segundos de stun causados em inimigos nesta run (unlock da skin Terracota).
+# Segundos de stun causados em inimigos nesta run (unlock da skin Earthy).
 var stats_stun_seconds: float = 0.0
+# Quantas skills ativáveis (Q elemental OU espaço: dash/esquivando) o player
+# usou nesta run — acumulado entre runs pro unlock da skin Urban.
+var stats_active_skills_used: int = 0
 var stats_damage_dealt: float = 0.0
 var stats_damage_taken: float = 0.0
 # Breakdown de dano recebido por tipo de fonte (source_id passado em take_damage).
@@ -495,6 +528,7 @@ func _physics_process(delta: float) -> void:
 		return
 	_update_dash(delta)
 	_update_esquivando(delta)
+	_update_fenda(delta)
 	_update_fire_skill(delta)
 	_update_chain_lightning_skill(delta)
 	_update_boomerang(delta)
@@ -519,6 +553,8 @@ func _physics_process(delta: float) -> void:
 			_try_start_dash()
 		elif esquivando_level >= ESQUIVANDO_ABILITY_MIN_LEVEL:
 			_try_start_esquivando_ability()
+		elif fenda_level >= 1:
+			_try_fenda()
 	if is_dead:
 		velocity = Vector2.ZERO
 		return
@@ -550,6 +586,9 @@ func apply_stun(duration: float) -> void:
 	# Usado pelas vinhas da Duskrose. Mesmo visual usado pelo Claudio nos
 	# macacos — stun_visual.gd anexa ícone acima da cabeça enquanto ativo.
 	if is_dead:
+		return
+	# Imune a stun durante o teleporte da Fenda / i-frames (atravessa vinhas etc).
+	if _fenda_teleporting or _iframes_remaining > 0.0:
 		return
 	_stun_remaining = maxf(_stun_remaining, duration)
 	_ensure_stun_visual()
@@ -1094,8 +1133,10 @@ func _is_piercing_shot() -> bool:
 		return false
 	if perfuracao_level >= 4:
 		return true
-	# Levels 1-3: a cada 3 ataques (shots 1,2,3 → 3rd procca).
-	return _perf_shot_counter >= 2
+	# L1-L2: a cada 3 ataques (counter 0→1→2 → 3º procca).
+	# L3: a cada 2 ataques (counter 0→1 → 2º procca).
+	var threshold: int = 1 if perfuracao_level >= 3 else 2
+	return _perf_shot_counter >= threshold
 
 
 func _is_ricochet_shot() -> bool:
@@ -1443,11 +1484,287 @@ func _use_skill() -> void:
 	print("skill triggered toward: ", get_global_mouse_position())
 
 
+# Conta uma ativação de skill Q (elemental) ou espaço (dash/esquivando) — só é
+# chamado quando a skill REALMENTE dispara (após o guard de cooldown). Unlock Urban.
+func _count_active_skill_use() -> void:
+	stats_active_skills_used += 1
+
+
+# ---------- Fenda Crepuscular (teleporte + corte) ----------
+
+func _fenda_cooldown() -> float:
+	return FENDA_COOLDOWNS_BY_LEVEL[clampi(fenda_level - 1, 0, FENDA_LEVEL_MAX - 1)]
+
+
+func _fenda_resolve_target(raw: Vector2) -> Vector2:
+	# Destino válido: checa o CORPO do player (círculo de raio corpo+margem) na
+	# posição. Se cabe livre, usa. Se encosta num objeto/parede (ou fora do mapa,
+	# coberto por wall invisível), marcha de volta em direção ao player até achar
+	# um spot onde o corpo INTEIRO cabe com folga (não fica preso na borda).
+	var space: PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
+	if space == null:
+		return raw
+	var r: float = _fenda_clearance_radius()
+	# O corpo (CollisionShape2D) fica deslocado do origin do player — checa a folga
+	# na posição REAL do corpo (pos + offset), senão fica 12px errado e prende.
+	var col := get_node_or_null("CollisionShape2D")
+	var col_off: Vector2 = (col as Node2D).position if col != null else Vector2.ZERO
+	if not _fenda_pos_blocked(space, raw + col_off, r):
+		return raw
+	var from_pos: Vector2 = global_position
+	var back: Vector2 = from_pos - raw
+	var dist: float = back.length()
+	if dist < 1.0:
+		return from_pos
+	var dir: Vector2 = back / dist
+	var d: float = 6.0
+	while d < dist:
+		var cand: Vector2 = raw + dir * d
+		if not _fenda_pos_blocked(space, cand + col_off, r):
+			return cand
+		d += 6.0
+	return from_pos
+
+
+func _fenda_clearance_radius() -> float:
+	# Raio do corpo do player + margem de "respiro" pra não colar na borda.
+	var r: float = 8.0
+	var col := get_node_or_null("CollisionShape2D")
+	if col != null and col.shape != null:
+		var sh = col.shape
+		if sh is CircleShape2D:
+			r = (sh as CircleShape2D).radius
+		elif sh is CapsuleShape2D:
+			r = (sh as CapsuleShape2D).radius
+		elif sh is RectangleShape2D:
+			r = (sh as RectangleShape2D).size.length() * 0.5
+	return r + 6.0
+
+
+func _fenda_pos_blocked(space: PhysicsDirectSpaceState2D, point: Vector2, radius: float) -> bool:
+	# True se o corpo do player (círculo `radius`) encostaria em algo na layer 2
+	# (walls/objetos sólidos) nessa posição.
+	var shape := CircleShape2D.new()
+	shape.radius = radius
+	var q := PhysicsShapeQueryParameters2D.new()
+	q.shape = shape
+	q.transform = Transform2D(0.0, point)
+	q.collision_mask = 2
+	q.collide_with_bodies = true
+	q.collide_with_areas = false
+	return space.intersect_shape(q, 1).size() > 0
+
+
+func _try_fenda() -> void:
+	if fenda_level <= 0 or is_dead:
+		return
+	# Combo (L3+): dentro da janela e abaixo do máximo de pontos, ignora o CD.
+	var in_combo: bool = fenda_level >= 3 and _fenda_combo_remaining > 0.0 and _fenda_combo_points < FENDA_COMBO_MAX_POINTS
+	if not in_combo and _fenda_cd_remaining > 0.0:
+		return
+	_count_active_skill_use()  # conta pra quest da skin Urban
+	var from_pos: Vector2 = global_position
+	# Resolve o destino: clicou dentro de um objeto / fora do mapa → vai pro
+	# terreno válido mais próximo (marcha de volta em direção ao player).
+	var target: Vector2 = _fenda_resolve_target(get_global_mouse_position())
+	# "Blink dash" rápido (~0.22s) até o destino, reusando a maquinaria + efeito
+	# visual do dash. Desliga a colisão (atravessa objetos no caminho); i-frames
+	# cobrem TODO o trajeto. dash_level=0 num user de fenda → sem rastro de dano.
+	var to_target: Vector2 = target - from_pos
+	_is_dashing = true
+	_dash_time_left = FENDA_TELEPORT_DURATION
+	_dash_velocity = (to_target / FENDA_TELEPORT_DURATION) if to_target.length() > 0.01 else Vector2.ZERO
+	_iframes_remaining = maxf(_iframes_remaining, FENDA_TELEPORT_DURATION + 0.08)
+	# Atravessa objetos: colisão off durante o blink (restaurada no fim).
+	if not _fenda_teleporting:
+		_fenda_saved_mask = collision_mask
+	_fenda_teleporting = true
+	collision_mask = 0
+	if absf(to_target.x) > 0.001:
+		sprite.flip_h = to_target.x < 0.0
+		muzzle.position.x = -muzzle_offset_x if sprite.flip_h else muzzle_offset_x
+	if sprite.sprite_frames != null and sprite.sprite_frames.has_animation("dash"):
+		sprite.speed_scale = 1.0
+		sprite.play("dash")
+	_play_fenda_sound()
+	# Corte no caminho percorrido (L2+).
+	if fenda_level >= 2:
+		_fenda_cut(from_pos, target)
+	# Combo (L3+): abre/continua a janela; senão dispara o cooldown.
+	if fenda_level >= 3:
+		_fenda_combo_points += 1
+		if _fenda_combo_points < FENDA_COMBO_MAX_POINTS:
+			_fenda_combo_remaining = FENDA_COMBO_WINDOW
+		else:
+			_start_fenda_cooldown()
+	else:
+		_start_fenda_cooldown()
+
+
+func _start_fenda_cooldown() -> void:
+	_fenda_cd_remaining = _fenda_cooldown()
+	_fenda_combo_points = 0
+	_fenda_combo_remaining = 0.0
+	dash_cooldown_changed.emit(_fenda_cd_remaining, _fenda_cooldown())
+
+
+func _update_fenda(delta: float) -> void:
+	if fenda_level <= 0:
+		return
+	# Blink acabou (a maquinaria do dash zerou _is_dashing) → restaura a colisão.
+	if _fenda_teleporting and not _is_dashing:
+		collision_mask = _fenda_saved_mask
+		_fenda_teleporting = false
+	# Janela do combo (L3+): se expirar sem reusar, dispara o cooldown.
+	if _fenda_combo_remaining > 0.0:
+		_fenda_combo_remaining = maxf(_fenda_combo_remaining - delta, 0.0)
+		if _fenda_combo_remaining <= 0.0:
+			_start_fenda_cooldown()
+	if _fenda_cd_remaining > 0.0:
+		_fenda_cd_remaining = maxf(_fenda_cd_remaining - delta, 0.0)
+		dash_cooldown_changed.emit(_fenda_cd_remaining, _fenda_cooldown())
+
+
+func _fenda_cut(a: Vector2, b: Vector2) -> void:
+	# Mostra o rasgo (fica ~0.5s) e SÓ aplica o dano no FIM do cast (não instant).
+	# Inimigos que estiverem perto da linha a→b quando o corte "fecha" são atingidos.
+	var dmg: float = FENDA_CUT_DAMAGE_BY_LEVEL[clampi(fenda_level - 1, 0, FENDA_LEVEL_MAX - 1)]
+	_spawn_fenda_slash_vfx(a, b)
+	if dmg <= 0.0:
+		return
+	# Captura a linha do corte; o dano entra após FENDA_CUT_CAST_TIME.
+	var aa: Vector2 = a
+	var bb: Vector2 = b
+	var dd: float = dmg
+	get_tree().create_timer(FENDA_CUT_CAST_TIME).timeout.connect(func() -> void:
+		_fenda_apply_cut_damage(aa, bb, dd)
+	)
+
+
+func _fenda_apply_cut_damage(a: Vector2, b: Vector2, dmg: float) -> void:
+	if is_dead or not is_inside_tree():
+		return
+	var wsq: float = FENDA_CUT_WIDTH * FENDA_CUT_WIDTH
+	var hit_any: bool = false
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not is_instance_valid(e) or not (e is Node2D):
+			continue
+		if (e as Node).is_in_group("boss_shielded"):
+			continue
+		if not e.has_method("take_damage"):
+			continue
+		var p: Vector2 = (e as Node2D).global_position + Vector2(0, -12)
+		if _point_seg_dist_sq(p, a, b) > wsq:
+			continue
+		var final_dmg: float = dmg
+		var crit: Dictionary = roll_crit()
+		if bool(crit.get("crit", false)):
+			final_dmg *= float(crit.get("mult", 1.0))
+			CritFeedback.mark_next_hit_crit(e)
+		var was_alive: bool = (not ("hp" in e)) or float(e.hp) > 0.0
+		e.take_damage(final_dmg)
+		notify_damage_dealt_by_source(final_dmg, "fenda")
+		hit_any = true
+		if was_alive and ("hp" in e) and float(e.hp) <= 0.0:
+			notify_kill_by_source("fenda")
+	# Som de impacto — só se o corte acertou pelo menos um inimigo (1× por corte).
+	if hit_any:
+		_play_fenda_hit_sound((a + b) * 0.5)
+
+
+func _point_seg_dist_sq(p: Vector2, a: Vector2, b: Vector2) -> float:
+	var ab: Vector2 = b - a
+	var l2: float = ab.length_squared()
+	if l2 < 0.0001:
+		return p.distance_squared_to(a)
+	var t: float = clampf((p - a).dot(ab) / l2, 0.0, 1.0)
+	return p.distance_squared_to(a + ab * t)
+
+
+func _spawn_fenda_slash_vfx(a: Vector2, b: Vector2) -> void:
+	# Tilea o desenho (3 frames de 32×32) sem emenda ao longo da linha a→b
+	# (rotacionado). Miolo 100% opaco e contínuo; o fade fica SÓ na 1ª e na última
+	# tile (pontas), pra tirar o "corte seco" sem desconectar o meio. Frames animam
+	# juntos e o tempo casa com o cast: surge → dano (FENDA_CUT_CAST_TIME) → fade.
+	if FENDA_FX_TEX == null:
+		return
+	var dir: Vector2 = b - a
+	var dist: float = dir.length()
+	var ndir: Vector2 = dir.normalized() if dist > 0.01 else Vector2.DOWN
+	var rot: float = (dir.angle() - PI / 2.0) if dist > 0.01 else 0.0
+	const TILE: float = 32.0
+	var n: int = int(maxf(1.0, ceil(dist / TILE)))
+	var root := Node2D.new()
+	root.z_index = 50
+	_get_world().add_child(root)
+	var atlases: Array = []
+	for i in n:
+		var atlas := AtlasTexture.new()
+		atlas.atlas = FENDA_FX_TEX
+		atlas.region = Rect2(0, 0, 32, 32)  # frame 0 (surge)
+		var spr := Sprite2D.new()
+		spr.texture = atlas
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		spr.rotation = rot
+		spr.global_position = a + ndir * ((float(i) + 0.5) * TILE)
+		# Fade só nas pontas: 1ª e última tile mais transparentes (miolo opaco).
+		if n >= 3 and (i == 0 or i == n - 1):
+			spr.modulate.a = 0.45
+		root.add_child(spr)
+		atlases.append(atlas)
+	var set_frame := func(fi: int) -> void:
+		for at in atlases:
+			at.region = Rect2(float(fi) * 32.0, 0, 32, 32)
+	var t_appear: float = maxf(FENDA_CUT_CAST_TIME - 0.15, 0.05)  # surge até ~dano
+	var tw := root.create_tween()
+	tw.tween_interval(t_appear)
+	tw.tween_callback(set_frame.bind(1))  # frame do dano (≈ FENDA_CUT_CAST_TIME)
+	tw.tween_interval(0.15)
+	tw.tween_callback(set_frame.bind(2))  # frame de fade
+	tw.tween_property(root, "modulate:a", 0.0, 0.2).set_ease(Tween.EASE_IN)
+	tw.tween_callback(root.queue_free)
+
+
+func _play_fenda_sound() -> void:
+	if FENDA_SOUND == null:
+		return
+	var p := AudioStreamPlayer2D.new()
+	p.bus = &"SFX"
+	p.stream = FENDA_SOUND
+	p.volume_db = FENDA_SOUND_VOLUME_DB
+	_get_world().add_child(p)
+	p.global_position = global_position
+	p.play()
+	var ref: AudioStreamPlayer2D = p
+	get_tree().create_timer(1.5).timeout.connect(func() -> void:
+		if is_instance_valid(ref):
+			ref.queue_free()
+	)
+
+
+func _play_fenda_hit_sound(pos: Vector2) -> void:
+	if FENDA_HIT_SOUND == null:
+		return
+	var p := AudioStreamPlayer2D.new()
+	p.bus = &"SFX"
+	p.stream = FENDA_HIT_SOUND
+	p.volume_db = FENDA_HIT_SOUND_VOLUME_DB
+	_get_world().add_child(p)
+	p.global_position = pos
+	p.play()
+	var ref: AudioStreamPlayer2D = p
+	get_tree().create_timer(1.5).timeout.connect(func() -> void:
+		if is_instance_valid(ref):
+			ref.queue_free()
+	)
+
+
 func _handle_fire_skill_press() -> void:
 	# Cast direto na posição do cursor — sem targeter, sem range clamp. Range
 	# efetivo = tela inteira (igual ao Chain Lightning skill).
 	if _fire_skill_cd_remaining > 0.0:
 		return
+	_count_active_skill_use()
 	var target: Vector2 = get_global_mouse_position()
 	var proj: Node = FIRE_SKILL_PROJECTILE_SCENE.instantiate()
 	if "field_dps" in proj:
@@ -1507,6 +1824,7 @@ func _handle_chain_lightning_skill_press() -> void:
 	# Cooldown padrão segura spam.
 	if _chain_lightning_skill_cd_remaining > 0.0:
 		return
+	_count_active_skill_use()
 	var target: Vector2 = get_global_mouse_position()
 	if CHAIN_LIGHTNING_BOLT_SCENE != null:
 		var bolt: Node = CHAIN_LIGHTNING_BOLT_SCENE.instantiate()
@@ -1751,6 +2069,7 @@ func _cast_curse_beam() -> void:
 		return
 	if CURSE_BEAM_SCENE == null:
 		return
+	_count_active_skill_use()
 	var mouse_pos: Vector2 = get_global_mouse_position()
 	var dir: Vector2 = (mouse_pos - global_position).normalized()
 	if dir.length() < 0.01:
@@ -1790,6 +2109,7 @@ func _update_curse_skill(delta: float) -> void:
 func _cast_earthquake() -> void:
 	if _stone_skill_cd_remaining > 0.0:
 		return
+	_count_active_skill_use()
 	_play_earthquake_sound()
 	# Treme a tela.
 	var cam := get_viewport().get_camera_2d()
@@ -1860,6 +2180,7 @@ func _trigger_time_freeze() -> void:
 	# overlay azul. Sem targeter, sem warmup. Ativa 3s + cd 30s.
 	if _time_freeze_cd_remaining > 0.0 or _time_freeze_active_remaining > 0.0:
 		return
+	_count_active_skill_use()
 	_apply_time_freeze_world_pause()
 	_show_freeze_overlay()
 	_time_freeze_active_remaining = TIME_FREEZE_DURATION
@@ -2000,6 +2321,7 @@ func _hide_freeze_overlay() -> void:
 func _try_start_dash() -> void:
 	if _is_dashing or _dash_cd_remaining > 0.0 or is_attacking:
 		return
+	_count_active_skill_use()
 	# Direção: input atual; se não tiver, dash pra onde o sprite está virado.
 	var dir := Vector2(
 		Input.get_axis("move_left", "move_right"),
@@ -2163,6 +2485,7 @@ func _try_start_esquivando_ability() -> void:
 		return
 	if _esquivando_ability_cd > 0.0:
 		return
+	_count_active_skill_use()
 	_esquivando_ability_buff_remaining = ESQUIVANDO_ABILITY_DURATION
 	_esquivando_ability_cd = _esquivando_ability_cd_total()
 	_iframes_remaining = maxf(_iframes_remaining, DASH_IFRAMES_DURATION)
@@ -2492,8 +2815,8 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# Lv2: rastro de fogo, cd 4.5s
 			# Lv3: auto-attack após dash, cd 4s
 			# Lv4: 2 flechas após dash, cd 3.5s
-			# Mutex defensivo com esquivando — shop/welcome pool já filtram.
-			if esquivando_level > 0:
+			# Mutex defensivo com esquivando/fenda — shop/welcome pool já filtram.
+			if esquivando_level > 0 or fenda_level > 0:
 				return
 			if dash_level >= DASH_LEVEL_MAX:
 				return
@@ -2533,9 +2856,9 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# de dano + visual amarelo (damage number + flash do enemy).
 			critical_chance_level = mini(critical_chance_level + 1, 4)
 		"esquivando":
-			# Lv1-4. Mutuamente exclusivo com dash (mesma categoria movimentação)
-			# — shop e welcome pool já filtram, defensivo aqui contra dev panel.
-			if dash_level > 0:
+			# Lv1-4. Mutuamente exclusivo com dash/fenda (mesma categoria
+			# movimentação) — shop/welcome pool filtram; defensivo aqui (dev panel).
+			if dash_level > 0 or fenda_level > 0:
 				return
 			if esquivando_level >= ESQUIVANDO_LEVEL_MAX:
 				return
@@ -2555,6 +2878,17 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# Refresca label de stacks (cap muda 3→4 no lv4) — sem isso o "0/3"
 			# antigo persiste até o próximo stack/expire.
 			esquivando_stacks_changed.emit(_esquivando_stacks, _esquivando_max_stacks())
+		"fenda":
+			# Lv1-4. Mutuamente exclusivo com dash/esquivando (mobilidade).
+			if dash_level > 0 or esquivando_level > 0:
+				return
+			if fenda_level >= FENDA_LEVEL_MAX:
+				return
+			fenda_level = mini(fenda_level + 1, FENDA_LEVEL_MAX)
+			if fenda_level == 1:
+				_fenda_cd_remaining = 0.0
+				dash_unlocked.emit()  # reusa a barra de mobilidade
+			dash_cooldown_changed.emit(_fenda_cd_remaining, _fenda_cooldown())
 	# Notifica HUD/listeners. Emitido SEMPRE no fim, independente do match.
 	upgrade_applied.emit(upgrade_id, get_upgrade_count(upgrade_id))
 
@@ -2584,6 +2918,7 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"gold_magnet": return gold_magnet_level
 		"dash": return dash_level
 		"esquivando": return esquivando_level
+		"fenda": return fenda_level
 		"ricochet_arrow": return ricochet_arrow_level
 		"graviton": return graviton_level
 		"boomerang": return boomerang_level
@@ -3552,7 +3887,7 @@ func notify_monkey_cursed() -> void:
 
 
 # Segundos de stun que o player causou em inimigos nesta run (qualquer fonte:
-# claudio druida, pedra, terremoto, gelo). Acumula pro unlock da skin Terracota.
+# claudio druida, pedra, terremoto, gelo). Acumula pro unlock da skin Earthy.
 func notify_stun_applied(duration: float) -> void:
 	if duration > 0.0:
 		stats_stun_seconds += duration

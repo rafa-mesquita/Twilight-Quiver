@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dlrsg1klkw7i4"]
 
 [ext_resource type="Texture2D" uid="uid://3oukf8ka04kq" path="res://assets/Hud/bossHotBar.png" id="1_frame"]
-[ext_resource type="FontFile" uid="uid://bw54fcmefpqf1" path="res://font/ByteBounce.ttf" id="2_font"]
+[ext_resource type="FontFile" uid="uid://dypftyuvk0wlo" path="res://font/Silver.ttf" id="2_font"]
 [ext_resource type="Shader" uid="uid://buidd1qd62px" path="res://shaders/boss_bar_fill.gdshader" id="3_shader"]
 
 [sub_resource type="ShaderMaterial" id="MAT_fill"]
@@ -77,7 +77,7 @@ theme_override_colors/font_color = Color(1, 0.85, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "BOSS"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -93,7 +93,7 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "100/100"
 horizontal_alignment = 1
 vertical_alignment = 1

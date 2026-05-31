@@ -1327,6 +1327,7 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	{"id": "gold_magnet", "name": "SHOP_UPG_GOLD_MAGNET"},
 	{"id": "dash", "name": "SHOP_UPG_DASH"},
 	{"id": "esquivando", "name": "SHOP_UPG_ESQUIVANDO"},
+	{"id": "fenda", "name": "SHOP_UPG_FENDA"},
 	{"id": "ricochet_arrow", "name": "SHOP_UPG_RICOCHET"},
 	{"id": "graviton", "name": "SHOP_UPG_GRAVITON"},
 	{"id": "armor", "name": "SHOP_UPG_ARMOR"},
@@ -1361,6 +1362,7 @@ func _grant_free_random_upgrade() -> void:
 	var has_double: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("double_arrows") > 0
 	var has_dash: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("dash") > 0
 	var has_esq: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("esquivando") > 0
+	var has_fenda: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("fenda") > 0
 	var pool: Array[Dictionary] = []
 	for entry in FREE_UPGRADE_POOL:
 		var id: String = entry["id"]
@@ -1372,9 +1374,12 @@ func _grant_free_random_upgrade() -> void:
 			continue
 		if id == "double_arrows" and has_multi:
 			continue
-		if id == "dash" and has_esq:
+		# Mobilidade: dash / esquivando / fenda são mutuamente exclusivos.
+		if id == "dash" and (has_esq or has_fenda):
 			continue
-		if id == "esquivando" and has_dash:
+		if id == "esquivando" and (has_dash or has_fenda):
+			continue
+		if id == "fenda" and (has_dash or has_esq):
 			continue
 		pool.append(entry)
 	if pool.is_empty():
@@ -1408,6 +1413,7 @@ const FREE_REWARD_CARD_PATHS: Dictionary = {
 	"tiger_claws": "res://assets/Hud/shop/upgrade/garras de tigre/garras de tigre hud-Sheet.png",
 	"dash": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"esquivando": "res://assets/Hud/shop/upgrade/deslizando.png",
+	"fenda": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"double_arrows": "res://assets/Hud/shop/upgrade/multi_arrow.png",
 }
 const FREE_REWARD_STATUS_SHEET: String = "res://assets/Hud/shop/status/HP - atck speed - Move speed - Atck Dmg.png"
@@ -1485,7 +1491,7 @@ func _show_card_reward_popup(slot_id: String, target_level: int, title_key: Stri
 	bg.color = Color(0, 0, 0, 0.78)
 	bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	layer.add_child(bg)
-	var at01_font: Font = load("res://font/ByteBounce.ttf")
+	var at01_font: Font = load("res://font/Silver.ttf")
 
 	var title := Label.new()
 	title.set_anchors_preset(Control.PRESET_CENTER)
@@ -1496,7 +1502,7 @@ func _show_card_reward_popup(slot_id: String, target_level: int, title_key: Stri
 	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3, 1.0))
 	if at01_font != null:
 		title.add_theme_font_override("font", at01_font)
-	title.add_theme_font_size_override("font_size", 64)
+	title.add_theme_font_size_override("font_size", 69)
 	bg.add_child(title)
 
 	# Card art centrado. Pivot no meio pro scale animar do centro.
@@ -1525,7 +1531,7 @@ func _show_card_reward_popup(slot_id: String, target_level: int, title_key: Stri
 	name_label.add_theme_color_override("font_color", Color.WHITE)
 	if at01_font != null:
 		name_label.add_theme_font_override("font", at01_font)
-	name_label.add_theme_font_size_override("font_size", 64)
+	name_label.add_theme_font_size_override("font_size", 69)
 	name_label.modulate.a = 0.0
 	bg.add_child(name_label)
 
@@ -1536,7 +1542,7 @@ func _show_card_reward_popup(slot_id: String, target_level: int, title_key: Stri
 	btn.text = tr("COMMON_CONTINUE")
 	if at01_font != null:
 		btn.add_theme_font_override("font", at01_font)
-	btn.add_theme_font_size_override("font_size", 48)
+	btn.add_theme_font_size_override("font_size", 52)
 	btn.modulate.a = 0.0
 	btn.disabled = true  # evita click acidental durante animação
 	bg.add_child(btn)

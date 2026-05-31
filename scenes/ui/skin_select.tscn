@@ -1,7 +1,7 @@
 [gd_scene load_steps=14 format=3 uid="uid://csh7n4kxvjt8b"]
 
 [ext_resource type="Script" path="res://scripts/ui/skin_select.gd" id="1_skin"]
-[ext_resource type="FontFile" path="res://font/ByteBounce.ttf" id="2_font"]
+[ext_resource type="FontFile" path="res://font/Silver.ttf" id="2_font"]
 [ext_resource type="PackedScene" uid="uid://b8tw1gv0vqlbl" path="res://scenes/ui/version_label.tscn" id="3_version"]
 [ext_resource type="PackedScene" path="res://scenes/player/cursor.tscn" id="4_cursor"]
 [ext_resource type="PackedScene" uid="uid://drv5fwt92gxqc" path="res://scenes/ui/player_preview.tscn" id="5_preview"]
@@ -73,7 +73,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="Panel" type="Panel" parent="Center"]
-custom_minimum_size = Vector2(1300, 820)
+custom_minimum_size = Vector2(1440, 820)
 layout_mode = 2
 
 [node name="Margin" type="MarginContainer" parent="Center/Panel"]
@@ -94,7 +94,7 @@ theme_override_constants/separation = 14
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 56
+theme_override_font_sizes/font_size = 60
 text = "PLAYER_TITLE"
 horizontal_alignment = 1
 
@@ -169,7 +169,7 @@ visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.7, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 25
 text = "PLAYER_EMPTY"
 horizontal_alignment = 1
 autowrap_mode = 3
@@ -182,7 +182,7 @@ size_flags_vertical = 3
 [node name="CardsGrid" type="GridContainer" parent="Center/Panel/Margin/VBox/Body/EditSection/CardsScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-columns = 4
+columns = 5
 theme_override_constants/h_separation = 14
 theme_override_constants/v_separation = 14
 
@@ -190,7 +190,7 @@ theme_override_constants/v_separation = 14
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 25
 text = ""
 horizontal_alignment = 1
 
@@ -204,7 +204,7 @@ custom_minimum_size = Vector2(280, 56)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/pressed = SubResource("SBF_btn_pressed")
@@ -215,7 +215,7 @@ custom_minimum_size = Vector2(280, 56)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 theme_override_styles/normal = SubResource("SBF_btn_normal")
 theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/pressed = SubResource("SBF_btn_pressed")

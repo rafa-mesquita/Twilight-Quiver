@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://hx12c7egx4qw"
+path="res://.godot/imported/fenda sound.mp3-248f0789c49924f577dad7353b6ac7b1.mp3str"
+
+[deps]
+
+source_file="res://audios/effects/fenda sound.mp3"
+dest_files=["res://.godot/imported/fenda sound.mp3-248f0789c49924f577dad7353b6ac7b1.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -64,6 +64,7 @@ const UPGRADE_POOL: Array = [
 	{"id": "gold_magnet", "name": "SHOP_UPG_GOLD_MAGNET", "max_level": 4},
 	{"id": "dash", "name": "SHOP_UPG_DASH", "max_level": 4},
 	{"id": "esquivando", "name": "SHOP_UPG_ESQUIVANDO", "max_level": 4},
+	{"id": "fenda", "name": "SHOP_UPG_FENDA", "max_level": 4},
 	{"id": "ricochet_arrow", "name": "SHOP_UPG_RICOCHET", "max_level": 4},
 	{"id": "graviton", "name": "SHOP_UPG_GRAVITON", "max_level": 4},
 	{"id": "fire_arrow", "name": "SHOP_UPG_FIRE_ARROW", "max_level": 4},
@@ -89,9 +90,9 @@ const EXCLUSIVE_PAIRS: Array = [
 	["perfuracao", "ricochet_arrow"],
 	# Salva de flechas: multi (leque 30°) ou duplas (chance + apertado).
 	["multi_arrow", "double_arrows"],
-	# Categoria movimentação: dash (espaço) ou esquivando (espaço + stacks +
-	# dodge). Ambos ocupam o slot da barra de espaço, então o player escolhe um.
-	["dash", "esquivando"],
+	# Categoria movimentação: dash (espaço), esquivando (espaço + stacks + dodge)
+	# ou fenda (teleporte + corte). Todos ocupam o slot do espaço → escolhe um.
+	["dash", "esquivando", "fenda"],
 ]
 
 # Descrições por upgrade. Cada entry é uma translation key — resolvida via
@@ -159,6 +160,12 @@ const ESQUIVANDO_DESCS: Array[String] = [
 	"SHOP_ESQUIVANDO_DESC_2",
 	"SHOP_ESQUIVANDO_DESC_3",
 	"SHOP_ESQUIVANDO_DESC_4",
+]
+const FENDA_DESCS: Array[String] = [
+	"SHOP_FENDA_DESC_1",
+	"SHOP_FENDA_DESC_2",
+	"SHOP_FENDA_DESC_3",
+	"SHOP_FENDA_DESC_4",
 ]
 const LIFE_STEAL_DESCS: Array[String] = [
 	"SHOP_LIFE_STEAL_DESC_1",
@@ -850,16 +857,16 @@ func _ensure_sell_confirm_dialog() -> void:
 	# Title.
 	var title := Label.new()
 	title.name = "Title"
-	title.add_theme_font_override("font", load("res://font/ByteBounce.ttf"))
-	title.add_theme_font_size_override("font_size", 38)
+	title.add_theme_font_override("font", load("res://font/Silver.ttf"))
+	title.add_theme_font_size_override("font_size", 42)
 	title.add_theme_color_override("font_color", Color(0.95, 0.85, 1.0, 1.0))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 	# Body.
 	var body := Label.new()
 	body.name = "Body"
-	body.add_theme_font_override("font", load("res://font/ByteBounce.ttf"))
-	body.add_theme_font_size_override("font_size", 26)
+	body.add_theme_font_override("font", load("res://font/Silver.ttf"))
+	body.add_theme_font_size_override("font_size", 29)
 	body.add_theme_color_override("font_color", Color(0.85, 0.82, 0.95, 1.0))
 	body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -877,8 +884,8 @@ func _ensure_sell_confirm_dialog() -> void:
 	cancel_btn.text = "SHOP_SELL_PET_CANCEL"
 	cancel_btn.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_INHERIT
 	cancel_btn.custom_minimum_size = Vector2(180, 60)
-	cancel_btn.add_theme_font_override("font", load("res://font/ByteBounce.ttf"))
-	cancel_btn.add_theme_font_size_override("font_size", 28)
+	cancel_btn.add_theme_font_override("font", load("res://font/Silver.ttf"))
+	cancel_btn.add_theme_font_size_override("font_size", 30)
 	cancel_btn.pressed.connect(_on_sell_cancelled)
 	buttons.add_child(cancel_btn)
 	var confirm_btn := Button.new()
@@ -886,8 +893,8 @@ func _ensure_sell_confirm_dialog() -> void:
 	confirm_btn.text = "SHOP_SELL_PET_CONFIRM"
 	confirm_btn.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_INHERIT
 	confirm_btn.custom_minimum_size = Vector2(180, 60)
-	confirm_btn.add_theme_font_override("font", load("res://font/ByteBounce.ttf"))
-	confirm_btn.add_theme_font_size_override("font_size", 28)
+	confirm_btn.add_theme_font_override("font", load("res://font/Silver.ttf"))
+	confirm_btn.add_theme_font_size_override("font_size", 30)
 	confirm_btn.add_theme_color_override("font_color", Color(1.0, 0.84, 0.34, 1.0))
 	buttons.add_child(confirm_btn)
 	_sell_confirm_dialog = dlg
@@ -1119,6 +1126,7 @@ func _get_upgrade_descs_array(id: String) -> Array:
 		"gold_magnet": return GOLD_MAGNET_DESCS
 		"dash": return DASH_DESCS
 		"esquivando": return ESQUIVANDO_DESCS
+		"fenda": return FENDA_DESCS
 		"life_steal": return LIFE_STEAL_DESCS
 		"fire_arrow": return FIRE_ARROW_DESCS
 		"curse_arrow": return CURSE_ARROW_DESCS
@@ -1146,6 +1154,122 @@ func _get_upgrade_desc(id: String, target_level: int) -> String:
 	return arr[idx]
 
 
+# Altura da faixa do rodapé reservada pro indicador "ver mais" quando a desc
+# estoura. O texto é encurtado nessa medida e o hint ocupa o espaço.
+const _MORE_HINT_STRIP_H: float = 36.0
+# Tamanho da fonte do "+ ver mais" (bem maior que o resto pra chamar atenção).
+const _MORE_HINT_FONT_SIZE: int = 27
+# Colado no fim do texto truncado pra indicar que tem continuação.
+const _MORE_ELLIPSIS: String = " (...)"
+
+
+func _refresh_more_hint(card: Control) -> void:
+	# Mostra/esconde o indicador "+ ver mais" no rodapé do card quando a
+	# descrição não cabe no DescLabel. Quando estoura, trunca o texto e cola
+	# " (...)" no fim. Só vale pra cards com tooltip multi-nível (upgrades/
+	# aliados) — estrutura/locked/placeholder não têm.
+	if not is_instance_valid(card):
+		return
+	var desc_label: Label = card.get_node_or_null("DescLabel") as Label
+	if desc_label == null:
+		return
+	# Captura o texto completo ANTES de qualquer await (o _build_card acabou de
+	# setar o texto cheio; uma passada anterior pode tê-lo truncado).
+	var full_text: String = desc_label.text
+	await get_tree().process_frame
+	if not is_instance_valid(card) or not is_instance_valid(desc_label):
+		return
+	var hint: Label = card.get_node_or_null("MoreHint") as Label
+	# Guarda o offset_bottom original uma vez (estado "altura cheia").
+	if not card.has_meta("desc_full_bottom"):
+		card.set_meta("desc_full_bottom", desc_label.offset_bottom)
+	var full_bottom: float = float(card.get_meta("desc_full_bottom"))
+	# Reset pro estado base antes de medir (altura cheia + centralizado + texto cheio).
+	desc_label.offset_bottom = full_bottom
+	desc_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	desc_label.text = full_text
+	if hint != null:
+		hint.visible = false
+	# Só cards com array de descs (upgrade/aliado real) ganham o indicador.
+	var card_id: String = String(card.get_meta("aug_id", ""))
+	if _get_upgrade_descs_array(card_id).is_empty():
+		return
+	if not desc_label.visible:
+		return
+	# Mede overflow com a altura cheia.
+	await get_tree().process_frame
+	if not is_instance_valid(card) or not is_instance_valid(desc_label):
+		return
+	var overflow: bool = desc_label.get_line_count() > desc_label.get_visible_line_count()
+	if not overflow:
+		return
+	# Overflow: encurta a área de texto pra reservar a faixa do hint e alinha o
+	# texto ao topo (a leitura começa do início, o corte fica embaixo).
+	desc_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	desc_label.offset_bottom = full_bottom - _MORE_HINT_STRIP_H
+	await get_tree().process_frame
+	if not is_instance_valid(card) or not is_instance_valid(desc_label):
+		return
+	# Trunca o texto pra caber na altura reduzida, deixando " (...)" no fim.
+	var max_lines: int = desc_label.get_visible_line_count()
+	_truncate_with_ellipsis(desc_label, full_text, max_lines)
+	if hint == null:
+		hint = _make_more_hint(card, desc_label, full_bottom)
+	hint.add_theme_color_override("font_color", desc_label.get_theme_color("font_color"))
+	hint.modulate = Color(1, 1, 1, 1)
+	hint.visible = true
+
+
+func _truncate_with_ellipsis(label: Label, full_text: String, max_lines: int) -> void:
+	# Acha o maior prefixo de full_text que, com " (...)" no fim, ainda cabe em
+	# max_lines linhas (busca binária por palavra). get_line_count() reflete o
+	# texto atual após reshape, então mede sem esperar frame.
+	if max_lines < 1:
+		max_lines = 1
+	label.text = full_text
+	if label.get_line_count() <= max_lines:
+		return
+	var words: PackedStringArray = full_text.split(" ", false)
+	if words.is_empty():
+		label.text = _MORE_ELLIPSIS.strip_edges()
+		return
+	var best: String = ""
+	var lo: int = 1
+	var hi: int = words.size()
+	while lo <= hi:
+		var mid: int = (lo + hi) / 2
+		var candidate: String = " ".join(words.slice(0, mid)) + _MORE_ELLIPSIS
+		label.text = candidate
+		if label.get_line_count() <= max_lines:
+			best = candidate
+			lo = mid + 1
+		else:
+			hi = mid - 1
+	if best == "":
+		best = _MORE_ELLIPSIS.strip_edges()  # nem 1 palavra coube
+	label.text = best
+
+
+func _make_more_hint(card: Control, desc_label: Label, full_bottom: float) -> Label:
+	var hint := Label.new()
+	hint.name = "MoreHint"
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hint.offset_left = desc_label.offset_left
+	hint.offset_right = desc_label.offset_right
+	hint.offset_top = full_bottom - _MORE_HINT_STRIP_H
+	hint.offset_bottom = full_bottom
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hint.autowrap_mode = TextServer.AUTOWRAP_OFF
+	var f: Font = desc_label.get_theme_font("font")
+	if f != null:
+		hint.add_theme_font_override("font", f)
+	hint.add_theme_font_size_override("font_size", _MORE_HINT_FONT_SIZE)
+	hint.text = tr("SHOP_VER_MAIS")
+	card.add_child(hint)
+	return hint
+
+
 # Categorias de upgrade que afetam grupos exclusivos (EXCLUSIVE_PAIRS).
 # Mostra no card de compra e no tooltip do equipado pra explicar pro jogador
 # que aquela escolha bloqueia a outra do par.
@@ -1159,6 +1283,9 @@ const UPGRADE_CATEGORIES: Dictionary = {
 	"ricochet_arrow": "SHOP_UPG_CAT_ARROW_MOD",
 	"multi_arrow": "SHOP_UPG_CAT_ARROW_VOLLEY",
 	"double_arrows": "SHOP_UPG_CAT_ARROW_VOLLEY",
+	"dash": "SHOP_UPG_CAT_MOBILITY",
+	"esquivando": "SHOP_UPG_CAT_MOBILITY",
+	"fenda": "SHOP_UPG_CAT_MOBILITY",
 }
 
 
@@ -1271,6 +1398,10 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 		title_label.visible = not is_joker_card
 	if desc_label != null:
 		desc_label.visible = not is_joker_card
+	# "Ver mais": descrições longas estouram o DescLabel (clip_text). Quando isso
+	# acontece num card com tooltip multi-nível, mostra um indicador no rodapé
+	# apontando pro hover (que já lista todos os níveis).
+	_refresh_more_hint(card)
 
 
 # IDs de upgrade cujo título + desc devem ser centralizados horizontal e
@@ -1333,7 +1464,7 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 	"multi_arrow": Color(0x3d / 255.0, 0x15 / 255.0, 0x00 / 255.0),  # #3d1500 (marrom escuro)
 	"double_arrows": Color(0x3d / 255.0, 0x15 / 255.0, 0x00 / 255.0),  # #3d1500 (marrom escuro — mesma família do multi_arrow)
 	"fire_arrow": Color(0x77 / 255.0, 0x20 / 255.0, 0x00 / 255.0),  # #772000
-	"curse_arrow": Color(0x45 / 255.0, 0x14 / 255.0, 0x58 / 255.0),  # #451458
+	"curse_arrow": Color.WHITE,  # texto branco no card do Disparo Profano
 	"ice_arrow": Color(0x1b / 255.0, 0x31 / 255.0, 0x6c / 255.0),  # #1b316c (azul escuro — combina com a arte do card)
 	"stone_arrow": Color.WHITE,  # texto branco no card da Pedra
 	"leno": Color(0xfc / 255.0, 0xb4 / 255.0, 0xcc / 255.0),  # #fcb4cc
@@ -1349,6 +1480,7 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 	"life_steal": Color(0x58 / 255.0, 0x14 / 255.0, 0x1f / 255.0),  # #58141f
 	"dash": Color(0x3d / 255.0, 0x28 / 255.0, 0x18 / 255.0),  # #3d2818 (marrom escuro contrasta com cream)
 	"esquivando": Color(0x3d / 255.0, 0x28 / 255.0, 0x18 / 255.0),  # mesmo do dash — compartilham arte
+	"fenda": Color(0x3d / 255.0, 0x28 / 255.0, 0x18 / 255.0),  # mesmo do dash — compartilha arte
 	"boomerang": Color(0xfb / 255.0, 0xe3 / 255.0, 0xc6 / 255.0),  # creme claro (fundo marrom da carta)
 	"critical_chance": Color(0xcb / 255.0, 0x49 / 255.0, 0x0d / 255.0),  # #cb490d (laranja-vermelho)
 }
@@ -1396,6 +1528,7 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	# Esquivando compartilha a arte do dash (mesma categoria movimentação,
 	# mutuamente exclusivos — o player só compra um dos dois por run).
 	"esquivando": "res://assets/Hud/shop/upgrade/deslizando.png",
+	"fenda": "res://assets/Hud/shop/upgrade/deslizando.png",
 	# double_arrows compartilha a arte do multi_arrow (mesma família — marrom).
 	# Quando tiver arte própria, trocar pra "res://assets/Hud/shop/upgrade/double_arrows.png".
 	"double_arrows": "res://assets/Hud/shop/upgrade/multi_arrow.png",
@@ -2165,10 +2298,10 @@ func _setup_bonus_label() -> void:
 	var bonus := Label.new()
 	bonus.name = "BonusUpgradeLabel"
 	bonus.text = "SHOP_BONUS_PLUS_ONE"
-	var at01_font: Font = load("res://font/ByteBounce.ttf")
+	var at01_font: Font = load("res://font/Silver.ttf")
 	if at01_font != null:
 		bonus.add_theme_font_override("font", at01_font)
-	bonus.add_theme_font_size_override("font_size", 22)
+	bonus.add_theme_font_size_override("font_size", 25)
 	bonus.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3, 1.0))
 	bonus.position = Vector2(720, 4)
 	bonus.size = Vector2(200, 40)
@@ -2405,7 +2538,7 @@ func _build_mini_owned_chip(id: String, lvl: int, hud: Node, sellable: bool = fa
 		var max_lvl: int = _max_level_for(id)
 		var is_max: bool = max_lvl > 0 and lvl >= max_lvl
 		badge.text = "MAX" if is_max else "%d" % lvl
-		badge.add_theme_font_size_override("font_size", 12)
+		badge.add_theme_font_size_override("font_size", 15)
 		badge.add_theme_color_override("font_color", Color(1.0, 0.84, 0.34, 1.0))
 		badge.add_theme_color_override("font_outline_color", Color.BLACK)
 		badge.add_theme_constant_override("outline_size", 3)
@@ -2431,7 +2564,7 @@ func _build_mini_owned_chip(id: String, lvl: int, hud: Node, sellable: bool = fa
 		# Slot vazio: traço cinza no centro.
 		var dash := Label.new()
 		dash.text = "—"
-		dash.add_theme_font_size_override("font_size", 24)
+		dash.add_theme_font_size_override("font_size", 28)
 		dash.add_theme_color_override("font_color", Color(0.35, 0.30, 0.42, 1.0))
 		dash.anchor_right = 1.0
 		dash.anchor_bottom = 1.0
@@ -2451,8 +2584,8 @@ func _build_stat_line(label_key: String, lvl: int, gain_text: String) -> Control
 	var label := Label.new()
 	label.text = label_key
 	label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_INHERIT
-	label.add_theme_font_override("font", load("res://font/ByteBounce.ttf"))
-	label.add_theme_font_size_override("font_size", 22)
+	label.add_theme_font_override("font", load("res://font/Silver.ttf"))
+	label.add_theme_font_size_override("font_size", 25)
 	label.add_theme_color_override("font_color", label_color)
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(label)
@@ -2460,8 +2593,8 @@ func _build_stat_line(label_key: String, lvl: int, gain_text: String) -> Control
 	var gain := Label.new()
 	gain.text = gain_text
 	gain.custom_minimum_size = Vector2(110, 0)
-	gain.add_theme_font_override("font", load("res://font/ByteBounce.ttf"))
-	gain.add_theme_font_size_override("font_size", 22)
+	gain.add_theme_font_override("font", load("res://font/Silver.ttf"))
+	gain.add_theme_font_size_override("font_size", 25)
 	gain.add_theme_color_override("font_color", Color(0.62, 0.95, 0.62, 1.0) if has_lvl else label_color)
 	gain.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	row.add_child(gain)
@@ -2469,8 +2602,8 @@ func _build_stat_line(label_key: String, lvl: int, gain_text: String) -> Control
 	var value := Label.new()
 	value.text = ("★ %d" % lvl) if has_lvl else "—"
 	value.custom_minimum_size = Vector2(70, 0)
-	value.add_theme_font_override("font", load("res://font/ByteBounce.ttf"))
-	value.add_theme_font_size_override("font_size", 22)
+	value.add_theme_font_override("font", load("res://font/Silver.ttf"))
+	value.add_theme_font_size_override("font_size", 25)
 	value.add_theme_color_override("font_color", accent_color)
 	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	row.add_child(value)
@@ -2506,7 +2639,7 @@ func _build_augment_chip(id: String, lvl: int, hud: Node) -> Control:
 	var max_lvl: int = _max_level_for(id)
 	var is_max: bool = max_lvl > 0 and lvl >= max_lvl
 	badge.text = "MAX" if is_max else "%d" % lvl
-	badge.add_theme_font_size_override("font_size", 12)
+	badge.add_theme_font_size_override("font_size", 15)
 	badge.add_theme_color_override("font_color", Color(1.0, 0.84, 0.34, 1.0))
 	badge.add_theme_color_override("font_outline_color", Color.BLACK)
 	badge.add_theme_constant_override("outline_size", 3)
@@ -2608,7 +2741,9 @@ func _show_card_tooltip(card: Control) -> void:
 	# Categoria (Elemental / Tipo de flecha) quando aplica.
 	var cat_line: String = ""
 	if UPGRADE_CATEGORIES.has(card_id):
-		cat_line = "[color=#a890c8][i]%s[/i][/color]\n" % tr(UPGRADE_CATEGORIES[card_id])
+		# Hover explica que só dá pra escolher 1 upgrade da mesma categoria por run.
+		var hint: String = tr("SHOP_UPG_CAT_HINT") % tr(UPGRADE_CATEGORIES[card_id])
+		cat_line = "[color=#a890c8][i]%s[/i][/color]\n" % hint
 	# Lista todos os níveis: passado (já comprado) cinza, alvo verde, futuros azul.
 	var lines: Array[String] = []
 	for i in descs.size():
@@ -2694,10 +2829,10 @@ func _open_joker_modal() -> void:
 	_joker_modal.add_child(vbox)
 	var title := Label.new()
 	title.text = tr("SHOP_JOKER_MODAL_TITLE")
-	var byte_font: Font = load("res://font/ByteBounce.ttf")
+	var byte_font: Font = load("res://font/Silver.ttf")
 	if byte_font != null:
 		title.add_theme_font_override("font", byte_font)
-	title.add_theme_font_size_override("font_size", 36)
+	title.add_theme_font_size_override("font_size", 39)
 	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.30, 1.0))
 	title.add_theme_color_override("font_outline_color", Color.BLACK)
 	title.add_theme_constant_override("outline_size", 3)
@@ -2706,7 +2841,7 @@ func _open_joker_modal() -> void:
 	# Aviso de uso único (reusa a key do tooltip da carta) — reforça na hora de usar.
 	var subtitle := Label.new()
 	subtitle.text = tr("SHOP_JOKER_TOOLTIP_RARE")
-	subtitle.add_theme_font_size_override("font_size", 18)
+	subtitle.add_theme_font_size_override("font_size", 20)
 	subtitle.add_theme_color_override("font_color", Color(0.72, 0.62, 0.85, 1.0))
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(subtitle)
@@ -2724,7 +2859,7 @@ func _open_joker_modal() -> void:
 		var empty_lbl := Label.new()
 		empty_lbl.text = tr("SHOP_JOKER_MODAL_EMPTY")
 		empty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		empty_lbl.add_theme_font_size_override("font_size", 24)
+		empty_lbl.add_theme_font_size_override("font_size", 28)
 		empty_lbl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.90, 1.0))
 		vbox.add_child(empty_lbl)
 		get_tree().create_timer(1.2).timeout.connect(_close_joker_modal_and_emit)
@@ -2739,7 +2874,7 @@ func _open_joker_modal() -> void:
 	_joker_confirm_btn.focus_mode = Control.FOCUS_NONE
 	if byte_font != null:
 		_joker_confirm_btn.add_theme_font_override("font", byte_font)
-	_joker_confirm_btn.add_theme_font_size_override("font_size", 28)
+	_joker_confirm_btn.add_theme_font_size_override("font_size", 30)
 	_joker_confirm_btn.add_theme_color_override("font_color", Color(1.0, 0.92, 0.55, 1.0))
 	_joker_confirm_btn.add_theme_color_override("font_color_disabled", Color(0.55, 0.50, 0.55, 1.0))
 	var btn_sb := StyleBoxFlat.new()
@@ -2806,10 +2941,10 @@ func _add_joker_section(parent: VBoxContainer, title_key: String, ids: Array[Str
 		return
 	var section_label := Label.new()
 	section_label.text = tr(title_key)
-	var byte_font: Font = load("res://font/ByteBounce.ttf")
+	var byte_font: Font = load("res://font/Silver.ttf")
 	if byte_font != null:
 		section_label.add_theme_font_override("font", byte_font)
-	section_label.add_theme_font_size_override("font_size", 22)
+	section_label.add_theme_font_size_override("font_size", 25)
 	section_label.add_theme_color_override("font_color", Color(0.78, 0.68, 0.95, 1.0))
 	parent.add_child(section_label)
 	var row := HBoxContainer.new()
@@ -2862,10 +2997,10 @@ func _build_joker_chip(id: String, player: Node, hud: Node) -> Control:
 	# Level transition label.
 	var lvl_label := Label.new()
 	lvl_label.text = "%d → %d" % [lvl, lvl + 1]
-	var byte_font: Font = load("res://font/ByteBounce.ttf")
+	var byte_font: Font = load("res://font/Silver.ttf")
 	if byte_font != null:
 		lvl_label.add_theme_font_override("font", byte_font)
-	lvl_label.add_theme_font_size_override("font_size", 18)
+	lvl_label.add_theme_font_size_override("font_size", 20)
 	lvl_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.30, 1.0))
 	lvl_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	lvl_label.add_theme_constant_override("outline_size", 2)
@@ -2990,10 +3125,10 @@ func _ensure_augment_tooltip() -> void:
 	_augment_tooltip_label.bbcode_enabled = true
 	_augment_tooltip_label.fit_content = true
 	_augment_tooltip_label.scroll_active = false
-	_augment_tooltip_label.add_theme_font_override("normal_font", load("res://font/ByteBounce.ttf"))
-	_augment_tooltip_label.add_theme_font_override("bold_font", load("res://font/ByteBounce.ttf"))
-	_augment_tooltip_label.add_theme_font_size_override("normal_font_size", 22)
-	_augment_tooltip_label.add_theme_font_size_override("bold_font_size", 24)
+	_augment_tooltip_label.add_theme_font_override("normal_font", load("res://font/Silver.ttf"))
+	_augment_tooltip_label.add_theme_font_override("bold_font", load("res://font/Silver.ttf"))
+	_augment_tooltip_label.add_theme_font_size_override("normal_font_size", 25)
+	_augment_tooltip_label.add_theme_font_size_override("bold_font_size", 28)
 	_augment_tooltip_label.add_theme_color_override("default_color", Color(0.92, 0.86, 1.0, 1.0))
 	_augment_tooltip_label.custom_minimum_size = Vector2(348, 0)
 	_augment_tooltip.add_child(_augment_tooltip_label)
@@ -3025,6 +3160,7 @@ func _augment_title_for(id: String) -> String:
 		"life_steal": return "SHOP_UPG_LIFE_STEAL"
 		"dash": return "SHOP_UPG_DASH"
 		"esquivando": return "SHOP_UPG_ESQUIVANDO"
+		"fenda": return "SHOP_UPG_FENDA"
 		"gold_magnet": return "SHOP_UPG_GOLD_MAGNET"
 		"claudio_druida": return "SHOP_ALLY_CLAUDIO_DRUIDA"
 		"leno": return "SHOP_ALLY_LENO"

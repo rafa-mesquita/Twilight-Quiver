@@ -18,7 +18,7 @@ const TITLE_COLOR := Color(0.95, 0.85, 1, 1)
 const ROW_COLOR := Color(0.85, 0.85, 0.95, 1)
 const VALUE_COLOR := Color(1, 0.85, 0.35, 1)
 const TOTAL_COLOR := Color(1, 0.7, 0.85, 1)
-const FONT_PATH: String = "res://font/ByteBounce.ttf"
+const FONT_PATH: String = "res://font/Silver.ttf"
 
 # Mapeia source_id (interno) → translation key (label exibida ao jogador).
 # IDs sem entrada aqui caem em fallback exibindo o próprio id.
@@ -116,7 +116,7 @@ func _build_ui() -> void:
 
 	_title = Label.new()
 	_title.add_theme_color_override("font_color", TITLE_COLOR)
-	_title.add_theme_font_size_override("font_size", 28)
+	_title.add_theme_font_size_override("font_size", 30)
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	if _font != null:
 		_title.add_theme_font_override("font", _font)
@@ -125,7 +125,7 @@ func _build_ui() -> void:
 
 	_total_label = Label.new()
 	_total_label.add_theme_color_override("font_color", TOTAL_COLOR)
-	_total_label.add_theme_font_size_override("font_size", 20)
+	_total_label.add_theme_font_size_override("font_size", 23)
 	_total_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	if _font != null:
 		_total_label.add_theme_font_override("font", _font)
@@ -179,7 +179,7 @@ func _refresh() -> void:
 		var key: String = SOURCE_LABELS.get(sid, "")
 		name_lbl.text = tr(key) if not key.is_empty() else sid
 		name_lbl.add_theme_color_override("font_color", ROW_COLOR)
-		name_lbl.add_theme_font_size_override("font_size", 22)
+		name_lbl.add_theme_font_size_override("font_size", 25)
 		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		if _font != null:
 			name_lbl.add_theme_font_override("font", _font)
@@ -188,7 +188,7 @@ func _refresh() -> void:
 		var val_lbl := Label.new()
 		val_lbl.text = str(int(round(amount)))
 		val_lbl.add_theme_color_override("font_color", VALUE_COLOR)
-		val_lbl.add_theme_font_size_override("font_size", 22)
+		val_lbl.add_theme_font_size_override("font_size", 25)
 		val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		if _font != null:
 			val_lbl.add_theme_font_override("font", _font)

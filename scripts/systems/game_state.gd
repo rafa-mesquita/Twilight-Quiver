@@ -155,9 +155,9 @@ func _ensure_fps_overlay() -> void:
 	_fps_label.add_theme_color_override("font_color", Color(1, 1, 0.4, 1))
 	_fps_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 	_fps_label.add_theme_constant_override("outline_size", 4)
-	_fps_label.add_theme_font_size_override("font_size", 22)
+	_fps_label.add_theme_font_size_override("font_size", 25)
 	# Carrega fonte do projeto se disponível (falha silenciosa em testes).
-	var fnt: FontFile = load("res://font/ByteBounce.ttf") as FontFile
+	var fnt: FontFile = load("res://font/Silver.ttf") as FontFile
 	if fnt != null:
 		_fps_label.add_theme_font_override("font", fnt)
 	_fps_overlay.add_child(_fps_label)

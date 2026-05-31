@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/dev_panel.gd" id="1_dev"]
-[ext_resource type="FontFile" path="res://font/ByteBounce.ttf" id="2_font"]
+[ext_resource type="FontFile" path="res://font/Silver.ttf" id="2_font"]
 
 [node name="DevPanel" type="CanvasLayer"]
 layer = 100
@@ -34,7 +34,7 @@ theme_override_constants/separation = 4
 [node name="EnemyHeader" type="Button" parent="Content/Scroll/VBox/EnemySection"]
 custom_minimum_size = Vector2(0, 40)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "[+] Spawn enemy"
 alignment = 0
 
@@ -45,62 +45,62 @@ theme_override_constants/separation = 4
 [node name="MonkeyBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Monkey"
 
 [node name="MageBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Mage"
 
 [node name="SummonerBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Summoner Mage"
 
 [node name="InsectBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Insect"
 
 [node name="StoneCubeBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Stone Cube"
 
 [node name="FireMageBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Fire Mage"
 
 [node name="IceMageBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Ice Mage"
 
 [node name="ElectricMageBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Electric Mage"
 
 [node name="DarkBallBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Dark Ball"
 
 [node name="Burst10MonkeyBtn" type="Button" parent="Content/Scroll/VBox/EnemySection/EnemyContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_colors/font_color = Color(1, 0.7, 0.3, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Spawn 10 Monkeys (3 spawns)"
 
 [node name="UpgPadraoSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
@@ -110,7 +110,7 @@ theme_override_constants/separation = 4
 custom_minimum_size = Vector2(0, 40)
 theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "[+] Upgrades padrao"
 alignment = 0
 
@@ -125,7 +125,7 @@ theme_override_constants/separation = 2
 custom_minimum_size = Vector2(0, 34)
 theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "[+] Arco / Ataque"
 alignment = 0
 
@@ -136,61 +136,61 @@ theme_override_constants/separation = 2
 [node name="UpgDamageBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "+1 Dano"
 
 [node name="UpgAtkSpeedBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "+1 Atk Speed"
 
 [node name="UpgPerfBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "+1 Perfuracao"
 
 [node name="UpgMultiArrowBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "+1 Multi Arrow"
 
 [node name="UpgDoubleArrowsBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "+1 Flechas Duplas"
 
 [node name="UpgRicochetBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "+1 Flecha Ricochete"
 
 [node name="UpgGravitonBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "+1 Graviton"
 
 [node name="UpgBoomerangBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "+1 Boomerang Veloz"
 
 [node name="UpgCriticalChanceBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "+1 Flechas Criticas"
 
 [node name="UpgTigerClawsBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/ArcoSection/ArcoContent"]
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "+1 Garras de Tigre"
 
 [node name="VidaSection" type="VBoxContainer" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent"]
@@ -200,7 +200,7 @@ theme_override_constants/separation = 2
 custom_minimum_size = Vector2(0, 34)
 theme_override_colors/font_color = Color(1, 0.55, 0.55, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "[+] Vida / HP"
 alignment = 0
 
@@ -211,19 +211,19 @@ theme_override_constants/separation = 2
 [node name="UpgHpBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/VidaSection/VidaContent"]
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "+1 HP"
 
 [node name="UpgArmorBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/VidaSection/VidaContent"]
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "+1 Armadura"
 
 [node name="UpgLifeStealBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/VidaSection/VidaContent"]
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "+1 Mestre da Cura"
 
 [node name="MovSection" type="VBoxContainer" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent"]
@@ -233,7 +233,7 @@ theme_override_constants/separation = 2
 custom_minimum_size = Vector2(0, 34)
 theme_override_colors/font_color = Color(0.6, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "[+] Movimentacao"
 alignment = 0
 
@@ -244,26 +244,32 @@ theme_override_constants/separation = 2
 [node name="UpgMoveSpeedBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/MovSection/MovContent"]
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "+1 Move Speed"
 
 [node name="UpgGoldMagnetBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/MovSection/MovContent"]
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "+1 Chuva de Coins"
 
 [node name="UpgDashBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/MovSection/MovContent"]
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "+1 Deslizando"
 
 [node name="UpgEsquivandoBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/MovSection/MovContent"]
 custom_minimum_size = Vector2(0, 34)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "+1 Esquivando"
+
+[node name="UpgFendaBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/MovSection/MovContent"]
+custom_minimum_size = Vector2(0, 34)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "+1 Fenda"
 
 [node name="UpgElementaisSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
 theme_override_constants/separation = 4
@@ -272,7 +278,7 @@ theme_override_constants/separation = 4
 custom_minimum_size = Vector2(0, 40)
 theme_override_colors/font_color = Color(0.95, 0.6, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "[+] Upgrades elementais"
 alignment = 0
 
@@ -287,7 +293,7 @@ theme_override_constants/separation = 2
 custom_minimum_size = Vector2(0, 36)
 theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "[+] Poderes (skills ativas)"
 alignment = 0
 
@@ -298,31 +304,31 @@ theme_override_constants/separation = 2
 [node name="UpgFireArrowBtn" type="Button" parent="Content/Scroll/VBox/UpgElementaisSection/UpgElementaisContent/PoderesSubSection/PoderesContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "+1 Flecha de Fogo"
 
 [node name="UpgChainBtn" type="Button" parent="Content/Scroll/VBox/UpgElementaisSection/UpgElementaisContent/PoderesSubSection/PoderesContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "+1 Cadeia de Raios"
 
 [node name="UpgCurseArrowBtn" type="Button" parent="Content/Scroll/VBox/UpgElementaisSection/UpgElementaisContent/PoderesSubSection/PoderesContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "+1 Disparo Profano"
 
 [node name="UpgIceArrowBtn" type="Button" parent="Content/Scroll/VBox/UpgElementaisSection/UpgElementaisContent/PoderesSubSection/PoderesContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "+1 Fica Frio"
 
 [node name="UpgStoneArrowBtn" type="Button" parent="Content/Scroll/VBox/UpgElementaisSection/UpgElementaisContent/PoderesSubSection/PoderesContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "+1 Disparo de Pedra"
 
 [node name="EstruturasSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
@@ -332,7 +338,7 @@ theme_override_constants/separation = 4
 custom_minimum_size = Vector2(0, 40)
 theme_override_colors/font_color = Color(0.7, 1, 0.7, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 text = "[+] Estruturas e pets"
 alignment = 0
 
@@ -343,43 +349,43 @@ theme_override_constants/separation = 4
 [node name="SpawnTowerBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Spawn Torre"
 
 [node name="SpawnClaudioDruidaBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Spawn Claudio Druida"
 
 [node name="UpgLenoBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "+1 Leno"
 
 [node name="UpgCapivaraBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "+1 Capivara Joe"
 
 [node name="UpgTingBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "+1 Mecânico Ting"
 
 [node name="UpgMiniMagoBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "+1 Mini Mago"
 
 [node name="UpgArbustoBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "+1 Pai do verde e verde"
 
 [node name="Sep" type="HSeparator" parent="Content/Scroll/VBox"]
@@ -387,7 +393,7 @@ text = "+1 Pai do verde e verde"
 [node name="MenuBtn" type="Button" parent="Content/Scroll/VBox"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Back to Menu"
 
 [node name="MainToggle" type="Button" parent="."]
@@ -404,7 +410,7 @@ grow_horizontal = 0
 grow_vertical = 0
 theme_override_colors/font_color = Color(1, 0.6, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "DEV MODE ▲"
 
 [node name="WaveBar" type="PanelContainer" parent="."]
@@ -425,28 +431,28 @@ theme_override_constants/separation = 6
 custom_minimum_size = Vector2(0, 40)
 theme_override_colors/font_color = Color(0.7, 1, 0.7, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 25
 text = "▶ Wave 1"
 
 [node name="FinishWaveBtn" type="Button" parent="WaveBar/Row"]
 custom_minimum_size = Vector2(0, 40)
 theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 25
 text = "⏭ Finish Wave"
 
 [node name="Wave7Btn" type="Button" parent="WaveBar/Row"]
 custom_minimum_size = Vector2(0, 40)
 theme_override_colors/font_color = Color(1, 0.55, 0.45, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 25
 text = "Boss W7"
 
 [node name="Wave14Btn" type="Button" parent="WaveBar/Row"]
 custom_minimum_size = Vector2(0, 40)
 theme_override_colors/font_color = Color(1, 0.55, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 25
 text = "Boss W14"
 
 [node name="UtilityBar" type="PanelContainer" parent="."]
@@ -463,58 +469,58 @@ theme_override_constants/separation = 6
 [node name="AddGoldBtn" type="Button" parent="UtilityBar/Row"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "+50 coins"
 
 [node name="OpenShopBtn" type="Button" parent="UtilityBar/Row"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Abrir Shop"
 
 [node name="OpenShopJokerBtn" type="Button" parent="UtilityBar/Row"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Shop c/ Joker"
 
 [node name="ResetHpBtn" type="Button" parent="UtilityBar/Row"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Reset HP"
 
 [node name="ClearBtn" type="Button" parent="UtilityBar/Row"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Clear Enemies"
 
 [node name="PartyModeBtn" type="Button" parent="UtilityBar/Row"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_colors/font_color = Color(1, 0.55, 0.85, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "🎉 Festa: OFF"
 
 [node name="FlushTelemetryBtn" type="Button" parent="UtilityBar/Row"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_colors/font_color = Color(0.65, 0.95, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Flush Telemetria"
 
 [node name="RespawnSameUpgradesBtn" type="Button" parent="UtilityBar/Row"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_colors/font_color = Color(1, 0.7, 0.95, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Renascer (mesmos upgrades)"
 
 [node name="GodmodeBtn" type="Button" parent="UtilityBar/Row"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_colors/font_color = Color(0.6, 1, 0.65, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 23
 text = "Vida Infinita: OFF"

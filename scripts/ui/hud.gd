@@ -481,7 +481,7 @@ func _build_upgrade_chip(id: String, lvl: int) -> Control:
 	var capped: bool = _UPG_CAPS.has(id) and lvl >= int(_UPG_CAPS[id])
 	badge.text = "★ MAX" if capped else "★ %d" % lvl
 	badge.add_theme_font_override("font", _get_upg_badge_font())
-	badge.add_theme_font_size_override("font_size", 14)
+	badge.add_theme_font_size_override("font_size", 16)
 	badge.add_theme_color_override("font_color", _UPG_BADGE_COLOR)
 	badge.add_theme_color_override("font_outline_color", Color.BLACK)
 	badge.add_theme_constant_override("outline_size", 4)
@@ -716,7 +716,9 @@ func _on_perfuracao_counter_changed(counter: int, level: int) -> void:
 		perfurante_counter_icon.visible = false
 		return
 	perfurante_counter_icon.visible = true
-	var is_pierce_imminent: bool = level >= 4 or counter >= 2
+	# L1-L2: cada 3 ataques (threshold 2). L3: cada 2 ataques (threshold 1).
+	var pierce_threshold: int = 1 if level == 3 else 2
+	var is_pierce_imminent: bool = level >= 4 or counter >= pierce_threshold
 	if level >= 4:
 		perfurante_count_label.text = "★"
 	else:
@@ -1068,7 +1070,7 @@ func _play_killcam(source_id: String) -> void:
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		label.add_theme_font_size_override("font_size", 64)
+		label.add_theme_font_size_override("font_size", 69)
 		label.add_theme_color_override("font_color", Color(1, 0.3, 0.3, 1))
 		label.add_theme_color_override("font_outline_color", Color.BLACK)
 		label.add_theme_constant_override("outline_size", 10)
@@ -1342,10 +1344,10 @@ func _build_or_get_replay_button() -> Button:
 	btn.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4, 1.0))
 	btn.add_theme_color_override("font_outline_color", Color.BLACK)
 	btn.add_theme_constant_override("outline_size", 4)
-	var font: Font = load("res://font/ByteBounce.ttf") as Font
+	var font: Font = load("res://font/Silver.ttf") as Font
 	if font != null:
 		btn.add_theme_font_override("font", font)
-	btn.add_theme_font_size_override("font_size", 32)
+	btn.add_theme_font_size_override("font_size", 35)
 	btn.pressed.connect(_on_replay_death_pressed)
 	death_top_layer.add_child(btn)
 	return btn
@@ -1399,10 +1401,10 @@ func _build_or_get_dmg_breakdown_label() -> Label:
 	lbl.add_theme_color_override("font_color", Color(0.9, 0.85, 1, 1))
 	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 	lbl.add_theme_constant_override("outline_size", 4)
-	var font: Font = load("res://font/ByteBounce.ttf") as Font
+	var font: Font = load("res://font/Silver.ttf") as Font
 	if font != null:
 		lbl.add_theme_font_override("font", font)
-	lbl.add_theme_font_size_override("font_size", 24)
+	lbl.add_theme_font_size_override("font_size", 28)
 	death_top_layer.add_child(lbl)
 	return lbl
 
@@ -1464,7 +1466,7 @@ func _show_dev_send_buttons(wave_num: int) -> void:
 	# Útil pra testar o stack sem poluir o backend com runs de dev.
 	if death_top_layer == null:
 		return
-	var at01: Font = load("res://font/ByteBounce.ttf")
+	var at01: Font = load("res://font/Silver.ttf")
 
 	var tel_btn := Button.new()
 	tel_btn.name = "DevSendTelemetryBtn"
@@ -1474,7 +1476,7 @@ func _show_dev_send_buttons(wave_num: int) -> void:
 	tel_btn.size = Vector2(400, 48)
 	if at01 != null:
 		tel_btn.add_theme_font_override("font", at01)
-	tel_btn.add_theme_font_size_override("font_size", 24)
+	tel_btn.add_theme_font_size_override("font_size", 28)
 	tel_btn.add_theme_color_override("font_color", Color(0.65, 0.95, 1, 1))
 	tel_btn.pressed.connect(func(): _dev_send_telemetry(wave_num, tel_btn))
 	death_top_layer.add_child(tel_btn)
@@ -1487,7 +1489,7 @@ func _show_dev_send_buttons(wave_num: int) -> void:
 	score_btn.size = Vector2(400, 48)
 	if at01 != null:
 		score_btn.add_theme_font_override("font", at01)
-	score_btn.add_theme_font_size_override("font_size", 24)
+	score_btn.add_theme_font_size_override("font_size", 28)
 	score_btn.add_theme_color_override("font_color", Color(1, 0.85, 0.55, 1))
 	score_btn.pressed.connect(func(): _dev_send_score(score_btn))
 	death_top_layer.add_child(score_btn)
@@ -1500,7 +1502,7 @@ func _show_dev_send_buttons(wave_num: int) -> void:
 	respawn_btn.size = Vector2(400, 48)
 	if at01 != null:
 		respawn_btn.add_theme_font_override("font", at01)
-	respawn_btn.add_theme_font_size_override("font_size", 24)
+	respawn_btn.add_theme_font_size_override("font_size", 28)
 	respawn_btn.add_theme_color_override("font_color", Color(1, 0.7, 0.95, 1))
 	respawn_btn.pressed.connect(_dev_respawn_same_upgrades)
 	death_top_layer.add_child(respawn_btn)
@@ -1591,6 +1593,7 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 	var dmg_dealt_by_src: Dictionary = {}
 	var kills_by_src: Dictionary = {}
 	var killed_by: String = ""
+	var elemental_l4: bool = false
 	if p != null:
 		kills = int(p.get("stats_enemies_killed")) if "stats_enemies_killed" in p else 0
 		allies = int(p.get("stats_allies_made")) if "stats_allies_made" in p else 0
@@ -1615,12 +1618,18 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 				kills_by_src[String(k)] = int(raw_k[k])
 		if "stats_killed_by" in p:
 			killed_by = String(p.get("stats_killed_by"))
+		# Chegou ao Lv4 de QUALQUER elemental nesta run? (unlock da skin Skeleton)
+		for lvl_prop in ["fire_arrow_level", "curse_arrow_level", "ice_arrow_level", "stone_arrow_level"]:
+			if lvl_prop in p and int(p.get(lvl_prop)) >= 4:
+				elemental_l4 = true
+				break
 	return {
 		"wave": wave_num,
 		"kills": kills,
 		"allies": allies,
 		"monkeys_cursed": monkeys_cursed,
 		"stun_seconds": int(round(float(p.get("stats_stun_seconds")))) if p != null and "stats_stun_seconds" in p else 0,
+		"active_skills_used": int(p.get("stats_active_skills_used")) if p != null and "stats_active_skills_used" in p else 0,
 		"dmg_dealt": dmg_dealt,
 		"dmg_taken": dmg_taken,
 		"dmg_taken_by_source": dmg_by_src,
@@ -1628,6 +1637,7 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 		"kills_by_source": kills_by_src,
 		"killed_by": killed_by,
 		"bosses_killed": bosses,
+		"elemental_l4_reached": elemental_l4,
 	}
 
 
@@ -1751,7 +1761,7 @@ func _create_pause_menu() -> void:
 	bg.color = Color(0, 0, 0, 0.78)
 	bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	_pause_layer.add_child(bg)
-	var at01: Font = load("res://font/ByteBounce.ttf")
+	var at01: Font = load("res://font/Silver.ttf")
 	var title := Label.new()
 	title.set_anchors_preset(Control.PRESET_CENTER)
 	title.position = Vector2(-600, -260)
@@ -1760,7 +1770,7 @@ func _create_pause_menu() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	if at01 != null:
 		title.add_theme_font_override("font", at01)
-	title.add_theme_font_size_override("font_size", 96)
+	title.add_theme_font_size_override("font_size", 101)
 	title.add_theme_color_override("font_color", Color.WHITE)
 	bg.add_child(title)
 	var continue_btn := Button.new()
@@ -1770,7 +1780,7 @@ func _create_pause_menu() -> void:
 	continue_btn.text = "HUD_PAUSE_CONTINUE"
 	if at01 != null:
 		continue_btn.add_theme_font_override("font", at01)
-	continue_btn.add_theme_font_size_override("font_size", 48)
+	continue_btn.add_theme_font_size_override("font_size", 52)
 	continue_btn.pressed.connect(_close_pause)
 	bg.add_child(continue_btn)
 	var settings_btn := Button.new()
@@ -1780,7 +1790,7 @@ func _create_pause_menu() -> void:
 	settings_btn.text = "HUD_PAUSE_SETTINGS"
 	if at01 != null:
 		settings_btn.add_theme_font_override("font", at01)
-	settings_btn.add_theme_font_size_override("font_size", 36)
+	settings_btn.add_theme_font_size_override("font_size", 39)
 	settings_btn.pressed.connect(_open_settings_overlay)
 	bg.add_child(settings_btn)
 	var menu_btn := Button.new()
@@ -1790,7 +1800,7 @@ func _create_pause_menu() -> void:
 	menu_btn.text = "HUD_PAUSE_MENU"
 	if at01 != null:
 		menu_btn.add_theme_font_override("font", at01)
-	menu_btn.add_theme_font_size_override("font_size", 36)
+	menu_btn.add_theme_font_size_override("font_size", 39)
 	menu_btn.pressed.connect(_on_menu_pressed)
 	bg.add_child(menu_btn)
 	add_child(_pause_layer)

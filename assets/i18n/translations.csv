@@ -13,25 +13,25 @@ MENU_SUBTITLE,top-down archer roguelike,top-down archer roguelike,roguelike de a
 MENU_START,Start Game,Start Game,Empezar,Commencer
 MENU_PLAYER,Skins,Skins,Skins,Skins
 MENU_LEADERBOARD,Leaderboard,Leaderboard,Clasificación,Classement
-MENU_SETTINGS,Configuracoes,Settings,Ajustes,Paramètres
+MENU_SETTINGS,Configurações,Settings,Ajustes,Paramètres
 MENU_DEV_MODE,Dev Mode,Dev Mode,Modo Dev,Mode Dev
 MENU_QUIT,Quit,Quit,Salir,Quitter
 NICKNAME_TITLE,BEM-VINDO,WELCOME,BIENVENIDO,BIENVENUE
 NICKNAME_SUBTITLE,Qual o seu nick?,What's your nickname?,¿Cuál es tu nick?,Quel est votre pseudo ?
 NICKNAME_PLACEHOLDER,Digite seu nick,Enter your nickname,Escribe tu nick,Entrez votre pseudo
 NICKNAME_OK,Continuar,Continue,Continuar,Continuer
-SETTINGS_TITLE,CONFIGURACOES,SETTINGS,AJUSTES,PARAMÈTRES
+SETTINGS_TITLE,CONFIGURAÇÕES,SETTINGS,AJUSTES,PARAMÈTRES
 SETTINGS_HEADER_DISPLAY,DISPLAY,DISPLAY,PANTALLA,AFFICHAGE
-SETTINGS_HEADER_AUDIO,AUDIO,AUDIO,AUDIO,AUDIO
-SETTINGS_HEADER_VIDEO,VIDEO,VIDEO,VIDEO,VIDÉO
+SETTINGS_HEADER_AUDIO,ÁUDIO,AUDIO,AUDIO,AUDIO
+SETTINGS_HEADER_VIDEO,VÍDEO,VIDEO,VIDEO,VIDÉO
 SETTINGS_HEADER_LOCALE,IDIOMA,LANGUAGE,IDIOMA,LANGUE
 SETTINGS_DISPLAY_MODE,Modo de janela,Window mode,Modo de ventana,Mode fenêtre
-SETTINGS_RESOLUTION,Resolucao,Resolution,Resolución,Résolution
+SETTINGS_RESOLUTION,Resolução,Resolution,Resolución,Résolution
 SETTINGS_AUDIO_MASTER,Mestre,Master,Principal,Principal
-SETTINGS_AUDIO_MUSIC,Musica,Music,Música,Musique
+SETTINGS_AUDIO_MUSIC,Música,Music,Música,Musique
 SETTINGS_AUDIO_SFX,Efeitos,SFX,Efectos,Effets
 SETTINGS_VSYNC,VSync,VSync,VSync,VSync
-SETTINGS_FPS_CAP,FPS maximo,Max FPS,FPS máximo,FPS max
+SETTINGS_FPS_CAP,FPS máximo,Max FPS,FPS máximo,FPS max
 SETTINGS_SHOW_FPS,Mostrar FPS,Show FPS,Mostrar FPS,Afficher FPS
 SETTINGS_LOCALE,Idioma,Language,Idioma,Langue
 SETTINGS_DISPLAY_MODE_WINDOWED,Janela,Windowed,Ventana,Fenêtré
@@ -39,7 +39,7 @@ SETTINGS_DISPLAY_MODE_BORDERLESS,Tela cheia em janela,Borderless,Pantalla comple
 SETTINGS_DISPLAY_MODE_FULLSCREEN,Tela cheia,Fullscreen,Pantalla completa,Plein écran
 SETTINGS_FPS_UNLIMITED,Sem limite,Unlimited,Sin límite,Illimité
 LEADERBOARD_TITLE,LEADERBOARD,LEADERBOARD,CLASIFICACIÓN,CLASSEMENT
-LEADERBOARD_FILTER_VERSION,Versao,Version,Versión,Version
+LEADERBOARD_FILTER_VERSION,Versão,Version,Versión,Version
 LEADERBOARD_FILTER_ALL,Todas,All,Todas,Tous
 LEADERBOARD_COL_RANK,#,#,#,#
 LEADERBOARD_COL_NICK,Nick,Nick,Nick,Pseudo
@@ -48,12 +48,12 @@ LEADERBOARD_COL_WAVE,Wave,Raid,Raid,Raid
 LEADERBOARD_COL_TIME,Tempo,Time,Tiempo,Temps
 LEADERBOARD_COL_KILLS,Kills,Kills,Bajas,Éliminations
 LEADERBOARD_COL_DAMAGE,Dano,Damage,Daño,Dégâts
-LEADERBOARD_COL_VERSION,Versao,Version,Versión,Version
-LEADERBOARD_NO_SCORES,Nenhum score nessa versao.,No scores for this version.,Sin puntuaciones para esta versión.,Aucun score pour cette version.
+LEADERBOARD_COL_VERSION,Versão,Version,Versión,Version
+LEADERBOARD_NO_SCORES,Nenhum score nessa versão.,No scores for this version.,Sin puntuaciones para esta versión.,Aucun score pour cette version.
 LEADERBOARD_ERROR,Erro: %s,Error: %s,Error: %s,Erreur : %s
 PLAYER_TITLE,PLAYER,PLAYER,PERSONAJE,PERSONNAGE
 PLAYER_PROGRESS_HEADER,PROGRESSO,PROGRESS,PROGRESO,PROGRÈS
-PLAYER_EMPTY,"Nenhuma skin disponivel.
+PLAYER_EMPTY,"Nenhuma skin disponível.
 Drop PNGs em assets/player/<slot>/ pra criar variantes.","No skins available.
 Drop PNGs in assets/player/<slot>/ to create variants.","Sin skins disponibles.
 Suelta PNGs en assets/player/<slot>/ para crear variantes.","Aucune apparence disponible.
@@ -67,7 +67,7 @@ PLAYER_SLOT_QUIVER,Aljava,Quiver,Aljaba,Carquois
 PLAYER_SLOT_HAIR,Cabelo,Hair,Cabello,Cheveux
 PLAYER_SLOT_BOW,Arco,Bow,Arco,Arc
 PLAYER_SLOT_KITS,Kits,Kits,Kits,Kits
-PLAYER_STAT_MAX_WAVE,Wave maxima,Max raid,Raid máximo,Raid max
+PLAYER_STAT_MAX_WAVE,Wave máxima,Max raid,Raid máximo,Raid max
 PLAYER_STAT_KILLS,Inimigos mortos,Enemies killed,Enemigos eliminados,Ennemis tués
 PLAYER_STAT_DAMAGE,Dano causado,Damage dealt,Daño causado,Dégâts infligés
 PLAYER_STAT_RUNS,Runs,Runs,Partidas,Parties
@@ -116,7 +116,7 @@ HUD_DEATH_BY_MAGE,Morto pelo tiro do mago,Killed by the mage's shot,Muerto por e
 HUD_DEATH_BY_SUMMONER_MAGE,Morto pelo tiro do mago invocador,Killed by the summoner mage's shot,Muerto por el disparo del mago invocador,Tué par le tir du mage invocateur
 HUD_DEATH_BY_FIRE_MAGE,Morto pelo tiro do mago de fogo,Killed by the fire mage's shot,Muerto por el disparo del mago de fuego,Tué par le tir du mage de feu
 HUD_DEATH_BY_ICE_MAGE,Morto pelo tiro do mago de gelo,Killed by the ice mage's shot,Muerto por el disparo del mago de hielo,Tué par le tir du mage de glace
-HUD_DEATH_BY_ELECTRIC_MAGE,Morto pelo raio do mago eletrico,Killed by the electric mage's lightning,Muerto por el rayo del mago eléctrico,Tué par l'éclair du mage électrique
+HUD_DEATH_BY_ELECTRIC_MAGE,Morto pelo raio do mago elétrico,Killed by the electric mage's lightning,Muerto por el rayo del mago eléctrico,Tué par l'éclair du mage électrique
 HUD_DEATH_BY_MAGE_MONKEY,Morto pelo tiro do gorila mago,Killed by the mage gorilla's shot,Muerto por el disparo del gorila mago,Tué par le tir du gorille mage
 HUD_DEATH_BY_MAGE_MONKEY_BEAM,Morto pelo raio laser do gorila mago,Killed by the mage gorilla's laser beam,Muerto por el rayo láser del gorila mago,Tué par le rayon laser du gorille mage
 HUD_DEATH_BY_DUSKROSE,Morto pela Duskrose,Killed by Duskrose,Muerto por Duskrose,Tué par Duskrose
@@ -151,38 +151,40 @@ Alliés créés : %d
 Dégâts infligés : %d
 Dégâts subis : %d"
 HUD_UNLOCK_TITLE,SKIN DESBLOQUEADA!,SKIN UNLOCKED!,¡SKIN DESBLOQUEADA!,APPARENCE DÉBLOQUÉE !
-RELEASE_NOTES_TITLE,NOVA VERSAO,NEW VERSION,NUEVA VERSION,NOUVELLE VERSION
+RELEASE_NOTES_TITLE,NOVA VERSÃO,NEW VERSION,NUEVA VERSION,NOUVELLE VERSION
 RELEASE_NOTES_DISMISS,Entendi,Got it,Entendido,Compris
 HUD_TOWER_ATTACKED,Torre sob ataque,Tower under attack,Torre bajo ataque,Tour attaquée
 HUD_PAUSE_TITLE,PAUSADO,PAUSED,PAUSADO,EN PAUSE
 HUD_PAUSE_CONTINUE,Continuar,Continue,Continuar,Continuer
-HUD_PAUSE_SETTINGS,Configuracoes,Settings,Ajustes,Paramètres
+HUD_PAUSE_SETTINGS,Configurações,Settings,Ajustes,Paramètres
 HUD_PAUSE_MENU,Voltar ao Menu,Back to Menu,Volver al menú,Retour au menu
-SHOP_NEXT_WAVE,Proxima Wave,Next Raid,Siguiente Raid,Raid suivant
-SHOP_NEXT_WAVE_FMT,Proxima Wave: %d,Next Raid: %d,Siguiente Raid: %d,Raid suivant : %d
+SHOP_NEXT_WAVE,Próxima Wave,Next Raid,Siguiente Raid,Raid suivant
+SHOP_NEXT_WAVE_FMT,Próxima Wave: %d,Next Raid: %d,Siguiente Raid: %d,Raid suivant : %d
 SHOP_GOLD_LABEL,%d coins,%d coins,%d monedas,%d pièces
 SHOP_HEADER_STRUCTURES,ESTRUTURAS,STRUCTURES,ESTRUCTURAS,STRUCTURES
 SHOP_HEADER_STATUS,STATUS,STATUS,ESTADO,STATS
 SHOP_HEADER_ALLIES,ALIADOS,ALLIES,ALIADOS,ALLIÉS
 SHOP_HEADER_UPGRADES,UPGRADES,UPGRADES,MEJORAS,AMÉLIORATIONS
-SHOP_UPG_CAT_ELEMENTAL,Elemental · escolha 1,Elemental · pick 1,Elemental · elige 1,Élémentaire · choisissez 1
-SHOP_UPG_CAT_ARROW_MOD,Tipo de flecha · escolha 1,Arrow type · pick 1,Tipo de flecha · elige 1,Type de flèche · choisissez 1
-SHOP_UPG_CAT_ARROW_VOLLEY,Salva de flechas · escolha 1,Arrow volley · pick 1,Salva de flechas · elige 1,Volée de flèches · choisissez 1
+SHOP_UPG_CAT_ELEMENTAL,Elemental,Elemental,Elemental,Élémentaire
+SHOP_UPG_CAT_ARROW_MOD,Tipo de flecha,Arrow type,Tipo de flecha,Type de flèche
+SHOP_UPG_CAT_ARROW_VOLLEY,Salva de flechas,Arrow volley,Salva de flechas,Volée de flèches
+SHOP_UPG_CAT_MOBILITY,Mobilidade,Mobility,Movilidad,Mobilité
+SHOP_UPG_CAT_HINT,Só é possível escolher 1 upgrade da mesma categoria (%s) por run,You can only pick 1 upgrade from the same category (%s) per run,Solo puedes elegir 1 mejora de la misma categoría (%s) por partida,Vous ne pouvez choisir qu'une amélioration de la même catégorie (%s) par partie
 SHOP_STAT_HP,Vida,HP,Vida,PV
 SHOP_STAT_DAMAGE,Dano,Damage,Daño,Dégâts
 SHOP_STAT_MOVE_SPEED,Vel. Mov.,Move,Vel. Mov.,Mvt.
 SHOP_STAT_ATTACK_SPEED,Vel. Atk.,Atk Speed,Vel. Atk.,Vit. Atq.
 SHOP_STAT_ARMOR,Armadura,Armor,Armadura,Armure
-SHOP_BONUS_PLUS_ONE,BONUS +1!,BONUS +1!,¡BONUS +1!,BONUS +1 !
-SHOP_JOKER_NAME,Ultimo Desejo,Last Wish,Último Deseo,Dernier Souhait
-SHOP_JOKER_TOOLTIP_HEADER,Ultimo Desejo,Last Wish,Último Deseo,Dernier Souhait
-SHOP_JOKER_TOOLTIP_BODY,"Sobe +1 nivel em qualquer status, pet ou upgrade que voce ja tenha.","Levels up +1 any status, pet or upgrade you already own.","Sube +1 nivel en cualquier estado, mascota o mejora que ya tengas.","Augmente de +1 niveau n'importe quel statut, allié ou amélioration que vous possédez déjà."
-SHOP_JOKER_TOOLTIP_RARE,Carta rara · uso unico por run,Rare card · one use per run,Carta rara · un solo uso por partida,Carte rare · un seul usage par partie
-SHOP_JOKER_MODAL_TITLE,Ultimo Desejo — escolha o que upar,Last Wish — pick what to level up,Último Deseo — elige qué subir,Dernier Souhait — choisissez quoi améliorer
+SHOP_BONUS_PLUS_ONE,BÔNUS +1!,BONUS +1!,¡BONUS +1!,BONUS +1 !
+SHOP_JOKER_NAME,Último Desejo,Last Wish,Último Deseo,Dernier Souhait
+SHOP_JOKER_TOOLTIP_HEADER,Último Desejo,Last Wish,Último Deseo,Dernier Souhait
+SHOP_JOKER_TOOLTIP_BODY,"Sobe +1 nível em qualquer status, pet ou upgrade que você já tenha.","Levels up +1 any status, pet or upgrade you already own.","Sube +1 nivel en cualquier estado, mascota o mejora que ya tengas.","Augmente de +1 niveau n'importe quel statut, allié ou amélioration que vous possédez déjà."
+SHOP_JOKER_TOOLTIP_RARE,Carta rara · uso único por run,Rare card · one use per run,Carta rara · un solo uso por partida,Carte rare · un seul usage par partie
+SHOP_JOKER_MODAL_TITLE,Último Desejo — escolha o que upar,Last Wish — pick what to level up,Último Deseo — elige qué subir,Dernier Souhait — choisissez quoi améliorer
 SHOP_JOKER_MODAL_SECTION_STATUS,STATUS,STATUS,ESTADO,STATS
 SHOP_JOKER_MODAL_SECTION_PETS,ALIADOS,ALLIES,ALIADOS,ALLIÉS
 SHOP_JOKER_MODAL_SECTION_UPGRADES,UPGRADES,UPGRADES,MEJORAS,AMÉLIORATIONS
-SHOP_JOKER_MODAL_EMPTY,Nada upgradavel disponivel,Nothing upgradable available,Nada mejorable disponible,Rien à améliorer
+SHOP_JOKER_MODAL_EMPTY,Nada upgradável disponível,Nothing upgradable available,Nada mejorable disponible,Rien à améliorer
 SHOP_PLACEMENT_HINT,Escolha um dos 5 pontos para posicionar  -  Aperte Z para voltar,Pick one of the 5 spots to place  -  Press Z to go back,Elige uno de los 5 puntos para colocar  -  Pulsa Z para volver,Choisissez un des 5 emplacements  -  Appuyez sur Z pour revenir
 SHOP_COMING_SOON,Em breve,Coming soon,Próximamente,Bientôt
 SHOP_BLOCKED,Bloqueado,Blocked,Bloqueado,Bloqué
@@ -191,7 +193,7 @@ no round do boss","No structures
 on boss round","Sin estructuras
 en la ronda del jefe","Pas de structures
 au tour du boss"
-SHOP_FREE_PET,Pet gratis!,Free pet!,¡Mascota gratis!,Animal gratuit !
+SHOP_FREE_PET,Pet grátis!,Free pet!,¡Mascota gratis!,Animal gratuit !
 SHOP_FREE_PET_DESC,"Recebido nesta
 wave","Received this
 raid","Recibido en este
@@ -199,6 +201,7 @@ raid","Reçu dans ce
 raid"
 SHOP_MAX_REACHED,Max (4/4) atingido,Max (4/4) reached,Máx (4/4) alcanzado,Max (4/4) atteint
 SHOP_PET_LIMIT_REACHED,Limite de 2 pets atingido — venda um pra trocar,Pet limit (2) reached — sell one to swap,Límite de 2 pets — vende uno para cambiar,Limite de 2 pets — vendez-en un pour changer
+SHOP_VER_MAIS,+ ver mais,+ see more,+ ver más,+ voir plus
 SHOP_SELL_PET_TITLE,Vender %s?,Sell %s?,¿Vender %s?,Vendre %s ?
 SHOP_SELL_PET_BODY,Você vai receber %d moedas (metade do total pago: %d).,You'll receive %d coins (half of total paid: %d).,Recibirás %d monedas (mitad del total pagado: %d).,Vous recevrez %d pièces (moitié du total payé : %d).
 SHOP_SELL_PET_CONFIRM,Vender,Sell,Vender,Vendre
@@ -221,7 +224,7 @@ cercanos. 80% daño.","Tire sur les ennemis
 proches. 80% dégâts."
 SHOP_FIRE_ARROW_NAME,FLECHA DE FOGO,FIRE ARROW,FLECHA DE FUEGO,FLÈCHE DE FEU
 SHOP_FIRE_ARROW_DESC,SUA FLECHA GANHA PODER DE FOGO BLABLABLABLA,YOUR ARROW GAINS FIRE POWER BLABLABLABLA,TU FLECHA GANA PODER DE FUEGO BLABLABLABLA,VOTRE FLÈCHE GAGNE LE POUVOIR DU FEU BLABLABLABLA
-SHOP_HP_TITLE,+ HP MAXIMO,+ MAX HP,+ HP MÁXIMO,+ PV MAX
+SHOP_HP_TITLE,+ HP MÁXIMO,+ MAX HP,+ HP MÁXIMO,+ PV MAX
 SHOP_HP_PLUS_18,+18 HP,+18 HP,+18 HP,+18 PV
 SHOP_HP_PLUS_20,+20 HP,+20 HP,+20 HP,+20 PV
 SHOP_HP_PLUS_22,+22 HP,+22 HP,+22 HP,+22 PV
@@ -234,599 +237,149 @@ SHOP_ARMOR_18,(-18% dano e slow),(-18% dmg & slow),(-18% daño y slow),(-18% dé
 SHOP_ARMOR_22,(-22% dano e slow),(-22% dmg & slow),(-22% daño y slow),(-22% dégâts & slow)
 SHOP_ARMOR_25,(-25% dano e slow),(-25% dmg & slow),(-25% daño y slow),(-25% dégâts & slow)
 SHOP_ARMOR_3,(-3% dano e slow),(-3% dmg & slow),(-3% daño y slow),(-3% dégâts & slow)
-SHOP_UPG_PERFURACAO,Perfuracao,Piercing,Perforación,Perforation
-SHOP_UPG_MULTI_ARROW,Multiplas Flechas,Multiple Arrows,Flechas Múltiples,Flèches Multiples
+SHOP_UPG_PERFURACAO,Perfuração,Piercing,Perforación,Perforation
+SHOP_UPG_MULTI_ARROW,Múltiplas Flechas,Multiple Arrows,Flechas Múltiples,Flèches Multiples
 SHOP_UPG_DOUBLE_ARROWS,Flechas Duplas,Double Arrows,Flechas Dobles,Flèches Doubles
 SHOP_UPG_CHAIN_LIGHTNING,Cadeia de Raios,Chain Lightning,Cadena de Rayos,Chaîne d'Éclairs
 SHOP_UPG_LIFE_STEAL,Mestre da Cura,Heal Master,Maestro de Cura,Maître Soigneur
 SHOP_UPG_GOLD_MAGNET,Chuva de Coins,Coin Rain,Lluvia de Monedas,Pluie de Pièces
 SHOP_UPG_DASH,Deslizando,Sliding,Deslizar,Esquive
 SHOP_UPG_ESQUIVANDO,Esquivando,Dodging,Esquivando,Esquivant
+SHOP_UPG_FENDA,Fenda Crepuscular,Twilight Rift,Grieta Crepuscular,Faille Crépusculaire
 SHOP_UPG_RICOCHET,Flecha Ricochete,Ricochet Arrow,Flecha Rebotadora,Flèche Ricochet
-SHOP_UPG_GRAVITON,Graviton,Graviton,Gravitón,Graviton
+SHOP_UPG_GRAVITON,Gráviton,Graviton,Gravitón,Graviton
 SHOP_UPG_FIRE_ARROW,Flecha de Fogo,Fire Arrow,Flecha de Fuego,Flèche de Feu
 SHOP_UPG_CURSE_ARROW,Disparo Profano,Profane Shot,Disparo Profano,Tir Profane
 SHOP_UPG_ICE_ARROW,Fica Frio,Stay Frosty,Mantente Fresco,Reste Calme
 SHOP_UPG_STONE_ARROW,Disparo de Pedra,Stone Shot,Disparo de Piedra,Tir de Pierre
 SHOP_UPG_BOOMERANG,Boomerang Veloz,Swift Boomerang,Bumerán Veloz,Boomerang Rapide
-SHOP_UPG_CRITICAL_CHANCE,Flechas Criticas,Critical Arrows,Flechas Críticas,Flèches Critiques
-SHOP_CRITICAL_CHANCE_DESC_1,"30% chance critico
-+50% dano + knockback","30% crit chance
-+50% damage + knockback","30% chance crítica
-+50% daño + knockback","30% chance critique
-+50% dégâts + recul"
-SHOP_CRITICAL_CHANCE_DESC_2,"50% chance critico
-+50% dano","50% crit chance
-+50% damage","50% chance crítica
-+50% daño","50% chance critique
-+50% dégâts"
-SHOP_CRITICAL_CHANCE_DESC_3,"70% chance critico
-+60% dano","70% crit chance
-+60% damage","70% chance crítica
-+60% daño","70% chance critique
-+60% dégâts"
-SHOP_CRITICAL_CHANCE_DESC_4,"100% critico
-+65% dano","100% crit
-+65% damage","100% crítica
-+65% daño","100% critique
-+65% dégâts"
+SHOP_UPG_CRITICAL_CHANCE,Flechas Críticas,Critical Arrows,Flechas Críticas,Flèches Critiques
+SHOP_CRITICAL_CHANCE_DESC_1,30% de chance de crítico em todas as fontes (crítico causa +50% de dano e mais knockback),30% crit chance from all sources (crits deal +50% damage and extra knockback),30% de probabilidad de crítico de todas las fuentes (los críticos causan +50% de daño y más empuje),30% de chance de critique de toutes les sources (les critiques infligent +50% de dégâts et plus de recul)
+SHOP_CRITICAL_CHANCE_DESC_2,50% de chance de crítico (+50% de dano no crítico),50% crit chance (+50% crit damage),50% de probabilidad de crítico (+50% de daño crítico),50% de chance de critique (+50% de dégâts critiques)
+SHOP_CRITICAL_CHANCE_DESC_3,70% de chance de crítico (+60% de dano no crítico),70% crit chance (+60% crit damage),70% de probabilidad de crítico (+60% de daño crítico),70% de chance de critique (+60% de dégâts critiques)
+SHOP_CRITICAL_CHANCE_DESC_4,100% de chance de crítico (+65% de dano no crítico),100% crit chance (+65% crit damage),100% de probabilidad de crítico (+65% de daño crítico),100% de chance de critique (+65% de dégâts critiques)
 DMG_PANEL_BOOMERANG,Boomerang Veloz,Swift Boomerang,Bumerán Veloz,Boomerang Rapide
 DMG_PANEL_TIGER_CLAWS,Garras de Tigre,Tiger Claws,Garras de Tigre,Griffes de Tigre
+DMG_PANEL_FENDA,Fenda Crepuscular,Twilight Rift,Grieta Crepuscular,Faille Crépusculaire
 DMG_PANEL_FROSTWISP,Brisa Gelada,Frostwisp,Frostwisp,Frostwisp
 DMG_PANEL_DARK_BALL,Dark Ball,Dark Ball,Dark Ball,Dark Ball
 DMG_PANEL_DARK_BALL_BURN,Veneno da Dark Ball,Dark Ball Venom,Veneno de Dark Ball,Venin de Dark Ball
 DMG_PANEL_DARK_BALL_VENOM,Fumaça da Dark Ball,Dark Ball Smoke,Niebla de Dark Ball,Brume de Dark Ball
 HUD_DEATH_DMG_BREAKDOWN_TITLE,Dano por fonte:,Damage by source:,Daño por fuente:,Dégâts par source :
-SHOP_BOOMERANG_DESC_1,"Cada 5s lança no
-inimigo mais próximo
-15 dano, vai e volta","Every 5s throws at
-nearest enemy
-15 dmg, returns","Cada 5s lanza al
-enemigo más cercano
-15 daño, va y vuelve","Toutes les 5s lance vers
-l'ennemi le + proche
-15 dgt, va et revient"
-SHOP_BOOMERANG_DESC_2,"CD 4s
-20 dano","CD 4s
-20 dmg","CD 4s
-20 daño","CD 4s
-20 dgt"
-SHOP_BOOMERANG_DESC_3,"2 bumerangues
-(alvo + oposto)
-25 dano","2 boomerangs
-(target + opposite)
-25 dmg","2 bumeranes
-(objetivo + opuesto)
-25 daño","2 boomerangs
-(cible + opposé)
-25 dgt"
-SHOP_BOOMERANG_DESC_4,"4 bumerangues
-todas direções
-30 dano","4 boomerangs
-all directions
-30 dmg","4 bumeranes
-todas direcciones
-30 daño","4 boomerangs
-toutes directions
-30 dgt"
+SHOP_BOOMERANG_DESC_1,"A cada 5s lança um bumerangue no inimigo mais próximo, causando 15 de dano na ida e na volta","Every 5s throws a boomerang at the nearest enemy, dealing 15 damage going and returning","Cada 5s lanza un bumerán al enemigo más cercano, causando 15 de daño a la ida y a la vuelta","Toutes les 5s lance un boomerang sur l'ennemi le plus proche, infligeant 15 dégâts à l'aller et au retour"
+SHOP_BOOMERANG_DESC_2,CD reduzido para 4s e dano aumentado para 20,CD reduced to 4s and damage raised to 20,CD reducido a 4s y daño aumentado a 20,CD réduit à 4s et dégâts portés à 20
+SHOP_BOOMERANG_DESC_3,+1 bumerangue (total 2) na direção oposta e dano aumentado para 25,+1 boomerang (2 total) in the opposite direction and damage raised to 25,+1 bumerán (2 en total) en dirección opuesta y daño aumentado a 25,+1 boomerang (2 au total) dans la direction opposée et dégâts portés à 25
+SHOP_BOOMERANG_DESC_4,+2 bumerangues (total 4) em todas as direções e dano aumentado para 30,+2 boomerangs (4 total) in all directions and damage raised to 30,+2 bumeranes (4 en total) en todas las direcciones y daño aumentado a 30,+2 boomerangs (4 au total) dans toutes les directions et dégâts portés à 30
 SHOP_UPG_TIGER_CLAWS,Garras de Tigre,Tiger Claws,Garras de Tigre,Griffes de Tigre
-SHOP_TIGER_CLAWS_DESC_1,"CD 7s
-1 alvo aleatorio
-2 arranhadas
-25 dano cada","CD 7s
-1 random target
-2 scratches
-25 dmg each","CD 7s
-1 objetivo aleatorio
-2 arañazos
-25 daño cada","CD 7s
-1 cible aléatoire
-2 griffures
-25 dgt chacune"
-SHOP_TIGER_CLAWS_DESC_2,"2 alvos aleatorios
-27 dano por arranhada","2 random targets
-27 dmg per scratch","2 objetivos aleatorios
-27 daño por arañazo","2 cibles aléatoires
-27 dgt par griffure"
-SHOP_TIGER_CLAWS_DESC_3,"CD 5.5s
-2 alvos
-35 dano por arranhada","CD 5.5s
-2 targets
-35 dmg per scratch","CD 5.5s
-2 objetivos
-35 daño por arañazo","CD 5.5s
-2 cibles
-35 dgt par griffure"
-SHOP_TIGER_CLAWS_DESC_4,"3 alvos aleatorios
-35 dano por arranhada","3 random targets
-35 dmg per scratch","3 objetivos aleatorios
-35 daño por arañazo","3 cibles aléatoires
-35 dgt par griffure"
+SHOP_TIGER_CLAWS_DESC_1,Garras arranham um alvo aleatório duas vezes (25 de dano cada) a cada 7s,Claws scratch a random target twice (25 damage each) every 7s,Las garras arañan a un objetivo aleatorio dos veces (25 de daño cada una) cada 7s,Les griffes lacèrent une cible aléatoire deux fois (25 dégâts chacune) toutes les 7s
+SHOP_TIGER_CLAWS_DESC_2,2 alvos aleatórios e 27 de dano por arranhada,2 random targets and 27 damage per scratch,2 objetivos aleatorios y 27 de daño por arañazo,2 cibles aléatoires et 27 dégâts par lacération
+SHOP_TIGER_CLAWS_DESC_3,"3 alvos, 40 de dano por arranhada e agora a cada 4,8s","3 targets, 40 damage per scratch and now every 4.8s","3 objetivos, 40 de daño por arañazo y ahora cada 4,8s","3 cibles, 40 dégâts par lacération et désormais toutes les 4,8s"
+SHOP_TIGER_CLAWS_DESC_4,"4 alvos aleatórios, 48 de dano por arranhada e a cada 4s","4 random targets, 48 damage per scratch and every 4s","4 objetivos aleatorios, 48 de daño por arañazo y cada 4s","4 cibles aléatoires, 48 dégâts par lacération et toutes les 4s"
 SHOP_ALLY_CLAUDIO_DRUIDA,Claudio o Druida,Claudio the Druid,Claudio el Druida,Claudio le Druide
 SHOP_ALLY_LENO,Amigo Leno,Friend Leno,Amigo Leno,Ami Leno
 SHOP_ALLY_CAPIVARA,Capivara Joe,Capybara Joe,Capibara Joe,Capybara Joe
 SHOP_ALLY_TING,Mecânico Ting,Ting the Mechanic,Ting el Mecánico,Ting le Mécanicien
 SHOP_ALLY_MINI_MAGO,Mini Mago,Mini Mage,Mini Mago,Mini Mage
 SHOP_ALLY_ARBUSTO,Pai do verde e verde,Father of green and green,Padre del verde y verde,Père du vert et vert
-SHOP_ARBUSTO_DESC_1,"Esconde + invulnerável
-Perde aggro, zero dano
-+12% atk, +5 dmg/flecha
-Mini puxa aggro","Hide + invulnerable
-Loses aggro, zero damage
-+12% atk, +5 dmg/arrow
-Mini pulls aggro","Esconde + invulnerable
-Pierde aggro, cero daño
-+12% atk, +5 daño/flecha
-Mini atrae aggro","Cache + invulnérable
-Perd l'aggro, zéro dégât
-+12% atk, +5 dgt/flèche
-Mini attire l'aggro"
-SHOP_ARBUSTO_DESC_2,"+20% atk speed
-+9 dmg/flecha","+20% atk speed
-+9 dmg/arrow","+20% atk speed
-+9 daño/flecha","+20% vit. atk
-+9 dgt/flèche"
-SHOP_ARBUSTO_DESC_3,"2 minis (150 HP cada)
-Big senta mais rápido
-(10s ao invés de 16s)","2 minis (150 HP each)
-Big sits faster
-(10s instead of 16s)","2 minis (150 HP cada)
-Big se sienta más rápido
-(10s en lugar de 16s)","2 minis (150 PV chacun)
-Big s'assoit plus vite
-(10s au lieu de 16s)"
-SHOP_ARBUSTO_DESC_4,"+30% atk speed
-+14 dmg/flecha
-+5 HP por hit dentro do mato","+30% atk speed
-+14 dmg/arrow
-+5 HP per hit while hidden","+30% atk speed
-+14 daño/flecha
-+5 HP por golpe en el mato","+30% vit. atk
-+14 dgt/flèche
-+5 PV par coup dans le buisson"
-SHOP_MINI_MAGO_DESC_1,Invoca um macaco aliado a cada 8s,Summons an ally monkey every 8s,Invoca un mono aliado cada 8s,Invoque un singe allié toutes les 8s
-SHOP_MINI_MAGO_DESC_2,"Cd 6s, macacos +25% HP/dano/atk speed/vel","Cd 6s, monkeys +25% HP/dmg/atk speed/speed","Cd 6s, monos +25% PV/daño/atk speed/vel","Cd 6s, singes +25% PV/dégâts/vit atk/vit"
-SHOP_MINI_MAGO_DESC_3,"Invoca 2 macacos por cast, mantém buffs","Summons 2 monkeys per cast, keeps buffs","Invoca 2 monos por cast, mantiene buffs","Invoque 2 singes par cast, garde les bonus"
-SHOP_MINI_MAGO_DESC_4,"Invoca 3 macacos por cast, mantém buffs","Summons 3 monkeys per cast, keeps buffs","Invoca 3 monos por cast, mantiene buffs","Invoque 3 singes par cast, garde les bonus"
-SHOP_HP_DESC_1,+18 HP maximo,+18 max HP,+18 HP máximo,+18 PV max
-SHOP_HP_DESC_2,+20 HP maximo,+20 max HP,+20 HP máximo,+20 PV max
-SHOP_HP_DESC_3,+22 HP maximo,+22 max HP,+22 HP máximo,+22 PV max
-SHOP_HP_DESC_4,+25 HP maximo,+25 max HP,+25 HP máximo,+25 PV max
-SHOP_ARMOR_DESC_1,"-12% dano e slow
-sofridos","-12% dmg & slow
-taken","-12% daño y slow
-recibidos","-12% dégâts & slow
-subis"
-SHOP_ARMOR_DESC_2,"-18% dano e slow
-sofridos","-18% dmg & slow
-taken","-18% daño y slow
-recibidos","-18% dégâts & slow
-subis"
-SHOP_ARMOR_DESC_3,"-22% dano e slow
-sofridos","-22% dmg & slow
-taken","-22% daño y slow
-recibidos","-22% dégâts & slow
-subis"
-SHOP_ARMOR_DESC_4,"-25% dano e slow
-sofridos","-25% dmg & slow
-taken","-25% daño y slow
-recibidos","-25% dégâts & slow
-subis"
-SHOP_ARMOR_DESC_5,"-3% dano e slow
-por compra","-3% dmg & slow
-per purchase","-3% daño y slow
-por compra","-3% dégâts & slow
-par achat"
-SHOP_DAMAGE_DESC,+24% dano da flecha,+24% arrow damage,+24% daño de flecha,+24% dégâts de flèche
-SHOP_PERFURACAO_DESC_1,"A cada 3 ataques flecha
-atravessa, +30% dano","Every 3 attacks arrow
-pierces, +30% damage","Cada 3 ataques flecha
-perfora, +30% daño","Toutes les 3 attaques
-perfore, +30% dégâts"
-SHOP_PERFURACAO_DESC_2,+60% dano + hitbox maior,+60% damage + bigger hitbox,+60% daño + hitbox mayor,+60% dégâts + hitbox plus grande
-SHOP_PERFURACAO_DESC_3,+90% dano,+90% damage,+90% daño,+90% dégâts
+SHOP_ARBUSTO_DESC_1,"Ganha o Pai do Verde, que corre pelo mapa e para virando um esconderijo. Ao se esconder nele você fica invulnerável, os inimigos perdem o foco (vão atrás do mini verde, 120 HP) e você ganha +12% de velocidade de ataque e +5 de dano por flecha","Gain the Father of Green, who runs across the map and stops to become a hiding spot. Hiding in it makes you invulnerable, enemies lose focus (they chase the little green, 120 HP) and you gain +12% attack speed and +5 damage per arrow","Obtienes al Padre del Verde, que corre por el mapa y se detiene volviéndose un escondite. Al esconderte te vuelves invulnerable, los enemigos pierden el foco (van tras el mini verde, 120 HP) y ganas +12% de velocidad de ataque y +5 de daño por flecha","Obtenez le Père du Vert, qui parcourt la carte et s'arrête en devenant une cachette. En vous y cachant vous devenez invulnérable, les ennemis perdent leur cible (ils poursuivent le petit vert, 120 PV) et vous gagnez +12% de vitesse d'attaque et +5 de dégâts par flèche"
+SHOP_ARBUSTO_DESC_2,O esconderijo passa a dar +20% de velocidade de ataque e +9 de dano por flecha,The hiding spot now gives +20% attack speed and +9 damage per arrow,El escondite ahora da +20% de velocidad de ataque y +9 de daño por flecha,La cachette donne désormais +20% de vitesse d'attaque et +9 de dégâts par flèche
+SHOP_ARBUSTO_DESC_3,Ganha 2 minis verdes (150 HP cada) e o Pai do Verde vira esconderijo com mais frequência,Gain 2 little greens (150 HP each) and the Father of Green becomes a hiding spot more often,Obtienes 2 minis verdes (150 HP cada uno) y el Padre del Verde se vuelve escondite con más frecuencia,Obtenez 2 petits verts (150 PV chacun) et le Père du Vert devient une cachette plus souvent
+SHOP_ARBUSTO_DESC_4,"O esconderijo dá +30% de velocidade de ataque, +14 de dano por flecha e cada acerto enquanto escondido te cura 5 HP","The hiding spot gives +30% attack speed, +14 damage per arrow and each hit while hidden heals you 5 HP","El escondite da +30% de velocidad de ataque, +14 de daño por flecha y cada acierto mientras estás escondido te cura 5 HP","La cachette donne +30% de vitesse d'attaque, +14 de dégâts par flèche et chaque coup porté en étant caché vous soigne de 5 PV"
+SHOP_MINI_MAGO_DESC_1,"Ganha o Mini Mago, que a cada 8s invoca um macaco aliado pra lutar ao seu lado","Gain the Mini Mage, who every 8s summons an ally monkey to fight by your side","Obtienes al Mini Mago, que cada 8s invoca un mono aliado para luchar a tu lado","Obtenez le Mini Mage, qui toutes les 8s invoque un singe allié pour combattre à vos côtés"
+SHOP_MINI_MAGO_DESC_2,"Invoca a cada 6s e os macacos vêm 25% mais fortes (HP, dano, velocidade de ataque e de movimento)","Summons every 6s and monkeys come 25% stronger (HP, damage, attack and movement speed)","Invoca cada 6s y los monos vienen 25% más fuertes (HP, daño, velocidad de ataque y de movimiento)","Invoque toutes les 6s et les singes arrivent 25% plus forts (PV, dégâts, vitesse d'attaque et de déplacement)"
+SHOP_MINI_MAGO_DESC_3,Passa a invocar 2 macacos por vez (mantendo os bônus),Now summons 2 monkeys at a time (keeping the bonuses),Ahora invoca 2 monos a la vez (manteniendo los bonos),Invoque désormais 2 singes à la fois (en gardant les bonus)
+SHOP_MINI_MAGO_DESC_4,Passa a invocar 3 macacos por vez (mantendo os bônus),Now summons 3 monkeys at a time (keeping the bonuses),Ahora invoca 3 monos a la vez (manteniendo los bonos),Invoque désormais 3 singes à la fois (en gardant les bonus)
+SHOP_HP_DESC_1,+18 HP máximo,+18 max HP,+18 HP máximo,+18 PV max
+SHOP_HP_DESC_2,+20 HP máximo,+20 max HP,+20 HP máximo,+20 PV max
+SHOP_HP_DESC_3,+22 HP máximo,+22 max HP,+22 HP máximo,+22 PV max
+SHOP_HP_DESC_4,+25 HP máximo,+25 max HP,+25 HP máximo,+25 PV max
+SHOP_ARMOR_DESC_1,12% de redução do dano e slow sofrido,12% reduction of damage and slow taken,12% de reducción del daño y ralentización recibidos,12% de réduction des dégâts et ralentissement subis
+SHOP_ARMOR_DESC_2,18% de redução do dano e slow sofrido,18% reduction of damage and slow taken,18% de reducción del daño y ralentización recibidos,18% de réduction des dégâts et ralentissement subis
+SHOP_ARMOR_DESC_3,22% de redução do dano e slow sofrido,22% reduction of damage and slow taken,22% de reducción del daño y ralentización recibidos,22% de réduction des dégâts et ralentissement subis
+SHOP_ARMOR_DESC_4,25% de redução do dano e slow sofrido,25% reduction of damage and slow taken,25% de reducción del daño y ralentización recibidos,25% de réduction des dégâts et ralentissement subis
+SHOP_ARMOR_DESC_5,+3% de redução do dano e slow sofrido por compra,+3% damage and slow reduction per purchase,+3% de reducción de daño y ralentización por compra,+3% de réduction des dégâts et ralentissement par achat
+SHOP_DAMAGE_DESC,+24% de dano em todas as fontes,+24% damage from all sources,+24% de daño de todas las fuentes,+24% de dégâts de toutes les sources
+SHOP_PERFURACAO_DESC_1,"A cada 3 ataques, sua flecha atravessa inimigos e objetos e causa +30% de dano no 1º alvo","Every 3 attacks, your arrow pierces enemies and objects and deals +30% damage to the 1st target","Cada 3 ataques, tu flecha perfora enemigos y objetos y causa +30% de daño al 1er objetivo","Toutes les 3 attaques, votre flèche perfore ennemis et objets et inflige +30% de dégâts à la 1re cible"
+SHOP_PERFURACAO_DESC_2,+60% de dano no 1º alvo e hitbox maior,+60% damage to the 1st target and bigger hitbox,+60% de daño al 1er objetivo y hitbox más grande,+60% de dégâts à la 1re cible et hitbox plus grande
+SHOP_PERFURACAO_DESC_3,Agora atravessa a cada 2 ataques e +90% de dano no 1º alvo,Now pierces every 2 attacks and +90% damage to the 1st target,Ahora perfora cada 2 ataques y +90% de daño al 1er objetivo,Perfore désormais toutes les 2 attaques et +90% de dégâts à la 1re cible
 SHOP_PERFURACAO_DESC_4,Todo ataque atravessa,Every attack pierces,Cada ataque perfora,Chaque attaque perfore
-SHOP_ATTACK_SPEED_DESC,"+23% velocidade de
-ataque","+23% attack
-speed","+23% velocidad de
-ataque","+23% vitesse
-d'attaque"
-SHOP_MULTI_ARROW_DESC_1,"3 flechas a ±30°
-(laterais 30% dano)","3 arrows at ±30°
-(sides 30% damage)","3 flechas a ±30°
-(laterales 30% daño)","3 flèches à ±30°
-(côtés 30% dégâts)"
-SHOP_MULTI_ARROW_DESC_2,"Laterais agora a
-65% do dano","Sides now at
-65% damage","Laterales ahora a
-65% del daño","Côtés à
-65% des dégâts"
-SHOP_MULTI_ARROW_DESC_3,"Laterais a 75%
-(continua 3 flechas)","Sides at 75%
-(still 3 arrows)","Laterales a 75%
-(siguen 3 flechas)","Côtés à 75%
-(toujours 3 flèches)"
-SHOP_MULTI_ARROW_DESC_4,"5 flechas a ±15°/±45°
-(extras 85% dano)","5 arrows at ±15°/±45°
-(extras 85% damage)","5 flechas a ±15°/±45°
-(extras 85% daño)","5 flèches à ±15°/±45°
-(extras 85% dégâts)"
-SHOP_DOUBLE_ARROWS_DESC_1,"50% chance flechas duplas
-Secundária dá 70% dano","50% chance double arrows
-Secondary deals 70% damage","50% chance flechas dobles
-Secundaria da 70% daño","50% chance flèches doubles
-Secondaire 70% dégâts"
-SHOP_DOUBLE_ARROWS_DESC_2,"60% chance duplas
-Ambas com dano total","60% chance double
-Both at full damage","60% chance dobles
-Ambas dañan total","60% chance doubles
-Deux dégâts pleins"
-SHOP_DOUBLE_ARROWS_DESC_3,"75% duplas + 45% triplas
-+15% dano se 3 procarem","75% double + 45% triple
-+15% dmg if 3 proc","75% dobles + 45% triples
-+15% daño si 3 disparan","75% doubles + 45% triples
-+15% dgt si 3 sortent"
-SHOP_DOUBLE_ARROWS_DESC_4,"90% duplas, 60% triplas, 5% quíntuplas
-+15%/+30% dano em 3/5","90% double, 60% triple, 5% quintuple
-+15%/+30% dmg on 3/5","90% dobles, 60% triples, 5% quíntuples
-+15%/+30% daño en 3/5","90% doubles, 60% triples, 5% quintuples
-+15%/+30% dgt en 3/5"
-SHOP_CHAIN_LIGHTNING_DESC_1,"30% dano no inimigo
-mais próximo
-(a cada 2 hits)","30% damage to nearest
-enemy
-(every 2 hits)","30% daño al enemigo
-más cercano
-(cada 2 golpes)","30% dégâts à l'ennemi
-le plus proche
-(tous les 2 coups)"
-SHOP_CHAIN_LIGHTNING_DESC_2,"50% dano em 2 inimigos
-+30% chance no 3º
-(todo hit)","50% damage on 2 enemies
-+30% chance on 3rd
-(every hit)","50% daño en 2 enemigos
-+30% chance en el 3º
-(cada golpe)","50% dégâts sur 2 ennemis
-+30% chance sur le 3e
-(chaque coup)"
-SHOP_CHAIN_LIGHTNING_DESC_3,"60% dano em 4 inimigos
-Destrava skill ativável (E)","60% damage on 4 enemies
-Unlocks active skill (E)","60% daño en 4 enemigos
-Desbloquea habilidad activa (E)","60% dégâts sur 4 ennemis
-Débloque compétence active (E)"
-SHOP_CHAIN_LIGHTNING_DESC_4,"100% dano em todos da area
-+20% dano no raio invocado","100% damage on all in area
-+20% damage to invoked bolt","100% daño en todos del área
-+20% daño al rayo invocado","100% dégâts sur tous dans la zone
-+20% dégâts à l'éclair invoqué"
-SHOP_MOVE_SPEED_DESC,"+10% velocidade de
-movimento","+10% movement
-speed","+10% velocidad de
-movimiento","+10% vitesse de
-déplacement"
-SHOP_GOLD_MAGNET_DESC_1,"+5% drop +25%
-duracao das coins","+5% drop +25%
-coin duration","+5% drop +25%
-duración monedas","+5% drop +25%
-durée des pièces"
-SHOP_GOLD_MAGNET_DESC_2,"Coins duram 2x
-+2% drop","Coins last 2x
-+2% drop","Monedas duran 2x
-+2% drop","Pièces durent 2x
-+2% drop"
-SHOP_GOLD_MAGNET_DESC_3,"+2% drop
-pulso da slow","+2% drop
-slow pulse","+2% drop
-pulso ralentizador","+2% drop
-impulsion ralentit"
-SHOP_GOLD_MAGNET_DESC_4,"Puxa coins
-da area","Pulls coins
-from area","Atrae monedas
-del área","Attire les pièces
-de la zone"
-SHOP_DASH_DESC_1,"Espaco = dash
-cd 6.3s","Space = dash
-cd 6.3s","Espacio = dash
-cd 6.3s","Espace = esquive
-cd 6.3s"
-SHOP_DASH_DESC_2,"Rastro de veneno
-cd 5.3s","Poison trail
-cd 5.3s","Estela de veneno
-cd 5.3s","Traînée de poison
-cd 5.3s"
-SHOP_DASH_DESC_3,"Auto-attack
-cd 4.8s","Auto-attack
-cd 4.8s","Auto-ataque
-cd 4.8s","Auto-attaque
-cd 4.8s"
-SHOP_DASH_DESC_4,"+1 flecha
-cd 4.3s","+1 arrow
-cd 4.3s","+1 flecha
-cd 4.3s","+1 flèche
-cd 4.3s"
-SHOP_ESQUIVANDO_DESC_1,"1a flecha do hit
-+5% atk/move 2s
-max 3 stacks
-2% esquiva","1st arrow hit
-+5% atk/move 2s
-max 3 stacks
-2% dodge","1ra flecha hit
-+5% atk/mov 2s
-máx 3 stacks
-2% esquiva","1ère flèche hit
-+5% atk/mov 2s
-max 3 stacks
-2% esquive"
-SHOP_ESQUIVANDO_DESC_2,"+6% por stack
-moeda = stack
-Espaço: +30% move
-3s, 0.3s iframes, cd 15s","+6% per stack
-coin = stack
-Space: +30% move
-3s, 0.3s iframes, cd 15s","+6% por stack
-moneda = stack
-Espacio: +30% mov
-3s, 0.3s iframes, cd 15s","+6% par stack
-pièce = stack
-Espace: +30% mov
-3s, 0.3s iframes, cd 15s"
-SHOP_ESQUIVANDO_DESC_3,"+9% por stack
-max 4 stacks
-5% esquiva
-cd habilidade 12.5s","+9% per stack
-max 4 stacks
-5% dodge
-ability cd 12.5s","+9% por stack
-máx 4 stacks
-5% esquiva
-cd hab. 12.5s","+9% par stack
-max 4 stacks
-5% esquive
-cd capa 12.5s"
-SHOP_ESQUIVANDO_DESC_4,"+11% por stack
-max 5 stacks
-todo hit stacka
-cd habilidade 10s","+11% per stack
-max 5 stacks
-every hit stacks
-ability cd 10s","+11% por stack
-máx 5 stacks
-todo hit stack
-cd hab. 10s","+11% par stack
-max 5 stacks
-chaque hit stack
-cd capa 10s"
-SHOP_LIFE_STEAL_DESC_1,"12% drop coracao
-cura 20% HP","12% heart drop
-heals 20% HP","12% drop corazón
-cura 20% HP","12% drop cœur
-soigne 20% PV"
-SHOP_LIFE_STEAL_DESC_2,"+5% drop
-+5% cura","+5% drop
-+5% heal","+5% drop
-+5% cura","+5% drop
-+5% soin"
-SHOP_LIFE_STEAL_DESC_3,"+5% drop, +5% cura
-puxa em area","+5% drop, +5% heal
-pulls in area","+5% drop, +5% cura
-atrae en área","+5% drop, +5% soin
-attire en zone"
-SHOP_LIFE_STEAL_DESC_4,Puxa do mapa todo,Pulls from whole map,Atrae de todo el mapa,Attire de toute la carte
-SHOP_RICOCHET_DESC_1,"A cada 3 ataques
-flecha ricocheteia","Every 3 attacks
-arrow ricochets","Cada 3 ataques
-flecha rebota","Toutes les 3 attaques
-flèche ricoche"
-SHOP_RICOCHET_DESC_2,"A cada 2 ataques
-divide em 2","Every 2 attacks
-splits in 2","Cada 2 ataques
-se divide en 2","Toutes les 2 attaques
-se divise en 2"
-SHOP_RICOCHET_DESC_3,"+1 ricochete
-(sem dividir)","+1 ricochet
-(no split)","+1 rebote
-(sin dividir)","+1 ricochet
-(sans diviser)"
-SHOP_RICOCHET_DESC_4,"2º ricochete
-divide tambem","2nd ricochet
-also splits","2º rebote
-también divide","2e ricochet
-divise aussi"
-SHOP_GRAVITON_DESC_1,"Cada 3 ataques cria
-campo gravitacional
-20% slow, 1.3s","Every 3 attacks creates
-gravity field
-20% slow, 1.3s","Cada 3 ataques crea
-campo gravitacional
-20% lento, 1.3s","Toutes les 3 attaques
-champ gravitationnel
-20% ralent., 1.3s"
-SHOP_GRAVITON_DESC_2,"A cada 2 ataques
-30% slow, dura 3s","Every 2 attacks
-30% slow, lasts 3s","Cada 2 ataques
-30% lento, dura 3s","Toutes les 2 attaques
-30% ralent., 3s"
-SHOP_GRAVITON_DESC_3,"+range maior
-do campo","+bigger field
-range","+mayor alcance
-del campo","+grande portée
-du champ"
-SHOP_GRAVITON_DESC_4,"Explode no fim
-20 dano area","Explodes at end
-20 area damage","Explota al final
-20 daño en área","Explose à la fin
-20 dégâts de zone"
-SHOP_LENO_DESC_1,"Aliado voador, atira
-8 dano + slow area","Flying ally, shoots
-8 dmg + slow area","Aliado volador, dispara
-8 daño + área lenta","Allié volant, tire
-8 dégâts + zone lente"
-SHOP_LENO_DESC_2,"+atk speed,
-18 dano por ataque","+atk speed,
-18 damage per attack","+vel. ataque,
-18 daño por ataque","+vit. attaque,
-18 dégâts par attaque"
-SHOP_LENO_DESC_3,+1 Leno (total 2),+1 Leno (total 2),+1 Leno (total 2),+1 Leno (total 2)
-SHOP_LENO_DESC_4,+1 Leno (total 3),+1 Leno (total 3),+1 Leno (total 3),+1 Leno (total 3)
-SHOP_CAPIVARA_DESC_1,"Cogumelo a cada 17,5s
-cura 35 HP / speed","Mushroom every 17.5s
-heals 35 HP / speed","Hongo cada 17.5s
-cura 35 HP / vel.","Champignon toutes les 17.5s
-soigne 35 PV / vit."
-SHOP_CAPIVARA_DESC_2,"8,75s alterna buff/dano
-40 dmg area roxa","8.75s buff/damage
-40 dmg purple area","8.75s buff/daño
-40 dmg área púrpura","8.75s buff/dégâts
-40 dmg zone violette"
-SHOP_CAPIVARA_DESC_3,"Buff cura+speed
-+atk speed 50%","Buff heal+speed
-+atk speed 50%","Buff cura+vel.
-+vel. ataque 50%","Buff soin+vit.
-+vit. attaque 50%"
-SHOP_CAPIVARA_DESC_4,"+1 Capivara
-(total 2)","+1 Capybara
-(total 2)","+1 Capibara
-(total 2)","+1 Capybara
-(total 2)"
-SHOP_TING_DESC_1,"Torreta a cada 15s
-dura 8s, atira 2s","Turret every 15s
-lasts 8s, fires 2s","Torreta cada 15s
-dura 8s, dispara 2s","Tourelle toutes les 15s
-dure 8s, tire 2s"
-SHOP_TING_DESC_2,"Torreta +10% dano
-em área, dura 9s","Turret +10% area
-damage, lasts 9s","Torreta +10% daño
-en área, dura 9s","Tourelle +10% dégâts
-de zone, dure 9s"
-SHOP_TING_DESC_3,"Deploy a cada 13s
-torreta atira 1,7s","Deploy every 13s
-turret fires 1.7s","Despliegue cada 13s
-torreta dispara 1.7s","Déploi toutes les 13s
-tourelle tire 1.7s"
-SHOP_TING_DESC_4,"+1 Mecânico Ting
-(total 2)","+1 Ting the Mechanic
-(total 2)","+1 Ting el Mecánico
-(total 2)","+1 Ting le Mécanicien
-(total 2)"
-SHOP_FIRE_ARROW_DESC_1,"Queima inimigo
-6 dmg/s por 5s","Burns enemy
-6 dmg/s for 5s","Quema enemigo
-6 dmg/s por 5s","Brûle l'ennemi
-6 dmg/s pendant 5s"
-SHOP_FIRE_ARROW_DESC_2,"+1 dmg/s + rastro
-de fogo (4 dps)","+1 dmg/s + fire
-trail (4 dps)","+1 dmg/s + estela
-de fuego (4 dps)","+1 dmg/s + traînée
-de feu (4 dps)"
-SHOP_FIRE_ARROW_DESC_3,"Skill Q: chama
-area 12 dps 6s","Skill Q: flame
-area 12 dps 6s","Hab. Q: llama
-área 12 dps 6s","Comp. Q : flamme
-zone 12 dps 6s"
-SHOP_FIRE_ARROW_DESC_4,"Rastro do player
-+30% queima area","Player trail
-+30% area burn","Estela del jugador
-+30% quema área","Traînée du joueur
-+30% brûle zone"
-SHOP_CURSE_ARROW_DESC_1,"Slow 35% + 3 dps
-Morte propaga DoT
-pro alvo mais próximo","Slow 35% + 3 dps
-Death spreads DoT
-to nearest target","Lentitud 35% + 3 dps
-Muerte propaga DoT
-al objetivo cercano","Lenteur 35% + 3 dps
-Mort propage DoT
-à la cible la + proche"
-SHOP_CURSE_ARROW_DESC_2,"Slow 42% + 4 dps
-18% chance kill
-vira aliado","Slow 42% + 4 dps
-18% chance kill
-turns into ally","Lentitud 42% + 4 dps
-18% al matar
-se vuelve aliado","Lenteur 42% + 4 dps
-18% de tuer
-devient allié"
-SHOP_CURSE_ARROW_DESC_3,"Slow 48% + 6 dps
-33% chance + aliados
-aplicam DoT, propaga p/ 2","Slow 48% + 6 dps
-33% chance + allies
-apply DoT, spreads to 2","Lentitud 48% + 6 dps
-33% + aliados aplican
-DoT, propaga a 2","Lenteur 48% + 6 dps
-33% + alliés appliquent
-DoT, propage à 2"
-SHOP_CURSE_ARROW_DESC_4,"Slow 55% + 8 dps
-50% chance kill
-Q: raio purpura cd 20s","Slow 55% + 8 dps
-50% chance kill
-Q: purple beam cd 20s","Lentitud 55% + 8 dps
-50% al matar
-Q: rayo púrpura cd 20s","Lenteur 55% + 8 dps
-50% de tuer
-Q : rayon violet cd 20s"
-SHOP_ICE_ARROW_DESC_1,"Congela 2s ao contato
-+4 dps no congelado","Freezes 2s on contact
-+4 dps while frozen","Congela 2s al contacto
-+4 dps al congelado","Gèle 2s au contact
-+4 dps gelé"
-SHOP_ICE_ARROW_DESC_2,"Dobra dano do gelo (8 dps)
-+ área nevada slow 5.5s","Doubles ice damage (8 dps)
-+ snow area slow 5.5s","Dobla daño de hielo (8 dps)
-+ área lentitud 5.5s","Double dégâts glace (8 dps)
-+ zone lenteur 5.5s"
-SHOP_ICE_ARROW_DESC_3,"Brisa Gelada aliada
-bombardeia área (15s)","Frostwisp ally
-bombards area (15s)","Frostwisp aliada
-bombardea zona (15s)","Frostwisp alliée
-bombarde zone (15s)"
-SHOP_ICE_ARROW_DESC_4,"Q: pausa o tempo 3s
-cd 28s (só movimento)","Q: time freeze 3s
-28s cd (move only)","Q: pausa el tiempo 3s
-cd 28s (solo mover)","Q : gèle le temps 3s
-cd 28s (déplace seulement)"
-SHOP_STONE_ARROW_DESC_1,"Pedra: alcance curto, +50% dano
-Estoura em área + atordoa","Stone: short range, +50% dmg
-Bursts in an area + stuns","Piedra: corto alcance, +50% daño
-Estalla en área + aturde","Pierre : courte portée, +50% dégâts
-Explose en zone + étourdit"
-SHOP_STONE_ARROW_DESC_2,"Área e atordoamento maiores
-+ dano da explosão","Bigger area and stun
-+ blast damage","Mayor área y aturdimiento
-+ daño de explosión","Zone et étourdissement accrus
-+ dégâts d'explosion"
-SHOP_STONE_ARROW_DESC_3,"Q: Avalanche de pedregulhos
-atordoa em área","Q: Boulder avalanche
-stuns in an area","Q: Avalancha de rocas
-aturde en área","Q : Avalanche de rochers
-étourdit en zone"
-SHOP_STONE_ARROW_DESC_4,"+dano de área e raio
-deixa escombros que reduzem velocidade","+area damage and radius
-leaves debris that slows","+daño de área y radio
-deja escombros que ralentizan","+dégâts de zone et rayon
-laisse des débris qui ralentissent"
+SHOP_ATTACK_SPEED_DESC,+23% de velocidade de ataque,+23% attack speed,+23% de velocidad de ataque,+23% de vitesse d'attaque
+SHOP_MULTI_ARROW_DESC_1,"Dispara +2 flechas laterais a cada ataque, causando 30% do dano","Fires +2 side arrows each attack, dealing 30% damage","Dispara +2 flechas laterales en cada ataque, causando 30% del daño","Tire +2 flèches latérales à chaque attaque, infligeant 30% des dégâts"
+SHOP_MULTI_ARROW_DESC_2,Flechas laterais passam a causar 65% do dano,Side arrows now deal 65% damage,Las flechas laterales ahora causan 65% del daño,Les flèches latérales infligent désormais 65% des dégâts
+SHOP_MULTI_ARROW_DESC_3,Flechas laterais passam a causar 75% do dano,Side arrows now deal 75% damage,Las flechas laterales ahora causan 75% del daño,Les flèches latérales infligent désormais 75% des dégâts
+SHOP_MULTI_ARROW_DESC_4,"Aumenta para +4 flechas laterais, causando 85% do dano","Increases to +4 side arrows, dealing 85% damage","Aumenta a +4 flechas laterales, causando 85% del daño","Passe à +4 flèches latérales, infligeant 85% des dégâts"
+SHOP_DOUBLE_ARROWS_DESC_1,50% de chance de lançar uma flecha extra que causa 70% do dano,50% chance to fire an extra arrow dealing 70% damage,50% de probabilidad de lanzar una flecha extra que causa 70% del daño,50% de chance de tirer une flèche supplémentaire infligeant 70% des dégâts
+SHOP_DOUBLE_ARROWS_DESC_2,60% de chance e ambas com dano total,60% chance and both deal full damage,60% de probabilidad y ambas con daño total,60% de chance et les deux à pleins dégâts
+SHOP_DOUBLE_ARROWS_DESC_3,75% de chance de flecha dupla e 45% de chance de flecha tripla,75% chance of a double arrow and 45% chance of a triple arrow,75% de probabilidad de flecha doble y 45% de flecha triple,75% de chance de flèche double et 45% de flèche triple
+SHOP_DOUBLE_ARROWS_DESC_4,"90% de chance de dupla, 60% de tripla e 5% de quíntupla","90% double, 60% triple and 5% quintuple chance","90% doble, 60% triple y 5% quíntuple","90% double, 60% triple et 5% quintuple"
+SHOP_CHAIN_LIGHTNING_DESC_1,Causa 30% do dano no inimigo mais próximo,Deals 30% damage to the nearest enemy,Causa 30% del daño al enemigo más cercano,Inflige 30% des dégâts à l'ennemi le plus proche
+SHOP_CHAIN_LIGHTNING_DESC_2,Causa 50% do dano em 2 a 3 inimigos próximos,Deals 50% damage to 2-3 nearby enemies,Causa 50% del daño a 2-3 enemigos cercanos,Inflige 50% des dégâts à 2-3 ennemis proches
+SHOP_CHAIN_LIGHTNING_DESC_3,Causa 60% do dano em 4 inimigos e ganha a skill Q: um raio que causa grande dano em área,Deals 60% damage to 4 enemies and unlocks Q skill: a bolt dealing big area damage,Causa 60% del daño a 4 enemigos y desbloquea la habilidad Q: un rayo que causa gran daño en área,Inflige 60% des dégâts à 4 ennemis et débloque la compétence Q : un éclair infligeant de gros dégâts de zone
+SHOP_CHAIN_LIGHTNING_DESC_4,Causa 100% do dano em todos os inimigos próximos e +20% de dano no Q,Deals 100% damage to all nearby enemies and +20% damage on Q,Causa 100% del daño a todos los enemigos cercanos y +20% de daño en la Q,Inflige 100% des dégâts à tous les ennemis proches et +20% de dégâts sur la Q
+SHOP_MOVE_SPEED_DESC,+10% de velocidade de movimento,+10% movement speed,+10% de velocidad de movimiento,+10% de vitesse de déplacement
+SHOP_GOLD_MAGNET_DESC_1,Inimigos têm +5% de chance de dropar moedas e elas duram 25% mais,Enemies have +5% chance to drop coins and they last 25% longer,Los enemigos tienen +5% de probabilidad de soltar monedas y duran 25% más,Les ennemis ont +5% de chance de lâcher des pièces et elles durent 25% plus longtemps
+SHOP_GOLD_MAGNET_DESC_2,As moedas duram 2x mais e +2% de chance de drop,Coins last twice as long and +2% drop chance,Las monedas duran el doble y +2% de probabilidad de drop,Les pièces durent deux fois plus longtemps et +2% de chance de drop
+SHOP_GOLD_MAGNET_DESC_3,+2% de chance de drop e pegar moedas gera um pulso de slow,+2% drop chance and picking up coins creates a slow pulse,+2% de probabilidad de drop y recoger monedas genera un pulso de ralentización,+2% de chance de drop et ramasser des pièces crée une impulsion de ralentissement
+SHOP_GOLD_MAGNET_DESC_4,Puxa todas as moedas de uma área,Pulls every coin in an area,Atrae todas las monedas de un área,Attire toutes les pièces d'une zone
+SHOP_DASH_DESC_1,"Espaço dá um dash rápido que te deixa invulnerável por um instante (CD 6,3s)",Space performs a quick dash that makes you briefly invulnerable (CD 6.3s),"Espacio realiza un dash rápido que te vuelve invulnerable un instante (CD 6,3s)","Espace effectue un dash rapide qui vous rend brièvement invulnérable (CD 6,3s)"
+SHOP_DASH_DESC_2,"O dash passa a deixar um rastro de veneno que causa dano (CD 5,3s)",The dash now leaves a poison trail that deals damage (CD 5.3s),"El dash ahora deja una estela de veneno que causa daño (CD 5,3s)","Le dash laisse désormais une traînée de poison qui inflige des dégâts (CD 5,3s)"
+SHOP_DASH_DESC_3,"Ao dar dash você dispara um auto-ataque de flechas (CD 4,8s)",On dash you fire an automatic arrow attack (CD 4.8s),"Al hacer dash disparas un autoataque de flechas (CD 4,8s)","En faisant un dash, vous tirez une attaque automatique de flèches (CD 4,8s)"
+SHOP_DASH_DESC_4,"O dash dispara um auto-ataque extra (CD 4,3s)",The dash fires an extra auto-attack (CD 4.3s),"El dash dispara un autoataque extra (CD 4,3s)","Le dash déclenche une attaque automatique supplémentaire (CD 4,3s)"
+SHOP_ESQUIVANDO_DESC_1,Acertar inimigos te dá velocidade de ataque e de movimento por 2s (máx 3 stacks) e 2% de chance de esquiva,Hitting enemies grants attack and movement speed for 2s (max 3 stacks) and 2% dodge chance,Golpear enemigos te da velocidad de ataque y de movimiento por 2s (máx 3 stacks) y 2% de esquiva,Toucher des ennemis octroie vitesse d'attaque et de déplacement pendant 2s (max 3 cumuls) et 2% d'esquive
+SHOP_ESQUIVANDO_DESC_2,"Mais stats por stack, pegar moedas também dá stacks e Espaço: +30% de velocidade por 3s","More stats per stack, picking up coins also grants stacks and Space: +30% speed for 3s","Más stats por stack, recoger monedas también da stacks y Espacio: +30% de velocidad por 3s","Plus de stats par cumul, ramasser des pièces donne aussi des cumuls et Espace : +30% de vitesse pendant 3s"
+SHOP_ESQUIVANDO_DESC_3,"Mais stats por stack, mais chance de esquiva e CD da skill reduzido para 12,5s","More stats per stack, higher dodge chance and skill CD reduced to 12.5s","Más stats por stack, más esquiva y CD de la habilidad reducido a 12,5s","Plus de stats par cumul, plus d'esquive et CD de la compétence réduit à 12,5s"
+SHOP_ESQUIVANDO_DESC_4,"Mais stats por stack, máximo sobe para 5 stacks e CD da skill reduzido para 10s","More stats per stack, max rises to 5 stacks and skill CD reduced to 10s","Más stats por stack, máximo sube a 5 stacks y CD de la habilidad reducido a 10s","Plus de stats par cumul, max porté à 5 cumuls et CD de la compétence réduit à 10s"
+SHOP_FENDA_DESC_1,Teleporta para o ponto do cursor (CD 20s),Teleport to the cursor point (CD 20s),Teletranspórtate al punto del cursor (CD 20s),Téléportez-vous au point du curseur (CD 20s)
+SHOP_FENDA_DESC_2,"Cria um corte no caminho percorrido (25 de dano em quem for atingido) e CD reduzido para 18s","Creates a slash along the path traveled (25 damage to enemies hit) and CD reduced to 18s","Crea un corte en el camino recorrido (25 de daño a los enemigos alcanzados) y CD reducido a 18s","Crée une entaille sur le trajet (25 dégâts aux ennemis touchés) et CD réduit à 18s"
+SHOP_FENDA_DESC_3,"Após teleportar, 0,8s para usar de novo — o corte rasga em até 3 pontos (acerta o mesmo inimigo várias vezes). CD reduzido para 16s","After teleporting, 0.8s to use again — the slash tears across up to 3 points (hits the same enemy multiple times). CD reduced to 16s","Tras teletransportarte, 0,8s para usar de nuevo — el corte rasga hasta 3 puntos (golpea al mismo enemigo varias veces). CD reducido a 16s","Après téléportation, 0,8s pour réutiliser — l'entaille déchire jusqu'à 3 points (touche le même ennemi plusieurs fois). CD réduit à 16s"
+SHOP_FENDA_DESC_4,CD reduzido para 14s e dano aumentado para 50,CD reduced to 14s and damage raised to 50,CD reducido a 14s y daño aumentado a 50,CD réduit à 14s et dégâts portés à 50
+SHOP_LIFE_STEAL_DESC_1,Inimigos têm 12% de chance de dropar uma cura de 20% do HP,Enemies have a 12% chance to drop a heal worth 20% HP,Los enemigos tienen 12% de probabilidad de soltar una cura del 20% de HP,Les ennemis ont 12% de chance de lâcher un soin de 20% des PV
+SHOP_LIFE_STEAL_DESC_2,+5% de chance de drop e +5% de cura,+5% drop chance and +5% heal,+5% de probabilidad de drop y +5% de cura,+5% de chance de drop et +5% de soin
+SHOP_LIFE_STEAL_DESC_3,"+5% de chance de drop, +5% de cura e puxa as curas de uma área","+5% drop chance, +5% heal and pulls heals from an area","+5% de probabilidad de drop, +5% de cura y atrae las curas de un área","+5% de chance de drop, +5% de soin et attire les soins d'une zone"
+SHOP_LIFE_STEAL_DESC_4,Puxa todas as curas do mapa,Pulls every heal on the map,Atrae todas las curas del mapa,Attire tous les soins de la carte
+SHOP_RICOCHET_DESC_1,"A cada 3 ataques, sua flecha ricocheteia aleatoriamente","Every 3 attacks, your arrow ricochets to a random target","Cada 3 ataques, tu flecha rebota aleatoriamente","Toutes les 3 attaques, votre flèche ricoche aléatoirement"
+SHOP_RICOCHET_DESC_2,Agora a cada 2 ataques e se divide em 2 flechas,Now every 2 attacks and splits into 2 arrows,Ahora cada 2 ataques y se divide en 2 flechas,Désormais toutes les 2 attaques et se divise en 2 flèches
+SHOP_RICOCHET_DESC_3,Ricocheteia mais uma vez,Ricochets one more time,Rebota una vez más,Ricoche une fois de plus
+SHOP_RICOCHET_DESC_4,O segundo ricochete também se divide,The second ricochet also splits,El segundo rebote también se divide,Le second ricochet se divise aussi
+SHOP_GRAVITON_DESC_1,A cada 3 ataques cria um campo gravitacional que puxa inimigos e causa 20% de slow,Every 3 attacks creates a gravity field that pulls enemies and applies 20% slow,Cada 3 ataques crea un campo gravitatorio que atrae enemigos y aplica 20% de ralentización,Toutes les 3 attaques crée un champ gravitationnel qui attire les ennemis et applique 20% de ralentissement
+SHOP_GRAVITON_DESC_2,"Agora a cada 2 ataques, slow sobe para 30% e dura mais","Now every 2 attacks, slow rises to 30% and lasts longer","Ahora cada 2 ataques, la ralentización sube a 30% y dura más","Désormais toutes les 2 attaques, le ralentissement passe à 30% et dure plus longtemps"
+SHOP_GRAVITON_DESC_3,Aumenta a área do campo gravitacional,Increases the gravity field's area,Aumenta el área del campo gravitatorio,Augmente la zone du champ gravitationnel
+SHOP_GRAVITON_DESC_4,"Ao acabar, o campo explode causando 20 de dano em área","When it ends, the field explodes dealing 20 area damage","Al terminar, el campo explota causando 20 de daño en área","À la fin, le champ explose en infligeant 20 dégâts de zone"
+SHOP_LENO_DESC_1,Leno cospe causando 8 de dano por ataque e slow em área,"Leno spits, dealing 8 damage per attack and an area slow",Leno escupe causando 8 de daño por ataque y ralentización en área,"Leno crache, infligeant 8 dégâts par attaque et un ralentissement de zone"
+SHOP_LENO_DESC_2,Dano sobe para 18 e ganha velocidade de ataque,Damage rises to 18 and gains attack speed,El daño sube a 18 y gana velocidad de ataque,Les dégâts passent à 18 et gagne en vitesse d'attaque
+SHOP_LENO_DESC_3,+1 cópia do Leno (2 no total),+1 Leno copy (2 total),+1 copia de Leno (2 en total),+1 copie de Leno (2 au total)
+SHOP_LENO_DESC_4,+1 cópia do Leno (3 no total),+1 Leno copy (3 total),+1 copia de Leno (3 en total),+1 copie de Leno (3 au total)
+SHOP_CAPIVARA_DESC_1,"Ganha a Capivara Joe, um pet que vagueia e a cada 19,5s larga um cogumelo. Pegá-lo cura 29 HP (se você estiver com menos da metade da vida) ou dá um forte impulso de velocidade de movimento por alguns segundos","Gain Capivara Joe, a pet that wanders and drops a mushroom every 19.5s. Picking it up heals 29 HP (if below half health) or gives a strong movement speed boost for a few seconds","Obtienes a Capivara Joe, una mascota que deambula y suelta un hongo cada 19,5s. Recogerlo cura 29 HP (si estás por debajo de la mitad de vida) o da un fuerte impulso de velocidad de movimiento por unos segundos","Obtenez Capivara Joe, un familier qui erre et lâche un champignon toutes les 19,5s. Le ramasser soigne 29 PV (si vous êtes sous la moitié de la vie) ou donne un grand bonus de vitesse de déplacement pendant quelques secondes"
+SHOP_CAPIVARA_DESC_2,"Larga cogumelos a cada 10,75s e passa a alternar entre o cogumelo de buff e um cogumelo roxo de dano, que explode quando um inimigo pisa (40 de dano em área por 5s)",Drops mushrooms every 10.75s and alternates between the buff mushroom and a purple damage mushroom that explodes when an enemy steps on it (40 area damage over 5s),"Suelta hongos cada 10,75s y alterna entre el hongo de mejora y un hongo morado de daño que explota cuando un enemigo lo pisa (40 de daño en área durante 5s)","Lâche des champignons toutes les 10,75s et alterne entre le champignon de bonus et un champignon violet de dégâts qui explose quand un ennemi marche dessus (40 dégâts de zone sur 5s)"
+SHOP_CAPIVARA_DESC_3,"O cogumelo de buff agora dá cura e velocidade juntos, além de +50% de velocidade de ataque","The buff mushroom now gives heal and speed together, plus +50% attack speed","El hongo de mejora ahora da cura y velocidad juntos, además de +50% de velocidad de ataque","Le champignon de bonus donne désormais soin et vitesse ensemble, plus +50% de vitesse d'attaque"
+SHOP_CAPIVARA_DESC_4,Ganha +1 Capivara Joe (2 no total),Gain +1 Capivara Joe (2 total),Obtienes +1 Capivara Joe (2 en total),Obtenez +1 Capivara Joe (2 au total)
+SHOP_TING_DESC_1,"Ganha o Mecânico Ting, que a cada 15s constrói uma torreta que atira no inimigo mais próximo (25 de dano, escala com seu Dano) e dura 8s","Gain Ting the Mechanic, who every 15s builds a turret that shoots the nearest enemy (25 damage, scales with your Damage) and lasts 8s","Obtienes a Ting el Mecánico, que cada 15s construye una torreta que dispara al enemigo más cercano (25 de daño, escala con tu Daño) y dura 8s","Obtenez Ting le Mécanicien, qui toutes les 15s construit une tourelle qui tire sur l'ennemi le plus proche (25 dégâts, évolue avec vos Dégâts) et dure 8s"
+SHOP_TING_DESC_2,A torreta passa a causar 10% do dano em área e dura 9s,The turret now deals 10% area damage and lasts 9s,La torreta ahora causa 10% de daño en área y dura 9s,La tourelle inflige désormais 10% de dégâts de zone et dure 9s
+SHOP_TING_DESC_3,"Constrói torretas a cada 13s e elas atiram mais rápido (a cada 1,7s)",Builds turrets every 13s and they shoot faster (every 1.7s),"Construye torretas cada 13s y disparan más rápido (cada 1,7s)","Construit des tourelles toutes les 13s et elles tirent plus vite (toutes les 1,7s)"
+SHOP_TING_DESC_4,Ganha +1 Mecânico Ting (2 no total),Gain +1 Ting the Mechanic (2 total),Obtienes +1 Ting el Mecánico (2 en total),Obtenez +1 Ting le Mécanicien (2 au total)
+SHOP_FIRE_ARROW_DESC_1,"Suas flechas queimam inimigos, causando 6 de dano/s por 5s","Your arrows burn enemies, dealing 6 damage/s for 5s","Tus flechas queman a los enemigos, causando 6 de daño/s durante 5s","Vos flèches brûlent les ennemis, infligeant 6 dégâts/s pendant 5s"
+SHOP_FIRE_ARROW_DESC_2,Queimadura sobe para 7 de dano/s e suas flechas deixam um rastro de fogo (4 de dano/s),Burn rises to 7 damage/s and your arrows leave a fire trail (4 damage/s),La quemadura sube a 7 de daño/s y tus flechas dejan una estela de fuego (4 de daño/s),La brûlure passe à 7 dégâts/s et vos flèches laissent une traînée de feu (4 dégâts/s)
+SHOP_FIRE_ARROW_DESC_3,Queimadura sobe para 9 de dano/s e ganha a skill Q: uma chama em área que causa 12 de dano/s,Burn rises to 9 damage/s and unlocks Q skill: a flame area dealing 12 damage/s,La quemadura sube a 9 de daño/s y desbloquea la habilidad Q: un área de llamas que causa 12 de daño/s,La brûlure passe à 9 dégâts/s et débloque la compétence Q : une zone de flammes infligeant 12 dégâts/s
+SHOP_FIRE_ARROW_DESC_4,"Queimadura sobe para 12 de dano/s, +30% em todo dano de fogo e você deixa um rastro de fogo ao andar","Burn rises to 12 damage/s, +30% to all fire damage and you leave a fire trail as you move","La quemadura sube a 12 de daño/s, +30% a todo el daño de fuego y dejas una estela de fuego al moverte","La brûlure passe à 12 dégâts/s, +30% à tous les dégâts de feu et vous laissez une traînée de feu en vous déplaçant"
+SHOP_CURSE_ARROW_DESC_1,"Slow de 35% e 3 de dano/s. Ao morrer, a maldição propaga para o alvo mais próximo","35% slow and 3 damage/s. On death, the curse spreads to the nearest target","35% de ralentización y 3 de daño/s. Al morir, la maldición se propaga al objetivo más cercano","35% de ralentissement et 3 dégâts/s. À la mort, la malédiction se propage à la cible la plus proche"
+SHOP_CURSE_ARROW_DESC_2,"Slow de 42%, 4 de dano/s e 18% de chance do abate virar aliado","42% slow, 4 damage/s and 18% chance a kill becomes an ally","42% de ralentización, 4 de daño/s y 18% de probabilidad de que un abatido se vuelva aliado","42% de ralentissement, 4 dégâts/s et 18% de chance qu'une élimination devienne un allié"
+SHOP_CURSE_ARROW_DESC_3,"Slow de 48%, 6 de dano/s, 33% de chance de virar aliado, aliados aplicam maldição e ela propaga para 2 alvos","48% slow, 6 damage/s, 33% ally chance, allies apply the curse and it spreads to 2 targets","48% de ralentización, 6 de daño/s, 33% de probabilidad de aliado, los aliados aplican la maldición y se propaga a 2 objetivos","48% de ralentissement, 6 dégâts/s, 33% de chance d'allié, les alliés appliquent la malédiction et elle se propage à 2 cibles"
+SHOP_CURSE_ARROW_DESC_4,"Slow de 55%, 8 de dano/s, 50% de chance do abate virar aliado e skill Q: um raio púrpura (CD 20s)","55% slow, 8 damage/s, 50% chance a kill becomes an ally and Q skill: a purple beam (CD 20s)","55% de ralentización, 8 de daño/s, 50% de probabilidad de aliado y habilidad Q: un rayo púrpura (CD 20s)","55% de ralentissement, 8 dégâts/s, 50% de chance d'allié et compétence Q : un rayon pourpre (CD 20s)"
+SHOP_ICE_ARROW_DESC_1,Suas flechas congelam inimigos por 2s e causam 4 de dano/s enquanto congelados,Your arrows freeze enemies for 2s and deal 4 damage/s while frozen,Tus flechas congelan a los enemigos por 2s y causan 4 de daño/s mientras están congelados,Vos flèches gèlent les ennemis pendant 2s et infligent 4 dégâts/s tant qu'ils sont gelés
+SHOP_ICE_ARROW_DESC_2,"Dobra o dano do gelo (8 de dano/s) e cria uma área nevada com slow por 5,5s",Doubles ice damage (8 damage/s) and creates a snowy slow area for 5.5s,"Duplica el daño de hielo (8 de daño/s) y crea un área nevada con ralentización por 5,5s","Double les dégâts de glace (8 dégâts/s) et crée une zone enneigée ralentissante pendant 5,5s"
+SHOP_ICE_ARROW_DESC_3,"Ganha a Brisa Gelada aliada, que bombardeia uma área por 15s","Gain the Frost Breeze ally, which bombards an area for 15s","Obtienes la Brisa Helada aliada, que bombardea un área por 15s","Obtenez l'alliée Brise Glaciale, qui bombarde une zone pendant 15s"
+SHOP_ICE_ARROW_DESC_4,Skill Q: pausa o tempo por 3s (só você se move) — CD 28s,Q skill: freezes time for 3s (only you move) — CD 28s,Habilidad Q: pausa el tiempo por 3s (solo tú te mueves) — CD 28s,Compétence Q : fige le temps pendant 3s (vous seul bougez) — CD 28s
+SHOP_STONE_ARROW_DESC_1,"Suas flechas viram pedras: menor alcance, +50% de dano e atordoamento em área","Your arrows turn to stone: shorter range, +50% damage and area stun","Tus flechas se vuelven piedra: menor alcance, +50% de daño y aturdimiento en área","Vos flèches deviennent des pierres : portée réduite, +50% de dégâts et étourdissement de zone"
+SHOP_STONE_ARROW_DESC_2,Aumenta o dano e amplia a área de dano e de atordoamento,Increases damage and widens the damage and stun area,Aumenta el daño y amplía el área de daño y aturdimiento,Augmente les dégâts et élargit la zone de dégâts et d'étourdissement
+SHOP_STONE_ARROW_DESC_3,Ganha dois cubos de pedra aliados no início de cada round,Gain two ally stone cubes at the start of each round,Obtienes dos cubos de piedra aliados al inicio de cada ronda,Obtenez deux cubes de pierre alliés au début de chaque manche
+SHOP_STONE_ARROW_DESC_4,Skill Q: atordoa todos os inimigos e causa muito dano ao seu redor,Q skill: stuns all enemies and deals heavy damage around you,Habilidad Q: aturde a todos los enemigos y causa mucho daño a tu alrededor,Compétence Q : étourdit tous les ennemis et inflige de lourds dégâts autour de vous
 SHOP_CD_MAX,Max (4/4) atingido,Max (4/4) reached,Máx (4/4) alcanzado,Max (4/4) atteint
-SHOP_CD_DESC_1,"Aliado tank: +20% HP
-stun em área, sem dano","Tank ally: +20% HP
-area stun, no damage","Aliado tanque: +20% HP
-aturde en área, sin daño","Allié tank : +20% PV
-étourdit en zone, 0 dégât"
-SHOP_CD_DESC_2,"Lv2: cada ataque
-cura player +25hp","Lv2: each attack
-heals player +25hp","Lv2: cada ataque
-cura jugador +25hp","Lv2 : chaque attaque
-soigne joueur +25pv"
-SHOP_CD_DESC_3,"Lv3: +1 aliado
-ataque cura +30hp","Lv3: +1 ally
-attack heals +30hp","Lv3: +1 aliado
-ataque cura +30hp","Lv3 : +1 allié
-attaque soigne +30pv"
-SHOP_CD_DESC_4,"Lv4 max: +150 HP
-100 dano, cd 4.5s","Lv4 max: +150 HP
-100 damage, cd 4.5s","Lv4 máx: +150 HP
-100 daño, cd 4.5s","Lv4 max : +150 PV
-100 dégâts, cd 4.5s"
-HUD_FREE_UPGRADE_TITLE,BONUS DE BOAS-VINDAS,WELCOME BONUS,BONUS DE BIENVENIDA,BONUS DE BIENVENUE
-HUD_FREE_PET_TITLE,ALIADO GRATIS!,FREE ALLY!,¡ALIADO GRATIS!,ALLIE GRATUIT !
+SHOP_CD_DESC_1,Ganha um aliado tank que atordoa ao golpear e atrai projéteis inimigos,Gain a tank ally that stuns on hit and draws enemy projectiles,Obtienes un aliado tanque que aturde al golpear y atrae los proyectiles enemigos,Obtenez un allié tank qui étourdit en frappant et attire les projectiles ennemis
+SHOP_CD_DESC_2,Os ataques do Cláudio passam a te curar +25 HP,Claudio's attacks now heal you +25 HP,Los ataques de Claudio ahora te curan +25 HP,Les attaques de Claudio vous soignent désormais de +25 PV
+SHOP_CD_DESC_3,+1 cópia do Cláudio e a cura sobe para +30 HP,+1 Claudio copy and the heal rises to +30 HP,+1 copia de Claudio y la cura sube a +30 HP,+1 copie de Claudio et le soin passe à +30 PV
+SHOP_CD_DESC_4,Cláudio ganha +150 HP e mais dano e velocidade de ataque,Claudio gains +150 HP and more damage and attack speed,Claudio gana +150 HP y más daño y velocidad de ataque,Claudio gagne +150 PV et plus de dégâts et de vitesse d'attaque
+HUD_FREE_UPGRADE_TITLE,BÔNUS DE BOAS-VINDAS,WELCOME BONUS,BONUS DE BIENVENIDA,BONUS DE BIENVENUE
+HUD_FREE_PET_TITLE,ALIADO GRÁTIS!,FREE ALLY!,¡ALIADO GRATIS!,ALLIE GRATUIT !
 SHOP_UPG_DAMAGE,Dano,Damage,Daño,Dégâts
 SHOP_UPG_ATTACK_SPEED,Velocidade de Ataque,Attack Speed,Velocidad de Ataque,Vitesse d'Attaque
 SHOP_UPG_MOVE_SPEED,Velocidade de Movimento,Move Speed,Velocidad de Movimiento,Vitesse de Déplacement
@@ -836,4 +389,6 @@ PLAYER_QUEST_BLUEY,Derrote o boss Mage Monkey (raid 7),Defeat the Mage Monkey bo
 PLAYER_QUEST_LINKED,Renasça 200 macaquinhos como aliados,Reincarnate 200 monkeys as allies,Renace 200 monitos como aliados,Faites renaître 200 petits singes en alliés
 PLAYER_QUEST_HAWK,Alcance a raid 20,Reach raid 20,Alcanza el raid 20,Atteignez le raid 20
 PLAYER_QUEST_ROSA_ONYX,Derrote a Duskrose,Defeat Duskrose,Derrota a Duskrose,Vaincre Duskrose
-PLAYER_QUEST_TERRACOTA,Cause 750s de stun no total,Deal 750s of stun total,Causa 750s de stun en total,Infligez 750s d'étourdissement au total
+PLAYER_QUEST_EARTHY,Cause 1000s de stun no total,Deal 1000s of stun total,Causa 1000s de stun en total,Infligez 1000s d'étourdissement au total
+PLAYER_QUEST_SKELETON,Pegue o Level 4 de qualquer Elemental,Get Level 4 of any Elemental,Consigue el Nivel 4 de cualquier Elemental,Obtenez le Niveau 4 de tout Élémentaire
+PLAYER_QUEST_URBAN,Use a skill Q ou Espaço 500 vezes,Use the Q or Space skill 500 times,Usa la habilidad Q o Espacio 500 veces,Utilisez la compétence Q ou Espace 500 fois

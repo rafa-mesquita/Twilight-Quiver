@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://cn07phmkuy745" path="res://scenes/world/props/casa.tscn" id="11_n6obe"]
 [ext_resource type="PackedScene" uid="uid://b1tqjmx0me8hl" path="res://scenes/world/props/poco.tscn" id="14_aq2c6"]
 [ext_resource type="PackedScene" path="res://scenes/world/props/grass.tscn" id="15_jkv2x"]
+[ext_resource type="PackedScene" path="res://scenes/world/wall.tscn" id="15_krdpc"]
 [ext_resource type="PackedScene" path="res://scenes/world/props/cerca_cima.tscn" id="cerca_cima"]
 [ext_resource type="PackedScene" uid="uid://c3ufhc3l5yvor" path="res://scenes/world/props/cerca_cima_end.tscn" id="cerca_cima_end"]
 [ext_resource type="PackedScene" uid="uid://b8sm8r8nsg2re" path="res://scenes/world/decorative_rose.tscn" id="dec_rose_a"]
@@ -924,3 +925,43 @@ position = Vector2(-134, 334)
 [node name="Arvore5B" parent="." unique_id=961502355 instance=ExtResource("10_sem2w")]
 position = Vector2(-73, 410.00003)
 scale = Vector2(1.69, 1.69)
+
+[node name="Wall" parent="." unique_id=1029674667 instance=ExtResource("15_krdpc")]
+position = Vector2(-211, 34)
+scale = Vector2(10, 10)
+
+[node name="Wall2" parent="." unique_id=1832983253 instance=ExtResource("15_krdpc")]
+position = Vector2(-211, 344.00003)
+scale = Vector2(10, 10)
+
+[node name="Wall3" parent="." unique_id=1887864639 instance=ExtResource("15_krdpc")]
+position = Vector2(89.00001, 549.00006)
+scale = Vector2(10, 10)
+
+[node name="Wall4" parent="." unique_id=1384822483 instance=ExtResource("15_krdpc")]
+position = Vector2(408, 549)
+scale = Vector2(10, 10)
+
+[node name="Wall5" parent="." unique_id=1164272789 instance=ExtResource("15_krdpc")]
+position = Vector2(724, 549)
+scale = Vector2(10, 10)
+
+[node name="Wall6" parent="." unique_id=366756371 instance=ExtResource("15_krdpc")]
+position = Vector2(749, 294)
+scale = Vector2(10, 10)
+
+[node name="Wall7" parent="." unique_id=430151359 instance=ExtResource("15_krdpc")]
+position = Vector2(749, 46.000004)
+scale = Vector2(10, 10)
+
+[node name="Wall8" parent="." unique_id=1015362076 instance=ExtResource("15_krdpc")]
+position = Vector2(505, -243)
+scale = Vector2(10, 10)
+
+[node name="Wall9" parent="." unique_id=984136684 instance=ExtResource("15_krdpc")]
+position = Vector2(190, -242.99998)
+scale = Vector2(10, 10)
+
+[node name="Wall10" parent="." unique_id=1970673553 instance=ExtResource("15_krdpc")]
+position = Vector2(-131.00002, -242.99998)
+scale = Vector2(10, 10)

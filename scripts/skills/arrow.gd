@@ -850,7 +850,7 @@ func _apply_curse_to(target: Node) -> void:
 func _apply_freeze_to(target: Node) -> void:
 	# Re-aplica freeze existente (refresh duração + dps) ou cria novo FreezeDebuff.
 	# cc_immune é tratado dentro do _ready do debuff.
-	# Freeze conta como stun pro unlock da skin Terracota (pula cc_immune — resistem).
+	# Freeze conta como stun pro unlock da skin Earthy (pula cc_immune — resistem).
 	if not target.is_in_group("cc_immune"):
 		var _p_frz := get_tree().get_first_node_in_group("player")
 		if _p_frz != null and _p_frz.has_method("notify_stun_applied"):

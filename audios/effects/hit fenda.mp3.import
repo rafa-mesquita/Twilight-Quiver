@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://doytols3wx5su"
+path="res://.godot/imported/hit fenda.mp3-40db470bb2408ea39b0673ebf559972e.mp3str"
+
+[deps]
+
+source_file="res://audios/effects/hit fenda.mp3"
+dest_files=["res://.godot/imported/hit fenda.mp3-40db470bb2408ea39b0673ebf559972e.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
