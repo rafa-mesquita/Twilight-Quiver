@@ -106,9 +106,11 @@ var stone_size_scale: float = 1.0
 # % do dano de referência aplicada pelo AoE por gatilho.
 const STONE_SPLASH_PCT: float = 0.5  # hit direto: 50% nos OUTROS (alvo já levou 100%)
 const STONE_LAND_PCT: float = 0.8    # cair no range / estrutura / parede: 80% em todos
-# Range do quique do ricochete (lifetime): um pouco maior que o ataque base
-# (150 × 1.0 = 150px vs ~105px base). Aplicado via maxf (não compõe entre quiques).
-const STONE_RICOCHET_LIFETIME: float = 1.0
+# Range do quique do ricochete (lifetime): quique CURTO, bem menor que o ataque
+# base (150 × 0.45 ≈ 67px vs ~105px base). Antes era 1.0 (150px), mais longo que
+# o tiro original — o quique voava longe demais. Atribuição fixa (não maxf), pra
+# o quique não herdar o range cheio/inflado da flecha que veio.
+const STONE_RICOCHET_LIFETIME: float = 0.45
 const STONE_AOE_SCRIPT: GDScript = preload("res://scripts/skills/stone_aoe.gd")
 const STUN_VISUAL_SCRIPT: GDScript = preload("res://scripts/effects/stun_visual.gd")
 const STONE_SHOOT_SOUND: AudioStream = preload("res://assets/effects/Rock Arrow/rock arrow sound effect.mp3")
@@ -483,7 +485,7 @@ func _on_hit(body: Node) -> void:
 			_spawn_graviton_pulse()
 		# Pedra: cravar em estrutura também estoura o AoE (pega todos no raio).
 		if is_stone:
-			_spawn_stone_aoe(null, STONE_LAND_PCT)
+			_spawn_stone_aoe(null, STONE_LAND_PCT, _consume_stone_stun_token())
 		if is_piercing:
 			_pierce_hits += 1
 			_spawn_pierce_hit_effect(_pierce_hits == 3)
@@ -560,14 +562,17 @@ func _on_hit(body: Node) -> void:
 				_spawn_ice_slow_area_at(global_position)
 		# Pedra: stun no alvo direto (crit aumenta a duração) + AoE no ponto de
 		# impacto. O alvo direto fica excluído do dano splash (já tomou o hit
-		# cheio). Com perfuração, isso roda em CADA inimigo perfurado.
+		# cheio). Com perfuração, isso roda em CADA inimigo perfurado. O stun só
+		# acontece na 1ª flecha do ataque que conectar (token global, igual raio).
 		if is_stone:
-			var stone_stun: float = stone_stun_duration
-			if bool(crit_info.get("crit", false)):
-				stone_stun *= float(crit_info.get("mult", 1.0))
-			_apply_stone_stun(target, stone_stun)
+			var do_stun: bool = _consume_stone_stun_token()
+			if do_stun:
+				var stone_stun: float = stone_stun_duration
+				if bool(crit_info.get("crit", false)):
+					stone_stun *= float(crit_info.get("mult", 1.0))
+				_apply_stone_stun(target, stone_stun)
 			# Hit direto: alvo já levou 100% (take_damage acima); splash 50% nos outros.
-			_spawn_stone_aoe(target, STONE_SPLASH_PCT)
+			_spawn_stone_aoe(target, STONE_SPLASH_PCT, do_stun)
 		# Graviton: pulso no ponto de impacto. Com perfuração: spawna apenas se o
 		# enemy morreu nesse hit (spec — "inimigos que morrerem"). Sem perfuração:
 		# spawna sempre que cravar (caso normal abaixo, antes do _stick_in_body).
@@ -604,7 +609,7 @@ func _on_hit(body: Node) -> void:
 			_spawn_graviton_pulse()
 		# Pedra: bater em parede/objeto também estoura o AoE.
 		if is_stone:
-			_spawn_stone_aoe(null, STONE_LAND_PCT)
+			_spawn_stone_aoe(null, STONE_LAND_PCT, _consume_stone_stun_token())
 		if is_piercing:
 			_pierce_hits += 1
 			_spawn_pierce_hit_effect(_pierce_hits == 3)
@@ -725,6 +730,20 @@ func _get_world() -> Node:
 	return w if w != null else get_tree().current_scene
 
 
+# Gate do stun da pedra: pergunta ao player se ESTE hit deve stunar. Mesma
+# lógica do raio — só a 1ª flecha do ataque que conectar aplica stun (direto e
+# no AoE); as extras do Multi e os quiques do ricochete só dão dano + kb.
+# EXCEÇÃO: perfuração é isenta — cada inimigo perfurado leva stun (combo
+# full-power). Fonte não-player (não dispara pedra hoje) sempre stuna.
+func _consume_stone_stun_token() -> bool:
+	if is_piercing:
+		return true
+	var p := get_tree().get_first_node_in_group("player")
+	if p != null and p.has_method("consume_stone_stun_token"):
+		return p.consume_stone_stun_token()
+	return true
+
+
 func _apply_stone_stun(target: Node, duration: float) -> void:
 	# Stun no alvo direto da pedra (mesmo ícone/efeito do Claudio Druida).
 	# cc_immune (boss/stone_cube) ignoram via apply_stun próprio.
@@ -747,13 +766,15 @@ func _ensure_stun_visual(target: Node) -> void:
 	target.add_child(STUN_VISUAL_SCRIPT.new())
 
 
-func _spawn_stone_aoe(exclude_target: Node, dmg_pct: float) -> void:
+func _spawn_stone_aoe(exclude_target: Node, dmg_pct: float, apply_stun: bool) -> void:
 	var aoe: Node2D = STONE_AOE_SCRIPT.new()
 	aoe.radius = stone_aoe_radius
 	aoe.damage = stone_aoe_damage
 	aoe.damage_pct = dmg_pct
 	aoe.knockback_strength = stone_aoe_knockback
-	aoe.stun_duration = stone_stun_duration
+	# Stun só na 1ª flecha do ataque que conecta (gate global no player, igual ao
+	# raio). Demais estouros do mesmo ataque vêm com stun_duration 0 = só dano+kb.
+	aoe.stun_duration = stone_stun_duration if apply_stun else 0.0
 	aoe.source = source
 	aoe.exclude = exclude_target
 	# Posição ANTES do add_child: o AoE aplica dano no _ready a partir de `origin`.
@@ -779,7 +800,7 @@ func _on_lifetime_expired() -> void:
 		# onde aterrissou (sem isso, só o estouro por superfície tinha som).
 		if is_stone:
 			_play_stone_impact(global_position)
-			_spawn_stone_aoe(null, STONE_LAND_PCT)
+			_spawn_stone_aoe(null, STONE_LAND_PCT, _consume_stone_stun_token())
 		_die()
 
 
@@ -948,10 +969,10 @@ func _perform_ricochet(hit_target: Node = null) -> bool:
 	global_position += new_dir * RICOCHET_PUSH
 	direction = new_dir
 	rotation = direction.angle()
-	# Pedra: rearma o lifetime pra o quique ter um range um pouco MAIOR que o
-	# ataque base, fresco a partir daqui (sem isso usaria só o tempo restante).
+	# Pedra: rearma o lifetime pra o quique ter um range CURTO fixo, fresco a
+	# partir daqui (sem isso usaria só o tempo restante / herdaria range longo).
 	if is_stone:
-		lifetime = maxf(lifetime, STONE_RICOCHET_LIFETIME)
+		lifetime = STONE_RICOCHET_LIFETIME
 		_arm_lifetime()
 	# Limpa trail pra novo segmento sair limpo da posição atual.
 	if trail != null:
@@ -1033,10 +1054,10 @@ func _spawn_ricochet_clone(target: Node2D, hops: int, splits: int) -> void:
 		# do clone (clone.damage já leva o falloff de -20%/quique do ricochete).
 		clone.is_stone = is_stone
 		if is_stone:
-			# Quique-clone com range um pouco maior que o ataque base (mesmo do
-			# quique da flecha principal), fresco a partir do ponto do quique.
+			# Quique-clone com range CURTO fixo (mesmo do quique da flecha
+			# principal), fresco a partir do ponto do quique.
 			clone.speed = speed
-			clone.lifetime = maxf(lifetime, STONE_RICOCHET_LIFETIME)
+			clone.lifetime = STONE_RICOCHET_LIFETIME
 		clone.stone_aoe_radius = stone_aoe_radius
 		clone.stone_aoe_damage = clone.damage
 		clone.stone_aoe_knockback = stone_aoe_knockback

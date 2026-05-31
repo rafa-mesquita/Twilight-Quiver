@@ -74,9 +74,12 @@ var _tab_buttons: Dictionary = {}
 # inclui alguma peça bloqueada.
 var _preview_badge: Label
 var _face_badge: Label
-# Requisito de unlock (no topo do quadro do boneco) da última peça bloqueada selecionada.
+# Requisito de unlock (no topo do quadro do boneco) da última peça selecionada.
+# _locked: desafio em vermelho (ainda bloqueada). _unlocked: mesmo desafio em
+# branco (o que o jogador fez pra liberar a skin já desbloqueada).
 var _req_label: Label
 var _last_locked_quest_key: String = ""
+var _last_unlocked_quest_key: String = ""
 
 
 func _ready() -> void:
@@ -492,9 +495,13 @@ func _on_kit_picked(kit_name: String) -> void:
 				_current[slot] = default_part
 			elif SkinLoadout.REMOVABLE_SLOTS.has(slot):
 				_current[slot] = null
-	# Kit bloqueado → guarda a quest dele pro requisito no topo do preview.
+	# Guarda a quest do kit pro requisito no topo do preview: vermelho se ainda
+	# bloqueado, branco (o que liberou) se já desbloqueado. Kit sem quest limpa.
+	var kit_quest_key: String = String(SkinLoadout.get_quest_for(kit_name).get("label", ""))
 	if not SkinLoadout.is_kit_unlocked(kit_name):
-		_last_locked_quest_key = String(SkinLoadout.get_quest_for(kit_name).get("label", ""))
+		_last_locked_quest_key = kit_quest_key
+	else:
+		_last_unlocked_quest_key = kit_quest_key
 	_apply_to_preview()
 	_refresh_shop_face()
 	_play_preview_walk()
@@ -591,9 +598,14 @@ func _make_card_stylebox(selected: bool, hover: bool) -> StyleBoxFlat:
 
 func _on_card_picked(slot: StringName, part: SkinPart) -> void:
 	_current[slot] = part
-	# Peça bloqueada → guarda a quest dela pro requisito no topo do preview.
-	if part != null and not SkinLoadout.is_unlocked(part):
-		_last_locked_quest_key = String(SkinLoadout.get_quest_for(part.display_name).get("label", ""))
+	# Guarda a quest da peça pro requisito no topo do preview: vermelho se ainda
+	# bloqueada, branco (o que liberou) se já desbloqueada. Peça sem quest limpa.
+	if part != null:
+		var quest_key: String = String(SkinLoadout.get_quest_for(part.display_name).get("label", ""))
+		if not SkinLoadout.is_unlocked(part):
+			_last_locked_quest_key = quest_key
+		else:
+			_last_unlocked_quest_key = quest_key
 	var skin: Node = preview.get_node("Skin")
 	if skin != null and skin.has_method("set_part"):
 		skin.set_part(slot, part)
@@ -675,6 +687,18 @@ func _first_locked_quest_key() -> String:
 	return ""
 
 
+# Fallback (estado inicial): quest da primeira peça LIBERADA com desafio. Mostra
+# em branco o que o jogador fez pra liberar a skin equipada ao abrir a tela.
+func _first_unlocked_quest_key() -> String:
+	for slot in SkinLoadout.SLOTS:
+		var part: SkinPart = _current.get(slot)
+		if part != null and SkinLoadout.is_unlocked(part):
+			var key: String = String(SkinLoadout.get_quest_for(part.display_name).get("label", ""))
+			if key != "":
+				return key
+	return ""
+
+
 # Alguma peça da seleção atual está bloqueada?
 func _selection_has_locked() -> bool:
 	for slot in SkinLoadout.SLOTS:
@@ -698,14 +722,25 @@ func _update_lock_indicator() -> void:
 		_preview_badge.visible = locked
 	if _face_badge != null:
 		_face_badge.visible = locked
-	# Requisito de unlock no topo do quadro do boneco.
+	# Requisito no topo do quadro do boneco: vermelho se a seleção tem peça
+	# bloqueada (o que falta), branco se está liberada (o que o jogador fez).
 	if _req_label != null:
-		var req_key: String = _last_locked_quest_key
-		if req_key == "" and locked:
-			req_key = _first_locked_quest_key()
-		_req_label.visible = locked and req_key != ""
-		if _req_label.visible:
-			_req_label.text = tr(req_key)
+		if locked:
+			var req_key: String = _last_locked_quest_key
+			if req_key == "":
+				req_key = _first_locked_quest_key()
+			_req_label.visible = req_key != ""
+			if _req_label.visible:
+				_req_label.text = tr(req_key)
+				_req_label.add_theme_color_override("font_color", Color(0.98, 0.4, 0.4, 1))
+		else:
+			var req_key: String = _last_unlocked_quest_key
+			if req_key == "":
+				req_key = _first_unlocked_quest_key()
+			_req_label.visible = req_key != ""
+			if _req_label.visible:
+				_req_label.text = tr(req_key)
+				_req_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 
 
 func _setup_save_disabled_style() -> void:

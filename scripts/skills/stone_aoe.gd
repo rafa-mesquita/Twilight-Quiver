@@ -68,7 +68,9 @@ func _apply_aoe() -> void:
 				dealt_dmg *= mult
 				stun *= mult
 				CritFeedback.mark_next_hit_crit(e)
-		if e.has_method("apply_stun"):
+		# stun_duration 0 = estouro sem stun (não é a 1ª flecha do ataque; o gate
+		# de stun fica no player, igual ao raio). Esse estouro só dá dano + kb.
+		if stun > 0.0 and e.has_method("apply_stun"):
 			e.apply_stun(stun)
 			_ensure_stun_visual(e)
 		if e.has_method("apply_knockback") and offset.length() > 1.0:
@@ -106,20 +108,25 @@ func _spawn_visual() -> void:
 	# z_index = 0 nos dois (sem forçar): assim y-sortam com o mundo (Entities tem
 	# y_sort_enabled) — ficam ATRÁS de árvores/objetos quando o impacto está
 	# "acima" deles, e na frente quando abaixo. Forçar z jogava sempre pra frente.
-	# Onda sísmica no chão marcando a ÁREA do stun. Escalada pro diâmetro do AoE
-	# (frame de 31px = raio → scale = raio*2/31), centrada na origem. Cada frame
-	# repetido SEISMIC_REPEAT× pra ficar mais lenta/cadenciada + fade de opacidade.
-	var seismic := AnimatedSprite2D.new()
-	seismic.sprite_frames = _build_frames(SEISMIC_TEXTURE, SEISMIC_FRAME_W, SEISMIC_FRAME_H, SEISMIC_FRAMES, SEISMIC_FPS, SEISMIC_REPEAT)
-	seismic.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	var seismic_scale: float = (radius * 2.0) / float(SEISMIC_FRAME_W)
-	seismic.scale = Vector2(seismic_scale, seismic_scale)
-	add_child(seismic)
-	seismic.play(&"default")
-	# Fade: opacidade decai ao longo de toda a animação.
 	var seismic_dur: float = float(SEISMIC_FRAMES * SEISMIC_REPEAT) / SEISMIC_FPS
-	var tw := seismic.create_tween()
-	tw.tween_property(seismic, "modulate:a", 0.0, seismic_dur)
+	# Onda sísmica no chão = indicador da ÁREA do STUN. Só aparece quando ESTE
+	# estouro realmente stuna (1ª flecha do ataque). Estouros sem stun (extras do
+	# Multi / ricochete) mostram só os detritos — sem a onda, pra não enganar.
+	var has_stun: bool = stun_duration > 0.0
+	if has_stun:
+		# Escalada pro diâmetro do AoE (frame de 31px = raio → scale = raio*2/31),
+		# centrada na origem. Cada frame repetido SEISMIC_REPEAT× pra ficar mais
+		# lenta/cadenciada + fade de opacidade.
+		var seismic := AnimatedSprite2D.new()
+		seismic.sprite_frames = _build_frames(SEISMIC_TEXTURE, SEISMIC_FRAME_W, SEISMIC_FRAME_H, SEISMIC_FRAMES, SEISMIC_FPS, SEISMIC_REPEAT)
+		seismic.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		var seismic_scale: float = (radius * 2.0) / float(SEISMIC_FRAME_W)
+		seismic.scale = Vector2(seismic_scale, seismic_scale)
+		add_child(seismic)
+		seismic.play(&"default")
+		# Fade: opacidade decai ao longo de toda a animação.
+		var tw := seismic.create_tween()
+		tw.tween_property(seismic, "modulate:a", 0.0, seismic_dur)
 
 	# Detritos da pedra (Rock Arrow Impact.png — 3 frames 32x32) em tamanho
 	# natural. Adicionado DEPOIS da sísmica → desenha por cima dela (mesmo z).
@@ -128,11 +135,12 @@ func _spawn_visual() -> void:
 	anim.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(anim)
 	anim.play(&"default")
-	# Detritos somem rápido (quando a anim curta termina); a sísmica (mais longa)
-	# segura o node até o fim, e aí libera tudo. Fallback caso o sinal não dispare.
 	anim.animation_finished.connect(anim.queue_free)
-	seismic.animation_finished.connect(_die)
-	get_tree().create_timer(seismic_dur + 0.3).timeout.connect(_die)
+	# Libera o AoE quando o visual mais longo termina: com onda, ela segura o node;
+	# sem onda (sem stun), os detritos curtos. Timer cobre os dois casos.
+	var impact_dur: float = float(IMPACT_FRAMES) / IMPACT_FPS
+	var life: float = (seismic_dur if has_stun else impact_dur) + 0.3
+	get_tree().create_timer(life).timeout.connect(_die)
 
 
 func _build_frames(tex: Texture2D, fw: int, fh: int, count: int, fps: float, repeat: int = 1) -> SpriteFrames:

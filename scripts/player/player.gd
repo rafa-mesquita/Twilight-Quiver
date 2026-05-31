@@ -203,6 +203,9 @@ const STONE_QUAKE_SHAKE_DURATION: float = 0.6
 const STONE_QUAKE_SHAKE_STRENGTH: float = 7.0
 const STONE_AOE_QUAKE_SCRIPT: GDScript = preload("res://scripts/skills/stone_aoe.gd")
 const STONE_QUAKE_STUN_VISUAL: GDScript = preload("res://scripts/effects/stun_visual.gd")
+# Nerf: flechas EXTRAS (Multi/Duplas) da pedra batem a esta fração do dano —
+# só a primária leva o dano cheio (espelha o stun, que só a 1ª flecha aplica).
+const STONE_EXTRA_DMG_MULT: float = 0.5
 const STONE_QUAKE_SOUND: AudioStream = preload("res://assets/effects/Rock Arrow/terremoto sismico.mp3")
 const STONE_QUAKE_VOLUME_DB: float = -6.0
 var _stone_skill_cd_remaining: float = 0.0
@@ -283,6 +286,10 @@ var _fenda_combo_points: int = 0
 # imune a dano (i-frames) E stun (pra atravessar vinhas da Duskrose).
 var _fenda_teleporting: bool = false
 var _fenda_saved_mask: int = 0
+# Setado quando o blink termina; varre as moedas do DESTINO 1 frame depois (pra
+# a lista de overlap física já refletir o ponto final). A coleta em trânsito é
+# pulada no gold.gd via _fenda_teleporting — a fenda não suga a linha A→B.
+var _fenda_pending_dest_pickup: bool = false
 
 # === Esquivando (mutuamente exclusivo com dash — compartilham slot de mov.) ===
 # Lv1: primeira flecha do volley que acerta inimigo dá +5% atk speed e +5% move
@@ -803,6 +810,9 @@ func _release_arrow() -> void:
 	# Chain lightning: novo ataque libera o token global (primeira flecha que
 	# acertar proca; demais multi-arrow/ricochete não procam mais).
 	reset_chain_attack_token()
+	# Stun da pedra: mesma lógica — novo ataque libera o token (só a 1ª flecha
+	# que conectar aplica stun).
+	reset_stone_stun_token()
 	# Decisão de pierce é feita UMA VEZ por ataque — a volley inteira de
 	# Multiple Arrows compartilha o mesmo flag (ex: lv perfuração 1 + multi lv1
 	# = a cada 3º ataque, as 3 flechas perfuram juntas).
@@ -1070,6 +1080,10 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 		# +dano direto da pedra (aplicado sobre o damage já calculado acima).
 		if "damage" in arrow:
 			arrow.damage *= _stone_direct_dmg_mult()
+			# Nerf: flechas extras (Multi/Duplas) batem mais fraco que a primária.
+			# Reduz ANTES do stone_aoe_damage abaixo, então o AoE delas também cai.
+			if not is_primary:
+				arrow.damage *= STONE_EXTRA_DMG_MULT
 		if "stone_aoe_radius" in arrow:
 			arrow.stone_aoe_radius = _stone_radius()
 		# Referência de dano do AoE = o dano direto da flecha (já inclui o +dano
@@ -1355,11 +1369,13 @@ func _stone_pierce_lifetime() -> float:
 
 func _stone_direct_dmg_mult() -> float:
 	# +dano direto da pedra (sobre o dano da flecha). Escala por nível.
+	# Nerf 2026-05-31: curva descida em 0.10 (L1 de +50% pra +40%) — nerfa todos
+	# os níveis. Afeta direto E AoE (stone_aoe_damage = arrow.damage).
 	match stone_arrow_level:
-		1: return 1.50
-		2: return 1.65
-		3: return 1.80
-		4: return 2.00
+		1: return 1.40
+		2: return 1.55
+		3: return 1.70
+		4: return 1.90
 	return 1.0
 
 
@@ -1470,6 +1486,27 @@ func reset_chain_attack_token() -> void:
 	_chain_attack_used = false
 
 
+# Gate global do STUN da pedra: mesma lógica do raio — cada ATAQUE (volley
+# inteiro) só aplica stun uma vez. A 1ª flecha que conectar (primária, extra do
+# Multi, perfuração ou ricochete) consome o token; as outras só dão dano +
+# knockback, sem stun. Resetado em _release_arrow e na dash auto-attack.
+var _stone_stun_attack_used: bool = false
+
+
+func consume_stone_stun_token() -> bool:
+	# Retorna true se ESTE hit deve aplicar o stun da pedra (direto + AoE).
+	if stone_arrow_level <= 0:
+		return false
+	if _stone_stun_attack_used:
+		return false
+	_stone_stun_attack_used = true
+	return true
+
+
+func reset_stone_stun_token() -> void:
+	_stone_stun_attack_used = false
+
+
 func _perf_damage_bonus() -> float:
 	match perfuracao_level:
 		1: return 0.30
@@ -1562,6 +1599,16 @@ func _try_fenda() -> void:
 	var in_combo: bool = fenda_level >= 3 and _fenda_combo_remaining > 0.0 and _fenda_combo_points < FENDA_COMBO_MAX_POINTS
 	if not in_combo and _fenda_cd_remaining > 0.0:
 		return
+	# Cancela um ataque em andamento ANTES do blink. Sem isso, o sprite.play("dash")
+	# abaixo interrompe a anim "attack" — que então nunca dispara animation_finished,
+	# deixando is_attacking travado em true. Resultado: _update_animation sai cedo
+	# (não reseta o sprite) e o input fica bloqueado → player CONGELA no sprite
+	# "dash" no fim da fenda (bug reportado). O attack_timer segue e restaura
+	# can_attack normalmente; o tiro em andamento é cancelado (escolheu blinkar).
+	if is_attacking:
+		is_attacking = false
+		is_drawing = false
+		sprite.speed_scale = 1.0
 	_count_active_skill_use()  # conta pra quest da skin Urban
 	var from_pos: Vector2 = global_position
 	# Resolve o destino: clicou dentro de um objeto / fora do mapa → vai pro
@@ -1608,13 +1655,28 @@ func _start_fenda_cooldown() -> void:
 	dash_cooldown_changed.emit(_fenda_cd_remaining, _fenda_cooldown())
 
 
+func _fenda_collect_destination_coins() -> void:
+	# Pega só as moedas que o player está sobrepondo no DESTINO do blink (as do
+	# caminho foram puladas no gold.gd via _fenda_teleporting). Usa overlaps_body
+	# (shapes reais) — sem isso a fenda viraria um ímã que suga a linha A→B inteira.
+	for coin in get_tree().get_nodes_in_group("gold"):
+		if coin is Area2D and coin.has_method("collect") and (coin as Area2D).overlaps_body(self):
+			coin.collect(self)
+
+
 func _update_fenda(delta: float) -> void:
 	if fenda_level <= 0:
 		return
+	# Coleta as moedas do destino 1 frame depois do blink terminar (overlap físico
+	# já atualizado pro ponto final).
+	if _fenda_pending_dest_pickup and not _fenda_teleporting:
+		_fenda_pending_dest_pickup = false
+		_fenda_collect_destination_coins()
 	# Blink acabou (a maquinaria do dash zerou _is_dashing) → restaura a colisão.
 	if _fenda_teleporting and not _is_dashing:
 		collision_mask = _fenda_saved_mask
 		_fenda_teleporting = false
+		_fenda_pending_dest_pickup = true
 	# Janela do combo (L3+): se expirar sem reusar, dispara o cooldown.
 	if _fenda_combo_remaining > 0.0:
 		_fenda_combo_remaining = maxf(_fenda_combo_remaining - delta, 0.0)
@@ -2598,6 +2660,8 @@ func _dash_auto_attack_volley() -> void:
 	_esquivando_volley_id += 1
 	# Chain lightning: novo ataque libera o token global.
 	reset_chain_attack_token()
+	# Stun da pedra: idem — libera o token pra esta auto-attack.
+	reset_stone_stun_token()
 	var target: Node2D = _find_nearest_enemy()
 	if target == null:
 		return

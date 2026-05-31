@@ -202,18 +202,18 @@ const _UPG_CHIP_SIZE: Vector2 = Vector2(72, 44)
 const _UPG_MAX_CELLS_NORMAL: int = 4
 const _UPG_MAX_CELLS_STATUS: int = 5
 const _UPG_BADGE_COLOR: Color = Color(1.0, 0.93, 0.4, 1.0)
-# Badge usa fonte do sistema (não ByteBounce) pra renderizar o caractere ★.
-# SystemFont escolhe automaticamente uma fonte instalada que suporte unicode.
-var _upg_badge_font: SystemFont = null
+# Badge usa Silver.ttf (não ByteBounce) pra renderizar o caractere ★ (U+2605).
+# Silver TEM o glifo e é bundled → funciona no WEB. SystemFont NÃO funciona no
+# web (navegador não dá acesso a fontes do SO) → o ★ virava tofu "2605".
+var _upg_badge_font: Font = null
 
 
-func _get_upg_badge_font() -> SystemFont:
+func _get_upg_badge_font() -> Font:
 	if _upg_badge_font != null:
 		return _upg_badge_font
-	var sf := SystemFont.new()
-	sf.font_names = PackedStringArray(["Segoe UI", "Arial", "Helvetica", "DejaVu Sans", "Noto Sans"])
-	_upg_badge_font = sf
-	return sf
+	# Silver.ttf tem o glifo ★ (U+2605) e é bundled — renderiza no web.
+	_upg_badge_font = load("res://font/Silver.ttf")
+	return _upg_badge_font
 
 # Largura total do Fill (sem padding agora que tirei o Bg/border).
 const BAR_FILL_WIDTH: float = 330.0
