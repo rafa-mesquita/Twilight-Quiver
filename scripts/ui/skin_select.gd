@@ -39,6 +39,14 @@ const _SLOT_LABELS: Dictionary = {
 	&"bow":    "PLAYER_SLOT_BOW",
 }
 
+# Ordem das abas por slot (UI only). Desacoplado de SkinLoadout.SLOTS: este
+# array controla SÓ a ordem/visibilidade das abas. SLOTS segue a ordem de
+# dados (save/load/apply). "Kits" entra à parte (sempre primeiro). alfaja no
+# fim: sem parts hoje, então a aba é pulada (invisível, sem efeito).
+const _TAB_SLOT_ORDER: Array[StringName] = [
+	&"body", &"hair", &"shirt", &"cape", &"legs", &"quiver", &"bow", &"alfaja"
+]
+
 # Stats exibidos no painel de progresso (ordem importa). Cada entry = chave do
 # stat + translation key do label. runs_no_damage NÃO entra aqui (decisão de design).
 const _STAT_DISPLAY: Array = [
@@ -229,7 +237,7 @@ func _build_tabs() -> void:
 		var kit_btn: Button = _make_tab_button(_KIT_SLOT, kit_label)
 		tabs_container.add_child(kit_btn)
 		_tab_buttons[_KIT_SLOT] = kit_btn
-	for slot in SkinLoadout.SLOTS:
+	for slot in _TAB_SLOT_ORDER:
 		if (_available.get(slot, []) as Array).is_empty():
 			continue
 		var label: String = tr(String(_SLOT_LABELS.get(slot, String(slot))))

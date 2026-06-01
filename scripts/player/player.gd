@@ -489,6 +489,9 @@ var stats_kills_by_source: Dictionary = {}
 # Lista de IDs de bosses mortos nesta run. Usada pelo skin_loadout.record_run
 # pra detectar unlocks de skins do tipo `boss_killed`.
 var stats_bosses_killed: Array[String] = []
+# Flag por-run: passou das waves 1, 2 e 3 sem tomar dano. Setada pelo
+# wave_manager no fim da wave 3 (se stats_damage_taken == 0). Unlock da Hawk.
+var stats_flawless_through_w3: bool = false
 
 
 func _ready() -> void:

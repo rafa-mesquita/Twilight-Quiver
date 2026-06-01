@@ -946,6 +946,16 @@ func _finish_wave() -> void:
 	wave_active = false
 	# Garante que a barra mostra 100% antes da tela de "Wave Limpa".
 	_emit_progress()
+	# Unlocks de skin amarrados à conclusão de wave:
+	#  - Hawk: passar das waves 1-3 SEM dano → no fim da wave 3, se o dano
+	#    acumulado da run for 0, marca a flag (record_run persiste no death).
+	#  - Destiny: concluir a Raid 21 (os 2 bosses mortos) → reporta "raid21".
+	var _p_fw := get_tree().get_first_node_in_group("player")
+	if _p_fw != null:
+		if wave_number == 3 and "stats_damage_taken" in _p_fw and float(_p_fw.stats_damage_taken) <= 0.0 and "stats_flawless_through_w3" in _p_fw:
+			_p_fw.stats_flawless_through_w3 = true
+		if wave_number == boss_dual_wave and _p_fw.has_method("notify_boss_killed"):
+			_p_fw.notify_boss_killed("raid21")
 	# Pós-boss: segura tudo (cleanup, magnet, tela "Wave Limpa") por
 	# `boss_kill_hold` segundos pras moedas dropadas pelo boss ficarem visíveis,
 	# saltarem e o player ter tempo de coletar/ver a animação.

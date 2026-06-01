@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bvimmuy1sv8ni"
-path="res://.godot/imported/Hawk.png-6d475fb440c6b5909f00c168c80d3d2a.ctex"
+uid="uid://bn44uimo7cjkf"
+path="res://.godot/imported/Destiny.png-a3d084eeee3d0063a7e05d03b9b72f7b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/player/skin/Hawk.png"
-dest_files=["res://.godot/imported/Hawk.png-6d475fb440c6b5909f00c168c80d3d2a.ctex"]
+source_file="res://assets/player/legs/Destiny.png"
+dest_files=["res://.godot/imported/Destiny.png-a3d084eeee3d0063a7e05d03b9b72f7b.ctex"]
 
 [params]
 

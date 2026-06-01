@@ -37,7 +37,7 @@ size = Vector2(842, 10)
 [sub_resource type="RectangleShape2D" id="RectShape_bound_v"]
 size = Vector2(8, 568.5)
 
-[node name="Main" type="Node2D" unique_id=1716182118]
+[node name="Player" type="Node2D" unique_id=1716182118]
 script = ExtResource("11_wave")
 monkey_scene = ExtResource("10_monkey")
 mage_scene = ExtResource("16_mage")

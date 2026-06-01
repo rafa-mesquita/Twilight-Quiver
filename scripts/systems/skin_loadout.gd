@@ -50,23 +50,27 @@ const DEFAULT_PREFERENCES: Dictionary = {
 #  - body de "Linked"/"Rosa_Onyx" resolve pra "Linked_Pink" (mesmo tom de pele).
 #  - arco+aljava de "Hawk"/"Skeleton" resolvem pra "Hawk_Skeleton" — peça única,
 #    aparece como UM card nas abas Arco/Aljava em vez de dois iguais.
+#  - body de "Hawk"/"Destiny" resolve pra "Hawk_Destiny" (corpo idêntico). As
+#    PERNAS são próprias de cada um (diferentes). Destiny NÃO tem bow/quiver
+#    próprios → caem no Default (preenchimento do kit).
 const KIT_PART_OVERRIDE: Dictionary = {
 	"Linked":    {&"body": "Linked_Pink"},
 	"Rosa_Onyx": {&"body": "Linked_Pink"},
-	"Hawk":      {&"bow": "Hawk_Skeleton", &"quiver": "Hawk_Skeleton"},
+	"Hawk":      {&"bow": "Hawk_Skeleton", &"quiver": "Hawk_Skeleton", &"body": "Hawk_Destiny"},
 	"Skeleton":  {&"bow": "Hawk_Skeleton", &"quiver": "Hawk_Skeleton"},
+	"Destiny":   {&"body": "Hawk_Destiny"},
 }
 
 # Peças PARTILHADAS entre kits (resolvidas via KIT_PART_OVERRIDE), NÃO kits
 # próprios. Mesmo ocupando >= _KIT_MIN_SLOTS slots, não listam como card de kit.
-const SHARED_PART_NAMES: Array[String] = ["Hawk_Skeleton"]
+const SHARED_PART_NAMES: Array[String] = ["Hawk_Skeleton", "Hawk_Destiny"]
 
 # Migração de display_names salvos (saves antigos) → nome atual, por slot.
 #  - body "Linked" virou "Linked_Pink".
 #  - arco/aljava "Hawk" e "Skeleton" viraram a peça partilhada "Hawk_Skeleton".
 #  - "Terracota" foi renomeada pra "Earthy" (todas as peças do kit).
 const PART_NAME_MIGRATIONS: Dictionary = {
-	&"body":   {"Linked": "Linked_Pink", "Terracota": "Earthy"},
+	&"body":   {"Linked": "Linked_Pink", "Terracota": "Earthy", "Hawk": "Hawk_Destiny", "Destiny": "Hawk_Destiny"},
 	&"legs":   {"Terracota": "Earthy"},
 	&"shirt":  {"Terracota": "Earthy"},
 	&"cape":   {"Terracota": "Earthy"},
@@ -119,8 +123,10 @@ const SKIN_QUESTS: Dictionary = {
 		"hidden": false,
 	},
 	"Hawk": {
-		"type": "wave_reached",
-		"value": 20,
+		# Passar das waves 1, 2 e 3 sem tomar NENHUM dano (flag setada no fim da
+		# wave 3 se o dano acumulado da run for 0).
+		"type": "flawless_w3",
+		"value": 1,
 		"label": "PLAYER_QUEST_HAWK",
 		"hidden": false,
 	},
@@ -149,13 +155,27 @@ const SKIN_QUESTS: Dictionary = {
 		"label": "PLAYER_QUEST_URBAN",
 		"hidden": false,
 	},
+	"Destiny": {
+		# Derrotar os DOIS bosses da Raid 21 (confronto duplo). A raid 21 só
+		# termina com os dois mortos → o wave_manager reporta "raid21" via
+		# notify_boss_killed ao concluir a wave (mesma engrenagem do boss_killed).
+		"type": "boss_killed",
+		"value": "raid21",
+		"label": "PLAYER_QUEST_DESTINY",
+		"hidden": false,
+	},
 }
 
 # DEV: skins que ficam BLOQUEADAS mesmo em debug build, pra testar a UI de skin
 # bloqueada (nome vermelho, "!", tooltip de unlock no hover, preview com filtro
 # vermelho leve, botão Salvar travado). Esvaziar ([]) pra desbloquear tudo em
 # debug como antes. IGNORADO em release — lá vale a quest real de cada skin.
-const DEV_FORCE_LOCKED: Array[String] = ["Skeleton"]
+const DEV_FORCE_LOCKED: Array[String] = []
+# DEV: quando true, debug build libera TODAS as skins (atalho pra testar visuais
+# sem grindar). Setado FALSE pra testar os UNLOCKS reais no dev — as skins ficam
+# bloqueadas até cumprir a quest, igual ao release. Flipar pra true pra voltar ao
+# atalho. (Em release sempre vale a quest real, independente disso.)
+const DEV_UNLOCK_ALL: bool = true
 
 # Stats persistentes em [progress]. Chaves usadas pelo sistema.
 const STAT_MAX_WAVE: StringName = &"max_wave_reached"
@@ -176,6 +196,9 @@ const STAT_ELEMENTAL_L4: StringName = &"elemental_l4_reached"
 # Quantas skills ativáveis (Q elemental ou espaço: dash/esquivando) o player
 # usou no total entre runs. Unlock da skin Urban.
 const STAT_ACTIVE_SKILLS: StringName = &"active_skills_used_total"
+# Flag (0/1): jogador já passou das waves 1, 2 e 3 sem tomar dano em alguma run.
+# Unlock da skin Hawk.
+const STAT_FLAWLESS_W3: StringName = &"flawless_through_w3"
 # Set de boss IDs já abatidos (persistente entre runs). Armazenado como string
 # CSV no settings.cfg porque ConfigFile só aceita primitivos.
 const _KEY_BOSSES_KILLED_SET: String = "bosses_killed_set"
@@ -383,6 +406,8 @@ static func _is_quest_satisfied(quest: Dictionary) -> bool:
 			return get_stat(STAT_ELEMENTAL_L4) >= int(raw_value)
 		"active_skills_used":
 			return get_stat(STAT_ACTIVE_SKILLS) >= int(raw_value)
+		"flawless_w3":
+			return get_stat(STAT_FLAWLESS_W3) >= int(raw_value)
 	return true  # type desconhecido: assume desbloqueada (não bloqueia o jogo).
 
 
@@ -413,10 +438,10 @@ static func has_killed_boss(boss_id: String) -> bool:
 static func is_unlocked(part: SkinPart) -> bool:
 	if part == null:
 		return true
-	# Debug build (editor + debug export) libera tudo — facilita testar skins
-	# sem precisar grindar quests. Exceção: DEV_FORCE_LOCKED fica travado pra
-	# testar a UI de bloqueio. Release build mantém unlock real.
-	if OS.is_debug_build():
+	# Debug build libera tudo SÓ se DEV_UNLOCK_ALL (atalho de teste de visuais).
+	# Com DEV_UNLOCK_ALL=false, debug respeita a quest real (skins relockadas pra
+	# testar os unlocks). DEV_FORCE_LOCKED força locked mesmo com DEV_UNLOCK_ALL.
+	if OS.is_debug_build() and DEV_UNLOCK_ALL:
 		return not DEV_FORCE_LOCKED.has(part.display_name)
 	var quest: Dictionary = SKIN_QUESTS.get(part.display_name, {})
 	if quest.is_empty():
@@ -434,7 +459,7 @@ static func is_kit_unlocked(kit_name: String) -> bool:
 	# checar o unlock pela peça body resolveria a quest errada: a peça partilhada
 	# "Linked_Pink" não tem quest, então Linked/Rosa_Onyx desbloqueavam sem o
 	# desafio. Aqui a quest é buscada pelo nome do kit (que casa com SKIN_QUESTS).
-	if OS.is_debug_build():
+	if OS.is_debug_build() and DEV_UNLOCK_ALL:
 		return not DEV_FORCE_LOCKED.has(kit_name)
 	var quest: Dictionary = SKIN_QUESTS.get(kit_name, {})
 	if quest.is_empty():
@@ -488,6 +513,9 @@ static func record_run(run_stats: Dictionary) -> Array:
 	# Flag persistente: chegou ao Lv4 de algum elemental nesta run (unlock Skeleton).
 	if bool(run_stats.get("elemental_l4_reached", false)) and get_stat(STAT_ELEMENTAL_L4) < 1:
 		set_stat(STAT_ELEMENTAL_L4, 1)
+	# Flag persistente: passou das waves 1-3 sem dano nesta run (unlock Hawk).
+	if bool(run_stats.get("flawless_through_w3", false)) and get_stat(STAT_FLAWLESS_W3) < 1:
+		set_stat(STAT_FLAWLESS_W3, 1)
 	set_stat(STAT_RUNS_COMPLETED, get_stat(STAT_RUNS_COMPLETED) + 1)
 	if run_dmg_taken == 0 and run_wave >= 1:
 		set_stat(STAT_RUNS_NO_DAMAGE, get_stat(STAT_RUNS_NO_DAMAGE) + 1)

@@ -42,3 +42,6 @@ miro_response.json
 /capra_jogo.png
 /capra_jogo.png.import
 /hud.tscn
+
+# Bug reports / vídeos de repro (dev only)
+bug report/

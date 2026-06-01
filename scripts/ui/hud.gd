@@ -1728,6 +1728,7 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 		"killed_by": killed_by,
 		"bosses_killed": bosses,
 		"elemental_l4_reached": elemental_l4,
+		"flawless_through_w3": bool(p.get("stats_flawless_through_w3")) if p != null and "stats_flawless_through_w3" in p else false,
 	}
 
 
