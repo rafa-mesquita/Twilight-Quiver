@@ -90,6 +90,36 @@ jobs:
           ./godot --headless --export-release "macOS" build/macos/twilight-quiver.zip
           ls -la build/macos/
 
+      # Publica os builds como assets na release pública que o launcher consome.
+      # Os nomes seguem o que o Updater.gd do launcher procura: zips com a keyword
+      # da plataforma (lowercase) e, no Windows, o exe interno = TwilightQuiver.exe.
+      # Precisa do secret RELEASES_TOKEN (PAT com Contents:write em twilight-quiver-releases).
+      # Sem o secret, o passo só avisa e segue (não quebra o deploy do site).
+      - name: Publicar release do jogo (twilight-quiver-releases)
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::RELEASES_TOKEN nao configurado — pulando publicacao da release. Crie um PAT com Contents:write em twilight-quiver-releases e salve como secret RELEASES_TOKEN."
+            exit 0
+          fi
+          set -e
+          VERSION=$(grep -oP 'config/version="\K[^"]+' project.godot)
+          REPO="rafa-mesquita/twilight-quiver-releases"
+          echo "Publicando versao $VERSION em $REPO"
+          # Empacota com os nomes EXATOS que o launcher procura (lowercase; exe sem espaco).
+          cp "build/windows/twilight-quiver.exe" "TwilightQuiver.exe"
+          zip -j "TwilightQuiver-windows.zip" "TwilightQuiver.exe"
+          cp "build/macos/twilight-quiver.zip" "TwilightQuiver-macos.zip"
+          ls -la TwilightQuiver-windows.zip TwilightQuiver-macos.zip
+          # 1a vez cria a release; nas seguintes atualiza os assets da mesma tag (versao).
+          if gh release view "$VERSION" --repo "$REPO" >/dev/null 2>&1; then
+            gh release upload "$VERSION" TwilightQuiver-windows.zip TwilightQuiver-macos.zip --repo "$REPO" --clobber
+          else
+            gh release create "$VERSION" TwilightQuiver-windows.zip TwilightQuiver-macos.zip \
+              --repo "$REPO" --title "$VERSION" --notes "Build automatico da versao $VERSION."
+          fi
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
