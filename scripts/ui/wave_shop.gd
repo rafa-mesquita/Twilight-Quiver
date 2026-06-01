@@ -348,6 +348,7 @@ var _augment_tooltip: PanelContainer = null
 var _augment_tooltip_label: RichTextLabel = null
 # Modal de confirmação de venda de pet (right-click no chip do StatsCard).
 var _sell_confirm_dialog: Panel = null
+var _all_augments_dialog: Panel = null
 
 # Status que aparecem no StatsCard (em ordem de exibição).
 const _STATS_CARD_ROWS: Array[Dictionary] = [
@@ -924,6 +925,9 @@ func _sell_pet(id: String) -> void:
 		p.add_gold(refund)
 	if p.has_method("reset_pet"):
 		p.reset_pet(id)
+	# Vender libera comprar outro pet: re-avalia os slots (preco/disponibilidade)
+	# pro novo numero de pets, sem re-rolar a selecao exibida.
+	_reeval_aliado_slots()
 	if _augment_tooltip != null:
 		_augment_tooltip.visible = false
 	_play_buy_sound()
@@ -937,6 +941,20 @@ func _sell_pet(id: String) -> void:
 	_refresh_pets_box()
 	_refresh_augments_column()
 	_refresh_stats_card()
+
+
+func _reeval_aliado_slots() -> void:
+	# Recalcula availability/preco dos slots de aliado JA exibidos pro estado
+	# atual de pets (ex: vender libera comprar outro). NAO re-rola a selecao.
+	var p := _get_player()
+	if p == null:
+		return
+	var distinct_owned: int = _distinct_pets_owned(p)
+	for i in aliado_slots.size():
+		var slot: Dictionary = aliado_slots[i]
+		var sid: String = String(slot.get("id", ""))
+		if sid in _ALL_ALLY_IDS:
+			aliado_slots[i] = _build_ally_slot(sid, p, distinct_owned)
 
 
 func _roll_upg_slots() -> void:
@@ -2384,18 +2402,24 @@ func _refresh_augments_column() -> void:
 	# Status vão pro StatsCard. Allies (pets) vão pro PetsBox abaixo. Aqui só
 	# entram upgrades de gameplay (perfuração, fire arrow, dash, etc).
 	var ids: Array = hud.UPGRADE_DISPLAY_ORDER
-	var added: int = 0
+	var owned: Array = []
 	for id_v in ids:
-		if added >= _AUGMENT_MAX_SLOTS:
-			break
 		var id: String = String(id_v)
 		if _is_status_id(id) or id in _PETS_ROW_IDS:
 			continue
 		var lvl: int = int(p.get_upgrade_count(id))
 		if lvl <= 0:
 			continue
-		augments_box.add_child(_build_augment_chip(id, lvl, hud))
-		added += 1
+		owned.append({"id": id, "lvl": lvl})
+	# Cabe tudo: mostra todos. Estoura: mostra (MAX-1) chips + botao +N (ver todos).
+	if owned.size() <= _AUGMENT_MAX_SLOTS:
+		for o in owned:
+			augments_box.add_child(_build_augment_chip(String(o["id"]), int(o["lvl"]), hud))
+	else:
+		var shown: int = _AUGMENT_MAX_SLOTS - 1
+		for i in shown:
+			augments_box.add_child(_build_augment_chip(String(owned[i]["id"]), int(owned[i]["lvl"]), hud))
+		augments_box.add_child(_build_see_all_chip(owned.size() - shown, owned, hud))
 
 
 # IDs de "status" (HP/armor/damage/attack_speed/move_speed) — escala infinita,
@@ -2608,6 +2632,109 @@ func _build_stat_line(label_key: String, lvl: int, gain_text: String) -> Control
 	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	row.add_child(value)
 	return row
+
+
+func _build_see_all_chip(extra: int, owned: Array, hud: Node) -> Control:
+	var chip := Button.new()
+	chip.custom_minimum_size = _AUGMENT_SLOT_SIZE
+	chip.focus_mode = Control.FOCUS_NONE
+	chip.text = "+%d" % extra
+	chip.add_theme_font_override("font", load("res://font/Silver.ttf"))
+	chip.add_theme_font_size_override("font_size", 28)
+	chip.add_theme_color_override("font_color", Color(1.0, 0.84, 0.34, 1.0))
+	chip.add_theme_color_override("font_hover_color", Color(1.0, 0.92, 0.6, 1.0))
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.16, 0.10, 0.20, 0.95)
+	sb.border_color = Color(0.65, 0.45, 0.85, 1.0)
+	sb.border_width_left = 2
+	sb.border_width_top = 2
+	sb.border_width_right = 2
+	sb.border_width_bottom = 2
+	chip.add_theme_stylebox_override("normal", sb)
+	chip.add_theme_stylebox_override("hover", sb)
+	chip.add_theme_stylebox_override("pressed", sb)
+	chip.tooltip_text = tr("SHOP_SEE_ALL_UPGRADES")
+	chip.pressed.connect(_show_all_augments_dialog.bind(owned, hud))
+	return chip
+
+
+func _ensure_all_augments_dialog() -> void:
+	if _all_augments_dialog != null:
+		return
+	var dlg := Panel.new()
+	dlg.name = "AllAugmentsDialog"
+	dlg.visible = false
+	dlg.z_index = 200
+	dlg.anchor_right = 1.0
+	dlg.anchor_bottom = 1.0
+	dlg.mouse_filter = Control.MOUSE_FILTER_STOP
+	var bstyle := StyleBoxFlat.new()
+	bstyle.bg_color = Color(0.0, 0.0, 0.0, 0.55)
+	dlg.add_theme_stylebox_override("panel", bstyle)
+	dlg.gui_input.connect(_on_all_augments_backdrop_input)
+	root_panel.add_child(dlg)
+	var center := CenterContainer.new()
+	center.name = "Center"
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dlg.add_child(center)
+	var card := PanelContainer.new()
+	card.name = "Card"
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	var cs := StyleBoxFlat.new()
+	cs.bg_color = Color(0.10, 0.07, 0.14, 1.0)
+	cs.border_color = Color(0.55, 0.40, 0.70, 1.0)
+	cs.border_width_left = 3
+	cs.border_width_top = 3
+	cs.border_width_right = 3
+	cs.border_width_bottom = 3
+	cs.corner_radius_top_left = 6
+	cs.corner_radius_top_right = 6
+	cs.corner_radius_bottom_left = 6
+	cs.corner_radius_bottom_right = 6
+	cs.content_margin_left = 24
+	cs.content_margin_right = 24
+	cs.content_margin_top = 20
+	cs.content_margin_bottom = 20
+	card.add_theme_stylebox_override("panel", cs)
+	center.add_child(card)
+	var vbox := VBoxContainer.new()
+	vbox.name = "VBox"
+	vbox.add_theme_constant_override("separation", 16)
+	card.add_child(vbox)
+	var title := Label.new()
+	title.name = "Title"
+	title.text = "SHOP_OWNED_UPGRADES_TITLE"
+	title.add_theme_font_override("font", load("res://font/Silver.ttf"))
+	title.add_theme_font_size_override("font_size", 38)
+	title.add_theme_color_override("font_color", Color(0.95, 0.85, 1.0, 1.0))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+	var grid := GridContainer.new()
+	grid.name = "Grid"
+	grid.columns = 8
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	vbox.add_child(grid)
+	_all_augments_dialog = dlg
+
+
+func _show_all_augments_dialog(owned: Array, hud: Node) -> void:
+	_ensure_all_augments_dialog()
+	var grid: GridContainer = _all_augments_dialog.get_node("Center/Card/VBox/Grid") as GridContainer
+	if grid == null:
+		return
+	for c in grid.get_children():
+		c.queue_free()
+	for o in owned:
+		grid.add_child(_build_augment_chip(String(o["id"]), int(o["lvl"]), hud))
+	_all_augments_dialog.visible = true
+
+
+func _on_all_augments_backdrop_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if _all_augments_dialog != null:
+			_all_augments_dialog.visible = false
 
 
 func _build_augment_chip(id: String, lvl: int, hud: Node) -> Control:
@@ -3107,7 +3234,8 @@ func _ensure_augment_tooltip() -> void:
 	_augment_tooltip = PanelContainer.new()
 	_augment_tooltip.visible = false
 	_augment_tooltip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_augment_tooltip.z_index = 100
+	# z acima do modal "Seus Upgrades" (z=200) pra o tooltip nao ficar atras dele.
+	_augment_tooltip.z_index = 300
 	_augment_tooltip.custom_minimum_size = Vector2(380, 0)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.10, 0.07, 0.14, 0.96)

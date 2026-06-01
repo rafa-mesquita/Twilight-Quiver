@@ -1816,25 +1816,34 @@ func _prespawn_boss_wave_entities() -> void:
 						enemy.max_hp = 6000.0
 					elif type_key == "duskrose":
 						enemy.max_hp = 8000.0
-			var gold_mult: float = 0.0
-			if wave_number == boss_redux_wave:
-				gold_mult = BOSS_REDUX_GOLD_MULT
-			elif wave_number == boss_dual_wave:
-				gold_mult = BOSS_DUAL_GOLD_MULT
-			if gold_mult > 1.0 and (type_key == "mage_monkey" or type_key == "duskrose"):
+			# Gold dos bosses por wave (valores FINAIS, fixos):
+			# - Wave 7 (Gorilla solo): 20-30 (pool ponderada mantida, pivot 23).
+			# - Wave 14 (Duskrose solo): 40-60.
+			# - Wave 21 (duplo): TOTAL combinado 70-100 — moedas travadas ate os 2
+			#   morrerem e caem juntas. Split: Gorilla 30-45 + Duskrose 40-55.
+			if wave_number == 7 and type_key == "mage_monkey":
 				if "gold_drop_min" in enemy:
-					enemy.gold_drop_min = int(round(float(enemy.gold_drop_min) * gold_mult))
+					enemy.gold_drop_min = 20
 				if "gold_drop_max" in enemy:
-					enemy.gold_drop_max = int(round(float(enemy.gold_drop_max) * gold_mult))
-				if "gold_drop_pivot" in enemy:
-					enemy.gold_drop_pivot = int(round(float(enemy.gold_drop_pivot) * gold_mult))
-			# Wave 14 (Duskrose): drop final FIXO entre 40 e 60 (nerf do gold do
-			# round) — sobrescreve o mult acima.
-			if wave_number == boss_redux_wave and type_key == "duskrose":
+					enemy.gold_drop_max = 30
+			elif wave_number == boss_redux_wave and type_key == "duskrose":
 				if "gold_drop_min" in enemy:
 					enemy.gold_drop_min = 40
 				if "gold_drop_max" in enemy:
 					enemy.gold_drop_max = 60
+			elif wave_number == boss_dual_wave:
+				if type_key == "mage_monkey":
+					if "gold_drop_min" in enemy:
+						enemy.gold_drop_min = 30
+					if "gold_drop_max" in enemy:
+						enemy.gold_drop_max = 45
+					if "gold_drop_pivot" in enemy:
+						enemy.gold_drop_pivot = 45
+				elif type_key == "duskrose":
+					if "gold_drop_min" in enemy:
+						enemy.gold_drop_min = 40
+					if "gold_drop_max" in enemy:
+						enemy.gold_drop_max = 55
 			world.add_child(enemy)
 			enemy.global_position = _pick_spawn_for(type_key)
 			_pause_if_time_frozen(enemy)

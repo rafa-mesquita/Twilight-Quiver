@@ -142,7 +142,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 	"hp", "armor", "damage", "attack_speed", "move_speed",
 	# Upgrades de gameplay
 	"perfuracao", "ricochet_arrow", "multi_arrow", "double_arrows", "chain_lightning",
-	"fire_arrow", "curse_arrow", "ice_arrow", "stone_arrow", "graviton", "boomerang", "critical_chance", "life_steal", "dash", "esquivando",
+	"fire_arrow", "curse_arrow", "ice_arrow", "stone_arrow", "graviton", "boomerang", "critical_chance", "life_steal", "dash", "esquivando", "fenda",
 	"gold_magnet",
 	"tiger_claws",
 	# Aliados
@@ -152,7 +152,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 const _UPG_CAPS: Dictionary = {
 	"perfuracao": 4, "ricochet_arrow": 4, "multi_arrow": 4, "double_arrows": 4, "chain_lightning": 4,
 	"fire_arrow": 4, "curse_arrow": 4, "ice_arrow": 4, "stone_arrow": 4, "graviton": 4, "boomerang": 4, "critical_chance": 4, "life_steal": 4,
-	"dash": 4, "esquivando": 4, "gold_magnet": 4, "tiger_claws": 4,
+	"dash": 4, "esquivando": 4, "fenda": 4, "gold_magnet": 4, "tiger_claws": 4,
 	"claudio_druida": 4, "leno": 4, "capivara_joe": 4, "ting": 4, "mini_mago": 4, "arbusto": 4,
 }
 const _UPG_STATUS_COMBINED_PATH: String = "res://assets/Hud/shop/status/HP - atck speed - Move speed - Atck Dmg.png"
@@ -175,6 +175,7 @@ const _UPG_PATHS: Dictionary = {
 	"life_steal": "res://assets/Hud/shop/upgrade/life steal.png",
 	"dash": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"esquivando": "res://assets/Hud/shop/upgrade/deslizando.png",
+	"fenda": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"leno": "res://assets/Hud/shop/aliado/Leno/Leno Card.png",
 	"claudio_druida": "res://assets/Hud/shop/aliado/claudio_druida/claudio_druida card.png",
 	"ting": "res://assets/Hud/shop/aliado/ting/ting card.png",
