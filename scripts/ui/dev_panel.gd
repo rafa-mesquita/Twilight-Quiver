@@ -87,6 +87,8 @@ func _ready() -> void:
 	$UtilityBar/Row/RespawnSameUpgradesBtn.pressed.connect(_respawn_same_upgrades)
 	$UtilityBar/Row/GodmodeBtn.pressed.connect(_toggle_godmode)
 	_refresh_godmode_label()
+	$UtilityBar/Row/ClockDropBtn.pressed.connect(_toggle_clock_drop)
+	_refresh_clock_drop_label()
 	# Aplica snapshot de upgrades pendente (se botão "Renascer" foi clicado na
 	# run anterior). Defer pra rodar APÓS o player carregar na nova cena.
 	_apply_pending_respawn_upgrades.call_deferred()
@@ -346,6 +348,25 @@ func _refresh_godmode_label() -> void:
 	else:
 		btn.text = "Vida Infinita: OFF"
 		btn.add_theme_color_override("font_color", Color(0.6, 1.0, 0.65, 1))
+
+
+func _toggle_clock_drop() -> void:
+	# Força o Relógio de Reset a dropar SEMPRE (100%, ignora o gate de skill) —
+	# pra testar o pickup/SFX/reset sem depender do RNG de 4%.
+	GameState.dev_clock_always_drop = not GameState.dev_clock_always_drop
+	_refresh_clock_drop_label()
+
+
+func _refresh_clock_drop_label() -> void:
+	var btn: Button = $UtilityBar/Row/ClockDropBtn
+	if btn == null:
+		return
+	if GameState.dev_clock_always_drop:
+		btn.text = "Relógio 100%: ON"
+		btn.add_theme_color_override("font_color", Color(1.0, 0.95, 0.4, 1))
+	else:
+		btn.text = "Relógio 100%: OFF"
+		btn.add_theme_color_override("font_color", Color(1.0, 0.85, 0.5, 1))
 
 
 func _respawn_same_upgrades() -> void:

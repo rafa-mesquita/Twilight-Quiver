@@ -47,10 +47,14 @@ enum State { RUN, IDLE, HIDDEN }
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var hide_zone: Area2D = $HideZone
 @onready var bush_sound: AudioStreamPlayer2D = $BushSound
+@onready var run_clock: Node2D = $RunClock
 
 var _state: int = State.RUN
 var _waypoint: Vector2 = Vector2.ZERO
 var _state_timer: float = 0.0
+# Duração total da corrida atual — referência pra calcular o ratio (0..1) do
+# relógio que indica quando ele vai parar. Setada junto do _state_timer em RUN.
+var _run_duration_total: float = 0.0
 var _player_inside: bool = false
 var _anti_stuck: AntiStuckHelper = AntiStuckHelper.new()
 # Flag pra primeira corrida do arbusto — usa FIRST_RUN_DURATION (8s) em vez
@@ -109,10 +113,14 @@ func _enter_run() -> void:
 	# Primeira corrida do arbusto sempre dura 8s; subsequentes usam o
 	# run_duration do nível (L1/L2 = 16s, L3+ = 10s — "senta mais rápido").
 	_state_timer = FIRST_RUN_DURATION if _first_run else RUN_DURATION_BY_LEVEL[_get_arbusto_level()]
+	_run_duration_total = _state_timer
 	_first_run = false
 	_pick_new_waypoint()
 	if sprite.sprite_frames != null and sprite.sprite_frames.has_animation("walk"):
 		sprite.play("walk")
+	# Relógio "pizza" cheio: indica quanto falta pra ele parar e virar esconderijo.
+	run_clock.visible = true
+	run_clock.set_ratio(1.0)
 	_play_bush_sound()
 
 
@@ -125,6 +133,8 @@ func _process_run(delta: float) -> void:
 		# em melee range do boss sem ter saída.
 		if _too_close_to_mage_monkey():
 			_state_timer = 4.0
+			# Novo segmento de corrida: total = 4s pra o relógio não passar de 100%.
+			_run_duration_total = 4.0
 			_pick_waypoint_away_from_mage_monkey()
 		else:
 			_enter_idle()
@@ -143,12 +153,17 @@ func _process_run(delta: float) -> void:
 	_anti_stuck.update(self, _waypoint, dir.length_squared() > 0.001, delta)
 	if absf(dir.x) > 0.001:
 		sprite.flip_h = dir.x < 0.0
+	# Relógio esvazia conforme o tempo de corrida restante.
+	if _run_duration_total > 0.0:
+		run_clock.set_ratio(_state_timer / _run_duration_total)
 
 
 func _enter_idle() -> void:
 	_state = State.IDLE
 	_state_timer = 0.0
 	velocity = Vector2.ZERO
+	# Parou de correr — relógio some (não há mais cooldown a mostrar).
+	run_clock.visible = false
 	if sprite.sprite_frames != null and sprite.sprite_frames.has_animation("idle"):
 		sprite.play("idle")
 	# Se o player já está em cima nesse momento, ativa hidden direto.
@@ -166,6 +181,8 @@ func _process_idle() -> void:
 func _enter_hidden() -> void:
 	_state = State.HIDDEN
 	_state_timer = 0.0
+	# Escondido = parado: sem relógio (defensivo caso não tenha vindo do IDLE).
+	run_clock.visible = false
 	# Visual translúcido + bush em cima do player (vence Y-sort). Veja
 	# _apply_hide_visual.
 	_apply_hide_visual(true)

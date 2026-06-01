@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://diiqyfmo783yg" path="res://scripts/allies/arbusto.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://bpf8ga0oj67bo" path="res://assets/aliados/arbusto/arbusto 2-Sheet.png" id="2_sheet"]
 [ext_resource type="AudioStream" path="res://audios/effects/bush/bush sound.mp3" id="3_bush_sfx"]
+[ext_resource type="Script" path="res://scripts/ui/run_clock.gd" id="4_run_clock"]
 
 [sub_resource type="AtlasTexture" id="A_idle_0"]
 atlas = ExtResource("2_sheet")
@@ -131,3 +132,8 @@ shape = SubResource("C_hide")
 [node name="BushSound" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("3_bush_sfx")
 volume_db = -14.0
+
+[node name="RunClock" type="Node2D" parent="."]
+visible = false
+position = Vector2(0, -37)
+script = ExtResource("4_run_clock")

@@ -321,6 +321,8 @@ func take_damage(amount: float) -> void:
 			# não dá gold (player perdeu um aliado, não matou um inimigo).
 			GoldDrop.try_drop(_get_world(), gold_scene, global_position,
 				gold_drop_chance, gold_drop_min, gold_drop_max)
+			# Relógio de Reset (4%, só se player tem skill ativa de Espaço/Q).
+			ClockDrop.try_drop(_get_world(), global_position)
 		_spawn_kill_effect()
 		_spawn_death_silhouette()
 		queue_free()

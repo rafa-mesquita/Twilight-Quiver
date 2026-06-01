@@ -13,6 +13,11 @@ var dev_mode: bool = false
 # Persiste entre scene reloads (útil pra testar runs longas sem morrer).
 var dev_godmode: bool = false
 
+# Dev: força o Relógio de Reset a dropar SEMPRE (chance 100%, ignora o gate de
+# "ter skill ativa"). Pra testar o pickup/SFX/reset sem depender do RNG de 4%.
+# Checado em ClockDrop.try_drop. Toggle no dev_panel.
+var dev_clock_always_drop: bool = false
+
 # Força a carta "Último Desejo" a aparecer no próximo roll do shop, ignorando
 # weight e wave 5+. Resetado pelo wave_shop ao consumir o flag. Setado pelo
 # dev_panel pra testar a feature sem depender de RNG.

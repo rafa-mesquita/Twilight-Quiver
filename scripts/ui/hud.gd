@@ -348,6 +348,8 @@ func _connect_player_signals() -> void:
 		player.stone_skill_unlocked.connect(_on_stone_skill_unlocked)
 	if player.has_signal("stone_skill_cooldown_changed") and not player.stone_skill_cooldown_changed.is_connected(_on_stone_skill_cooldown_changed):
 		player.stone_skill_cooldown_changed.connect(_on_stone_skill_cooldown_changed)
+		if player.has_signal("all_skills_reset") and not player.all_skills_reset.is_connected(_on_all_skills_reset):
+			player.all_skills_reset.connect(_on_all_skills_reset)
 	if "stone_arrow_level" in player and int(player.stone_arrow_level) >= 4:
 		_on_stone_skill_unlocked()
 	# Contador da flecha perfurante — visível a partir do lv1.
@@ -886,6 +888,24 @@ func _on_stone_skill_cooldown_changed(remaining: float, _total: float) -> void:
 	else:
 		stone_skill_cd_label.text = "%d" % int(ceilf(remaining))
 		stone_skill_icon.modulate = Color(0.6, 0.55, 0.45, 1.0)
+
+
+func _on_all_skills_reset() -> void:
+	# Relógio de Reset coletado: flash de brilho nas barras/ícones de cooldown
+	# visíveis, sinalizando que todas as skills voltaram a ficar prontas. As barras
+	# em si já são atualizadas pelos *_cooldown_changed; isto é só o realce visual.
+	for node in [dash_cd_bar, esquivando_skill_icon, fire_skill_icon,
+			chain_lightning_skill_icon, curse_skill_icon, ice_skill_icon, stone_skill_icon]:
+		_flash_skill_ui(node)
+
+
+func _flash_skill_ui(node: Control) -> void:
+	if node == null or not node.visible:
+		return
+	var base: Color = node.modulate
+	node.modulate = base * 1.8
+	var t := create_tween()
+	t.tween_property(node, "modulate", base, 0.4).set_trans(Tween.TRANS_SINE)
 
 
 func _process(delta: float) -> void:

@@ -33,6 +33,9 @@ signal time_freeze_skill_cooldown_changed(remaining: float, total: float)
 # causa grande dano em área em volta do player.
 signal stone_skill_unlocked
 signal stone_skill_cooldown_changed(remaining: float, total: float)
+# Pickup "Relógio de Reset": disparado quando todas as skills têm o cooldown
+# zerado de uma vez. HUD usa pra dar um flash nas barras de cooldown.
+signal all_skills_reset
 # Perfuração: HUD mostra contador 1/2/3 (próximo tiro perfurante a cada 3 ataques
 # nos lv1-3; sempre ativo no lv4). Emitido em cada release_arrow e no apply_upgrade.
 signal perfuracao_counter_changed(counter: int, level: int)
@@ -3665,6 +3668,45 @@ func reset_all_cooldowns() -> void:
 	if _frostwisp != null and is_instance_valid(_frostwisp):
 		if _frostwisp.has_method("set_initial_cooldown"):
 			_frostwisp.set_initial_cooldown(7.0)
+
+
+func reset_all_skill_cooldowns() -> void:
+	# Pickup "Relógio de Reset": zera o cooldown de TODAS as skills ativas do
+	# player na hora (Espaço: dash/esquivando/fenda; Q: fogo/maldição/pedra/
+	# cadeia/time freeze; + boomerang/garras). Diferente de reset_all_cooldowns
+	# (início de wave), inclui o esquivando e NÃO aplica o delay do Frostwisp.
+	_dash_cd_remaining = 0.0
+	dash_cooldown_changed.emit(0.0, dash_cooldown)
+	_esquivando_ability_cd = 0.0
+	if esquivando_level > 0:
+		esquivando_cooldown_changed.emit(0.0, _esquivando_ability_cd_total())
+	_fenda_cd_remaining = 0.0
+	if fenda_level > 0:
+		# Fenda compartilha a barra do dash (dash_cooldown_changed).
+		dash_cooldown_changed.emit(0.0, _fenda_cooldown())
+	_fire_skill_cd_remaining = 0.0
+	if fire_arrow_level >= 3:
+		fire_skill_cooldown_changed.emit(0.0, FIRE_SKILL_COOLDOWN)
+	_chain_lightning_skill_cd_remaining = 0.0
+	if chain_lightning_level >= 3:
+		chain_lightning_skill_cooldown_changed.emit(0.0, CHAIN_LIGHTNING_SKILL_COOLDOWN)
+	_curse_skill_cd_remaining = 0.0
+	if curse_arrow_level >= 4:
+		curse_skill_cooldown_changed.emit(0.0, CURSE_SKILL_TOTAL_CYCLE)
+	# Time Freeze: força encerrar se ativo + zera CD.
+	if _time_freeze_active_remaining > 0.0:
+		_time_freeze_active_remaining = 0.0
+		_remove_time_freeze_world_pause()
+		_hide_freeze_overlay()
+	_time_freeze_cd_remaining = 0.0
+	if ice_arrow_level >= 4:
+		time_freeze_skill_cooldown_changed.emit(0.0, TIME_FREEZE_COOLDOWN)
+	_stone_skill_cd_remaining = 0.0
+	if stone_arrow_level >= 3:
+		stone_skill_cooldown_changed.emit(0.0, STONE_SKILL_COOLDOWN)
+	_boomerang_cd_remaining = 0.0
+	_tiger_claws_cd_remaining = 0.0
+	all_skills_reset.emit()
 
 
 func take_damage(amount: float, source_id: String = "") -> void:
