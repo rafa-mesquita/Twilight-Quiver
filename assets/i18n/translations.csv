@@ -10,7 +10,7 @@ COMMON_CONTINUE,Continuar,Continue,Continuar,Continuer
 COMMON_LOCKED,Bloqueada,Locked,Bloqueada,Verrouillée
 MENU_TITLE,TWILIGHT QUIVER,TWILIGHT QUIVER,TWILIGHT QUIVER,TWILIGHT QUIVER
 MENU_SUBTITLE,top-down archer roguelike,top-down archer roguelike,roguelike de arquero top-down,roguelike d'archer en vue de dessus
-MENU_START,Start Game,Start Game,Empezar,Commencer
+MENU_START,Iniciar Jogo,Start Game,Empezar,Commencer
 MENU_PLAYER,Skins,Skins,Skins,Skins
 MENU_LEADERBOARD,Leaderboard,Leaderboard,Clasificación,Classement
 MENU_SETTINGS,Configurações,Settings,Ajustes,Paramètres
@@ -160,7 +160,7 @@ HUD_PAUSE_SETTINGS,Configurações,Settings,Ajustes,Paramètres
 HUD_PAUSE_MENU,Voltar ao Menu,Back to Menu,Volver al menú,Retour au menu
 SHOP_NEXT_WAVE,Próxima Wave,Next Raid,Siguiente Raid,Raid suivant
 SHOP_NEXT_WAVE_FMT,Próxima Wave: %d,Next Raid: %d,Siguiente Raid: %d,Raid suivant : %d
-SHOP_GOLD_LABEL,%d coins,%d coins,%d monedas,%d pièces
+SHOP_GOLD_LABEL,%d moedas,%d coins,%d monedas,%d pièces
 SHOP_HEADER_STRUCTURES,ESTRUTURAS,STRUCTURES,ESTRUCTURAS,STRUCTURES
 SHOP_HEADER_STATUS,STATUS,STATUS,ESTADO,STATS
 SHOP_HEADER_ALLIES,ALIADOS,ALLIES,ALIADOS,ALLIÉS
@@ -232,8 +232,8 @@ SHOP_HP_PLUS_20,+20 HP,+20 HP,+20 HP,+20 PV
 SHOP_HP_PLUS_22,+22 HP,+22 HP,+22 HP,+22 PV
 SHOP_HP_PLUS_25,+25 HP,+25 HP,+25 HP,+25 PV
 SHOP_DAMAGE,+24% dano,+24% dmg,+24% daño,+24% dégâts
-SHOP_ATTACK_SPEED,+23% atk speed,+23% atk speed,+23% vel. ataque,+23% vit. attaque
-SHOP_MOVE_SPEED,+10% move speed,+10% move speed,+10% vel. movimiento,+10% vit. déplacement
+SHOP_ATTACK_SPEED,+23% vel. ataque,+23% atk speed,+23% vel. ataque,+23% vit. attaque
+SHOP_MOVE_SPEED,+10% vel. movimento,+10% move speed,+10% vel. movimiento,+10% vit. déplacement
 SHOP_ARMOR_12,(-12% dano e slow),(-12% dmg & slow),(-12% daño y slow),(-12% dégâts & slow)
 SHOP_ARMOR_18,(-18% dano e slow),(-18% dmg & slow),(-18% daño y slow),(-18% dégâts & slow)
 SHOP_ARMOR_22,(-22% dano e slow),(-22% dmg & slow),(-22% daño y slow),(-22% dégâts & slow)

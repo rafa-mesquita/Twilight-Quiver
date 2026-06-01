@@ -384,6 +384,8 @@ func _start_next_wave() -> void:
 			player.reset_perf_counter()
 		if player.has_method("reset_ricochet_counter"):
 			player.reset_ricochet_counter()
+		if player.has_method("reset_graviton_counter"):
+			player.reset_graviton_counter()
 		if player.has_method("reset_claudio_druidas_hp"):
 			player.reset_claudio_druidas_hp()
 		if player.has_method("reset_all_cooldowns"):

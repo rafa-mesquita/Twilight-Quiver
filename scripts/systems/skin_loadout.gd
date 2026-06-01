@@ -435,6 +435,39 @@ static func has_killed_boss(boss_id: String) -> bool:
 	return boss_id in get_bosses_killed_set()
 
 
+static func quest_progress_suffix(quest: Dictionary) -> String:
+	# Sufixo " | X / Y" pra quests de CONTAGEM. Binarias (boss_killed/elemental_l4/
+	# flawless_w3) ou value<=1: retorna vazio (sem progresso a mostrar).
+	var target: int = int(quest.get("value", 0))
+	if target <= 1:
+		return ""
+	var stat_by_type := {
+		"wave_reached": STAT_MAX_WAVE,
+		"enemies_killed": STAT_KILLS,
+		"dmg_dealt": STAT_DMG_DEALT,
+		"runs_completed": STAT_RUNS_COMPLETED,
+		"no_damage_run": STAT_RUNS_NO_DAMAGE,
+		"monkeys_cursed": STAT_MONKEYS_CURSED,
+		"stun_seconds": STAT_STUN_SECONDS,
+		"active_skills_used": STAT_ACTIVE_SKILLS,
+	}
+	var qtype: String = String(quest.get("type", ""))
+	if not stat_by_type.has(qtype):
+		return ""
+	var current: int = mini(get_stat(stat_by_type[qtype]), target)
+	return "  |  %d / %d" % [current, target]
+
+
+static func progress_suffix_for_label(label_key: String) -> String:
+	# Acha a quest pelo label (translation key) e devolve o sufixo de progresso.
+	if label_key == "":
+		return ""
+	for skin_name in SKIN_QUESTS:
+		if String(SKIN_QUESTS[skin_name].get("label", "")) == label_key:
+			return quest_progress_suffix(SKIN_QUESTS[skin_name])
+	return ""
+
+
 static func is_unlocked(part: SkinPart) -> bool:
 	if part == null:
 		return true

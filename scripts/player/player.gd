@@ -3625,6 +3625,11 @@ func reset_ricochet_counter() -> void:
 		ricochet_counter_changed.emit(0, ricochet_arrow_level)
 
 
+func reset_graviton_counter() -> void:
+	# Graviton nao tem HUD counter (so contador interno); so zera o valor.
+	_graviton_shot_counter = 0
+
+
 func reset_all_cooldowns() -> void:
 	# Zera todos os cooldowns de skills ao iniciar uma nova wave. Player começa
 	# cada round com todo o kit pronto. Inclui Time Freeze: se estava ativo
@@ -3650,6 +3655,10 @@ func reset_all_cooldowns() -> void:
 		time_freeze_skill_cooldown_changed.emit(0.0, TIME_FREEZE_COOLDOWN)
 	_boomerang_cd_remaining = 0.0
 	_tiger_claws_cd_remaining = 0.0
+	_stone_skill_cd_remaining = 0.0
+	if stone_arrow_level >= 3:
+		stone_skill_cooldown_changed.emit(0.0, STONE_SKILL_COOLDOWN)
+	_fenda_cd_remaining = 0.0
 	# Frostwisp (L3 do Gelo): força delay inicial de 7s antes do primeiro
 	# cast da wave — evita que ela já comece bombardeando enquanto o player
 	# nem se posicionou ainda.

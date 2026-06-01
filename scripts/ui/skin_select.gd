@@ -739,7 +739,7 @@ func _update_lock_indicator() -> void:
 				req_key = _first_locked_quest_key()
 			_req_label.visible = req_key != ""
 			if _req_label.visible:
-				_req_label.text = tr(req_key)
+				_req_label.text = tr(req_key) + SkinLoadout.progress_suffix_for_label(req_key)
 				_req_label.add_theme_color_override("font_color", Color(0.98, 0.4, 0.4, 1))
 		else:
 			var req_key: String = _last_unlocked_quest_key
