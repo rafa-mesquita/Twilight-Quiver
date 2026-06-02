@@ -20,6 +20,9 @@ extends CharacterBody2D
 # L2-L4: TBD.
 
 @export var run_speed: float = 70.0
+# Nos últimos decel_time segundos de um run NORMAL, desacelera suave até parar
+# (em vez de parada brusca). O segmento curto do anti-grief não é afetado.
+@export var decel_time: float = 4.0
 @export var wander_bounds: Rect2 = Rect2(5, 8, 510, 284)
 @export var arrive_dist: float = 6.0
 
@@ -148,7 +151,12 @@ func _process_run(delta: float) -> void:
 	var dir: Vector2 = Vector2.ZERO if dist < 0.001 else to_wp / dist
 	if dir.length_squared() > 0.001:
 		dir = _anti_stuck.resolve(dir, delta)
-	velocity = dir * run_speed
+	# Desacelera suave nos últimos decel_time s de um run normal (parada não-brusca).
+	# Anti-grief (_run_duration_total == decel_time) corre a toda pra fugir.
+	var speed_factor: float = 1.0
+	if _run_duration_total > decel_time and _state_timer < decel_time:
+		speed_factor = maxf(_state_timer / decel_time, 0.0)
+	velocity = dir * run_speed * speed_factor
 	move_and_slide()
 	_anti_stuck.update(self, _waypoint, dir.length_squared() > 0.001, delta)
 	if absf(dir.x) > 0.001:

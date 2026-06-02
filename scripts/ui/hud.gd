@@ -234,6 +234,8 @@ var _boss_bar_bottom_anchored: bool = false
 # respondendo enquanto get_tree().paused é true.
 var _pause_layer: CanvasLayer = null
 var _pause_visible: bool = false
+# Overlay de confirmação ao sair pro menu (perde a run; salva progresso como morte).
+var _quit_confirm_layer: CanvasLayer = null
 
 # Settings overlay aberto a partir do botão "Configurações" no menu de pausa.
 # Reusa a cena scenes/ui/settings_menu.tscn em modo overlay.
@@ -1922,9 +1924,87 @@ func _create_pause_menu() -> void:
 	if at01 != null:
 		menu_btn.add_theme_font_override("font", at01)
 	menu_btn.add_theme_font_size_override("font_size", 39)
-	menu_btn.pressed.connect(_on_menu_pressed)
+	menu_btn.pressed.connect(_request_quit_to_menu)
 	bg.add_child(menu_btn)
 	add_child(_pause_layer)
+
+
+# Sair pro menu a partir do pause (player vivo): confirma antes, pois a run é
+# abandonada. Ao confirmar, salva o progresso (skins + leaderboard) como se o
+# player tivesse morrido agora.
+func _request_quit_to_menu() -> void:
+	if _quit_confirm_layer == null:
+		_build_quit_confirm_layer()
+	_quit_confirm_layer.visible = true
+
+
+func _build_quit_confirm_layer() -> void:
+	_quit_confirm_layer = CanvasLayer.new()
+	_quit_confirm_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	_quit_confirm_layer.layer = 61  # acima do pause (60)
+	var bg := ColorRect.new()
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.color = Color(0, 0, 0, 0.88)
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	_quit_confirm_layer.add_child(bg)
+	var at01: Font = load("res://font/Silver.ttf")
+	var msg := Label.new()
+	msg.set_anchors_preset(Control.PRESET_CENTER)
+	msg.position = Vector2(-640, -200)
+	msg.size = Vector2(1280, 220)
+	msg.text = "HUD_QUIT_CONFIRM_MSG"
+	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if at01 != null:
+		msg.add_theme_font_override("font", at01)
+	msg.add_theme_font_size_override("font_size", 58)
+	msg.add_theme_color_override("font_color", Color.WHITE)
+	bg.add_child(msg)
+	var yes_btn := Button.new()
+	yes_btn.set_anchors_preset(Control.PRESET_CENTER)
+	yes_btn.position = Vector2(-240, 70)
+	yes_btn.size = Vector2(220, 76)
+	yes_btn.text = "HUD_QUIT_CONFIRM_YES"
+	if at01 != null:
+		yes_btn.add_theme_font_override("font", at01)
+	yes_btn.add_theme_font_size_override("font_size", 48)
+	yes_btn.pressed.connect(_quit_to_menu_with_save)
+	bg.add_child(yes_btn)
+	var no_btn := Button.new()
+	no_btn.set_anchors_preset(Control.PRESET_CENTER)
+	no_btn.position = Vector2(20, 70)
+	no_btn.size = Vector2(220, 76)
+	no_btn.text = "HUD_QUIT_CONFIRM_NO"
+	if at01 != null:
+		no_btn.add_theme_font_override("font", at01)
+	no_btn.add_theme_font_size_override("font_size", 48)
+	no_btn.pressed.connect(func() -> void: _quit_confirm_layer.visible = false)
+	bg.add_child(no_btn)
+	add_child(_quit_confirm_layer)
+
+
+func _quit_to_menu_with_save() -> void:
+	# Confirmado: salva o progresso da run (igual ao death) e volta pro menu.
+	get_tree().paused = false
+	_save_run_progress_like_death()
+	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+
+
+func _save_run_progress_like_death() -> void:
+	# Mesmo save do death screen: persiste stats de skin (unlocks aplicam) e, em
+	# release, envia score pro leaderboard + telemetria run_end. Em debug só as
+	# skins (igual ao death, que mostra botões manuais em vez de auto-enviar).
+	var wave_num: int = 0
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm != null and "wave_number" in wm:
+		wave_num = int(wm.wave_number)
+	SkinLoadout.record_run(_collect_run_stats(wave_num))
+	if not OS.is_debug_build():
+		_auto_submit_score()
+		_track_run_end(wave_num)
+		if has_node("/root/Telemetry"):
+			get_node("/root/Telemetry").flush_now()
 
 
 # ---------- Tower attack alert ----------

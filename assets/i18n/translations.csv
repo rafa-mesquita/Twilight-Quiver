@@ -158,6 +158,9 @@ HUD_PAUSE_TITLE,PAUSADO,PAUSED,PAUSADO,EN PAUSE
 HUD_PAUSE_CONTINUE,Continuar,Continue,Continuar,Continuer
 HUD_PAUSE_SETTINGS,Configurações,Settings,Ajustes,Paramètres
 HUD_PAUSE_MENU,Voltar ao Menu,Back to Menu,Volver al menú,Retour au menu
+HUD_QUIT_CONFIRM_MSG,Tem certeza que deseja voltar ao menu? O progresso desta run será perdido.,Are you sure you want to return to the menu? This run's progress will be lost.,¿Seguro que quieres volver al menú? El progreso de esta partida se perderá.,Êtes-vous sûr de vouloir revenir au menu ? La progression de cette partie sera perdue.
+HUD_QUIT_CONFIRM_YES,Sim,Yes,Sí,Oui
+HUD_QUIT_CONFIRM_NO,Não,No,No,Non
 SHOP_NEXT_WAVE,Próxima Wave,Next Raid,Siguiente Raid,Raid suivant
 SHOP_NEXT_WAVE_FMT,Próxima Wave: %d,Next Raid: %d,Siguiente Raid: %d,Raid suivant : %d
 SHOP_GOLD_LABEL,%d moedas,%d coins,%d monedas,%d pièces

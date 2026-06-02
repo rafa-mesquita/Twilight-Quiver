@@ -525,7 +525,7 @@ func _build_wave_config(num: int) -> Dictionary:
 		return {
 			"mage_monkey": {"alive_target": 1, "total": 1},
 			"duskrose": {"alive_target": 1, "total": 1},
-			"mage": {"alive_target": 3, "total": 4},
+			"mage": {"alive_target": 6, "total": 8},
 		}
 	# Waves 3+: escala automática + um pouco de aleatoriedade.
 	# Quanto maior o wave_number, mais inimigos vivos e mais total.
@@ -1837,12 +1837,19 @@ func _prespawn_boss_wave_entities() -> void:
 				# Override pro boss Duskrose (wave 14): HP fixo 8500.
 				if wave_number == boss_redux_wave and type_key == "duskrose" and "max_hp" in enemy:
 					enemy.max_hp = 8500.0
-				# Wave 21 (boss duplo): HP fixo Gorilla 6000 / Duskrose 8000.
+				# Wave 21 (boss duplo): força DOBRADA — players chegam muito fortes
+				# nesse round. HP Gorilla 12000 / Duskrose 16000 + dano 2x (melee e
+				# projétil) nos DOIS bosses. Tropas dobradas via wave_config (8 mages).
 				if wave_number == boss_dual_wave and "max_hp" in enemy:
 					if type_key == "mage_monkey":
-						enemy.max_hp = 6000.0
+						enemy.max_hp = 12000.0
 					elif type_key == "duskrose":
-						enemy.max_hp = 8000.0
+						enemy.max_hp = 16000.0
+					if type_key == "mage_monkey" or type_key == "duskrose":
+						if "damage" in enemy:
+							enemy.damage *= 2.0
+						if "damage_mult" in enemy:
+							enemy.damage_mult *= 2.0
 			# Gold dos bosses por wave (valores FINAIS, fixos):
 			# - Wave 7 (Gorilla solo): 20-30 (pool ponderada mantida, pivot 23).
 			# - Wave 14 (Duskrose solo): 40-60.
