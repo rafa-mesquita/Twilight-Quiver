@@ -95,7 +95,7 @@ const PART_NAME_MIGRATIONS: Dictionary = {
 #   no_damage_run   — completar X runs sem tomar dano (runs_no_damage >= value)
 #   boss_killed     — matar boss específico (value=boss_id, ex: "mage_monkey")
 #   armor_lv5       — comprar Armadura até o Lv5 em alguma run (flag persistente)
-#   long_mage_kill  — matar um mago a >= 480px com a flecha (flag persistente)
+#   long_mage_kill  — matar um mago longe (>= 350px) com flecha perfurante (flag)
 #
 # Pra adicionar novo type: adicione um case em _is_quest_satisfied(),
 # adicione tracking em record_run() se for stat novo.
@@ -179,9 +179,10 @@ const SKIN_QUESTS: Dictionary = {
 		"hidden": false,
 	},
 	"Patriota": {
-		# Tema futebol americano ("lançamento longo"): matar um mago a >= 480px
-		# (1,45× o range da flecha) com a flecha do player. Flag persistente
-		# setada no arrow.gd via notify_long_mage_kill → record_run.
+		# Tema futebol americano ("lançamento longo"): matar um mago a longa
+		# distância (>= 350px, além do alcance da flecha normal) com flecha
+		# PERFURANTE do player. Flag persistente setada no arrow.gd via
+		# notify_long_mage_kill → record_run.
 		"type": "long_mage_kill",
 		"value": 1,
 		"label": "PLAYER_QUEST_PATRIOTA",

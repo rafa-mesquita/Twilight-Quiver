@@ -999,6 +999,13 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 	if is_pierce:
 		if "is_piercing" in arrow:
 			arrow.is_piercing = true
+		# Perfuração dá alcance "infinito" (atravessa o mapa inteiro) desde o Lv1:
+		# lifetime 1.5s→4.0s ≈ 880px (×220 speed), ~1.5× a diagonal da arena
+		# (~584px). A flecha cruza a tela de qualquer posição e despawna invisível
+		# fora dos bounds. Stone+perfuração sobrescreve depois com
+		# _stone_pierce_lifetime() (bloco da pedra roda após este).
+		if "lifetime" in arrow:
+			arrow.lifetime = 4.0
 		# Bonus de dano da perfuração entra como multiplicador do PRIMEIRO alvo
 		# atingido. Os demais que a flecha atravessar recebem `damage` base.
 		# Flechas extras do Multi Arrow aplicam só 60% do bônus (alinha com a
