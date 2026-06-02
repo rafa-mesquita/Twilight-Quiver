@@ -110,11 +110,12 @@ const HUD_RUNTIME_SCALE: Vector2 = Vector2(3, 3)
 # Glow ativo (skill do espaço): durante esse período, modulate do ícone é
 # sobrescrito pelo "active color" e ignora o estado de stacks.
 var _esquivando_ability_glow_active: bool = false
-# Posições do ícone do Esquivando: ocupa o slot do elemental (150) quando o
-# player ainda não tem nenhum elemental no nível que ativa o icone (Fire/Chain
-# lv3+, Curse lv4+). Quando ganha, desloca pro slot 330 (à direita do Chain).
-const ESQUIVANDO_ICON_LEFT_X: float = 150.0
-const ESQUIVANDO_ICON_RIGHT_X: float = 330.0
+# Posições do ícone do Esquivando. SEM elemental ativo: ocupa o slot do elemental
+# (x=150, que está livre). COM um elemental (Fire/Chain lv3+, Curse/Ice/Stone
+# lv4+): desloca pra ESQUERDA (x=60) pra não sobrepor o cooldown do elemental —
+# Esquivando e elemental NÃO são mutex (dá pra ter os dois ao mesmo tempo).
+const ESQUIVANDO_ICON_NO_ELEM_X: float = 150.0
+const ESQUIVANDO_ICON_ELEM_X: float = 60.0
 const ESQUIVANDO_ICON_WIDTH: float = 76.0
 @onready var upgrade_column_vbox: VBoxContainer = $UpgradeColumn/VBox
 @onready var boss_hp_bar: Control = $BossHpBar
@@ -718,7 +719,9 @@ func _update_esquivando_icon_position(player: Node = null) -> void:
 		has_any_elemental = true
 	elif "ice_arrow_level" in player and int(player.ice_arrow_level) >= 4:
 		has_any_elemental = true
-	var new_x: float = ESQUIVANDO_ICON_RIGHT_X if has_any_elemental else ESQUIVANDO_ICON_LEFT_X
+	elif "stone_arrow_level" in player and int(player.stone_arrow_level) >= 4:
+		has_any_elemental = true
+	var new_x: float = ESQUIVANDO_ICON_ELEM_X if has_any_elemental else ESQUIVANDO_ICON_NO_ELEM_X
 	esquivando_skill_icon.offset_left = new_x
 	esquivando_skill_icon.offset_right = new_x + ESQUIVANDO_ICON_WIDTH
 
