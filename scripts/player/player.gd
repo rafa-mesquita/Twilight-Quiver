@@ -495,6 +495,13 @@ var stats_bosses_killed: Array[String] = []
 # Flag por-run: passou das waves 1, 2 e 3 sem tomar dano. Setada pelo
 # wave_manager no fim da wave 3 (se stats_damage_taken == 0). Unlock da Hawk.
 var stats_flawless_through_w3: bool = false
+# Flag por-run: matou um mago a >= 480px com a flecha (lançamento longo).
+# Setada pelo arrow.gd via notify_long_mage_kill. Unlock da skin Patriota.
+var stats_long_mage_kill: bool = false
+
+
+func notify_long_mage_kill() -> void:
+	stats_long_mage_kill = true
 
 
 func _ready() -> void:
@@ -1030,8 +1037,9 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 		# dano por tick. Flechas extras carregam o mesmo cap (sem nerf).
 		if "burn_max_stacks" in arrow:
 			arrow.burn_max_stacks = clampi(fire_arrow_level, 1, 4)
-		# Lv2+: rastro de fogo no caminho da flecha.
-		if fire_arrow_level >= 2:
+		# Lv4: rastro de fogo no caminho da flecha (trocado com o rastro do player,
+		# que agora é Lv2). Os outros buffs (burn/stacks) seguem por nível.
+		if fire_arrow_level >= 4:
 			if "fire_trail_enabled" in arrow:
 				arrow.fire_trail_enabled = true
 			if "fire_trail_dps" in arrow:
@@ -1850,9 +1858,10 @@ func _handle_fire_skill_press() -> void:
 
 
 func _update_player_fire_trail() -> void:
-	# Lv4 do Fogo: dropa segmentos de player_fire_trail enquanto o player anda.
+	# Lv2+ do Fogo: dropa segmentos de player_fire_trail enquanto o player anda
+	# (trocado com o rastro da flecha, que agora é Lv4).
 	# NÃO dropa parado (velocity zero) nem morto.
-	if fire_arrow_level < 4 or is_dead:
+	if fire_arrow_level < 2 or is_dead:
 		return
 	if velocity.length() < 1.0:
 		_player_fire_trail_initialized = false  # reset, próximo movimento dropa imediato

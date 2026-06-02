@@ -184,6 +184,13 @@ var gave_esquivando_stack: bool = false
 # alvo leva dano cheio, 3º+ leva PIERCE_LATE_DMG_MULT do dano base.
 var pierce_first_dmg_mult: float = 1.0
 const PIERCE_LATE_DMG_MULT: float = 0.85
+# Unlock da skin Patriota (tema futebol americano / "lançamento longo"): matar
+# um MAGO a >= LONG_MAGE_KILL_DIST do ponto de disparo até o hit, com a flecha
+# do PLAYER. 480px ~= 1,45× o range base da flecha (330px). `_spawn_pos` guarda
+# de onde a flecha saiu (capturado no set_direction).
+const LONG_MAGE_KILL_DIST: float = 480.0
+const MAGE_GROUPS: Array[String] = ["mage", "summoner_mage", "fire_mage", "ice_mage", "electric_mage"]
+var _spawn_pos: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
@@ -432,6 +439,8 @@ func _apply_hitbox_scale() -> void:
 func set_direction(dir: Vector2) -> void:
 	direction = dir.normalized()
 	rotation = direction.angle()
+	# Origem do "lançamento" (a posição já foi setada pelo spawner antes daqui).
+	_spawn_pos = global_position
 	if trail != null:
 		trail.clear_points()
 		trail.add_point(global_position)
@@ -1240,6 +1249,20 @@ func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, 
 		var killed: bool = ("hp" in target) and float(target.hp) <= 0.0
 		if killed:
 			p.notify_kill_by_source(source_id)
+			# Unlock Patriota: flecha do PLAYER matando um MAGO a >= 480px do disparo.
+			if killed and source != null and is_instance_valid(source) and source.is_in_group("player"):
+				if _target_is_mage(target) and _spawn_pos.distance_to(global_position) >= LONG_MAGE_KILL_DIST:
+					if p.has_method("notify_long_mage_kill"):
+						p.notify_long_mage_kill()
+
+
+func _target_is_mage(target: Node) -> bool:
+	# Qualquer tipo de mago (comum, invocador, fogo, gelo, elétrico). Boss
+	# (mage_monkey) não conta — é o desafio de "lançamento longo" num mago normal.
+	for g in MAGE_GROUPS:
+		if target.is_in_group(g):
+			return true
+	return false
 
 
 func _play_stone_impact(pos: Vector2) -> void:

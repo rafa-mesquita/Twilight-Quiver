@@ -59,6 +59,10 @@ const KIT_PART_OVERRIDE: Dictionary = {
 	"Hawk":      {&"bow": "Hawk_Skeleton", &"quiver": "Hawk_Skeleton", &"body": "Hawk_Destiny"},
 	"Skeleton":  {&"bow": "Hawk_Skeleton", &"quiver": "Hawk_Skeleton"},
 	"Destiny":   {&"body": "Hawk_Destiny"},
+	# Warrior e Patriota compartilham o MESMO corpo/rosto (a cor de pele "Green_Eyes").
+	# Cada um tem o resto das peças próprio (cabelo/roupa/capa-máscara/etc).
+	"Warrior":   {&"body": "Green_Eyes"},
+	"Patriota":  {&"body": "Green_Eyes"},
 }
 
 # Peças PARTILHADAS entre kits (resolvidas via KIT_PART_OVERRIDE), NÃO kits
@@ -70,7 +74,7 @@ const SHARED_PART_NAMES: Array[String] = ["Hawk_Skeleton", "Hawk_Destiny"]
 #  - arco/aljava "Hawk" e "Skeleton" viraram a peça partilhada "Hawk_Skeleton".
 #  - "Terracota" foi renomeada pra "Earthy" (todas as peças do kit).
 const PART_NAME_MIGRATIONS: Dictionary = {
-	&"body":   {"Linked": "Linked_Pink", "Terracota": "Earthy", "Hawk": "Hawk_Destiny", "Destiny": "Hawk_Destiny"},
+	&"body":   {"Linked": "Linked_Pink", "Terracota": "Earthy", "Hawk": "Hawk_Destiny", "Destiny": "Hawk_Destiny", "Warrior": "Green_Eyes"},
 	&"legs":   {"Terracota": "Earthy"},
 	&"shirt":  {"Terracota": "Earthy"},
 	&"cape":   {"Terracota": "Earthy"},
@@ -91,6 +95,7 @@ const PART_NAME_MIGRATIONS: Dictionary = {
 #   no_damage_run   — completar X runs sem tomar dano (runs_no_damage >= value)
 #   boss_killed     — matar boss específico (value=boss_id, ex: "mage_monkey")
 #   armor_lv5       — comprar Armadura até o Lv5 em alguma run (flag persistente)
+#   long_mage_kill  — matar um mago a >= 480px com a flecha (flag persistente)
 #
 # Pra adicionar novo type: adicione um case em _is_quest_satisfied(),
 # adicione tracking em record_run() se for stat novo.
@@ -173,6 +178,15 @@ const SKIN_QUESTS: Dictionary = {
 		"label": "PLAYER_QUEST_WARRIOR",
 		"hidden": false,
 	},
+	"Patriota": {
+		# Tema futebol americano ("lançamento longo"): matar um mago a >= 480px
+		# (1,45× o range da flecha) com a flecha do player. Flag persistente
+		# setada no arrow.gd via notify_long_mage_kill → record_run.
+		"type": "long_mage_kill",
+		"value": 1,
+		"label": "PLAYER_QUEST_PATRIOTA",
+		"hidden": false,
+	},
 }
 
 # DEV: skins que ficam BLOQUEADAS mesmo em debug build, pra testar a UI de skin
@@ -210,6 +224,8 @@ const STAT_ACTIVE_SKILLS: StringName = &"active_skills_used_total"
 const STAT_FLAWLESS_W3: StringName = &"flawless_through_w3"
 # Flag (0/1): jogador já comprou Armadura até o Lv5 em alguma run. Unlock da skin Warrior.
 const STAT_ARMOR_LV5: StringName = &"armor_lv5_reached"
+# Flag (0/1): jogador já matou um mago a >= 480px com a flecha. Unlock da skin Patriota.
+const STAT_LONG_MAGE_KILL: StringName = &"long_mage_kill_done"
 # Set de boss IDs já abatidos (persistente entre runs). Armazenado como string
 # CSV no settings.cfg porque ConfigFile só aceita primitivos.
 const _KEY_BOSSES_KILLED_SET: String = "bosses_killed_set"
@@ -421,6 +437,8 @@ static func _is_quest_satisfied(quest: Dictionary) -> bool:
 			return get_stat(STAT_FLAWLESS_W3) >= int(raw_value)
 		"armor_lv5":
 			return get_stat(STAT_ARMOR_LV5) >= int(raw_value)
+		"long_mage_kill":
+			return get_stat(STAT_LONG_MAGE_KILL) >= int(raw_value)
 	return true  # type desconhecido: assume desbloqueada (não bloqueia o jogo).
 
 
@@ -565,6 +583,9 @@ static func record_run(run_stats: Dictionary) -> Array:
 	# Flag persistente: comprou Armadura até o Lv5 nesta run (unlock Warrior).
 	if bool(run_stats.get("armor_lv5_reached", false)) and get_stat(STAT_ARMOR_LV5) < 1:
 		set_stat(STAT_ARMOR_LV5, 1)
+	# Flag persistente: matou um mago a >= 480px com a flecha (unlock Patriota).
+	if bool(run_stats.get("long_mage_kill", false)) and get_stat(STAT_LONG_MAGE_KILL) < 1:
+		set_stat(STAT_LONG_MAGE_KILL, 1)
 	set_stat(STAT_RUNS_COMPLETED, get_stat(STAT_RUNS_COMPLETED) + 1)
 	if run_dmg_taken == 0 and run_wave >= 1:
 		set_stat(STAT_RUNS_NO_DAMAGE, get_stat(STAT_RUNS_NO_DAMAGE) + 1)

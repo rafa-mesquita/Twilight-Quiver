@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bnqrxs783msw4"
-path="res://.godot/imported/warrior.png-8e3f06bff346507d439015e330f87808.ctex"
+uid="uid://c36l5pxe2vcwo"
+path="res://.godot/imported/Green_Eyes.png-70a6bdcee7b7c485f56efba98c18aed9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/Hud/playerHud/head/warrior.png"
-dest_files=["res://.godot/imported/warrior.png-8e3f06bff346507d439015e330f87808.ctex"]
+source_file="res://assets/player/skin/Green_Eyes.png"
+dest_files=["res://.godot/imported/Green_Eyes.png-70a6bdcee7b7c485f56efba98c18aed9.ctex"]
 
 [params]
 

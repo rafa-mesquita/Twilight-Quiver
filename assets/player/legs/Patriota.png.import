@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dlwa5jr7i0lrn"
-path="res://.godot/imported/Warrior.png-afa3fd900154a5cd33606de5d5874bbc.ctex"
+uid="uid://ds23k6lvy0srj"
+path="res://.godot/imported/Patriota.png-270828c4046132c36f064a6036b5f0a5.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/player/skin/Warrior.png"
-dest_files=["res://.godot/imported/Warrior.png-afa3fd900154a5cd33606de5d5874bbc.ctex"]
+source_file="res://assets/player/legs/Patriota.png"
+dest_files=["res://.godot/imported/Patriota.png-270828c4046132c36f064a6036b5f0a5.ctex"]
 
 [params]
 
