@@ -218,7 +218,7 @@ const DEV_UNLOCK_ALL: bool = true
 # DEV: skins que respeitam a quest REAL mesmo com DEV_UNLOCK_ALL=true (o resto
 # continua livre no dev). Use pra testar a liberação de skins específicas sem
 # relockar tudo. Esvaziar ([]) quando terminar de testar.
-const DEV_QUEST_LOCKED: Array[String] = ["Patriota", "Sputnik"]
+const DEV_QUEST_LOCKED: Array[String] = []
 
 # Stats persistentes em [progress]. Chaves usadas pelo sistema.
 const STAT_MAX_WAVE: StringName = &"max_wave_reached"
