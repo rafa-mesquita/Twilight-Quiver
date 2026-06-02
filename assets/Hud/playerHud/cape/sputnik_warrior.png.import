@@ -10,7 +10,7 @@ metadata={
 
 [deps]
 
-source_file="res://assets/Hud/playerHud/cape/warrior.png"
+source_file="res://assets/Hud/playerHud/cape/sputnik_warrior.png"
 dest_files=["res://.godot/imported/warrior.png-4cd205def6667ca986e5bb55b4b9ced4.ctex"]
 
 [params]

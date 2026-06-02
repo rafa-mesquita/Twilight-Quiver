@@ -60,14 +60,18 @@ const KIT_PART_OVERRIDE: Dictionary = {
 	"Skeleton":  {&"bow": "Hawk_Skeleton", &"quiver": "Hawk_Skeleton"},
 	"Destiny":   {&"body": "Hawk_Destiny"},
 	# Warrior e Patriota compartilham o MESMO corpo/rosto (a cor de pele "Green_Eyes").
-	# Cada um tem o resto das peças próprio (cabelo/roupa/capa-máscara/etc).
-	"Warrior":   {&"body": "Green_Eyes"},
+	# Patriota tem o resto próprio; Warrior compartilha arco/aljava/capa+máscara
+	# com a Sputnik (peça única "Sputnik_Warrior").
+	"Warrior":   {&"body": "Green_Eyes", &"bow": "Sputnik_Warrior", &"quiver": "Sputnik_Warrior", &"cape": "Sputnik_Warrior"},
 	"Patriota":  {&"body": "Green_Eyes"},
+	# Sputnik: body/legs/shirt/hair próprios; arco/aljava/capa+máscara vêm da peça
+	# partilhada "Sputnik_Warrior" (idêntica à do Warrior).
+	"Sputnik":   {&"bow": "Sputnik_Warrior", &"quiver": "Sputnik_Warrior", &"cape": "Sputnik_Warrior"},
 }
 
 # Peças PARTILHADAS entre kits (resolvidas via KIT_PART_OVERRIDE), NÃO kits
 # próprios. Mesmo ocupando >= _KIT_MIN_SLOTS slots, não listam como card de kit.
-const SHARED_PART_NAMES: Array[String] = ["Hawk_Skeleton", "Hawk_Destiny"]
+const SHARED_PART_NAMES: Array[String] = ["Hawk_Skeleton", "Hawk_Destiny", "Sputnik_Warrior"]
 
 # Migração de display_names salvos (saves antigos) → nome atual, por slot.
 #  - body "Linked" virou "Linked_Pink".
@@ -77,10 +81,10 @@ const PART_NAME_MIGRATIONS: Dictionary = {
 	&"body":   {"Linked": "Linked_Pink", "Terracota": "Earthy", "Hawk": "Hawk_Destiny", "Destiny": "Hawk_Destiny", "Warrior": "Green_Eyes"},
 	&"legs":   {"Terracota": "Earthy"},
 	&"shirt":  {"Terracota": "Earthy"},
-	&"cape":   {"Terracota": "Earthy"},
-	&"quiver": {"Hawk": "Hawk_Skeleton", "Skeleton": "Hawk_Skeleton", "Terracota": "Earthy"},
+	&"cape":   {"Terracota": "Earthy", "Warrior": "Sputnik_Warrior"},
+	&"quiver": {"Hawk": "Hawk_Skeleton", "Skeleton": "Hawk_Skeleton", "Terracota": "Earthy", "Warrior": "Sputnik_Warrior"},
 	&"hair":   {"Terracota": "Earthy"},
-	&"bow":    {"Hawk": "Hawk_Skeleton", "Skeleton": "Hawk_Skeleton", "Terracota": "Earthy"},
+	&"bow":    {"Hawk": "Hawk_Skeleton", "Skeleton": "Hawk_Skeleton", "Terracota": "Earthy", "Warrior": "Sputnik_Warrior"},
 }
 
 # ---------- Quest config ----------
@@ -96,6 +100,7 @@ const PART_NAME_MIGRATIONS: Dictionary = {
 #   boss_killed     — matar boss específico (value=boss_id, ex: "mage_monkey")
 #   armor_lv5       — comprar Armadura até o Lv5 em alguma run (flag persistente)
 #   long_mage_kill  — matar um mago a >= 480px com a flecha (flag persistente)
+#   no_arrow_round  — passar de um round sem disparo manual de flecha (flag)
 #
 # Pra adicionar novo type: adicione um case em _is_quest_satisfied(),
 # adicione tracking em record_run() se for stat novo.
@@ -187,6 +192,16 @@ const SKIN_QUESTS: Dictionary = {
 		"label": "PLAYER_QUEST_PATRIOTA",
 		"hidden": false,
 	},
+	"Sputnik": {
+		# Passar de um round (qualquer wave >= 1) sem disparar NENHUMA flecha pelo
+		# botão do mouse. Skills (garra/boomerang/dash) são livres — o auto-ataque
+		# do dash NÃO conta como disparo manual. Flag persistente setada no
+		# wave_manager._finish_wave via stats_no_arrow_round → record_run.
+		"type": "no_arrow_round",
+		"value": 1,
+		"label": "PLAYER_QUEST_SPUTNIK",
+		"hidden": false,
+	},
 }
 
 # DEV: skins que ficam BLOQUEADAS mesmo em debug build, pra testar a UI de skin
@@ -226,6 +241,8 @@ const STAT_FLAWLESS_W3: StringName = &"flawless_through_w3"
 const STAT_ARMOR_LV5: StringName = &"armor_lv5_reached"
 # Flag (0/1): jogador já matou um mago a >= 480px com a flecha. Unlock da skin Patriota.
 const STAT_LONG_MAGE_KILL: StringName = &"long_mage_kill_done"
+# Flag (0/1): jogador já passou de um round sem disparo manual de flecha. Unlock Sputnik.
+const STAT_NO_ARROW_ROUND: StringName = &"no_arrow_round_done"
 # Set de boss IDs já abatidos (persistente entre runs). Armazenado como string
 # CSV no settings.cfg porque ConfigFile só aceita primitivos.
 const _KEY_BOSSES_KILLED_SET: String = "bosses_killed_set"
@@ -439,6 +456,8 @@ static func _is_quest_satisfied(quest: Dictionary) -> bool:
 			return get_stat(STAT_ARMOR_LV5) >= int(raw_value)
 		"long_mage_kill":
 			return get_stat(STAT_LONG_MAGE_KILL) >= int(raw_value)
+		"no_arrow_round":
+			return get_stat(STAT_NO_ARROW_ROUND) >= int(raw_value)
 	return true  # type desconhecido: assume desbloqueada (não bloqueia o jogo).
 
 
@@ -586,6 +605,9 @@ static func record_run(run_stats: Dictionary) -> Array:
 	# Flag persistente: matou um mago a >= 480px com a flecha (unlock Patriota).
 	if bool(run_stats.get("long_mage_kill", false)) and get_stat(STAT_LONG_MAGE_KILL) < 1:
 		set_stat(STAT_LONG_MAGE_KILL, 1)
+	# Flag persistente: passou de um round sem disparo manual de flecha (unlock Sputnik).
+	if bool(run_stats.get("no_arrow_round", false)) and get_stat(STAT_NO_ARROW_ROUND) < 1:
+		set_stat(STAT_NO_ARROW_ROUND, 1)
 	set_stat(STAT_RUNS_COMPLETED, get_stat(STAT_RUNS_COMPLETED) + 1)
 	if run_dmg_taken == 0 and run_wave >= 1:
 		set_stat(STAT_RUNS_NO_DAMAGE, get_stat(STAT_RUNS_NO_DAMAGE) + 1)

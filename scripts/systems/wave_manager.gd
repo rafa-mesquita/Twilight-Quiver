@@ -359,6 +359,10 @@ func _start_next_wave() -> void:
 	# Reseta contador de moedas dropadas — pity system da wave 1 garante mínimo no _finish_wave.
 	_coins_dropped_this_wave = 0
 	_boss_died_this_wave = false
+	# Sputnik: zera o flag de disparo manual no início da wave (desafio "round sem flecha").
+	var _p_no_arrow := get_tree().get_first_node_in_group("player")
+	if _p_no_arrow != null and "fired_arrow_this_wave" in _p_no_arrow:
+		_p_no_arrow.fired_arrow_this_wave = false
 
 	# Wave 7 (boss) e wave 14 (boss redux): pré-calcula posições — 1 spawn point
 	# pro player, os 3 restantes pros magos, e centroide dos 4 pro boss. Faz
@@ -958,6 +962,9 @@ func _finish_wave() -> void:
 			_p_fw.stats_flawless_through_w3 = true
 		if wave_number == boss_dual_wave and _p_fw.has_method("notify_boss_killed"):
 			_p_fw.notify_boss_killed("raid21")
+		# Sputnik: passou da wave sem disparo manual de flecha → unlock (qualquer wave >= 1).
+		if wave_number >= 1 and "fired_arrow_this_wave" in _p_fw and not _p_fw.fired_arrow_this_wave and "stats_no_arrow_round" in _p_fw:
+			_p_fw.stats_no_arrow_round = true
 	# Pós-boss: segura tudo (cleanup, magnet, tela "Wave Limpa") por
 	# `boss_kill_hold` segundos pras moedas dropadas pelo boss ficarem visíveis,
 	# saltarem e o player ter tempo de coletar/ver a animação.

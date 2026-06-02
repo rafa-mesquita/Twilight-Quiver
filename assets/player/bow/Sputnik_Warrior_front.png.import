@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b5uvy26xn4ofy"
-path="res://.godot/imported/Warrior_back.png-4506380b07c01b8922b3be4274933461.ctex"
+uid="uid://7ki6wht7pbvo"
+path="res://.godot/imported/Warrior_front.png-41cc03a3b276862833ebc07b567afee0.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/player/bow/Warrior_back.png"
-dest_files=["res://.godot/imported/Warrior_back.png-4506380b07c01b8922b3be4274933461.ctex"]
+source_file="res://assets/player/bow/Sputnik_Warrior_front.png"
+dest_files=["res://.godot/imported/Warrior_front.png-41cc03a3b276862833ebc07b567afee0.ctex"]
 
 [params]
 

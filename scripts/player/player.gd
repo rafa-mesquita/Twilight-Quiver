@@ -498,6 +498,13 @@ var stats_flawless_through_w3: bool = false
 # Flag por-run: matou um mago a >= 480px com a flecha (lançamento longo).
 # Setada pelo arrow.gd via notify_long_mage_kill. Unlock da skin Patriota.
 var stats_long_mage_kill: bool = false
+# Flag por-WAVE: o player disparou flecha manualmente (botão do mouse) nesta wave.
+# Resetada pelo wave_manager no início de cada wave; checada no fim. NÃO conta o
+# auto-ataque do dash (esse spawna flecha sem passar por _release_arrow).
+var fired_arrow_this_wave: bool = false
+# Flag por-RUN: o player passou de algum round sem disparo manual. Setada pelo
+# wave_manager._finish_wave. Unlock da skin Sputnik.
+var stats_no_arrow_round: bool = false
 
 
 func notify_long_mage_kill() -> void:
@@ -816,6 +823,9 @@ func _release_arrow() -> void:
 	is_drawing = false
 	if arrow_scene == null:
 		return
+	# Sputnik: marca que o player disparou manualmente nesta wave (desqualifica o
+	# desafio "round sem flecha"). Só o disparo manual passa por aqui.
+	fired_arrow_this_wave = true
 	# Esquivando: cada release_arrow = 1 volley nova. Todas as flechas spawnadas
 	# nesse ataque (incluindo as delayed do double_arrows) compartilham o id —
 	# lv1-3 do Esquivando bloqueia stacks adicionais do mesmo volley_id.

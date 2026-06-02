@@ -1754,6 +1754,8 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 		"armor_lv5_reached": (p != null and "armor_level" in p and int(p.get("armor_level")) >= 5),
 		# Matou um mago a >= 480px com a flecha nesta run (unlock Patriota).
 		"long_mage_kill": bool(p.get("stats_long_mage_kill")) if p != null and "stats_long_mage_kill" in p else false,
+		# Passou de um round sem disparo manual de flecha nesta run (unlock Sputnik).
+		"no_arrow_round": bool(p.get("stats_no_arrow_round")) if p != null and "stats_no_arrow_round" in p else false,
 	}
 
 
