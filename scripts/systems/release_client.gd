@@ -1,14 +1,19 @@
 class_name ReleaseClient
 extends Node
 
-# Cliente HTTP pra API pública de releases (twilight.hotsed.com/api/releases).
-# Uso típico: chama fetch_latest() no main_menu pra puxar a release mais nova
-# e mostrar modal de patch notes uma vez por versão por usuário.
+# Cliente HTTP pras patch notes. Fonte = GitHub Releases do repo público de
+# distribuição (twilight-quiver-releases), que o deploy popula automaticamente
+# com as notas de cada versão. Antes usava o backend custom (twilight.hotsed.com
+# /api/releases), mas ele ficava desatualizado e marcava is_latest numa entrada
+# "LAUNCHER" sem notas → o modal nunca aparecia. O GitHub é sempre a versão real.
+#
+# Uso: main_menu chama fetch_latest() e mostra o modal uma vez por versão.
 
-signal latest_fetched(release: Dictionary)  # Dict vazio = falha silenciosa
+signal latest_fetched(release: Dictionary)  # {version, notes}; vazio = falha silenciosa
 signal fetch_failed(message: String)
 
-const _CONFIG := preload("res://scripts/systems/api_config.gd")
+# Release pública mais nova (exclui draft/prerelease). Retorna tag_name + body.
+const GITHUB_LATEST_URL: String = "https://api.github.com/repos/rafa-mesquita/twilight-quiver-releases/releases/latest"
 
 var _http: HTTPRequest
 
@@ -20,14 +25,13 @@ func _ready() -> void:
 
 
 func fetch_latest() -> void:
-	if not _CONFIG.is_configured():
-		print("[release-notes] api not configured — skip fetch")
-		latest_fetched.emit({})
-		return
-	var url: String = _CONFIG.API_BASE_URL + _CONFIG.RELEASES_ENDPOINT
-	var headers: PackedStringArray = _CONFIG.build_headers()
-	print("[release-notes] GET ", url)
-	var err: Error = _http.request(url, headers, HTTPClient.METHOD_GET)
+	# GitHub exige User-Agent; sem ele responde 403.
+	var headers: PackedStringArray = [
+		"User-Agent: TwilightQuiver",
+		"Accept: application/vnd.github+json",
+	]
+	print("[release-notes] GET ", GITHUB_LATEST_URL)
+	var err: Error = _http.request(GITHUB_LATEST_URL, headers, HTTPClient.METHOD_GET)
 	if err != OK:
 		print("[release-notes] HTTPRequest.request() error: ", err)
 		fetch_failed.emit("Request error: " + str(err))
@@ -41,18 +45,15 @@ func _on_response(result: int, code: int, _hdrs: PackedStringArray, body: Packed
 		latest_fetched.emit({})
 		return
 	var parsed: Variant = JSON.parse_string(body.get_string_from_utf8())
-	var releases: Array = []
-	if typeof(parsed) == TYPE_DICTIONARY and parsed.has("releases"):
-		releases = parsed["releases"]
-	elif typeof(parsed) == TYPE_ARRAY:
-		releases = parsed
-	# Acha a marcada como is_latest=true; fallback pra primeira da lista.
-	var latest: Dictionary = {}
-	for r in releases:
-		if typeof(r) == TYPE_DICTIONARY and bool(r.get("is_latest", false)):
-			latest = r
-			break
-	if latest.is_empty() and not releases.is_empty() and typeof(releases[0]) == TYPE_DICTIONARY:
-		latest = releases[0]
-	print("[release-notes] parsed ", releases.size(), " releases; latest version=", latest.get("version", "<none>"))
-	latest_fetched.emit(latest)
+	if typeof(parsed) != TYPE_DICTIONARY:
+		print("[release-notes] resposta inesperada (não-objeto)")
+		latest_fetched.emit({})
+		return
+	# GitHub release: tag_name = versão, body = notas (markdown).
+	var version: String = String(parsed.get("tag_name", ""))
+	var notes: String = String(parsed.get("body", ""))
+	print("[release-notes] latest version=", version, " notes_len=", notes.length())
+	if version.is_empty():
+		latest_fetched.emit({})
+		return
+	latest_fetched.emit({"version": version, "notes": notes})

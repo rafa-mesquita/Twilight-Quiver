@@ -271,7 +271,7 @@ const FENDA_CUT_DAMAGE_BY_LEVEL: Array[float] = [0.0, 25.0, 25.0, 50.0]
 const FENDA_CUT_WIDTH: float = 26.0  # distância máx do inimigo à linha do corte
 const FENDA_TELEPORT_DURATION: float = 0.22  # tempo do "blink dash" até o cursor
 const FENDA_CUT_CAST_TIME: float = 0.5  # o corte fica visível 0.5s; dano entra no fim
-const FENDA_COMBO_WINDOW: float = 0.8  # L3+: janela pra reteleportar (2º cast)
+const FENDA_COMBO_WINDOW: float = 1.3  # L3+: janela pra reteleportar (2º cast)
 const FENDA_COMBO_MAX_POINTS: int = 2  # L3+: máx de teleportes encadeados (2 → 3 pontos de corte)
 const FENDA_SOUND: AudioStream = preload("res://audios/effects/fenda sound.mp3")
 const FENDA_SOUND_VOLUME_DB: float = -10.0
@@ -3670,42 +3670,38 @@ func reset_all_cooldowns() -> void:
 			_frostwisp.set_initial_cooldown(7.0)
 
 
-func reset_all_skill_cooldowns() -> void:
-	# Pickup "Relógio de Reset": zera o cooldown de TODAS as skills ativas do
-	# player na hora (Espaço: dash/esquivando/fenda; Q: fogo/maldição/pedra/
-	# cadeia/time freeze; + boomerang/garras). Diferente de reset_all_cooldowns
-	# (início de wave), inclui o esquivando e NÃO aplica o delay do Frostwisp.
-	_dash_cd_remaining = 0.0
-	dash_cooldown_changed.emit(0.0, dash_cooldown)
-	_esquivando_ability_cd = 0.0
+func reduce_all_skill_cooldowns() -> void:
+	# Pickup "Relógio de Reset": REDUZ em 80% o cooldown atual de todas as skills
+	# ativas (Espaço: dash/esquivando/fenda; Q: fogo/cadeia/maldição/time-freeze/
+	# pedra; + boomerang/garras) — mantém 20% do que faltava. NÃO encerra skill
+	# em curso (só corta o cooldown) nem aplica o delay do Frostwisp.
+	const KEEP: float = 0.2  # mantém 20% do restante = corta 80%
+	_dash_cd_remaining *= KEEP
+	dash_cooldown_changed.emit(_dash_cd_remaining, dash_cooldown)
+	_esquivando_ability_cd *= KEEP
 	if esquivando_level > 0:
-		esquivando_cooldown_changed.emit(0.0, _esquivando_ability_cd_total())
-	_fenda_cd_remaining = 0.0
+		esquivando_cooldown_changed.emit(_esquivando_ability_cd, _esquivando_ability_cd_total())
+	_fenda_cd_remaining *= KEEP
 	if fenda_level > 0:
 		# Fenda compartilha a barra do dash (dash_cooldown_changed).
-		dash_cooldown_changed.emit(0.0, _fenda_cooldown())
-	_fire_skill_cd_remaining = 0.0
+		dash_cooldown_changed.emit(_fenda_cd_remaining, _fenda_cooldown())
+	_fire_skill_cd_remaining *= KEEP
 	if fire_arrow_level >= 3:
-		fire_skill_cooldown_changed.emit(0.0, FIRE_SKILL_COOLDOWN)
-	_chain_lightning_skill_cd_remaining = 0.0
+		fire_skill_cooldown_changed.emit(_fire_skill_cd_remaining, FIRE_SKILL_COOLDOWN)
+	_chain_lightning_skill_cd_remaining *= KEEP
 	if chain_lightning_level >= 3:
-		chain_lightning_skill_cooldown_changed.emit(0.0, CHAIN_LIGHTNING_SKILL_COOLDOWN)
-	_curse_skill_cd_remaining = 0.0
+		chain_lightning_skill_cooldown_changed.emit(_chain_lightning_skill_cd_remaining, CHAIN_LIGHTNING_SKILL_COOLDOWN)
+	_curse_skill_cd_remaining *= KEEP
 	if curse_arrow_level >= 4:
-		curse_skill_cooldown_changed.emit(0.0, CURSE_SKILL_TOTAL_CYCLE)
-	# Time Freeze: força encerrar se ativo + zera CD.
-	if _time_freeze_active_remaining > 0.0:
-		_time_freeze_active_remaining = 0.0
-		_remove_time_freeze_world_pause()
-		_hide_freeze_overlay()
-	_time_freeze_cd_remaining = 0.0
+		curse_skill_cooldown_changed.emit(_curse_skill_cd_remaining, CURSE_SKILL_TOTAL_CYCLE)
+	_time_freeze_cd_remaining *= KEEP
 	if ice_arrow_level >= 4:
-		time_freeze_skill_cooldown_changed.emit(0.0, TIME_FREEZE_COOLDOWN)
-	_stone_skill_cd_remaining = 0.0
+		time_freeze_skill_cooldown_changed.emit(_time_freeze_cd_remaining, TIME_FREEZE_COOLDOWN)
+	_stone_skill_cd_remaining *= KEEP
 	if stone_arrow_level >= 3:
-		stone_skill_cooldown_changed.emit(0.0, STONE_SKILL_COOLDOWN)
-	_boomerang_cd_remaining = 0.0
-	_tiger_claws_cd_remaining = 0.0
+		stone_skill_cooldown_changed.emit(_stone_skill_cd_remaining, STONE_SKILL_COOLDOWN)
+	_boomerang_cd_remaining *= KEEP
+	_tiger_claws_cd_remaining *= KEEP
 	all_skills_reset.emit()
 
 

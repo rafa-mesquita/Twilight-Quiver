@@ -1,9 +1,11 @@
 class_name ShopPlayerFace
 extends Node2D
 
-# Preview animado do personagem na shop, em camadas: cape (atrás) → head → shirt → hair.
-# Cada layer escolhe sua textura a partir do SkinLoadout. Slot vazio ou asset
-# faltando cai pro default.png da pasta correspondente.
+# Preview animado do personagem na shop, em camadas: head → shirt → cape(máscara)
+# → hair (hair sempre na frente). Cada layer escolhe sua textura a partir do
+# SkinLoadout. Slot vazio ou asset faltando cai pro default.png da pasta.
+# A máscara mora no dir `cape` e é dirigida pelo slot cape ("Capa e Máscara"),
+# então trocar a máscara (não o corpo) atualiza o retrato.
 #
 # Sheet esperado: 858x66 (13 frames de 66x66), idle loop. Border é 858x132
 # (2 rows × 13 cols) — frame 0 da row 0 = back, frame 0 da row 1 = front,
@@ -19,9 +21,13 @@ const _ANIM_FPS: float = 6.0
 # Ordem do array determina z-order de criação (não usado em runtime — o
 # .tscn já fixa a ordem de filhos).
 const _LAYERS: Array[Dictionary] = [
-	{"slot": &"cape",  "dir": "cape",  "node": "Cape"},
 	{"slot": &"body",  "dir": "head",  "node": "Head"},
 	{"slot": &"shirt", "dir": "shirt", "node": "Shirt"},
+	# "Capa e Máscara": o dir `cape` guarda a MÁSCARA da skin (presa ao slot cape,
+	# igual ao in-game). Na cena renderiza ENTRE Shirt e Hair → máscara na frente
+	# do rosto, abaixo do cabelo. (Ordem aqui é só pra apply_loadout; a cena fixa o
+	# z-order real.)
+	{"slot": &"cape",  "dir": "cape",  "node": "Cape"},
 	{"slot": &"hair",  "dir": "hair",  "node": "Hair"},
 ]
 

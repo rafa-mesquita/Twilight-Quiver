@@ -1,8 +1,9 @@
 extends Area2D
 
-# Pickup raro "Relógio de Reset" — dropado por inimigos (4%, só depois que o
-# player tem alguma skill ativa de Espaço/Q). Ao coletar, zera o cooldown de
-# TODAS as skills ativas do player (dash/esquivando/fenda + fogo/maldição/pedra).
+# Pickup raro "Relógio de Reset" — dropado por inimigos (1,5%, só depois que o
+# player tem alguma skill ATIVÁVEL de Espaço/Q). Ao coletar, REDUZ em 80% o
+# cooldown atual de todas as skills ativas (dash/esquivando/fenda + fogo/cadeia/
+# maldição/gelo/pedra). Mantém 20% do que faltava.
 #
 # Origem do node no chão (Y-sort com player/inimigos); visual offsetado acima.
 # Dura `lifetime` segundos (= tempo de uma coin sob Chuva de Coins L1); nos
@@ -112,7 +113,7 @@ func _on_body_entered(body: Node) -> void:
 		return
 	if not body.is_in_group("player"):
 		return
-	if not body.has_method("reset_all_skill_cooldowns"):
+	if not body.has_method("reduce_all_skill_cooldowns"):
 		return
 	# Fenda Crepuscular: não coleta em trânsito durante o blink do teleporte.
 	if body.get("_fenda_teleporting") == true:
@@ -124,7 +125,7 @@ func _collect(body: Node) -> void:
 	if _picked:
 		return
 	_picked = true
-	body.reset_all_skill_cooldowns()
+	body.reduce_all_skill_cooldowns()
 	_play_pickup_sound()
 	# Anim de coleta: sobe e some.
 	var t := create_tween().set_parallel(true)

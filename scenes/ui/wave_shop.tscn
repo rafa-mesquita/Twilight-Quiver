@@ -983,13 +983,13 @@ script = ExtResource("10_pface_script")
 texture_filter = 1
 texture = SubResource("ATX_border_back")
 
-[node name="Cape" type="AnimatedSprite2D" parent="Root/StatsCard/PlayerFace" unique_id=1923971279]
-texture_filter = 1
-
 [node name="Head" type="AnimatedSprite2D" parent="Root/StatsCard/PlayerFace" unique_id=1821095773]
 texture_filter = 1
 
 [node name="Shirt" type="AnimatedSprite2D" parent="Root/StatsCard/PlayerFace" unique_id=580506115]
+texture_filter = 1
+
+[node name="Cape" type="AnimatedSprite2D" parent="Root/StatsCard/PlayerFace" unique_id=1923971279]
 texture_filter = 1
 
 [node name="Hair" type="AnimatedSprite2D" parent="Root/StatsCard/PlayerFace" unique_id=1436986626]

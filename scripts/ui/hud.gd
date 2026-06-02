@@ -1750,6 +1750,8 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 		"bosses_killed": bosses,
 		"elemental_l4_reached": elemental_l4,
 		"flawless_through_w3": bool(p.get("stats_flawless_through_w3")) if p != null and "stats_flawless_through_w3" in p else false,
+		# Armor sobe e nunca cai numa run, então o nível no death == máximo atingido.
+		"armor_lv5_reached": (p != null and "armor_level" in p and int(p.get("armor_level")) >= 5),
 	}
 
 

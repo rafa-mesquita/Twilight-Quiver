@@ -90,6 +90,7 @@ const PART_NAME_MIGRATIONS: Dictionary = {
 #   runs_completed  — completar X runs (morrer X vezes; runs_completed >= value)
 #   no_damage_run   — completar X runs sem tomar dano (runs_no_damage >= value)
 #   boss_killed     — matar boss específico (value=boss_id, ex: "mage_monkey")
+#   armor_lv5       — comprar Armadura até o Lv5 em alguma run (flag persistente)
 #
 # Pra adicionar novo type: adicione um case em _is_quest_satisfied(),
 # adicione tracking em record_run() se for stat novo.
@@ -164,6 +165,14 @@ const SKIN_QUESTS: Dictionary = {
 		"label": "PLAYER_QUEST_DESTINY",
 		"hidden": false,
 	},
+	"Warrior": {
+		# Comprar o status de Armadura até o Lv5 em alguma run (flag persistente,
+		# setada no record_run quando armor_level >= 5 no death).
+		"type": "armor_lv5",
+		"value": 1,
+		"label": "PLAYER_QUEST_WARRIOR",
+		"hidden": false,
+	},
 }
 
 # DEV: skins que ficam BLOQUEADAS mesmo em debug build, pra testar a UI de skin
@@ -199,6 +208,8 @@ const STAT_ACTIVE_SKILLS: StringName = &"active_skills_used_total"
 # Flag (0/1): jogador já passou das waves 1, 2 e 3 sem tomar dano em alguma run.
 # Unlock da skin Hawk.
 const STAT_FLAWLESS_W3: StringName = &"flawless_through_w3"
+# Flag (0/1): jogador já comprou Armadura até o Lv5 em alguma run. Unlock da skin Warrior.
+const STAT_ARMOR_LV5: StringName = &"armor_lv5_reached"
 # Set de boss IDs já abatidos (persistente entre runs). Armazenado como string
 # CSV no settings.cfg porque ConfigFile só aceita primitivos.
 const _KEY_BOSSES_KILLED_SET: String = "bosses_killed_set"
@@ -408,6 +419,8 @@ static func _is_quest_satisfied(quest: Dictionary) -> bool:
 			return get_stat(STAT_ACTIVE_SKILLS) >= int(raw_value)
 		"flawless_w3":
 			return get_stat(STAT_FLAWLESS_W3) >= int(raw_value)
+		"armor_lv5":
+			return get_stat(STAT_ARMOR_LV5) >= int(raw_value)
 	return true  # type desconhecido: assume desbloqueada (não bloqueia o jogo).
 
 
@@ -549,6 +562,9 @@ static func record_run(run_stats: Dictionary) -> Array:
 	# Flag persistente: passou das waves 1-3 sem dano nesta run (unlock Hawk).
 	if bool(run_stats.get("flawless_through_w3", false)) and get_stat(STAT_FLAWLESS_W3) < 1:
 		set_stat(STAT_FLAWLESS_W3, 1)
+	# Flag persistente: comprou Armadura até o Lv5 nesta run (unlock Warrior).
+	if bool(run_stats.get("armor_lv5_reached", false)) and get_stat(STAT_ARMOR_LV5) < 1:
+		set_stat(STAT_ARMOR_LV5, 1)
 	set_stat(STAT_RUNS_COMPLETED, get_stat(STAT_RUNS_COMPLETED) + 1)
 	if run_dmg_taken == 0 and run_wave >= 1:
 		set_stat(STAT_RUNS_NO_DAMAGE, get_stat(STAT_RUNS_NO_DAMAGE) + 1)

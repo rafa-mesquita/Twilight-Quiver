@@ -6,18 +6,24 @@ extends RefCounted
 # no death, logo após o GoldDrop — assim herda as exclusões anti-exploit do gold
 # (insetos invocados não chamam gold/clock; macacos do mini-mago ficam no guard).
 #
-# Gate: só dropa se o player JÁ tem alguma skill ativa de Espaço (dash/esquivando/
-# fenda) ou Q (fogo/maldição/pedra) — senão o relógio não teria o que resetar.
+# Gate: só dropa se o player JÁ tem alguma skill ATIVÁVEL de Espaço (dash/
+# esquivando/fenda) ou Q — senão o relógio não teria cooldown pra reduzir.
+# ⚠ Os elementais só viram skill de Q a partir do nível que destrava o ativável
+# (fogo lv3, maldição lv4, pedra lv3, cadeia lv3, gelo/time-freeze lv4). Ter o
+# elemental no lv1-2 (passivo) NÃO conta — era o bug de dropar "sem skill".
 #
 # Dev: GameState.dev_clock_always_drop força chance 100% e ignora o gate (teste).
 
 const CLOCK_SCENE: PackedScene = preload("res://scenes/pickups/clock.tscn")
-const DROP_CHANCE: float = 0.04
+const DROP_CHANCE: float = 0.015
 const PICKUP_SPREAD: float = 16.0
-# Skills ativas que o relógio reseta — se o player tem QUALQUER uma, libera o drop.
-const ACTIVE_SKILL_IDS: Array[String] = [
-	"dash", "esquivando", "fenda", "fire_arrow", "curse_arrow", "stone_arrow",
-]
+# id do upgrade → nível mínimo pra contar como "skill ativável". Espaço (dash/
+# esquivando/fenda) vale do lv1; Q (elementais) só no nível que libera o ativo.
+const ACTIVE_SKILL_REQS: Dictionary = {
+	"dash": 1, "esquivando": 1, "fenda": 1,
+	"fire_arrow": 3, "curse_arrow": 4, "stone_arrow": 3,
+	"chain_lightning": 3, "ice_arrow": 4,
+}
 
 
 static func try_drop(world: Node, drop_position: Vector2) -> void:
@@ -45,7 +51,7 @@ static func try_drop(world: Node, drop_position: Vector2) -> void:
 static func _player_has_active_skill(player: Node) -> bool:
 	if not player.has_method("get_upgrade_count"):
 		return false
-	for id in ACTIVE_SKILL_IDS:
-		if player.get_upgrade_count(id) > 0:
+	for id in ACTIVE_SKILL_REQS:
+		if player.get_upgrade_count(id) >= int(ACTIVE_SKILL_REQS[id]):
 			return true
 	return false
