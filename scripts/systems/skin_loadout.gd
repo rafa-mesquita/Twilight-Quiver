@@ -99,7 +99,7 @@ const PART_NAME_MIGRATIONS: Dictionary = {
 #   no_damage_run   — completar X runs sem tomar dano (runs_no_damage >= value)
 #   boss_killed     — matar boss específico (value=boss_id, ex: "mage_monkey")
 #   armor_lv5       — comprar Armadura até o Lv5 em alguma run (flag persistente)
-#   long_mage_kill  — matar um mago a >= 480px com a flecha (flag persistente)
+#   long_mage_kill  — matar um mago longe (>= 350px) com flecha perfurante (flag)
 #   no_arrow_round  — passar de um round sem disparo manual de flecha (flag)
 #
 # Pra adicionar novo type: adicione um case em _is_quest_satisfied(),
@@ -184,9 +184,10 @@ const SKIN_QUESTS: Dictionary = {
 		"hidden": false,
 	},
 	"Patriota": {
-		# Tema futebol americano ("lançamento longo"): matar um mago a >= 480px
-		# (1,45× o range da flecha) com a flecha do player. Flag persistente
-		# setada no arrow.gd via notify_long_mage_kill → record_run.
+		# Tema futebol americano ("lançamento longo"): matar um mago a longa
+		# distância (>= 350px, além do alcance da flecha normal) com flecha
+		# PERFURANTE do player. Flag persistente setada no arrow.gd via
+		# notify_long_mage_kill → record_run.
 		"type": "long_mage_kill",
 		"value": 1,
 		"label": "PLAYER_QUEST_PATRIOTA",
@@ -214,6 +215,10 @@ const DEV_FORCE_LOCKED: Array[String] = []
 # bloqueadas até cumprir a quest, igual ao release. Flipar pra true pra voltar ao
 # atalho. (Em release sempre vale a quest real, independente disso.)
 const DEV_UNLOCK_ALL: bool = true
+# DEV: skins que respeitam a quest REAL mesmo com DEV_UNLOCK_ALL=true (o resto
+# continua livre no dev). Use pra testar a liberação de skins específicas sem
+# relockar tudo. Esvaziar ([]) quando terminar de testar.
+const DEV_QUEST_LOCKED: Array[String] = ["Patriota", "Sputnik"]
 
 # Stats persistentes em [progress]. Chaves usadas pelo sistema.
 const STAT_MAX_WAVE: StringName = &"max_wave_reached"
@@ -239,7 +244,7 @@ const STAT_ACTIVE_SKILLS: StringName = &"active_skills_used_total"
 const STAT_FLAWLESS_W3: StringName = &"flawless_through_w3"
 # Flag (0/1): jogador já comprou Armadura até o Lv5 em alguma run. Unlock da skin Warrior.
 const STAT_ARMOR_LV5: StringName = &"armor_lv5_reached"
-# Flag (0/1): jogador já matou um mago a >= 480px com a flecha. Unlock da skin Patriota.
+# Flag (0/1): matou um mago longe (>= 350px) com flecha perfurante. Unlock da skin Patriota.
 const STAT_LONG_MAGE_KILL: StringName = &"long_mage_kill_done"
 # Flag (0/1): jogador já passou de um round sem disparo manual de flecha. Unlock Sputnik.
 const STAT_NO_ARROW_ROUND: StringName = &"no_arrow_round_done"
@@ -525,6 +530,11 @@ static func is_unlocked(part: SkinPart) -> bool:
 	# Com DEV_UNLOCK_ALL=false, debug respeita a quest real (skins relockadas pra
 	# testar os unlocks). DEV_FORCE_LOCKED força locked mesmo com DEV_UNLOCK_ALL.
 	if OS.is_debug_build() and DEV_UNLOCK_ALL:
+		# DEV_QUEST_LOCKED: estas respeitam a quest real (pra testar a liberação);
+		# o resto fica livre no dev.
+		if DEV_QUEST_LOCKED.has(part.display_name):
+			var q: Dictionary = SKIN_QUESTS.get(part.display_name, {})
+			return q.is_empty() or _is_quest_satisfied(q)
 		return not DEV_FORCE_LOCKED.has(part.display_name)
 	var quest: Dictionary = SKIN_QUESTS.get(part.display_name, {})
 	if quest.is_empty():
@@ -543,6 +553,9 @@ static func is_kit_unlocked(kit_name: String) -> bool:
 	# "Linked_Pink" não tem quest, então Linked/Rosa_Onyx desbloqueavam sem o
 	# desafio. Aqui a quest é buscada pelo nome do kit (que casa com SKIN_QUESTS).
 	if OS.is_debug_build() and DEV_UNLOCK_ALL:
+		if DEV_QUEST_LOCKED.has(kit_name):
+			var q: Dictionary = SKIN_QUESTS.get(kit_name, {})
+			return q.is_empty() or _is_quest_satisfied(q)
 		return not DEV_FORCE_LOCKED.has(kit_name)
 	var quest: Dictionary = SKIN_QUESTS.get(kit_name, {})
 	if quest.is_empty():
@@ -602,7 +615,7 @@ static func record_run(run_stats: Dictionary) -> Array:
 	# Flag persistente: comprou Armadura até o Lv5 nesta run (unlock Warrior).
 	if bool(run_stats.get("armor_lv5_reached", false)) and get_stat(STAT_ARMOR_LV5) < 1:
 		set_stat(STAT_ARMOR_LV5, 1)
-	# Flag persistente: matou um mago a >= 480px com a flecha (unlock Patriota).
+	# Flag persistente: matou um mago longe (>= 350px) com flecha perfurante (unlock Patriota).
 	if bool(run_stats.get("long_mage_kill", false)) and get_stat(STAT_LONG_MAGE_KILL) < 1:
 		set_stat(STAT_LONG_MAGE_KILL, 1)
 	# Flag persistente: passou de um round sem disparo manual de flecha (unlock Sputnik).

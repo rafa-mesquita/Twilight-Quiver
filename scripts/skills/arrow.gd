@@ -186,9 +186,11 @@ var pierce_first_dmg_mult: float = 1.0
 const PIERCE_LATE_DMG_MULT: float = 0.85
 # Unlock da skin Patriota (tema futebol americano / "lançamento longo"): matar
 # um MAGO a >= LONG_MAGE_KILL_DIST do ponto de disparo até o hit, com a flecha
-# do PLAYER. 480px ~= 1,45× o range base da flecha (330px). `_spawn_pos` guarda
-# de onde a flecha saiu (capturado no set_direction).
-const LONG_MAGE_KILL_DIST: float = 480.0
+# PERFURANTE do PLAYER. 350px = alcance normal da flecha (330px) + 20: além do
+# que a flecha SEM perfuração alcança, então só dá com o range bônus da
+# perfuração (que é "infinito"). `_spawn_pos` guarda de onde a flecha saiu
+# (capturado no set_direction).
+const LONG_MAGE_KILL_DIST: float = 350.0
 const MAGE_GROUPS: Array[String] = ["mage", "summoner_mage", "fire_mage", "ice_mage", "electric_mage"]
 var _spawn_pos: Vector2 = Vector2.ZERO
 
@@ -543,7 +545,7 @@ func _on_hit(body: Node) -> void:
 			CritFeedback.mark_next_hit_crit(target)
 		var _was_alive_arrow: bool = (not ("hp" in target)) or float(target.hp) > 0.0
 		target.take_damage(dmg_to_apply)
-		_notify_player_dmg_kill(dmg_to_apply, _resolve_dmg_source_id(), _was_alive_arrow, target)
+		_notify_player_dmg_kill(dmg_to_apply, _resolve_dmg_source_id(), _was_alive_arrow, target, true)
 		_arbusto_heal_player()
 		# Esquivando: bater num inimigo real (target em grupo "enemy") gera stack
 		# no player. Helper trata as regras por nível (lv1-3 só 1 stack por volley,
@@ -1234,7 +1236,7 @@ func _arbusto_heal_player() -> void:
 		p.arbusto_heal_on_arrow_hit(arbusto_heal_on_hit)
 
 
-func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, target: Node) -> void:
+func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, target: Node, count_long_mage: bool = false) -> void:
 	# Adiciona breakdown por fonte. NÃO chama notify_damage_dealt (total) nem
 	# notify_enemy_killed (total) pra evitar double-count: enemy take_damage()
 	# já contabiliza essas duas métricas globais.
@@ -1249,8 +1251,11 @@ func _notify_player_dmg_kill(amount: float, source_id: String, was_alive: bool, 
 		var killed: bool = ("hp" in target) and float(target.hp) <= 0.0
 		if killed:
 			p.notify_kill_by_source(source_id)
-			# Unlock Patriota: flecha do PLAYER matando um MAGO a >= 480px do disparo.
-			if killed and source != null and is_instance_valid(source) and source.is_in_group("player"):
+			# Unlock Patriota: flecha PERFURANTE do PLAYER matando um MAGO além do alcance
+				# normal da flecha (>= LONG_MAGE_KILL_DIST do disparo). Só o hit DIRETO conta
+				# (count_long_mage=true); chain/AoE passam false porque global_position é da
+				# flecha, não do inimigo encadeado.
+			if count_long_mage and is_piercing and source != null and is_instance_valid(source) and source.is_in_group("player"):
 				if _target_is_mage(target) and _spawn_pos.distance_to(global_position) >= LONG_MAGE_KILL_DIST:
 					if p.has_method("notify_long_mage_kill"):
 						p.notify_long_mage_kill()
