@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c3iby3qhd7fck"
-path="res://.godot/imported/Sputnik_Warrior.png-3f2f071d43a27c05e8efe6c164ef81a0.ctex"
+uid="uid://bjsg2tonpr5vb"
+path="res://.godot/imported/sputnik.png-6c02e7f8db8cf94259ef512fa6fd2323.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/player/quiver/Sputnik_Warrior.png"
-dest_files=["res://.godot/imported/Sputnik_Warrior.png-3f2f071d43a27c05e8efe6c164ef81a0.ctex"]
+source_file="res://assets/Hud/playerHud/head/sputnik.png"
+dest_files=["res://.godot/imported/sputnik.png-6c02e7f8db8cf94259ef512fa6fd2323.ctex"]
 
 [params]
 

@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://7ki6wht7pbvo"
-path="res://.godot/imported/Warrior_front.png-41cc03a3b276862833ebc07b567afee0.ctex"
+path="res://.godot/imported/Sputnik_Warrior_front.png-fabc774f63b988cc5aad070cf8d196c6.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://assets/player/bow/Sputnik_Warrior_front.png"
-dest_files=["res://.godot/imported/Warrior_front.png-41cc03a3b276862833ebc07b567afee0.ctex"]
+dest_files=["res://.godot/imported/Sputnik_Warrior_front.png-fabc774f63b988cc5aad070cf8d196c6.ctex"]
 
 [params]
 
