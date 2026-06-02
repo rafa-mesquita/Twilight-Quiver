@@ -20,6 +20,11 @@ extends CharacterBody2D
 @export var separation_radius: float = 14.0
 @export var separation_strength: float = 25.0
 @export var tower_target_switch_distance: float = 220.0
+# Anti-softlock: quando só sobram insetos no mapa (todos já spawnados), eles
+# tomam decay até morrer. O inseto foge dos aliados e ignora colisão de parede,
+# então sai do mapa e fica intargetável — sem isso a wave nunca fecha.
+# decay_seconds = tempo pra zerar a vida CHEIA (do hp atual morre proporcional).
+@export var decay_seconds: float = 3.0
 
 const SILHOUETTE_SHADER: Shader = preload("res://shaders/silhouette.gdshader")
 const BODY_CENTER_OFFSET: Vector2 = Vector2(0, -16)
@@ -222,6 +227,26 @@ func take_damage(amount: float) -> void:
 
 func apply_knockback(dir: Vector2, strength: float) -> void:
 	knockback_velocity = dir.normalized() * strength
+
+
+# Chamado pelo wave_manager a cada frame quando só restam insetos (todos já
+# spawnados). Dreno SILENCIOSO de vida (sem números de dano) até a morte.
+func apply_decay(delta: float) -> void:
+	if is_curse_ally or hp <= 0.0:
+		return
+	var rate: float = max_hp / maxf(decay_seconds, 0.1)
+	hp = maxf(hp - rate * delta, 0.0)
+	hp_bar.set_ratio(hp / max_hp)
+	if hp <= 0.0:
+		_die_by_decay()
+
+
+func _die_by_decay() -> void:
+	# Morte por decay: efeitos visuais normais + queue_free (a wave fecha quando
+	# _total_alive cai a 0). Não conta como kill do player (morte de sistema).
+	_spawn_kill_effect()
+	_spawn_death_silhouette()
+	queue_free()
 
 
 func _play_damage_sound(duration: float = 0.7) -> void:

@@ -285,6 +285,7 @@ func _process(delta: float) -> void:
 	_check_structure_respawns(delta)
 	_emit_progress()
 	_update_last_enemies_indicator()
+	_apply_insect_decay(delta)
 	spawn_cooldown = maxf(spawn_cooldown - delta, 0.0)
 	if spawn_cooldown > 0.0:
 		return
@@ -328,6 +329,23 @@ func _all_enemies_spawned() -> bool:
 		if int(spawned_this_wave.get(k, 0)) < int(wave_config[k]["total"]):
 			return false
 	return true
+
+
+func _apply_insect_decay(delta: float) -> void:
+	# Anti-softlock: quando só sobram insetos (todos já spawnados), eles tomam
+	# decay até morrer. O inseto foge e ignora colisão de parede → pode sair do
+	# mapa e ficar intargetável, travando o fim da wave (só fecha em alive == 0).
+	if not _all_enemies_spawned():
+		return
+	var enemies: Array = get_tree().get_nodes_in_group("enemy")
+	if enemies.is_empty():
+		return
+	for e in enemies:
+		if is_instance_valid(e) and not (e as Node).is_in_group("insect"):
+			return  # ainda há inimigo não-inseto vivo → não decai
+	for e in enemies:
+		if is_instance_valid(e) and e.has_method("apply_decay"):
+			e.apply_decay(delta)
 
 
 func _start_next_wave() -> void:
