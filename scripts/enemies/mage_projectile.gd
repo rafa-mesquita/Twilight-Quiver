@@ -91,6 +91,16 @@ func _target_node() -> Node2D:
 	return player
 
 
+# Aliado-alvo (override) ainda vivo? False se sumiu (freed) OU já morreu (hp<=0)
+# mas o node persiste na animação de morte — nesse caso o projétil congela.
+func _override_target_alive() -> bool:
+	if target_override == null or not is_instance_valid(target_override):
+		return false
+	if ("hp" in target_override) and float(target_override.hp) <= 0.0:
+		return false
+	return true
+
+
 func _target_position(t: Node2D) -> Vector2:
 	# Player tem offset (mira no peito); outros alvos miram na origem do node.
 	if t.is_in_group("player"):
@@ -107,10 +117,12 @@ func _physics_process(delta: float) -> void:
 			while trail.get_point_count() > trail_max_points:
 				trail.remove_point(0)
 		return
-	# Alvo era um aliado (não-player) que morreu em voo: congela a direção atual
-	# em vez de virar bruscamente pro player. Sem isso o redirect abaixo cairia no
-	# fallback _target_node() -> player e puxaria o tiro em até 90°.
-	if had_override_target and (target_override == null or not is_instance_valid(target_override)):
+	# Alvo era um aliado (não-player) que morreu/sumiu em voo: congela a direção
+	# atual (segue em LINHA RETA) em vez de virar bruscamente pro player — sem
+	# isso o redirect abaixo cairia no fallback _target_node() -> player e puxaria
+	# o tiro em até 90°. Cobre o free imediato E aliados que persistem na animação
+	# de morte (node ainda válido mas hp <= 0).
+	if had_override_target and not _override_target_alive():
 		has_redirected_halfway = true
 		has_redirected_final = true
 	if not has_redirected_halfway and halfway_distance > 0.0:
