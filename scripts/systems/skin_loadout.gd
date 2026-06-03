@@ -64,9 +64,10 @@ const KIT_PART_OVERRIDE: Dictionary = {
 	# com a Sputnik (peça única "Sputnik_Warrior").
 	"Warrior":   {&"body": "Green_Eyes", &"bow": "Sputnik_Warrior", &"quiver": "Sputnik_Warrior", &"cape": "Sputnik_Warrior"},
 	"Patriota":  {&"body": "Green_Eyes"},
-	# Sputnik: body/legs/shirt/hair próprios; arco/aljava/capa+máscara vêm da peça
-	# partilhada "Sputnik_Warrior" (idêntica à do Warrior).
-	"Sputnik":   {&"bow": "Sputnik_Warrior", &"quiver": "Sputnik_Warrior", &"cape": "Sputnik_Warrior"},
+	# Sputnik: legs/shirt/hair próprios; corpo/rosto = Default (NÃO tem corpo próprio,
+	# pra não aparecer um "corpo Sputnik" gateado na aba Corpo); arco/aljava/capa+
+	# máscara vêm da peça partilhada "Sputnik_Warrior".
+	"Sputnik":   {&"body": "Default", &"bow": "Sputnik_Warrior", &"quiver": "Sputnik_Warrior", &"cape": "Sputnik_Warrior"},
 }
 
 # Peças PARTILHADAS entre kits (resolvidas via KIT_PART_OVERRIDE), NÃO kits
