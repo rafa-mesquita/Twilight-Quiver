@@ -537,10 +537,35 @@ static func is_unlocked(part: SkinPart) -> bool:
 			var q: Dictionary = SKIN_QUESTS.get(part.display_name, {})
 			return q.is_empty() or _is_quest_satisfied(q)
 		return not DEV_FORCE_LOCKED.has(part.display_name)
+	# Peça PARTILHADA (valor em KIT_PART_OVERRIDE, ex: Green_Eyes / Sputnik_Warrior /
+	# Hawk_Skeleton): não tem quest própria, então só libera se ALGUM kit que a usa
+	# já estiver desbloqueado — senão tons de pele/aljavas de kits gateados ficavam
+	# livres pra contas novas. ("Default" fica de fora — base universal sempre livre.)
+	var shared_kits: Array = _kits_using_shared_part(part.display_name)
+	if not shared_kits.is_empty():
+		for kit_name in shared_kits:
+			if is_kit_unlocked(String(kit_name)):
+				return true
+		return false
 	var quest: Dictionary = SKIN_QUESTS.get(part.display_name, {})
 	if quest.is_empty():
 		return true
 	return _is_quest_satisfied(quest)
+
+
+# Kits cujo KIT_PART_OVERRIDE referencia `part_name` em algum slot (= peça
+# partilhada). "Default" nunca conta (base universal). Vazio = não-partilhada.
+static func _kits_using_shared_part(part_name: String) -> Array:
+	var kits: Array = []
+	if part_name == "Default" or part_name == "":
+		return kits
+	for kit_name in KIT_PART_OVERRIDE.keys():
+		var overrides: Dictionary = KIT_PART_OVERRIDE[kit_name]
+		for slot in overrides.keys():
+			if String(overrides[slot]) == part_name:
+				kits.append(String(kit_name))
+				break
+	return kits
 
 
 static func get_quest_for(display_name: String) -> Dictionary:
