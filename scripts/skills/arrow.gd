@@ -38,6 +38,9 @@ var _chain_proc_used: bool = false
 # Chance [0..1] de cadeiar num alvo adicional além dos `chain_count` garantidos
 # (usado no lv2 da cadeia, que tem 30% de chance de pegar um 3º inimigo).
 var chain_bonus_chance: float = 0.0
+# Identidade visual da Cadeia: setado pelo player quando a Cadeia está equipada
+# (qualquer nível). Tinta a flecha e o rastro de amarelo elétrico no _ready.
+var is_chain: bool = false
 # Arbusto Carrara L4: heal aplicado no player a cada hit válido dessa flecha.
 # Stampado pelo player no disparo se arbusto_hide_active (ver player.gd
 # _spawn_arrow). Mantém o heal mesmo se o player sair do bush antes do impacto.
@@ -114,6 +117,9 @@ var tide_radius: float = 31.0
 var tide_debuff_duration: float = 3.0
 var tide_debuff_max_stacks: int = 2
 var tide_per_stack: float = 0.15  # +dano recebido por stack (escala com o nível)
+# Dano leve do splash do debuff (stampado pelo player = base 2 × stat Dano) nos
+# inimigos do raio, exceto o alvo direto (que já levou o hit cheio).
+var tide_splash_damage: float = 0.0
 const TIDE_PROJ_SHEET: Texture2D = preload("res://assets/effects/water/water.png")
 const TIDE_IMPACT_SHEET: Texture2D = preload("res://assets/effects/water/water_impact.png")
 const TIDE_AREA_SHEET: Texture2D = preload("res://assets/effects/water/area_debuff.png")
@@ -160,12 +166,8 @@ var _fire_trail_last_pos: Vector2 = Vector2.ZERO
 var _fire_trail_initialized: bool = false
 var _fire_trail_delay_remaining: float = FIRE_TRAIL_START_DELAY
 const CHAIN_RADIUS: float = 85.0
-const CHAIN_SOUND: AudioStream = preload("res://audios/upgrades/cadeia de raios/Cadeia de raios effect.mp3")
-const CHAIN_SOUND_THROTTLE_MS: int = 80
-const CHAIN_SOUND_VOLUME_DB: float = -10.0
-# Throttle global do som de chain — várias flechas (multi arrow) podem proccar
-# no mesmo frame e somar dB. Compartilhado entre todas as instâncias da arrow.
-static var _last_chain_sound_msec: int = -1000
+# Faísca + som da cadeia agora vivem no util compartilhado ChainVfx (reusado pelo
+# raio automático do L2 no player.gd). Throttle do som é global lá dentro.
 # Mesmo problema no splash da Fúria da Maré: multi-arrow estoura várias bolhas
 # juntas e o som soma. Throttle global → só 1 splash por janela curta.
 const TIDE_SOUND_THROTTLE_MS: int = 90
@@ -239,6 +241,8 @@ func _ready() -> void:
 		_apply_ricochet_visuals()
 	if is_tide:
 		_apply_tide_visuals()
+	if is_chain:
+		_apply_chain_visuals()
 	# Pedra por último: esconde o sprite normal e mostra a pedra (vence o tint
 	# de perfuração/ricochete — flecha-pedra deve parecer pedra).
 	if is_stone:
@@ -326,8 +330,30 @@ func _apply_tide_visuals() -> void:
 		trail_max_points = 7
 
 
-func _apply_tide_on_hit(center: Vector2) -> void:
+func _apply_chain_visuals() -> void:
+	# Identidade visual da Cadeia de Raios (todos os níveis): flecha + rastro
+	# amarelos elétricos. A Cadeia é exclusiva dos outros elementais, então não
+	# concorre com fogo/gelo/etc no tint.
+	var normal_sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if normal_sprite != null:
+		# Amarelo elétrico (alinhado com a cor da faísca). modulate > 1 dá brilho.
+		normal_sprite.modulate = Color(1.6, 1.4, 0.35, 1.0)
+	if trail != null:
+		var grad := Gradient.new()
+		grad.offsets = PackedFloat32Array([0.0, 1.0])
+		grad.colors = PackedColorArray([
+			Color(1.0, 0.85, 0.2, 0.0),   # cauda: amarelo transparente
+			Color(1.0, 0.85, 0.2, 0.85),  # cabeça: amarelo elétrico
+		])
+		trail.gradient = grad
+		trail.default_color = Color(1.0, 0.85, 0.2, 1.0)
+
+
+func _apply_tide_on_hit(center: Vector2, exclude: Node = null) -> void:
 	# Debuff de Vulnerabilidade em ÁREA (raio = stun da Pedra L1) em todos os enemies.
+	# Splash: além do debuff, dano leve (`tide_splash_damage`, escala com Dano) nos
+	# inimigos do raio EXCETO o alvo direto (`exclude`, que já levou o hit cheio).
+	# Estouro sem alvo (parede / fim de alcance) passa exclude=null → todos levam.
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if not is_instance_valid(e) or not (e is Node2D):
 			continue
@@ -335,6 +361,10 @@ func _apply_tide_on_hit(center: Vector2) -> void:
 			continue
 		if center.distance_to((e as Node2D).global_position) <= tide_radius:
 			TideVulnerability.apply_to(e, tide_debuff_duration, tide_debuff_max_stacks, tide_per_stack)
+			if tide_splash_damage > 0.0 and e != exclude and e.has_method("take_damage"):
+				var was_alive_t: bool = (not ("hp" in e)) or float(e.hp) > 0.0
+				e.take_damage(tide_splash_damage)
+				_notify_player_dmg_kill(tide_splash_damage, _resolve_dmg_source_id(), was_alive_t, e)
 	_spawn_tide_vfx(center)
 	# Som do impacto bem baixo (a bolha estoura — não é um baque forte). Throttle
 	# global: multi-arrow estoura várias bolhas juntas → toca só 1 splash por janela.
@@ -619,6 +649,10 @@ func _on_hit(body: Node) -> void:
 			_play_stone_impact(global_position)
 		else:
 			_play_oneshot(object_impact_sound, global_position, sound_volume_db, 0.7)
+		# Fúria da Maré: a bolha estoura ao bater na estrutura igual numa parede
+		# (debuff de Vulnerabilidade + splash + VFX). Sem isso ela grudava na torre.
+		if is_tide:
+			_apply_tide_on_hit(global_position)
 		# Graviton: pulso ao bater na estrutura. Com perfuração também procca em
 		# cada estrutura atravessada (a flecha continua e pode bater em outra).
 		if is_graviton:
@@ -634,8 +668,8 @@ func _on_hit(body: Node) -> void:
 		if is_ricochet and ricochet_hops_remaining > 0:
 			if _perform_ricochet(target):
 				return
-		# Pedra estilhaça (não crava) — feedback é a anim de impacto do AoE.
-		if is_stone:
+		# Pedra e Maré estilhaçam/estouram (não cravam) — feedback é a anim de impacto.
+		if is_stone or is_tide:
 			_die()
 			return
 		_stick_in_place(stick_surface_duration)
@@ -701,9 +735,10 @@ func _on_hit(body: Node) -> void:
 			if ice_area_enabled and is_primary_arrow:
 				_spawn_ice_slow_area_at(global_position)
 		# Fúria da Maré: dano já foi no alvo (normal); aqui aplica o debuff de
-		# Vulnerabilidade em ÁREA (não só no alvo) + VFX/SFX de água.
+		# Vulnerabilidade em ÁREA (não só no alvo) + splash leve nos outros + VFX/SFX.
+		# O alvo direto é excluído do splash (já levou o hit cheio).
 		if is_tide and is_instance_valid(target):
-			_apply_tide_on_hit(target.global_position)
+			_apply_tide_on_hit(target.global_position, target)
 		# Pedra: stun no alvo direto (crit aumenta a duração) + AoE no ponto de
 		# impacto. O alvo direto fica excluído do dano splash (já tomou o hit
 		# cheio). Com perfuração, isso roda em CADA inimigo perfurado. O stun só
@@ -1306,52 +1341,8 @@ func _proc_chain_lightning(origin: Node) -> void:
 		_arbusto_heal_player()
 		if is_fire:
 			_apply_burn_to(enemy)
-		_spawn_lightning_visual(origin_pos, (enemy as Node2D).global_position)
-	_play_chain_sound(origin_pos)
-
-
-func _spawn_lightning_visual(from: Vector2, to: Vector2) -> void:
-	var dir: Vector2 = to - from
-	if dir.length() < 0.01:
-		return
-	var perp: Vector2 = Vector2(-dir.y, dir.x).normalized()
-	var line := Line2D.new()
-	line.width = 2.5
-	# Amarelo elétrico saturado (R/G altos, B baixo) — modulate > 1 pra brilho extra.
-	line.default_color = Color(2.2, 1.9, 0.4, 1.0)
-	line.z_index = 10
-	# Zigue-zague: 7 segmentos com offset perpendicular randômico nos pontos do meio.
-	var segments: int = 7
-	for i in segments + 1:
-		var t: float = float(i) / float(segments)
-		var p: Vector2 = from.lerp(to, t)
-		if i > 0 and i < segments:
-			p += perp * randf_range(-7.0, 7.0)
-		line.add_point(p)
-	_get_world().add_child(line)
-	line.global_position = Vector2.ZERO  # add_point usa coords absolutas
-	var tw := line.create_tween()
-	tw.tween_property(line, "modulate:a", 0.0, 0.18)
-	tw.tween_callback(line.queue_free)
-
-
-func _play_chain_sound(pos: Vector2) -> void:
-	var now: int = Time.get_ticks_msec()
-	if now - _last_chain_sound_msec < CHAIN_SOUND_THROTTLE_MS:
-		return
-	_last_chain_sound_msec = now
-	var p := AudioStreamPlayer2D.new()
-	p.bus = &"SFX"
-	p.stream = CHAIN_SOUND
-	p.volume_db = CHAIN_SOUND_VOLUME_DB
-	_get_world().add_child(p)
-	p.global_position = pos
-	p.play()
-	var ref: AudioStreamPlayer2D = p
-	get_tree().create_timer(2.0).timeout.connect(func() -> void:
-		if is_instance_valid(ref):
-			ref.queue_free()
-	)
+		ChainVfx.spark_between(_get_world(), origin_pos, (enemy as Node2D).global_position)
+	ChainVfx.play_chain_sound(_get_world(), origin_pos)
 
 
 func _resolve_dmg_source_id() -> String:

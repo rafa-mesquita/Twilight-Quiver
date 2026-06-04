@@ -110,8 +110,12 @@ const TIDE_AOE_RADIUS: float = 31.0
 const TIDE_LIFETIME: float = 2.4  # range da bolha de água (speed 110 × lifetime)
 const TIDE_DEBUFF_DURATION: float = 3.0
 const TIDE_DEBUFF_MAX_STACKS: int = 2
-# +dano recebido por stack do debuff, por nível da Maré. L1=15%, L2+=30%.
-const TIDE_DEBUFF_PER_STACK_BY_LEVEL: Array[float] = [0.0, 0.15, 0.30, 0.30]
+# +dano recebido por stack do debuff, por nível da Maré. L1=13%, L2+=28%.
+# (-2pp por stack de compensação ao buff do dano-base da flecha de 19→21.)
+const TIDE_DEBUFF_PER_STACK_BY_LEVEL: Array[float] = [0.0, 0.13, 0.28, 0.28]
+# Dano leve do splash do debuff (escala com o stat Dano via _apply_dmg_pct_to_dps)
+# nos inimigos ao lado do alvo direto / na área do estouro.
+const TIDE_SPLASH_DAMAGE: float = 2.0
 # Attack speed enquanto a Maré ativa, por nível. L1=20%, L2=25%, L3=30%.
 const TIDE_ATK_SPEED_BY_LEVEL: Array[float] = [0.0, 0.20, 0.25, 0.30]
 # Escudo de Água (L3, skill Q): invulnerável (sem dano de nenhuma fonte, sem slow)
@@ -124,8 +128,9 @@ var _tide_shield_cd_remaining: float = 0.0
 var _tide_shield_active_remaining: float = 0.0
 var _tide_shield_overlay: AnimatedSprite2D = null
 var _tide_shield_clock: Node2D = null
-# −24% → dano-base 19 (25×0.76). Com o debuff: 19 / 19×1.15≈22 / 19×1.30≈25.
-const TIDE_DAMAGE_FACTOR: float = 0.76
+# −16% → dano-base 21 (25×0.84). Com o debuff de Vulnerabilidade (+13%/stack, máx
+# 2 stacks): 21 / 21×1.13≈24 / 21×1.26≈26.
+const TIDE_DAMAGE_FACTOR: float = 0.84
 # Referência à Frostwisp spawnada no L3 (1 só por run).
 const FROSTWISP_SCENE: PackedScene = preload("res://scenes/allies/frostwisp.tscn")
 var _frostwisp: Node2D = null
@@ -211,6 +216,14 @@ const CHAIN_LIGHTNING_SKILL_BOLT_DAMAGE: float = 60.0
 const CHAIN_LIGHTNING_LV4_DAMAGE_MULT: float = 1.20
 const CHAIN_LIGHTNING_BOLT_SCENE: PackedScene = preload("res://scenes/skills/lightning_bolt.tscn")
 var _chain_lightning_skill_cd_remaining: float = 0.0
+# Chain Lightning lv2+: poder passivo automático. A cada CHAIN_AUTO_BOLT_INTERVAL
+# segundos, uma faísca atinge um inimigo aleatório dentro de CHAIN_AUTO_BOLT_RADIUS
+# (mesma área das Garras de Tigre). Dano escala com o stat "Dano". Reusa o visual/
+# áudio da cadeia (ChainVfx), com a faísca saindo do player até o alvo.
+const CHAIN_AUTO_BOLT_INTERVAL: float = 5.0
+const CHAIN_AUTO_BOLT_RADIUS: float = 180.0
+const CHAIN_AUTO_BOLT_DAMAGE: float = 20.0
+var _chain_auto_bolt_cd_remaining: float = 0.0
 # Curse skill (Q a partir do lv4 da Maldição): raio roxo gigante que corta o
 # mapa de um lado ao outro (ignora walls). Warmup 0.4s + sustained 5s. Cd 3s
 # começa depois que o beam acaba — total cycle = 8.4s.
@@ -600,6 +613,7 @@ func _physics_process(delta: float) -> void:
 	_update_fenda(delta)
 	_update_fire_skill(delta)
 	_update_chain_lightning_skill(delta)
+	_update_chain_auto_bolt(delta)
 	_update_boomerang(delta)
 	_update_tiger_claws(delta)
 	_tick_replay_recorder(delta)
@@ -1085,6 +1099,9 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 			arrow.chain_dmg_pct = _chain_damage_pct()
 		if "chain_bonus_chance" in arrow:
 			arrow.chain_bonus_chance = _chain_bonus_chance()
+		# Identidade visual: flecha + rastro amarelos em todos os níveis da Cadeia.
+		if "is_chain" in arrow:
+			arrow.is_chain = true
 	if fire_arrow_level > 0:
 		if "is_fire" in arrow:
 			arrow.is_fire = true
@@ -1201,6 +1218,10 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 			arrow.tide_debuff_max_stacks = TIDE_DEBUFF_MAX_STACKS
 		if "tide_per_stack" in arrow:
 			arrow.tide_per_stack = _tide_per_stack()
+		# Splash do debuff também causa um dano leve (escala com o stat Dano) nos
+		# inimigos ao lado do alvo direto / na área do estouro.
+		if "tide_splash_damage" in arrow:
+			arrow.tide_splash_damage = _apply_dmg_pct_to_dps(TIDE_SPLASH_DAMAGE)
 	if is_ricochet:
 		if "is_ricochet" in arrow:
 			arrow.is_ricochet = true
@@ -2150,6 +2171,58 @@ func _update_chain_lightning_skill(delta: float) -> void:
 		chain_lightning_skill_cooldown_changed.emit(_chain_lightning_skill_cd_remaining, CHAIN_LIGHTNING_SKILL_COOLDOWN)
 
 
+# ---------- Cadeia de Raios lv2+: raio automático ----------
+
+func _update_chain_auto_bolt(delta: float) -> void:
+	# Poder passivo do L2+: a cada CHAIN_AUTO_BOLT_INTERVAL, faísca num inimigo
+	# aleatório no raio. Sem inimigo no raio → cd não dispara, retenta no próximo
+	# frame (mesma lógica das Garras de Tigre).
+	if chain_lightning_level < 2 or is_dead:
+		return
+	if _chain_auto_bolt_cd_remaining > 0.0:
+		_chain_auto_bolt_cd_remaining = maxf(_chain_auto_bolt_cd_remaining - delta, 0.0)
+		return
+	if _try_cast_chain_auto_bolt():
+		_chain_auto_bolt_cd_remaining = CHAIN_AUTO_BOLT_INTERVAL
+
+
+func _try_cast_chain_auto_bolt() -> bool:
+	var candidates: Array[Node2D] = []
+	var rsq: float = CHAIN_AUTO_BOLT_RADIUS * CHAIN_AUTO_BOLT_RADIUS
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not is_instance_valid(e) or not (e is Node2D):
+			continue
+		var enemy_node: Node2D = e as Node2D
+		# Mesmo filtro do tiger claws: ignora tank/decoy (ally) e boss escudado.
+		if enemy_node.is_in_group("ally"):
+			continue
+		if enemy_node.is_in_group("boss_shielded"):
+			continue
+		if not enemy_node.has_method("take_damage"):
+			continue
+		if enemy_node.global_position.distance_squared_to(global_position) <= rsq:
+			candidates.append(enemy_node)
+	if candidates.is_empty():
+		return false
+	var target: Node2D = candidates[randi() % candidates.size()]
+	# Dano escala com o stat "Dano" (é poder do player), e rola crítico igual o proc.
+	var dmg: float = _apply_dmg_pct_to_dps(CHAIN_AUTO_BOLT_DAMAGE)
+	var crit: Dictionary = roll_crit()
+	if bool(crit.get("crit", false)):
+		dmg *= float(crit.get("mult", 1.0))
+		CritFeedback.mark_next_hit_crit(target)
+	var was_alive: bool = (not ("hp" in target)) or float(target.hp) > 0.0
+	target.take_damage(dmg)
+	notify_damage_dealt_by_source(dmg, "chain_lightning")
+	if was_alive and ("hp" in target) and float(target.hp) <= 0.0:
+		notify_kill_by_source("chain_lightning")
+	# Faísca do player até o alvo + som (reusa o VFX/áudio do proc de cadeia).
+	var world := _get_world()
+	ChainVfx.spark_between(world, global_position, target.global_position)
+	ChainVfx.play_chain_sound(world, global_position)
+	return true
+
+
 # ---------- Boomerang (skill passiva auto-cast) ----------
 
 func _update_boomerang(delta: float) -> void:
@@ -3091,8 +3164,8 @@ func apply_upgrade(upgrade_id: String) -> void:
 				stone_skill_unlocked.emit()
 				stone_skill_cooldown_changed.emit(0.0, STONE_SKILL_COOLDOWN)
 		"tide_arrow":
-			# Elemental Furia da Mare (L1): projetil lento, -15% dano de flecha +
-			# 20% atk speed; o hit aplica Vulnerabilidade em area (+15%/stack, 3s, 2x = +30%).
+			# Elemental Furia da Mare (L1): projetil lento, -16% dano de flecha (base 21) +
+			# 20% atk speed; o hit aplica Vulnerabilidade em area (+13%/stack, 3s, 2x = +26%).
 			var was_below_3_tide: bool = tide_arrow_level < 3
 			tide_arrow_level = mini(tide_arrow_level + 1, 4)
 			if was_below_3_tide and tide_arrow_level >= 3:
@@ -3965,6 +4038,7 @@ func reset_all_cooldowns() -> void:
 	_chain_lightning_skill_cd_remaining = 0.0
 	if chain_lightning_level >= 3:
 		chain_lightning_skill_cooldown_changed.emit(0.0, CHAIN_LIGHTNING_SKILL_COOLDOWN)
+	_chain_auto_bolt_cd_remaining = 0.0
 	_curse_skill_cd_remaining = 0.0
 	if curse_arrow_level >= 4:
 		curse_skill_cooldown_changed.emit(0.0, CURSE_SKILL_TOTAL_CYCLE)

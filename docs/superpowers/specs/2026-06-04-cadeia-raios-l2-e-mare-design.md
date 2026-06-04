@@ -126,6 +126,22 @@ Como o tiro base ficou mais forte, reduzir o bônus de dano-recebido do debuff e
 - Aplica automaticamente em todos os consumidores via `_tide_per_stack()`
   (flecha, e a `TideWave` do L4 que também lê `_tide_per_stack()`).
 
+### Splash do debuff causa dano leve
+
+O estouro que aplica o debuff de Vulnerabilidade passa a causar **dano leve** nos
+inimigos da área (além do debuff):
+
+- Base **2** (`TIDE_SPLASH_DAMAGE`), escalando com o stat Dano via
+  `_apply_dmg_pct_to_dps(2.0)` — stampado em `arrow.tide_splash_damage` no
+  `_spawn_arrow` (bloco tide).
+- Atinge os inimigos no `tide_radius`, **exceto o alvo direto** (que já levou o hit
+  cheio) — mesmo padrão do splash da Pedra. Em estouro sem alvo (parede / fim de
+  alcance), todos no raio levam o splash.
+- `_apply_tide_on_hit(center, exclude)` ganha o param `exclude`; o call site do hit
+  em inimigo passa `target`, os de parede/expiração passam `null`.
+- Atribuição de dano/kill via `_notify_player_dmg_kill(..., _resolve_dmg_source_id())`
+  (mesmo source do hit direto).
+
 ### Limpeza
 
 - Atualizar o comentário no `apply_upgrade` ("tide_arrow") que ainda diz "-15%"
