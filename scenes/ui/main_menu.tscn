@@ -261,3 +261,4 @@ theme_override_styles/focus = SubResource("SBF_btn_focus")
 text = "NICKNAME_OK"
 
 [node name="VersionLabel" parent="." instance=ExtResource("4_version")]
+show_help = true

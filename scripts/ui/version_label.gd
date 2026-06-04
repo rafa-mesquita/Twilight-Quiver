@@ -1,15 +1,19 @@
 extends CanvasLayer
 
-# Mostra application/config/version no canto inferior direito da tela, com um botão
-# "(?)" clicável LOGO À ESQUERDA da versão que reabre o modal de patch notes em
-# qualquer tela (mesmo fluxo do main_menu). O botão e a label são nós reais da cena
-# (ver version_label.tscn) — não criados em código — pra renderizarem de forma
-# confiável quando a cena é instanciada dentro de outra (HUD, menus, loja, etc).
-# O CanvasLayer fica em layer alto (100) pra a versão e o modal ficarem acima de tudo.
+# Mostra application/config/version no canto inferior direito da tela. O botão
+# "(?)" clicável LOGO À ESQUERDA da versão (que reabre o modal de patch notes) só
+# aparece quando `show_help = true` — setado apenas na instância do MAIN MENU. Nas
+# outras telas (HUD, loja, leaderboard, settings, skins) fica só a versão.
+# O botão e a label são nós reais da cena (ver version_label.tscn) — não criados em
+# código — pra renderizarem de forma confiável quando a cena é instanciada dentro de
+# outra. O CanvasLayer fica em layer alto (100) pra a versão e o modal ficarem acima de tudo.
 
 const _RELEASE_CLIENT := preload("res://scripts/systems/release_client.gd")
 const _RELEASE_NOTES_MODAL: PackedScene = preload("res://scenes/ui/release_notes_modal.tscn")
 const _MODAL_NODE_NAME: String = "PatchNotesModalInstance"
+
+# Só o main_menu liga isso (na instância do .tscn). Default false = só a versão.
+@export var show_help: bool = false
 
 @onready var _version_label: Label = $Row/Version
 @onready var _help_button: Button = $Row/Help
@@ -20,7 +24,9 @@ var _busy: bool = false
 func _ready() -> void:
 	var v: String = str(ProjectSettings.get_setting("application/config/version", ""))
 	_version_label.text = v
-	_help_button.pressed.connect(_on_help_pressed)
+	_help_button.visible = show_help
+	if show_help:
+		_help_button.pressed.connect(_on_help_pressed)
 
 
 func _on_help_pressed() -> void:
