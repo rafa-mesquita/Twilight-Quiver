@@ -2103,7 +2103,8 @@ func _spawn_player_fire_trail_segment() -> void:
 		return
 	var seg: Node = PLAYER_FIRE_TRAIL_SCENE.instantiate()
 	if "damage_per_second" in seg:
-		seg.damage_per_second = PLAYER_FIRE_TRAIL_DPS * _fire_burn_multiplier()
+		# +1 de DPS por status de Dano comprado (pedido do balance).
+		seg.damage_per_second = PLAYER_FIRE_TRAIL_DPS * _fire_burn_multiplier() + float(damage_upgrades)
 	_get_world().add_child(seg)
 	if seg is Node2D:
 		(seg as Node2D).global_position = global_position
