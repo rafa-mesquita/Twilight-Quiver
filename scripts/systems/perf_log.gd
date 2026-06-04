@@ -18,7 +18,7 @@ extends Node
 # É só DIAGNÓSTICO — `ENABLED = false` desliga tudo. NÃO deve ir pra release ligado.
 # Autoload registrado em project.godot ([autoload] PerfLog).
 
-const ENABLED: bool = true
+const ENABLED: bool = false  # DIAGNÓSTICO — ligar só pra caçar leak; nunca em release
 const INTERVAL: float = 2.0        # gravação no arquivo + cálculo das top classes
 const UI_INTERVAL: float = 0.5     # atualização do overlay (mais responsivo)
 const GROUPS: Array[String] = [

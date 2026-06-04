@@ -27,9 +27,7 @@ func _ready() -> void:
 	nickname_ok_button.pressed.connect(_on_nickname_ok)
 	nickname_input.text_submitted.connect(_on_nickname_submitted)
 	# DevMode só aparece em build de debug.
-	# DIAGNÓSTICO (perf log): forçado true pra o amigo pular pra wave 8 rápido.
-	# REVERTER pra `OS.is_debug_build()` quando achar o leak.
-	dev_button.visible = true  # OS.is_debug_build()
+	dev_button.visible = OS.is_debug_build()
 	# Primeira vez? Pede o nick antes de liberar o menu.
 	if _load_nickname().is_empty():
 		_show_nickname_prompt()

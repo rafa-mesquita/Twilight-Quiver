@@ -107,7 +107,7 @@ var tide_arrow_level: int = 0  # elemental Fúria da Maré (L1: debuff de vulner
 const TIDE_AOE_RADIUS: float = 31.0
 # Projétil lento → lifetime um pouco MAIOR que a flecha normal (1.5) pra o alcance
 # não ficar curto. maxf na aplicação não encurta builds com perfuração (4.0).
-const TIDE_LIFETIME: float = 1.9
+const TIDE_LIFETIME: float = 2.4  # range da bolha de água (speed 110 × lifetime)
 const TIDE_DEBUFF_DURATION: float = 3.0
 const TIDE_DEBUFF_MAX_STACKS: int = 2
 # +dano recebido por stack do debuff, por nível da Maré. L1=15%, L2+=30%.

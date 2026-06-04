@@ -47,6 +47,11 @@ var pierce_allies: bool = false
 # só na lógica de pierce_allies — não afeta dano no player nem em enemies.
 const BOSS_ALLY_DMG_MULT: float = 1.8
 
+# Limites do mapa (lidos da câmera no _ready) + margem. Projétil que sai muito
+# disso se autodestrói — rede de segurança contra leak de tiro perdido.
+var _bounds_min: Vector2 = Vector2(-1000000.0, -1000000.0)
+var _bounds_max: Vector2 = Vector2(1000000.0, 1000000.0)
+
 
 func _ready() -> void:
 	# Grupo "mage_projectile" usado pelo Claudio Druida pra detectar projéteis a
@@ -55,6 +60,11 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	get_tree().create_timer(lifetime).timeout.connect(_die)
 	player = get_tree().get_first_node_in_group("player")
+	var _cam := get_viewport().get_camera_2d()
+	if _cam != null:
+		var _mg := 120.0
+		_bounds_min = Vector2(_cam.limit_left - _mg, _cam.limit_top - _mg)
+		_bounds_max = Vector2(_cam.limit_right + _mg, _cam.limit_bottom + _mg)
 	if shoot_sound != null:
 		shoot_sound.play()
 		var sound_ref: AudioStreamPlayer2D = shoot_sound
@@ -112,6 +122,11 @@ func _target_position(t: Node2D) -> Vector2:
 
 func _physics_process(delta: float) -> void:
 	position += direction * speed * delta
+	# Rede de segurança: saiu muito do mapa → despawna (evita leak de tiro perdido).
+	var _gp: Vector2 = global_position
+	if _gp.x < _bounds_min.x or _gp.x > _bounds_max.x or _gp.y < _bounds_min.y or _gp.y > _bounds_max.y:
+		_die()
+		return
 	# Mago convertido: pula o redirect (anda em linha reta na direção setada).
 	if is_ally_source:
 		if trail != null:
