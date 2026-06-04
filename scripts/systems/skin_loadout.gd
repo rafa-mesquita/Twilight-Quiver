@@ -71,6 +71,9 @@ const KIT_PART_OVERRIDE: Dictionary = {
 	# Nautica: legs/shirt/quiver/cape/hair/bow próprios; corpo/rosto = Default
 	# (cor de pele default, sem corpo próprio gateado na aba Corpo).
 	"Nautica":   {&"body": "Default"},
+	# World_Cup: legs/shirt/quiver/cape/hair/bow próprios; corpo/rosto = Default
+	# (mesmo padrão da Nautica/Sputnik).
+	"World_Cup": {&"body": "Default"},
 }
 
 # Peças PARTILHADAS entre kits (resolvidas via KIT_PART_OVERRIDE), NÃO kits
@@ -106,6 +109,8 @@ const PART_NAME_MIGRATIONS: Dictionary = {
 #   long_mage_kill  — matar um mago longe (>= 350px) com flecha perfurante (flag)
 #   no_arrow_round  — passar de um round sem disparo manual de flecha (flag)
 #   tide_vulnerable_kills — matar X inimigos vulneráveis pela Fúria da Maré (debuff ativo)
+#   shop_petals     — NÃO desbloqueável por gameplay: comprada na loja por pétalas
+#                     (loja ainda não existe; fica como easter egg locked por enquanto)
 #
 # Pra adicionar novo type: adicione um case em _is_quest_satisfied(),
 # adicione tracking em record_run() se for stat novo.
@@ -218,6 +223,15 @@ const SKIN_QUESTS: Dictionary = {
 		"label": "PLAYER_QUEST_NAUTICA",
 		"hidden": false,
 	},
+	"World_Cup": {
+		# Skin de loja (comprada por pétalas). A loja ainda não existe, então fica
+		# bloqueada como easter egg — o tipo shop_petals nunca satisfaz por gameplay.
+		# Quando a loja/pétalas existirem, trocar por um unlock real.
+		"type": "shop_petals",
+		"value": 1,
+		"label": "PLAYER_QUEST_WORLD_CUP",
+		"hidden": false,
+	},
 }
 
 # DEV: skins que ficam BLOQUEADAS mesmo em debug build, pra testar a UI de skin
@@ -233,7 +247,7 @@ const DEV_UNLOCK_ALL: bool = true
 # DEV: skins que respeitam a quest REAL mesmo com DEV_UNLOCK_ALL=true (o resto
 # continua livre no dev). Use pra testar a liberação de skins específicas sem
 # relockar tudo. Esvaziar ([]) quando terminar de testar.
-const DEV_QUEST_LOCKED: Array[String] = []
+const DEV_QUEST_LOCKED: Array[String] = ["World_Cup"]
 
 # Stats persistentes em [progress]. Chaves usadas pelo sistema.
 const STAT_MAX_WAVE: StringName = &"max_wave_reached"
@@ -483,6 +497,8 @@ static func _is_quest_satisfied(quest: Dictionary) -> bool:
 			return get_stat(STAT_NO_ARROW_ROUND) >= int(raw_value)
 		"tide_vulnerable_kills":
 			return get_stat(STAT_TIDE_KILLS) >= int(raw_value)
+		"shop_petals":
+			return false  # só desbloqueia comprando na loja (ainda não existe).
 	return true  # type desconhecido: assume desbloqueada (não bloqueia o jogo).
 
 
