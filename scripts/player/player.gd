@@ -501,6 +501,9 @@ var _poison_plays_sound: bool = false
 # Run stats — exibidos na tela de morte. Tudo zerado em _ready.
 var _run_start_msec: int = 0
 var stats_enemies_killed: int = 0
+# Inimigos mortos com o debuff de vulnerabilidade da Fúria da Maré ativo —
+# acumulado entre runs pro unlock da skin Nautica.
+var stats_tide_vulnerable_kills: int = 0
 var stats_allies_made: int = 0
 # Macaquinhos (grupo "monkey") convertidos pelo disparo profano — desbloqueia
 # a skin Linked aos 200 totais acumulados entre runs.
@@ -4299,8 +4302,12 @@ func _on_frame_changed() -> void:
 
 # ---------- Run stats (death screen) ----------
 
-func notify_enemy_killed() -> void:
+func notify_enemy_killed(enemy: Node = null) -> void:
 	stats_enemies_killed += 1
+	# Unlock Nautica: conta se o inimigo morreu VULNERÁVEL pela Fúria da Maré
+	# (debuff TideVulnerability ativo), por qualquer fonte de kill.
+	if enemy != null and TideVulnerability.multiplier_for(enemy) > 1.0:
+		stats_tide_vulnerable_kills += 1
 
 
 func notify_boss_killed(boss_id: String) -> void:

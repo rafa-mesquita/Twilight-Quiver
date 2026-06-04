@@ -672,7 +672,7 @@ func _die() -> void:
 		HeartDrop.drop_guaranteed(_get_world(), heart_scene, global_position, ls_lvl)
 	var p := get_tree().get_first_node_in_group("player")
 	if p != null and p.has_method("notify_enemy_killed"):
-		p.notify_enemy_killed()
+		p.notify_enemy_killed(self)
 	# Notifica boss kill — adiciona "mage_monkey" ao set persistente no death,
 	# usado pra desbloquear a skin Bluey (SKIN_QUESTS type=boss_killed).
 	if p != null and p.has_method("notify_boss_killed"):

@@ -68,6 +68,9 @@ const KIT_PART_OVERRIDE: Dictionary = {
 	# pra não aparecer um "corpo Sputnik" gateado na aba Corpo); arco/aljava/capa+
 	# máscara vêm da peça partilhada "Sputnik_Warrior".
 	"Sputnik":   {&"body": "Default", &"bow": "Sputnik_Warrior", &"quiver": "Sputnik_Warrior", &"cape": "Sputnik_Warrior"},
+	# Nautica: legs/shirt/quiver/cape/hair/bow próprios; corpo/rosto = Default
+	# (cor de pele default, sem corpo próprio gateado na aba Corpo).
+	"Nautica":   {&"body": "Default"},
 }
 
 # Peças PARTILHADAS entre kits (resolvidas via KIT_PART_OVERRIDE), NÃO kits
@@ -102,6 +105,7 @@ const PART_NAME_MIGRATIONS: Dictionary = {
 #   armor_lv5       — comprar Armadura até o Lv5 em alguma run (flag persistente)
 #   long_mage_kill  — matar um mago longe (>= 350px) com flecha perfurante (flag)
 #   no_arrow_round  — passar de um round sem disparo manual de flecha (flag)
+#   tide_vulnerable_kills — matar X inimigos vulneráveis pela Fúria da Maré (debuff ativo)
 #
 # Pra adicionar novo type: adicione um case em _is_quest_satisfied(),
 # adicione tracking em record_run() se for stat novo.
@@ -204,6 +208,16 @@ const SKIN_QUESTS: Dictionary = {
 		"label": "PLAYER_QUEST_SPUTNIK",
 		"hidden": false,
 	},
+	"Nautica": {
+		# Eliminar 500 inimigos que estavam VULNERÁVEIS pela Fúria da Maré
+		# (debuff TideVulnerability ativo) no momento da morte — qualquer fonte de
+		# kill conta. Contado em player.notify_enemy_killed(enemy) → run stat
+		# "tide_vulnerable_kills" → record_run acumula em STAT_TIDE_KILLS.
+		"type": "tide_vulnerable_kills",
+		"value": 500,
+		"label": "PLAYER_QUEST_NAUTICA",
+		"hidden": false,
+	},
 }
 
 # DEV: skins que ficam BLOQUEADAS mesmo em debug build, pra testar a UI de skin
@@ -249,6 +263,9 @@ const STAT_ARMOR_LV5: StringName = &"armor_lv5_reached"
 const STAT_LONG_MAGE_KILL: StringName = &"long_mage_kill_done"
 # Flag (0/1): jogador já passou de um round sem disparo manual de flecha. Unlock Sputnik.
 const STAT_NO_ARROW_ROUND: StringName = &"no_arrow_round_done"
+# Total de inimigos mortos enquanto estavam vulneráveis pela Fúria da Maré
+# (debuff TideVulnerability ativo). Acumula entre runs — unlock da skin Nautica.
+const STAT_TIDE_KILLS: StringName = &"tide_vulnerable_kills_total"
 # Set de boss IDs já abatidos (persistente entre runs). Armazenado como string
 # CSV no settings.cfg porque ConfigFile só aceita primitivos.
 const _KEY_BOSSES_KILLED_SET: String = "bosses_killed_set"
@@ -464,6 +481,8 @@ static func _is_quest_satisfied(quest: Dictionary) -> bool:
 			return get_stat(STAT_LONG_MAGE_KILL) >= int(raw_value)
 		"no_arrow_round":
 			return get_stat(STAT_NO_ARROW_ROUND) >= int(raw_value)
+		"tide_vulnerable_kills":
+			return get_stat(STAT_TIDE_KILLS) >= int(raw_value)
 	return true  # type desconhecido: assume desbloqueada (não bloqueia o jogo).
 
 
@@ -509,6 +528,8 @@ static func _is_quest_satisfied_live(quest: Dictionary, rs: Dictionary) -> bool:
 			return get_stat(STAT_LONG_MAGE_KILL) >= int(raw_value) or bool(rs.get("long_mage_kill", false))
 		"no_arrow_round":
 			return get_stat(STAT_NO_ARROW_ROUND) >= int(raw_value) or bool(rs.get("no_arrow_round", false))
+		"tide_vulnerable_kills":
+			return get_stat(STAT_TIDE_KILLS) + int(rs.get("tide_vulnerable_kills", 0)) >= int(raw_value)
 		# runs_completed / no_damage_run: precisam fechar a run → não disparam toast.
 	return false
 
@@ -564,6 +585,7 @@ static func quest_progress_suffix(quest: Dictionary) -> String:
 		"monkeys_cursed": STAT_MONKEYS_CURSED,
 		"stun_seconds": STAT_STUN_SECONDS,
 		"active_skills_used": STAT_ACTIVE_SKILLS,
+		"tide_vulnerable_kills": STAT_TIDE_KILLS,
 	}
 	var qtype: String = String(quest.get("type", ""))
 	if not stat_by_type.has(qtype):
@@ -677,6 +699,7 @@ static func record_run(run_stats: Dictionary) -> Array:
 	var run_monkeys_cursed: int = int(run_stats.get("monkeys_cursed", 0))
 	var run_stun_seconds: int = int(run_stats.get("stun_seconds", 0))
 	var run_active_skills: int = int(run_stats.get("active_skills_used", 0))
+	var run_tide_kills: int = int(run_stats.get("tide_vulnerable_kills", 0))
 
 	if run_wave > get_stat(STAT_MAX_WAVE):
 		set_stat(STAT_MAX_WAVE, run_wave)
@@ -690,6 +713,8 @@ static func record_run(run_stats: Dictionary) -> Array:
 		set_stat(STAT_STUN_SECONDS, get_stat(STAT_STUN_SECONDS) + run_stun_seconds)
 	if run_active_skills > 0:
 		set_stat(STAT_ACTIVE_SKILLS, get_stat(STAT_ACTIVE_SKILLS) + run_active_skills)
+	if run_tide_kills > 0:
+		set_stat(STAT_TIDE_KILLS, get_stat(STAT_TIDE_KILLS) + run_tide_kills)
 	# Flag persistente: chegou ao Lv4 de algum elemental nesta run (unlock Skeleton).
 	if bool(run_stats.get("elemental_l4_reached", false)) and get_stat(STAT_ELEMENTAL_L4) < 1:
 		set_stat(STAT_ELEMENTAL_L4, 1)

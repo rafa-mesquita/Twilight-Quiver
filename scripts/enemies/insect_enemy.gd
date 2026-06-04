@@ -220,7 +220,7 @@ func take_damage(amount: float) -> void:
 		if not is_curse_ally:
 			var p2 := get_tree().get_first_node_in_group("player")
 			if p2 != null and p2.has_method("notify_enemy_killed"):
-				p2.notify_enemy_killed()
+				p2.notify_enemy_killed(self)
 		_spawn_kill_effect()
 		_spawn_death_silhouette()
 		queue_free()

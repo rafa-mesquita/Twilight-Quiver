@@ -342,7 +342,7 @@ func take_damage(amount: float) -> void:
 			HeartDrop.try_drop(_get_world(), heart_scene, global_position, self)
 			var p2 := get_tree().get_first_node_in_group("player")
 			if p2 != null and p2.has_method("notify_enemy_killed"):
-				p2.notify_enemy_killed()
+				p2.notify_enemy_killed(self)
 			# Conta morte de mago pra escalada de atk speed da torreta do Ting
 			# (+1% por mago morto na wave). Inclui fire/ice/electric/summoner —
 			# todos extendem este MageEnemy e passam por este take_damage.
