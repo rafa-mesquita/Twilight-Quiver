@@ -12,7 +12,8 @@ Três mudanças relacionadas a elementais:
 2. **Identidade visual da Cadeia**: a flecha e o rastro ficam amarelos em todos os
    níveis (L1–L4) quando a Cadeia está equipada.
 3. **Balance da Fúria da Maré**: reduzir a penalidade de dano do tiro de água — o
-   tiro base passa de 19 para 21.
+   tiro base passa de 19 para 21 — e, compensando, reduzir o debuff de
+   Vulnerabilidade em 2pp por stack.
 
 ---
 
@@ -103,12 +104,30 @@ por perto." (traduções equivalentes nas demais colunas.)
 
 ---
 
-## Parte 3 — Fúria da Maré: dano base 19 → 21
+## Parte 3 — Fúria da Maré: dano base 19 → 21 + debuff -2pp por stack
+
+### Dano base do tiro
 
 - `scripts/player/player.gd`: `const TIDE_DAMAGE_FACTOR: float` de `0.76` para
   `0.84`. Cálculo: dano base da flecha = 25; `25 × 0.84 = 21`.
-- Sem outras mudanças (o fator já é aplicado em `_mare_damage_factor()` no
-  `_spawn_arrow`; o debuff de Vulnerabilidade e o +20% atk speed continuam iguais).
+- O fator já é aplicado em `_mare_damage_factor()` no `_spawn_arrow`; o +20% atk
+  speed continua igual.
+
+### Compensação no debuff de Vulnerabilidade
+
+Como o tiro base ficou mais forte, reduzir o bônus de dano-recebido do debuff em
+**-2 pontos percentuais por stack, em todos os níveis**:
+
+- `const TIDE_DEBUFF_PER_STACK_BY_LEVEL` de `[0.0, 0.15, 0.30, 0.30]` para
+  `[0.0, 0.13, 0.28, 0.28]`.
+- Efeito (máx 2 stacks):
+  - L1: +15%/stack → **+13%/stack** (máx +30% → **+26%**)
+  - L2/L3+: +30%/stack → **+28%/stack** (máx +60% → **+56%**)
+- Aplica automaticamente em todos os consumidores via `_tide_per_stack()`
+  (flecha, e a `TideWave` do L4 que também lê `_tide_per_stack()`).
+
+### Limpeza
+
 - Atualizar o comentário no `apply_upgrade` ("tide_arrow") que ainda diz "-15%"
   (stale) pra refletir o novo fator, se fizer sentido durante a implementação.
 
