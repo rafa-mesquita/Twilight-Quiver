@@ -2173,6 +2173,9 @@ func _commit_upgrades_and_close() -> void:
 	var player := _get_player()
 	var joker_bought: bool = false
 	var roulette_new_id: String = ""
+	# Nível do Fogo antes da compra — pra detectar a transição pra L2 e disparar
+	# o modal de escolha de rastro (player primeiro vs flecha primeiro).
+	var fire_before: int = player.get_upgrade_count("fire_arrow") if player != null else 0
 	if player != null:
 		for idx in _selected_upgrade_idxs:
 			var slot: Dictionary = upg_slots[idx]
@@ -2196,13 +2199,18 @@ func _commit_upgrades_and_close() -> void:
 				continue
 			if player.has_method("apply_upgrade"):
 				player.apply_upgrade(slot["id"])
+	# Escolha de rastro do Fogo: pendente quando a compra levou o Fogo a exatamente
+	# L2. Mostrada como ÚLTIMO modal (depois de Joker/Roleta, se houver), via
+	# _maybe_finish_or_fire_choice nos fechamentos.
+	var fire_after: int = player.get_upgrade_count("fire_arrow") if player != null else 0
+	_pending_fire_choice = fire_before < 2 and fire_after == 2
 	if roulette_new_id != "":
 		_open_roulette_reveal(roulette_new_id)
 		return
 	if joker_bought:
 		_open_joker_modal()
 		return
-	closed.emit()
+	_maybe_finish_or_fire_choice()
 
 
 # ---------- Placement mode ----------
@@ -3010,6 +3018,10 @@ func _show_card_tooltip(card: Control) -> void:
 var _joker_modal: Panel = null
 # Modal de revelação da Roleta Elemental (mostra o L4 sorteado e fecha o shop).
 var _roulette_modal: Panel = null
+# Escolha de rastro do Fogo (player vs flecha) ao chegar no L2. Pendente entre o
+# commit e o último modal; mostrado por _maybe_finish_or_fire_choice.
+var _fire_choice_modal: Panel = null
+var _pending_fire_choice: bool = false
 # Estado da seleção (mesmo padrão do shop principal: clica, fica roxo, pode
 # trocar, só commita no botão Confirmar).
 var _joker_selected_id: String = ""
@@ -3307,7 +3319,7 @@ func _close_joker_modal_and_emit() -> void:
 	_joker_selected_id = ""
 	if root_panel != null:
 		root_panel.modulate = Color.WHITE
-	closed.emit()
+	_maybe_finish_or_fire_choice()
 
 
 # Revelação da Roleta Elemental: mostra qual elemental L4 saiu e, no OK, fecha o
@@ -3389,6 +3401,123 @@ func _close_roulette_reveal_and_emit() -> void:
 	if _roulette_modal != null and is_instance_valid(_roulette_modal):
 		_roulette_modal.queue_free()
 		_roulette_modal = null
+	if root_panel != null:
+		root_panel.modulate = Color.WHITE
+	_maybe_finish_or_fire_choice()
+
+
+# ---------- Escolha de rastro do Fogo (L2) ----------
+
+func _maybe_finish_or_fire_choice() -> void:
+	# Se a compra levou o Fogo ao L2, mostra a escolha de rastro como último passo
+	# antes de fechar o shop. Senão, fecha direto.
+	if _pending_fire_choice:
+		_pending_fire_choice = false
+		_open_fire_trail_choice()
+		return
+	closed.emit()
+
+
+func _open_fire_trail_choice() -> void:
+	# Modal pós-compra no mesmo molde do reveal da Roleta: dimma o shop, painel
+	# central, título + subtítulo e DUAS opções (player primeiro / flecha primeiro).
+	# Obrigatório escolher — não há botão de fechar.
+	if root_panel != null:
+		root_panel.modulate = Color(1, 1, 1, 0.35)
+	_fire_choice_modal = Panel.new()
+	_fire_choice_modal.anchor_left = 0.5
+	_fire_choice_modal.anchor_top = 0.5
+	_fire_choice_modal.anchor_right = 0.5
+	_fire_choice_modal.anchor_bottom = 0.5
+	_fire_choice_modal.offset_left = -440
+	_fire_choice_modal.offset_top = -240
+	_fire_choice_modal.offset_right = 440
+	_fire_choice_modal.offset_bottom = 240
+	_fire_choice_modal.z_index = 50
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.12, 0.06, 0.05, 0.97)
+	sb.border_color = Color(1.0, 0.55, 0.2, 1.0)  # laranja: tema do Fogo
+	sb.set_border_width_all(3)
+	sb.set_corner_radius_all(6)
+	_fire_choice_modal.add_theme_stylebox_override("panel", sb)
+	add_child(_fire_choice_modal)
+	var byte_font: Font = load("res://font/Silver.ttf")
+	var vbox := VBoxContainer.new()
+	vbox.anchor_right = 1.0
+	vbox.anchor_bottom = 1.0
+	vbox.offset_left = 28.0
+	vbox.offset_top = 24.0
+	vbox.offset_right = -28.0
+	vbox.offset_bottom = -24.0
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 14)
+	_fire_choice_modal.add_child(vbox)
+	var title := Label.new()
+	title.text = tr("SHOP_FIRE_TRAIL_TITLE")
+	if byte_font != null:
+		title.add_theme_font_override("font", byte_font)
+	title.add_theme_font_size_override("font_size", 36)
+	title.add_theme_color_override("font_color", Color(1.0, 0.72, 0.4, 1.0))
+	title.add_theme_color_override("font_outline_color", Color.BLACK)
+	title.add_theme_constant_override("outline_size", 3)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+	var subtitle := Label.new()
+	subtitle.text = tr("SHOP_FIRE_TRAIL_SUBTITLE")
+	if byte_font != null:
+		subtitle.add_theme_font_override("font", byte_font)
+	subtitle.add_theme_font_size_override("font_size", 24)
+	subtitle.add_theme_color_override("font_color", Color(0.85, 0.8, 0.75, 1.0))
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(subtitle)
+	var hbox := HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.add_theme_constant_override("separation", 28)
+	hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(hbox)
+	hbox.add_child(_make_fire_choice_option(
+		"player_first", "SHOP_FIRE_TRAIL_OPT_PLAYER", "SHOP_FIRE_TRAIL_DESC_PLAYER", byte_font))
+	hbox.add_child(_make_fire_choice_option(
+		"arrow_first", "SHOP_FIRE_TRAIL_OPT_ARROW", "SHOP_FIRE_TRAIL_DESC_ARROW", byte_font))
+
+
+func _make_fire_choice_option(variant: String, name_key: String, desc_key: String, byte_font: Font) -> Control:
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 10)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.custom_minimum_size = Vector2(360, 0)
+	var btn := Button.new()
+	btn.text = tr(name_key)
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.custom_minimum_size = Vector2(0, 64)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if byte_font != null:
+		btn.add_theme_font_override("font", byte_font)
+	btn.add_theme_font_size_override("font_size", 30)
+	btn.add_theme_color_override("font_color", Color(1.0, 0.84, 0.34, 1.0))
+	btn.pressed.connect(_close_fire_choice_and_emit.bind(variant))
+	col.add_child(btn)
+	var desc := Label.new()
+	desc.text = tr(desc_key)
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if byte_font != null:
+		desc.add_theme_font_override("font", byte_font)
+	desc.add_theme_font_size_override("font_size", 22)
+	desc.add_theme_color_override("font_color", Color(0.8, 0.78, 0.82, 1.0))
+	desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_child(desc)
+	return col
+
+
+func _close_fire_choice_and_emit(variant: String) -> void:
+	var player := _get_player()
+	if player != null and "fire_trail_variant" in player:
+		player.fire_trail_variant = variant
+	if _fire_choice_modal != null and is_instance_valid(_fire_choice_modal):
+		_fire_choice_modal.queue_free()
+		_fire_choice_modal = null
 	if root_panel != null:
 		root_panel.modulate = Color.WHITE
 	closed.emit()

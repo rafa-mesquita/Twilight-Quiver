@@ -97,6 +97,11 @@ var chain_lightning_level: int = 0  # capa em 4 (níveis 1-4)
 var move_speed_level: int = 0
 var life_steal_level: int = 0  # cada stack +5% chance e +10% heal nos drops de coração
 var fire_arrow_level: int = 0  # elemental Fogo (excalidraw lv1-4)
+# Ordem dos rastros do Fogo escolhida no L2 (modal pós-compra na loja).
+# "player_first" (default, = ordem antiga) ou "arrow_first". Só afeta L2-L3:
+# decide qual rastro único fica ativo enquanto sobe. No L4 os dois rastros
+# ligam de qualquer jeito. Reseta junto com o Fogo (nova run / refund / Roleta).
+var fire_trail_variant: String = "player_first"
 var curse_arrow_level: int = 0  # elemental Maldição (excalidraw lv1, escala lv1-4)
 var ice_arrow_level: int = 0  # elemental Gelo / "Fica Frio" (excalidraw lv1-4)
 var stone_arrow_level: int = 0  # elemental Pedra / "Disparo de Pedra" (lv1-4)
@@ -274,7 +279,6 @@ const FIRE_LV4_BURN_MULTIPLIER: float = 1.30
 const FIRE_LV4_AREA_SCALE: float = 1.25
 const PLAYER_FIRE_TRAIL_SCENE: PackedScene = preload("res://scenes/player/player_fire_trail.tscn")
 const PLAYER_FIRE_TRAIL_SPACING: float = 16.0
-const PLAYER_FIRE_TRAIL_DPS: float = 3.0
 var _player_fire_trail_last_pos: Vector2 = Vector2.ZERO
 var _player_fire_trail_initialized: bool = false
 # Chuva de Coins — refatorado pra 4 níveis (era one-shot has_gold_magnet).
@@ -1124,9 +1128,10 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 		# dano por tick. Flechas extras carregam o mesmo cap (sem nerf).
 		if "burn_max_stacks" in arrow:
 			arrow.burn_max_stacks = clampi(fire_arrow_level, 1, 4)
-		# Lv4: rastro de fogo no caminho da flecha (trocado com o rastro do player,
-		# que agora é Lv2). Os outros buffs (burn/stacks) seguem por nível.
-		if fire_arrow_level >= 4:
+		# Rastro de fogo no caminho da flecha. Ativo no L2-L3 se a escolha foi
+		# "flecha primeiro", e sempre no L4. Os outros buffs (burn/stacks) seguem
+		# por nível independente da escolha.
+		if _fire_arrow_trail_active():
 			if "fire_trail_enabled" in arrow:
 				arrow.fire_trail_enabled = true
 			if "fire_trail_dps" in arrow:
@@ -1382,6 +1387,37 @@ func _fire_trail_dps() -> float:
 		3: base = 5.0
 		4: base = 7.0
 	return _apply_dmg_pct_to_dps(base * _fire_burn_multiplier())
+
+
+func _fire_player_trail_dps() -> float:
+	# Lv2+ : DPS base do rastro de fogo do PLAYER × multiplier global. Escala por
+	# nível (igual o rastro da flecha) — o + damage_upgrades é somado no spawn.
+	var base: float = 0.0
+	match fire_arrow_level:
+		2: base = 3.0
+		3: base = 4.0
+		4: base = 5.0
+	return base * _fire_burn_multiplier()
+
+
+func _fire_player_trail_active() -> bool:
+	# Rastro do player ligado: no L4 sempre (os dois rastros); no L2-L3 só se a
+	# escolha foi "player primeiro".
+	if fire_arrow_level < 2:
+		return false
+	if fire_arrow_level >= 4:
+		return true
+	return fire_trail_variant != "arrow_first"
+
+
+func _fire_arrow_trail_active() -> bool:
+	# Rastro da flecha ligado: no L4 sempre (os dois rastros); no L2-L3 só se a
+	# escolha foi "flecha primeiro".
+	if fire_arrow_level < 2:
+		return false
+	if fire_arrow_level >= 4:
+		return true
+	return fire_trail_variant == "arrow_first"
 
 
 func _curse_dps() -> float:
@@ -2101,10 +2137,10 @@ func _handle_fire_skill_press() -> void:
 
 
 func _update_player_fire_trail() -> void:
-	# Lv2+ do Fogo: dropa segmentos de player_fire_trail enquanto o player anda
-	# (trocado com o rastro da flecha, que agora é Lv4).
+	# Dropa segmentos de player_fire_trail enquanto o player anda, quando o rastro
+	# do player está ativo (L2-L3 se "player primeiro", e sempre no L4).
 	# NÃO dropa parado (velocity zero) nem morto.
-	if fire_arrow_level < 2 or is_dead:
+	if not _fire_player_trail_active() or is_dead:
 		return
 	if velocity.length() < 1.0:
 		_player_fire_trail_initialized = false  # reset, próximo movimento dropa imediato
@@ -2124,8 +2160,8 @@ func _spawn_player_fire_trail_segment() -> void:
 		return
 	var seg: Node = PLAYER_FIRE_TRAIL_SCENE.instantiate()
 	if "damage_per_second" in seg:
-		# +1 de DPS por status de Dano comprado (pedido do balance).
-		seg.damage_per_second = PLAYER_FIRE_TRAIL_DPS * _fire_burn_multiplier() + float(damage_upgrades)
+		# Base por nível (× burn_mult) + 1 de DPS por status de Dano comprado.
+		seg.damage_per_second = _fire_player_trail_dps() + float(damage_upgrades)
 	_get_world().add_child(seg)
 	if seg is Node2D:
 		(seg as Node2D).global_position = global_position
@@ -2204,23 +2240,37 @@ func _try_cast_chain_auto_bolt() -> bool:
 			candidates.append(enemy_node)
 	if candidates.is_empty():
 		return false
-	var target: Node2D = candidates[randi() % candidates.size()]
-	# Dano escala com o stat "Dano" (é poder do player), e rola crítico igual o proc.
-	var dmg: float = _apply_dmg_pct_to_dps(CHAIN_AUTO_BOLT_DAMAGE)
-	var crit: Dictionary = roll_crit()
-	if bool(crit.get("crit", false)):
-		dmg *= float(crit.get("mult", 1.0))
-		CritFeedback.mark_next_hit_crit(target)
-	var was_alive: bool = (not ("hp" in target)) or float(target.hp) > 0.0
-	target.take_damage(dmg)
-	notify_damage_dealt_by_source(dmg, "chain_lightning")
-	if was_alive and ("hp" in target) and float(target.hp) <= 0.0:
-		notify_kill_by_source("chain_lightning")
-	# Faísca do player até o alvo + som (reusa o VFX/áudio do proc de cadeia).
+	# Quantos alvos distintos por cast: L2 → 1, L3 → 2, L4 → 3. Embaralha os
+	# candidatos e pega os N primeiros (sem repetir o mesmo inimigo).
+	candidates.shuffle()
+	var count: int = mini(_chain_auto_bolt_target_count(), candidates.size())
 	var world := _get_world()
-	ChainVfx.spark_between(world, global_position, target.global_position)
+	for i in count:
+		var target: Node2D = candidates[i]
+		# Dano escala com o stat "Dano" (é poder do player), e rola crítico igual o proc.
+		var dmg: float = _apply_dmg_pct_to_dps(CHAIN_AUTO_BOLT_DAMAGE)
+		var crit: Dictionary = roll_crit()
+		if bool(crit.get("crit", false)):
+			dmg *= float(crit.get("mult", 1.0))
+			CritFeedback.mark_next_hit_crit(target)
+		var was_alive: bool = (not ("hp" in target)) or float(target.hp) > 0.0
+		target.take_damage(dmg)
+		notify_damage_dealt_by_source(dmg, "chain_auto_bolt")
+		if was_alive and ("hp" in target) and float(target.hp) <= 0.0:
+			notify_kill_by_source("chain_auto_bolt")
+		# Faísca do player até cada alvo (reusa o VFX do proc de cadeia).
+		ChainVfx.spark_between(world, global_position, target.global_position)
+	# Som único por cast (evita spam de áudio quando atinge vários alvos).
 	ChainVfx.play_chain_sound(world, global_position)
 	return true
+
+
+func _chain_auto_bolt_target_count() -> int:
+	# Alvos do auto-raio por nível da Cadeia de Raios: L2 → 1, L3 → 2, L4 → 3.
+	match chain_lightning_level:
+		2: return 1
+		3: return 2
+		_: return 3  # L4+ (capado em 4)
 
 
 # ---------- Boomerang (skill passiva auto-cast) ----------
@@ -3966,6 +4016,7 @@ func _remove_elemental(id: String) -> void:
 			fire_arrow_level = 0
 			_fire_skill_cd_remaining = 0.0
 			_player_fire_trail_initialized = false
+			fire_trail_variant = "player_first"
 		"curse_arrow":
 			curse_arrow_level = 0
 			_curse_skill_cd_remaining = 0.0

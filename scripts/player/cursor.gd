@@ -1,5 +1,11 @@
 extends CanvasLayer
 
+# Cursor customizado (mouse OS escondido). O CanvasLayer fica em layer = 1000 na
+# cena pra ser o TOPO ABSOLUTO — acima de qualquer UI. Layers menores empatam e
+# o desempate é por ordem na árvore: version_label/dev_panel/fps_overlay ficam em
+# 100 e o modal de patch notes (filho do version_label) acabava desenhando POR CIMA
+# do cursor. Não baixe essa layer.
+
 @export var frame_size: Vector2i = Vector2i(33, 33)
 @export var frame_count: int = 6
 @export var fps: float = 8.0
