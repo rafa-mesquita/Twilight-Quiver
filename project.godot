@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="Twilight Quiver"
-config/version="pre-alpha-0.9.3"
+config/version="pre-alpha-0.9.4"
 run/main_scene="res://scenes/ui/splash.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="uid://c7qgqbvckpcdr"
@@ -27,6 +27,7 @@ Telemetry="*res://scripts/systems/telemetry.gd"
 DamagePanel="*res://scripts/ui/damage_panel.gd"
 Confetti="*res://scripts/effects/confetti.gd"
 MenuAudio="*res://scripts/systems/menu_audio.gd"
+PerfLog="*res://scripts/systems/perf_log.gd"
 
 [display]
 
