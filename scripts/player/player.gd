@@ -754,6 +754,9 @@ func _apply_poison_tick(amount: float) -> void:
 	# veneno do mosquito furava a invencibilidade do arbusto.
 	if is_in_group("bush_hidden"):
 		return
+	# I-frames de Dash/Fenda: DoT também não deve furar (mesmo gate da take_damage).
+	if _iframes_remaining > 0.0:
+		return
 	hp = maxf(hp - amount, 0.0)
 	# Mesmo clamp da take_damage — ticks de poison costumam ser fracionários
 	# (dps * tick_interval com float), então sub-1 HP é morte certa.
