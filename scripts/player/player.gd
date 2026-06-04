@@ -117,7 +117,7 @@ const TIDE_ATK_SPEED_BY_LEVEL: Array[float] = [0.0, 0.20, 0.25, 0.30]
 # Escudo de Água (L3, skill Q): invulnerável (sem dano de nenhuma fonte, sem slow)
 # por DURATION; CD COOLDOWN. Relógio azul acima do player + overlay animado.
 const TIDE_SHIELD_DURATION: float = 4.0
-const TIDE_SHIELD_COOLDOWN: float = 23.0
+const TIDE_SHIELD_COOLDOWN: float = 25.0
 const TIDE_SHIELD_SHEET: Texture2D = preload("res://assets/effects/water/water_shield.png")
 const RUN_CLOCK_SCRIPT: GDScript = preload("res://scripts/ui/run_clock.gd")
 var _tide_shield_cd_remaining: float = 0.0
