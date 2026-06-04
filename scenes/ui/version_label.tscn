@@ -5,25 +5,42 @@
 
 [node name="VersionLabel" type="CanvasLayer" unique_id=1033259335]
 layer = 100
+script = ExtResource("1_version")
 
-[node name="Label" type="Label" parent="." unique_id=242693716]
-anchors_preset = 3
+[node name="Row" type="HBoxContainer" parent="."]
+process_mode = 3
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -240.0
-offset_top = -44.0
-offset_right = -12.0
+offset_left = -360.0
+offset_top = -50.0
+offset_right = -14.0
 offset_bottom = -8.0
 grow_horizontal = 0
 grow_vertical = 0
+alignment = 2
+theme_override_constants/separation = 10
+
+[node name="Help" type="Button" parent="Row"]
+layout_mode = 2
+focus_mode = 0
+flat = true
+text = "(?)"
+theme_override_colors/font_color = Color(1, 1, 1, 0.72)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 0.98)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 0.98)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 0.98)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+
+[node name="Version" type="Label" parent="Row"]
+layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.55)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.7)
 theme_override_constants/outline_size = 4
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
-text = "?"
-horizontal_alignment = 2
 vertical_alignment = 2
-script = ExtResource("1_version")
