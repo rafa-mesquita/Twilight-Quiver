@@ -87,13 +87,38 @@ Resultado: no L2-L3 exatamente 1 rastro ativo (o escolhido); no L4 os dois.
 - Setup da flecha ([player.gd:1129](../../../scripts/player/player.gd#L1129)):
   troca `if fire_arrow_level >= 4:` por `if _fire_arrow_trail_active():`.
 
-**Sem retune de números.** O DPS e a área já são keyed por nível:
+**Rastro da flecha — sem retune.** O DPS e a área já são keyed por nível:
 - `_fire_trail_dps()` (rastro da flecha) já devolve 4/5/7 nos níveis 2/3/4, então
   no `arrow_first` o rastro da flecha aparece no L2 com DPS 4 (escala natural).
 - `_fire_area_scale()` já devolve 1.0 fora do L4, então o rastro da flecha no
   L2-L3 não ganha o +25% de área (que é bônus exclusivo do L4).
-- O rastro do player usa `PLAYER_FIRE_TRAIL_DPS` (flat) × `_fire_burn_multiplier()`,
-  que já é 1.0 fora do L4.
+
+**Rastro do player — passa a escalar por nível.** Hoje o rastro do player é
+*flat* (`PLAYER_FIRE_TRAIL_DPS = 3.0` base), então não cresce de L2 pra L3 —
+só ganha o +30% no L4. Como agora ele pode ser o rastro isolado de L2-L3 (no
+`player_first`), ele deve escalar igual o da flecha. Troca o constante flat por
+um helper keyed por nível:
+
+```gdscript
+func _fire_player_trail_dps() -> float:
+	var base: float = 0.0
+	match fire_arrow_level:
+		2: base = 3.0
+		3: base = 4.0
+		4: base = 5.0
+	return base * _fire_burn_multiplier()
+```
+
+E `_spawn_player_fire_trail_segment` ([player.gd:2128](../../../scripts/player/player.gd#L2128))
+passa a usar `_fire_player_trail_dps() + float(damage_upgrades)` no lugar de
+`PLAYER_FIRE_TRAIL_DPS * _fire_burn_multiplier() + float(damage_upgrades)`. O
+`+ damage_upgrades` (bônus por status de Dano) e a estrutura da fórmula seguem
+iguais — só a base vira por-nível.
+
+> ⚠️ Efeito colateral no L4: o rastro do player no L4 sai de `3.0×1.30 = 3.9`
+> pra `5.0×1.30 = 6.5` (+ status). É um buff no L4. Valores 3/4/5 são ponto de
+> partida — ajustar no playtest se ficar forte (ex: 3/4/4 mantém o L4 mais
+> perto do atual).
 
 ### 3. Modal de escolha (loja)
 
@@ -160,14 +185,19 @@ Novas keys em [translations.csv](../../../assets/i18n/translations.csv)
 
 ## Nota de balance (playtest)
 
-Os dois rastros têm DPS diferente hoje:
-- Rastro do player: `PLAYER_FIRE_TRAIL_DPS = 3.0` (flat base) + dano por status.
-- Rastro da flecha: 4/5/7 por nível.
+DPS dos rastros depois do design (base por nível, antes de status/burn_mult):
 
-Mantendo o tuning por-tipo, "flecha primeiro" entrega um rastro de DPS bruto
-maior no L2-L3, mas o do player é mais fácil de manter (cai continuamente onde
-você anda, sem depender do voo da flecha). Deixar pra sentir no playtest se
-precisa equalizar — nenhum número muda neste design.
+| Nível | Rastro do player | Rastro da flecha |
+|---|---|---|
+| L2 | 3 | 4 |
+| L3 | 4 | 5 |
+| L4 | 5 (×1.30 = 6.5) | 7 (×1.30 = 9.1) |
+
+Os dois agora escalam por nível. O da flecha continua com DPS bruto um pouco
+maior, mas o do player é mais fácil de manter (cai continuamente onde você anda,
+sem depender do voo da flecha) — diferença intencional de usabilidade. Único
+número que muda de fato é a base do rastro do player (era flat 3.0). Confirmar no
+playtest se o buff do L4 (3.9 → 6.5) fica ok.
 
 ## Fora de escopo
 
@@ -178,6 +208,8 @@ precisa equalizar — nenhum número muda neste design.
 
 ## Arquivos afetados
 
-- `scripts/player/player.gd` — var de estado, 2 helpers, 2 gates, reset.
+- `scripts/player/player.gd` — var de estado, 2 helpers de ativação, novo
+  `_fire_player_trail_dps()` (escala por nível), 2 gates, DPS do rastro do player,
+  reset.
 - `scripts/ui/wave_shop.gd` — detecção da transição L2 + `_open_fire_trail_choice()`.
 - `assets/i18n/translations.csv` — 6 keys novas.
