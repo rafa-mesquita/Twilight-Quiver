@@ -30,7 +30,7 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		return
 
-	var to_player := player.global_position - global_position
+	var to_player := AimTarget.pos(player) - global_position
 	var dist := to_player.length()
 	var dir := to_player.normalized()
 	var was_moving: bool = false
@@ -57,6 +57,7 @@ func _attack() -> void:
 
 
 func take_damage(amount: float) -> void:
+	amount *= TideVulnerability.multiplier_for(self)
 	hp = maxf(hp - amount, 0.0)
 	hp_bar.set_ratio(hp / max_hp)
 	_flash_damage()

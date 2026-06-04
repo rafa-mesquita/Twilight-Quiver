@@ -95,7 +95,7 @@ func _fire_projectile() -> void:
 	_get_world().add_child(proj)
 	# Spawn na posição do mago (cabeça/cima), mira no centro do corpo do alvo.
 	var spawn_pos: Vector2 = global_position + Vector2(0, -16)
-	var target_pos: Vector2 = target.global_position + Vector2(0, -10)
+	var target_pos: Vector2 = AimTarget.pos(target) + Vector2(0, -10)
 	if proj.has_method("setup"):
 		proj.setup(spawn_pos, target_pos)
 	_play_cast_sound()

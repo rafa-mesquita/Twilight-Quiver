@@ -887,15 +887,15 @@ func _start_single_dash() -> void:
 		collision_mask = _default_collision_mask
 		return
 	var player_node: Node2D = player as Node2D
-	var player_pos: Vector2 = player_node.global_position
+	# AimTarget: durante o blink da Fenda devolve o ponto pré-blink (a boss dasha
+	# pro lugar errado em vez de prever o destino).
+	var player_pos: Vector2 = AimTarget.pos(player_node)
 	# Predição de movimento: assume velocidade constante e mira no ponto onde
 	# o player estará quando a boss chegar + metade do telegraph (o golpe land
 	# 0.7s depois de chegar). Lead factor < 1 evita dashar pra muito longe se
 	# player muda de direção. Cap em dash_max_lead_distance pra player com dash
 	# rápido não fazer a boss errar pro outro lado do mapa.
-	var player_vel: Vector2 = Vector2.ZERO
-	if "velocity" in player_node:
-		player_vel = player_node.velocity
+	var player_vel: Vector2 = AimTarget.vel(player_node)
 	# Filtra spike de dash do player: cap na magnitude antes de usar pra lead.
 	# Sem isso, dashar enquanto a boss cast o dash fazia ela mirar pra MUITO
 	# longe (ex: 1500 px/s × 1s × 0.6 = 900px de lead, capado depois mas já
@@ -1089,6 +1089,7 @@ func _flash_white(duration: float) -> void:
 func take_damage(amount: float) -> void:
 	if hp <= 0.0:
 		return
+	amount *= TideVulnerability.multiplier_for(self)
 	# DoT (burn/curse/poison tick): -30% dano. Detecção via metadata setada
 	# pelo caller (BurnDoT/CurseDebuff) antes do take_damage. Remove em seguida
 	# pra não vazar pro próximo hit que pode ser direto.

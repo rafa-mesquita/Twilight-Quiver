@@ -76,18 +76,22 @@ func _fire_projectile() -> void:
 	var target: Node2D = current_target if is_curse_ally else (player as Node2D)
 	if target == null or not is_instance_valid(target):
 		return
-	# Bolt 1: posição atual do alvo.
-	_spawn_bolt(target.global_position)
-	# Bolt 2: posição prevista (target.velocity × bolt_lead_time, clampado).
-	var predicted: Vector2 = target.global_position
-	if "velocity" in target:
-		var lead: Vector2 = (target.velocity as Vector2) * bolt_lead_time
+	# Bolt 1: posição de mira do alvo (congelada no ponto pré-blink se ele estiver
+	# na Fenda — ver AimTarget).
+	var aim: Vector2 = AimTarget.pos(target)
+	_spawn_bolt(aim)
+	# Bolt 2: posição prevista (velocidade de mira × bolt_lead_time, clampado).
+	# Na Fenda a velocidade de mira é zero → a previsão cai no ponto congelado.
+	var predicted: Vector2 = aim
+	var aim_vel: Vector2 = AimTarget.vel(target)
+	if aim_vel.length_squared() > 0.0:
+		var lead: Vector2 = aim_vel * bolt_lead_time
 		if lead.length() > BOLT_MAX_LEAD_DISTANCE:
 			lead = lead.normalized() * BOLT_MAX_LEAD_DISTANCE
 		predicted += lead
 	# Se o alvo tava parado, a previsão é a mesma posição — força um offset
 	# aleatório pequeno pra os dois raios não caírem no mesmo pixel.
-	if (predicted - target.global_position).length() < BOLT_MIN_SEPARATION:
+	if (predicted - aim).length() < BOLT_MIN_SEPARATION:
 		var rand_angle: float = randf() * TAU
 		predicted += Vector2(cos(rand_angle), sin(rand_angle)) * BOLT_OFFSET_RADIUS
 	_spawn_bolt(predicted)

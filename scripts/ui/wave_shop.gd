@@ -71,6 +71,7 @@ const UPGRADE_POOL: Array = [
 	{"id": "curse_arrow", "name": "SHOP_UPG_CURSE_ARROW", "max_level": 4},
 	{"id": "ice_arrow", "name": "SHOP_UPG_ICE_ARROW", "max_level": 4},
 	{"id": "stone_arrow", "name": "SHOP_UPG_STONE_ARROW", "max_level": 4},
+	{"id": "tide_arrow", "name": "SHOP_UPG_TIDE_ARROW", "max_level": 4},
 	{"id": "boomerang", "name": "SHOP_UPG_BOOMERANG", "max_level": 4},
 	{"id": "critical_chance", "name": "SHOP_UPG_CRITICAL_CHANCE", "max_level": 4},
 	{"id": "tiger_claws", "name": "SHOP_UPG_TIGER_CLAWS", "max_level": 4},
@@ -85,7 +86,7 @@ const UPGRADE_PRICE_OVERRIDES: Dictionary = {}
 #   comportamento ao bater, escolha uma)
 const EXCLUSIVE_PAIRS: Array = [
 	# Elementais: só 1 por run (fogo / maldição / cadeia de raios / sangue frio / pedra).
-	["fire_arrow", "curse_arrow", "chain_lightning", "ice_arrow", "stone_arrow"],
+	["fire_arrow", "curse_arrow", "chain_lightning", "ice_arrow", "stone_arrow", "tide_arrow"],
 	# Tipo de flecha (modifier on-hit): perfuração ou ricochete.
 	["perfuracao", "ricochet_arrow"],
 	# Salva de flechas: multi (leque 30°) ou duplas (chance + apertado).
@@ -246,6 +247,12 @@ const STONE_ARROW_DESCS: Array[String] = [
 	"SHOP_STONE_ARROW_DESC_3",
 	"SHOP_STONE_ARROW_DESC_4",
 ]
+const TIDE_ARROW_DESCS: Array[String] = [
+	"SHOP_TIDE_ARROW_DESC_1",
+	"SHOP_TIDE_ARROW_DESC_2",
+	"SHOP_TIDE_ARROW_DESC_3",
+	"SHOP_TIDE_ARROW_DESC_4",
+]
 const BOOMERANG_DESCS: Array[String] = [
 	"SHOP_BOOMERANG_DESC_1",
 	"SHOP_BOOMERANG_DESC_2",
@@ -273,6 +280,13 @@ const JOKER_ID: String = "joker"
 const JOKER_PRICE: int = 10
 const JOKER_FIRST_WAVE: int = 5
 const JOKER_WEIGHT: float = 0.20  # ~20% da chance de uma carta normal por slot
+# Carta "Roleta Elemental": troca o elemental atual (precisa estar no L3) por OUTRO
+# elemental aleatório no L4. Custa 25G (10 a menos que comprar o L4 = 35G) e é mais
+# rara que uma carta normal (peso 0.5). Surpresa: o L4 sorteado só é revelado ao comprar.
+const ROULETTE_ID: String = "elemental_roulette"
+const ROULETTE_PRICE: int = 25
+const ROULETTE_WEIGHT: float = 0.5  # metade da chance de uma carta normal
+const _ELEMENTAL_IDS: Array[String] = ["fire_arrow", "curse_arrow", "chain_lightning", "ice_arrow", "stone_arrow", "tide_arrow"]
 # IDs que contam como "status" pro modal de seleção do joker (escala infinita).
 const _JOKER_STATUS_IDS: Array[String] = ["hp", "damage", "attack_speed", "move_speed", "armor"]
 # IDs de pets/aliados pro modal (top 4 cap).
@@ -973,6 +987,12 @@ func _roll_upg_slots() -> void:
 	var dev_force: bool = GameState.dev_force_joker_next_shop
 	var joker_eligible: bool = dev_force or _joker_can_appear(player)
 	var force_joker: bool = dev_force
+	# Roleta Elemental: elegível quando o player tem um elemental no L3. Dev flag
+	# força aparecer (slot 0) ignorando o weight.
+	var force_roulette: bool = GameState.dev_force_roulette_next_shop
+	var roulette_eligible: bool = force_roulette or _roulette_can_appear(player)
+	if force_roulette:
+		GameState.dev_force_roulette_next_shop = false
 	if force_joker:
 		GameState.dev_force_joker_next_shop = false
 	for i in 3:
@@ -1019,13 +1039,19 @@ func _roll_upg_slots() -> void:
 		if joker_eligible and not (JOKER_ID in already_picked_ids):
 			pool.append(_make_joker_entry())
 			weights.append(JOKER_WEIGHT)
+		# Roleta Elemental: entra com peso baixo, 1× por shop.
+		if roulette_eligible and not (ROULETTE_ID in already_picked_ids):
+			pool.append(_make_roulette_entry())
+			weights.append(ROULETTE_WEIGHT)
 		if pool.is_empty():
 			upg_slots.append({"id": "none", "name": "—", "desc": "—", "price": 0, "available": false})
 			continue
-		# Force-joker (dev): primeiro slot vira joker direto. Demais slots rolam normal.
+		# Force (dev): primeiro slot vira joker/roleta direto. Demais slots rolam normal.
 		var picked: Dictionary
 		if force_joker and i == 0:
 			picked = _make_joker_entry()
+		elif force_roulette and i == 0:
+			picked = _make_roulette_entry()
 		else:
 			# Pick ponderado: roll uniforme em [0, total_weight) e caminha no acumulado.
 			# Fallback no último entry cobre edge case de arredondamento float.
@@ -1056,6 +1082,19 @@ func _roll_upg_slots() -> void:
 				"is_joker": true,
 			})
 			continue
+		# Roleta Elemental: carta especial (surpresa). Desc explica o efeito; o L4
+		# sorteado só é revelado ao comprar (no _open_roulette_reveal).
+		if bool(picked.get("is_roulette", false)):
+			upg_slots.append({
+				"id": ROULETTE_ID,
+				"name": picked["name"],
+				"desc": "SHOP_ELEMENTAL_ROULETTE_DESC",
+				"price": ROULETTE_PRICE,
+				"available": true,
+				"target_level": 1,
+				"is_roulette": true,
+			})
+			continue
 		var current_level: int = 0
 		if player != null and player.has_method("get_upgrade_count"):
 			current_level = player.get_upgrade_count(picked_id)
@@ -1074,6 +1113,8 @@ func _roll_upg_slots() -> void:
 func _get_upgrade_price(id: String, player_current_level: int) -> int:
 	if id == JOKER_ID:
 		return JOKER_PRICE
+	if id == ROULETTE_ID:
+		return ROULETTE_PRICE
 	if id in UPGRADE_PRICE_OVERRIDES:
 		return int(UPGRADE_PRICE_OVERRIDES[id])
 	if player_current_level < 0:
@@ -1092,6 +1133,27 @@ func _make_joker_entry() -> Dictionary:
 		"max_level": 1,
 		"is_joker": true,
 	}
+
+
+# Entry "fake" da Roleta Elemental pro pool de _roll_upg_slots.
+func _make_roulette_entry() -> Dictionary:
+	return {
+		"id": ROULETTE_ID,
+		"name": "SHOP_UPG_ELEMENTAL_ROULETTE",
+		"max_level": 1,
+		"is_roulette": true,
+	}
+
+
+# Roleta Elemental pode aparecer? Só quando o player tem um elemental EXATAMENTE no
+# L3 (no L4 não há o que trocar; no L1/L2 ainda não investiu o suficiente).
+func _roulette_can_appear(player: Node) -> bool:
+	if player == null or not player.has_method("get_upgrade_count"):
+		return false
+	for id in _ELEMENTAL_IDS:
+		if int(player.get_upgrade_count(id)) == 3:
+			return true
+	return false
 
 
 # Joker pode aparecer? Precisa: wave 5+, não usado ainda, e player tem algum
@@ -1150,6 +1212,7 @@ func _get_upgrade_descs_array(id: String) -> Array:
 		"curse_arrow": return CURSE_ARROW_DESCS
 		"ice_arrow": return ICE_ARROW_DESCS
 		"stone_arrow": return STONE_ARROW_DESCS
+		"tide_arrow": return TIDE_ARROW_DESCS
 		"boomerang": return BOOMERANG_DESCS
 		"critical_chance": return CRITICAL_CHANCE_DESCS
 		"tiger_claws": return TIGER_CLAWS_DESCS
@@ -1297,6 +1360,7 @@ const UPGRADE_CATEGORIES: Dictionary = {
 	"chain_lightning": "SHOP_UPG_CAT_ELEMENTAL",
 	"ice_arrow": "SHOP_UPG_CAT_ELEMENTAL",
 	"stone_arrow": "SHOP_UPG_CAT_ELEMENTAL",
+	"tide_arrow": "SHOP_UPG_CAT_ELEMENTAL",
 	"perfuracao": "SHOP_UPG_CAT_ARROW_MOD",
 	"ricochet_arrow": "SHOP_UPG_CAT_ARROW_MOD",
 	"multi_arrow": "SHOP_UPG_CAT_ARROW_VOLLEY",
@@ -1408,14 +1472,14 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 		if desc_label != null:
 			desc_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			desc_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	# Joker: sem texto visual na carta (só price + tooltip on hover).
+	# Joker e Roleta Elemental: sem texto visual na carta (só price + tooltip on hover).
 	# Restaurado pra visible=true pelos próximos rebuilds do card via os labels
-	# acima recebendo .text — visible só fica false enquanto este slot é joker.
-	var is_joker_card: bool = bool(slot.get("is_joker", false))
+	# acima recebendo .text — visible só fica false enquanto este slot é joker/roleta.
+	var hide_text_card: bool = bool(slot.get("is_joker", false)) or bool(slot.get("is_roulette", false))
 	if title_label != null:
-		title_label.visible = not is_joker_card
+		title_label.visible = not hide_text_card
 	if desc_label != null:
-		desc_label.visible = not is_joker_card
+		desc_label.visible = not hide_text_card
 	# "Ver mais": descrições longas estouram o DescLabel (clip_text). Quando isso
 	# acontece num card com tooltip multi-nível, mostra um indicador no rodapé
 	# apontando pro hover (que já lista todos os níveis).
@@ -1538,6 +1602,8 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	"ice_arrow": "res://assets/Hud/shop/upgrade/ice arrow/sangue frio card design-Sheet.png",
 	# Disparo de Pedra: sheet 4 frames (1 por nível), mesma dim do card de gelo.
 	"stone_arrow": "res://assets/Hud/shop/upgrade/disparo do pedra/disparo de pedra card-Sheet.png",
+	# Fúria da Maré: sheet 4 frames (só o L1 usado por enquanto).
+	"tide_arrow": "res://assets/Hud/shop/upgrade/furia da maré/furia da maré.png",
 	"boomerang": "res://assets/Hud/shop/upgrade/boomerang/boomerang card design.png",
 	"critical_chance": "res://assets/Hud/shop/upgrade/flechas criticas/felchas criticas card design.png",
 	"tiger_claws": "res://assets/Hud/shop/upgrade/garras de tigre/garras de tigre hud-Sheet.png",
@@ -1552,6 +1618,8 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	"double_arrows": "res://assets/Hud/shop/upgrade/multi_arrow.png",
 	# Carta "Último Desejo" (joker): subpasta dedicada, sem desc na arte.
 	"joker": "res://assets/Hud/shop/upgrade/carta coringa/carta coringa.png",
+	# Carta "Roleta Elemental": arte única 38×47 (PNG exportado do .aseprite).
+	"elemental_roulette": "res://assets/Hud/shop/upgrade/up elemental/up elemental.png",
 }
 # Cor única pros aliados (todos compartilham por enquanto).
 const ALIADO_TEXT_COLOR: Color = Color(0x2c / 255.0, 0x1f / 255.0, 0x1f / 255.0)  # #2c1f1f
@@ -1847,6 +1915,8 @@ func _buy_upgrade(idx: int) -> void:
 		return
 	if _is_elemental_blocked_by_selection(slot.get("id", "")):
 		return
+	if _roulette_conflicts_with_selection(slot.get("id", "")):
+		return
 	var player := _get_player()
 	if player == null:
 		return
@@ -1869,6 +1939,23 @@ func _is_elemental_blocked_by_selection(id: String) -> bool:
 		if sel_id == id:
 			continue
 		if sel_id in group:
+			return true
+	return false
+
+
+func _roulette_conflicts_with_selection(id: String) -> bool:
+	# A Roleta troca o elemental atual — não faz sentido comprar junto com o upgrade
+	# de um elemental no mesmo round. Também bloqueia junto com o Joker (cada um abre
+	# seu próprio modal/efeito no commit — evita os dois de uma vez). Bidirecional.
+	var selecting_roulette: bool = (id == ROULETTE_ID)
+	var selecting_blocking_other: bool = (id in _ELEMENTAL_IDS) or (id == JOKER_ID)
+	if not selecting_roulette and not selecting_blocking_other:
+		return false
+	for sel_idx in _selected_upgrade_idxs:
+		var sel_id: String = upg_slots[sel_idx].get("id", "")
+		if selecting_roulette and ((sel_id in _ELEMENTAL_IDS) or sel_id == JOKER_ID):
+			return true
+		if selecting_blocking_other and sel_id == ROULETTE_ID:
 			return true
 	return false
 
@@ -2085,6 +2172,7 @@ func _commit_aliado_no_placement() -> void:
 func _commit_upgrades_and_close() -> void:
 	var player := _get_player()
 	var joker_bought: bool = false
+	var roulette_new_id: String = ""
 	if player != null:
 		for idx in _selected_upgrade_idxs:
 			var slot: Dictionary = upg_slots[idx]
@@ -2097,10 +2185,20 @@ func _commit_upgrades_and_close() -> void:
 						player.joker_used = true
 					joker_bought = true
 				continue
+			if bool(slot.get("is_roulette", false)):
+				# Roleta Elemental: paga + troca o elemental atual por outro no L4.
+				# O L4 sorteado é revelado no modal pós-compra.
+				if player.spend_gold(int(slot.get("price", 0))):
+					if player.has_method("swap_current_elemental_for_random_l4"):
+						roulette_new_id = String(player.swap_current_elemental_for_random_l4())
+				continue
 			if not player.spend_gold(int(slot.get("price", 0))):
 				continue
 			if player.has_method("apply_upgrade"):
 				player.apply_upgrade(slot["id"])
+	if roulette_new_id != "":
+		_open_roulette_reveal(roulette_new_id)
+		return
 	if joker_bought:
 		_open_joker_modal()
 		return
@@ -2847,6 +2945,10 @@ func _show_card_tooltip(card: Control) -> void:
 	if card_id == JOKER_ID:
 		_show_joker_tooltip(card)
 		return
+	# Roleta Elemental: idem joker — carta sem texto, explicação só no tooltip.
+	if card_id == ROULETTE_ID:
+		_show_roulette_tooltip(card)
+		return
 	var descs: Array = _get_upgrade_descs_array(card_id)
 	if descs.is_empty():
 		return  # Estrutura/Tower sem array de descs — tooltip não aplicável.
@@ -2906,6 +3008,8 @@ func _show_card_tooltip(card: Control) -> void:
 # ---------- Joker modal ----------
 
 var _joker_modal: Panel = null
+# Modal de revelação da Roleta Elemental (mostra o L4 sorteado e fecha o shop).
+var _roulette_modal: Panel = null
 # Estado da seleção (mesmo padrão do shop principal: clica, fica roxo, pode
 # trocar, só commita no botão Confirmar).
 var _joker_selected_id: String = ""
@@ -3206,6 +3310,90 @@ func _close_joker_modal_and_emit() -> void:
 	closed.emit()
 
 
+# Revelação da Roleta Elemental: mostra qual elemental L4 saiu e, no OK, fecha o
+# shop. A troca já foi aplicada no player antes de abrir isto.
+func _open_roulette_reveal(elemental_id: String) -> void:
+	if root_panel != null:
+		root_panel.modulate = Color(1, 1, 1, 0.35)
+	_roulette_modal = Panel.new()
+	_roulette_modal.anchor_left = 0.5
+	_roulette_modal.anchor_top = 0.5
+	_roulette_modal.anchor_right = 0.5
+	_roulette_modal.anchor_bottom = 0.5
+	_roulette_modal.offset_left = -380
+	_roulette_modal.offset_top = -270
+	_roulette_modal.offset_right = 380
+	_roulette_modal.offset_bottom = 270
+	_roulette_modal.z_index = 50
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.09, 0.06, 0.13, 0.97)
+	sb.border_color = Color(0.65, 0.45, 0.85, 1.0)
+	sb.set_border_width_all(3)
+	sb.set_corner_radius_all(6)
+	_roulette_modal.add_theme_stylebox_override("panel", sb)
+	add_child(_roulette_modal)
+	var byte_font: Font = load("res://font/Silver.ttf")
+	var vbox := VBoxContainer.new()
+	vbox.anchor_right = 1.0
+	vbox.anchor_bottom = 1.0
+	vbox.offset_left = 28.0
+	vbox.offset_top = 24.0
+	vbox.offset_right = -28.0
+	vbox.offset_bottom = -24.0
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 18)
+	_roulette_modal.add_child(vbox)
+	var title := Label.new()
+	title.text = tr("SHOP_ROULETTE_REVEAL_TITLE")
+	if byte_font != null:
+		title.add_theme_font_override("font", byte_font)
+	title.add_theme_font_size_override("font_size", 36)
+	title.add_theme_color_override("font_color", Color(0.85, 0.65, 1.0, 1.0))
+	title.add_theme_color_override("font_outline_color", Color.BLACK)
+	title.add_theme_constant_override("outline_size", 3)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+	# Arte do card L4 do elemental ganho (frame 4 da sheet 152×47 do elemental).
+	var art_tex: Texture2D = _load_card_texture("upgrade", elemental_id)
+	if art_tex != null:
+		var art := TextureRect.new()
+		art.texture = _make_card_atlas(art_tex, "upgrade", 4)
+		art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		art.custom_minimum_size = Vector2(38 * 4, 47 * 4)  # 152×188 (4× o frame)
+		art.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vbox.add_child(art)
+	var result := Label.new()
+	result.text = tr("SHOP_ROULETTE_REVEAL_RESULT") % tr(_augment_title_for(elemental_id))
+	if byte_font != null:
+		result.add_theme_font_override("font", byte_font)
+	result.add_theme_font_size_override("font_size", 44)
+	result.add_theme_color_override("font_color", Color(1.0, 0.92, 0.45, 1.0))
+	result.add_theme_color_override("font_outline_color", Color.BLACK)
+	result.add_theme_constant_override("outline_size", 3)
+	result.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(result)
+	var ok_btn := Button.new()
+	ok_btn.text = tr("SHOP_ROULETTE_REVEAL_OK")
+	ok_btn.focus_mode = Control.FOCUS_NONE
+	ok_btn.custom_minimum_size = Vector2(0, 56)
+	if byte_font != null:
+		ok_btn.add_theme_font_override("font", byte_font)
+	ok_btn.add_theme_font_size_override("font_size", 30)
+	ok_btn.pressed.connect(_close_roulette_reveal_and_emit)
+	vbox.add_child(ok_btn)
+
+
+func _close_roulette_reveal_and_emit() -> void:
+	if _roulette_modal != null and is_instance_valid(_roulette_modal):
+		_roulette_modal.queue_free()
+		_roulette_modal = null
+	if root_panel != null:
+		root_panel.modulate = Color.WHITE
+	closed.emit()
+
+
 func _show_joker_tooltip(card: Control) -> void:
 	_ensure_augment_tooltip()
 	var header: String = "[b]%s[/b]  [color=#ffd757]★[/color]" % tr("SHOP_JOKER_TOOLTIP_HEADER")
@@ -3213,6 +3401,23 @@ func _show_joker_tooltip(card: Control) -> void:
 	var rare_line: String = "[color=#a890c8][i]%s[/i][/color]" % tr("SHOP_JOKER_TOOLTIP_RARE")
 	_augment_tooltip_label.text = header + "\n\n" + body_line + "\n\n" + rare_line
 	_augment_tooltip.visible = true
+	_position_card_tooltip(card)
+
+
+# Tooltip da Roleta Elemental (mesmo molde do joker: carta sem texto, explicação
+# só aqui no hover). Header = nome, corpo = descrição do efeito.
+func _show_roulette_tooltip(card: Control) -> void:
+	_ensure_augment_tooltip()
+	var header: String = "[b]%s[/b]  [color=#c79bff]🎲[/color]" % tr("SHOP_UPG_ELEMENTAL_ROULETTE")
+	var body_line: String = "[color=#bfd4e8]%s[/color]" % tr("SHOP_ELEMENTAL_ROULETTE_DESC")
+	_augment_tooltip_label.text = header + "\n\n" + body_line
+	_augment_tooltip.visible = true
+	_position_card_tooltip(card)
+
+
+# Posiciona o tooltip ao lado do card (esquerda/direita conforme metade da tela).
+# Extraído do _show_joker_tooltip pra reuso (joker + roleta).
+func _position_card_tooltip(card: Control) -> void:
 	# Posicionamento mesmo padrão do tooltip normal.
 	await get_tree().process_frame
 	var card_rect: Rect2 = card.get_global_rect()
@@ -3281,6 +3486,7 @@ func _augment_title_for(id: String) -> String:
 		"curse_arrow": return "SHOP_UPG_CURSE_ARROW"
 		"ice_arrow": return "SHOP_UPG_ICE_ARROW"
 		"stone_arrow": return "SHOP_UPG_STONE_ARROW"
+		"tide_arrow": return "SHOP_UPG_TIDE_ARROW"
 		"boomerang": return "SHOP_UPG_BOOMERANG"
 		"critical_chance": return "SHOP_UPG_CRITICAL_CHANCE"
 		"tiger_claws": return "SHOP_UPG_TIGER_CLAWS"

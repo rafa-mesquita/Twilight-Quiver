@@ -88,7 +88,7 @@ func _physics_process(delta: float) -> void:
 	current_target = _pick_target()
 
 	if current_target != null and is_instance_valid(current_target):
-		var to_target: Vector2 = current_target.global_position - global_position
+		var to_target: Vector2 = AimTarget.pos(current_target) - global_position
 		var dist: float = to_target.length()
 		var dir: Vector2 = to_target.normalized()
 
@@ -121,11 +121,11 @@ func _try_shoot() -> void:
 		return
 	if projectile_scene == null:
 		return
-	var dist := global_position.distance_to(current_target.global_position)
+	var dist := global_position.distance_to(AimTarget.pos(current_target))
 	if dist > detection_range:
 		return
 
-	var target := current_target.global_position + Vector2(0, -12)
+	var target := AimTarget.pos(current_target) + Vector2(0, -12)
 	locked_attack_dir = (target - muzzle.global_position).normalized()
 	is_attacking = true
 	sprite.play("attack")
@@ -204,6 +204,7 @@ func _fire_projectile() -> void:
 
 
 func take_damage(amount: float) -> void:
+	amount *= TideVulnerability.multiplier_for(self)
 	if not is_curse_ally:
 		var p := get_tree().get_first_node_in_group("player")
 		if p != null and p.has_method("notify_damage_dealt"):

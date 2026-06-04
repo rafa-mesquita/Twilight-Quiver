@@ -467,6 +467,64 @@ static func _is_quest_satisfied(quest: Dictionary) -> bool:
 	return true  # type desconhecido: assume desbloqueada (não bloqueia o jogo).
 
 
+# Quais skins a quest considera SATISFEITA agora, combinando os stats PERSISTENTES
+# + os stats LIVE da run em curso (run_stats = mesmo dict do hud._collect_run_stats),
+# SEM gravar nada. Usado pelo HUD pra mostrar o toast de unlock em tempo real.
+# O HUD compara com o snapshot de "locked no início da run" e deduplica.
+# Tipos que só fecham ao COMPLETAR a run (runs_completed/no_damage_run) NÃO contam
+# aqui — esses ficam só pro death screen.
+static func evaluate_live_unlocks(run_stats: Dictionary) -> Array:
+	var out: Array = []
+	for skin_name in SKIN_QUESTS.keys():
+		if _is_quest_satisfied_live(SKIN_QUESTS[skin_name], run_stats):
+			out.append(String(skin_name))
+	return out
+
+
+static func _is_quest_satisfied_live(quest: Dictionary, rs: Dictionary) -> bool:
+	var qtype: String = String(quest.get("type", ""))
+	var raw_value: Variant = quest.get("value", 0)
+	match qtype:
+		"wave_reached":
+			return maxi(get_stat(STAT_MAX_WAVE), int(rs.get("wave", 0))) >= int(raw_value)
+		"enemies_killed":
+			return get_stat(STAT_KILLS) + int(rs.get("kills", 0)) >= int(raw_value)
+		"dmg_dealt":
+			return get_stat(STAT_DMG_DEALT) + int(rs.get("dmg_dealt", 0)) >= int(raw_value)
+		"monkeys_cursed":
+			return get_stat(STAT_MONKEYS_CURSED) + int(rs.get("monkeys_cursed", 0)) >= int(raw_value)
+		"stun_seconds":
+			return get_stat(STAT_STUN_SECONDS) + int(rs.get("stun_seconds", 0)) >= int(raw_value)
+		"active_skills_used":
+			return get_stat(STAT_ACTIVE_SKILLS) + int(rs.get("active_skills_used", 0)) >= int(raw_value)
+		"boss_killed":
+			return has_killed_boss(String(raw_value)) or _run_killed_boss(rs, String(raw_value))
+		"elemental_l4":
+			return get_stat(STAT_ELEMENTAL_L4) >= int(raw_value) or bool(rs.get("elemental_l4_reached", false))
+		"flawless_w3":
+			return get_stat(STAT_FLAWLESS_W3) >= int(raw_value) or bool(rs.get("flawless_through_w3", false))
+		"armor_lv5":
+			return get_stat(STAT_ARMOR_LV5) >= int(raw_value) or bool(rs.get("armor_lv5_reached", false))
+		"long_mage_kill":
+			return get_stat(STAT_LONG_MAGE_KILL) >= int(raw_value) or bool(rs.get("long_mage_kill", false))
+		"no_arrow_round":
+			return get_stat(STAT_NO_ARROW_ROUND) >= int(raw_value) or bool(rs.get("no_arrow_round", false))
+		# runs_completed / no_damage_run: precisam fechar a run → não disparam toast.
+	return false
+
+
+static func _run_killed_boss(rs: Dictionary, boss_id: String) -> bool:
+	if boss_id.is_empty():
+		return false
+	var arr: Variant = rs.get("bosses_killed", [])
+	if not (arr is Array):
+		return false
+	for b in arr:
+		if String(b) == boss_id:
+			return true
+	return false
+
+
 # Set persistente de IDs de bosses já abatidos (qualquer run).
 static func get_bosses_killed_set() -> PackedStringArray:
 	var cfg := ConfigFile.new()

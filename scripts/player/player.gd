@@ -33,6 +33,12 @@ signal time_freeze_skill_cooldown_changed(remaining: float, total: float)
 # causa grande dano em área em volta do player.
 signal stone_skill_unlocked
 signal stone_skill_cooldown_changed(remaining: float, total: float)
+# Escudo de Água (L3 da Fúria da Maré): Q dá invulnerabilidade 4s (sem dano/slow).
+signal tide_shield_skill_unlocked
+signal tide_shield_skill_cooldown_changed(remaining: float, total: float)
+# Emitido quando o elemental do player muda (ex: carta "Roleta Elemental" troca o
+# elemental por outro). HUD reavalia quais ícones de skill elemental mostrar/esconder.
+signal elementals_changed
 # Pickup "Relógio de Reset": disparado quando todas as skills têm o cooldown
 # zerado de uma vez. HUD usa pra dar um flash nas barras de cooldown.
 signal all_skills_reset
@@ -94,6 +100,32 @@ var fire_arrow_level: int = 0  # elemental Fogo (excalidraw lv1-4)
 var curse_arrow_level: int = 0  # elemental Maldição (excalidraw lv1, escala lv1-4)
 var ice_arrow_level: int = 0  # elemental Gelo / "Fica Frio" (excalidraw lv1-4)
 var stone_arrow_level: int = 0  # elemental Pedra / "Disparo de Pedra" (lv1-4)
+var tide_arrow_level: int = 0  # elemental Fúria da Maré (L1: debuff de vulnerabilidade em área)
+# Fúria da Maré: projétil lento; +20% atk speed e −15% dano de flecha enquanto
+# ativo (lidos dinamicamente pelo nível, à prova de Roleta); hit aplica o debuff
+# de Vulnerabilidade (TideVulnerability) em área (raio = stun da Pedra L1).
+const TIDE_AOE_RADIUS: float = 31.0
+# Projétil lento → lifetime um pouco MAIOR que a flecha normal (1.5) pra o alcance
+# não ficar curto. maxf na aplicação não encurta builds com perfuração (4.0).
+const TIDE_LIFETIME: float = 1.9
+const TIDE_DEBUFF_DURATION: float = 3.0
+const TIDE_DEBUFF_MAX_STACKS: int = 2
+# +dano recebido por stack do debuff, por nível da Maré. L1=15%, L2+=30%.
+const TIDE_DEBUFF_PER_STACK_BY_LEVEL: Array[float] = [0.0, 0.15, 0.30, 0.30]
+# Attack speed enquanto a Maré ativa, por nível. L1=20%, L2=25%, L3=30%.
+const TIDE_ATK_SPEED_BY_LEVEL: Array[float] = [0.0, 0.20, 0.25, 0.30]
+# Escudo de Água (L3, skill Q): invulnerável (sem dano de nenhuma fonte, sem slow)
+# por DURATION; CD COOLDOWN. Relógio azul acima do player + overlay animado.
+const TIDE_SHIELD_DURATION: float = 4.0
+const TIDE_SHIELD_COOLDOWN: float = 23.0
+const TIDE_SHIELD_SHEET: Texture2D = preload("res://assets/effects/water/water_shield.png")
+const RUN_CLOCK_SCRIPT: GDScript = preload("res://scripts/ui/run_clock.gd")
+var _tide_shield_cd_remaining: float = 0.0
+var _tide_shield_active_remaining: float = 0.0
+var _tide_shield_overlay: AnimatedSprite2D = null
+var _tide_shield_clock: Node2D = null
+# −24% → dano-base 19 (25×0.76). Com o debuff: 19 / 19×1.15≈22 / 19×1.30≈25.
+const TIDE_DAMAGE_FACTOR: float = 0.76
 # Referência à Frostwisp spawnada no L3 (1 só por run).
 const FROSTWISP_SCENE: PackedScene = preload("res://scenes/allies/frostwisp.tscn")
 var _frostwisp: Node2D = null
@@ -293,6 +325,13 @@ var _fenda_saved_mask: int = 0
 # a lista de overlap física já refletir o ponto final). A coleta em trânsito é
 # pulada no gold.gd via _fenda_teleporting — a fenda não suga a linha A→B.
 var _fenda_pending_dest_pickup: bool = false
+# Trava de MIRA: enquanto > 0, os inimigos miram em _fenda_frozen_aim (onde o
+# player estava ao iniciar o teleporte) em vez da posição live — ver AimTarget e
+# get_aim_position/get_aim_velocity. Dura o blink + uma folga curta pós-pouso, pra
+# os telegraphs (raios/gelo) caírem no lugar errado e os chargers overshootarem.
+const FENDA_AIM_FREEZE_GRACE: float = 0.3
+var _fenda_aim_freeze_remaining: float = 0.0
+var _fenda_frozen_aim: Vector2 = Vector2.ZERO
 
 # === Esquivando (mutuamente exclusivo com dash — compartilham slot de mov.) ===
 # Lv1: primeira flecha do volley que acerta inimigo dá +5% atk speed e +5% move
@@ -563,6 +602,7 @@ func _physics_process(delta: float) -> void:
 	_tick_replay_recorder(delta)
 	_update_curse_skill(delta)
 	_update_time_freeze(delta)
+	_update_tide_shield(delta)
 	_update_stone_skill(delta)
 	_update_player_fire_trail()
 	_check_claudio_druida_respawns(delta)
@@ -632,6 +672,9 @@ func _ensure_stun_visual() -> void:
 
 
 func apply_slow(multiplier: float, duration: float) -> void:
+	# Escudo de Agua (L3 da Mare): imune a slow enquanto ativo.
+	if _tide_shield_active_remaining > 0.0:
+		return
 	# Pega o slow mais forte ativo (multiplier mais baixo) e estende a duração se necessário.
 	if is_dead:
 		return
@@ -700,6 +743,9 @@ func _apply_poison_tick(amount: float) -> void:
 	# Dev godmode: ignora ticks de poison/burn (mesmo gate da take_damage).
 	if GameState.dev_godmode:
 		return
+	# Escudo de Agua (L3 da Mare): invulneravel a TODO dano enquanto ativo.
+	if _tide_shield_active_remaining > 0.0:
+		return
 	# Escondido no Pai do Verde / Verde: invulnerável a TODO dano, incluindo
 	# ticks de poison/burn já ativos (mesmo gate da take_damage). Sem isso o
 	# veneno do mosquito furava a invencibilidade do arbusto.
@@ -758,6 +804,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_trigger_time_freeze()
 		elif stone_arrow_level >= 4:
 			_cast_earthquake()
+		elif tide_arrow_level >= 3:
+			_trigger_tide_shield()
 	elif event.is_action_pressed("lightning_cast"):
 		# E é atalho alternativo específico pra Chain Lightning (lv3+).
 		if chain_lightning_level >= 3:
@@ -812,7 +860,7 @@ func _start_attack() -> void:
 	# proporcionalmente mais cedo). speed_scale só vale enquanto a anim está rolando.
 	# Capivara L3+: cogumelo de buff dá +50% atk speed temporário (some no fim).
 	# Arbusto: enquanto escondido, +12% atk speed.
-	var atk_mult: float = attack_speed_multiplier + _capivara_atk_speed_buff_amount + _esquivando_atk_buff() + arbusto_hide_atk_speed_bonus
+	var atk_mult: float = attack_speed_multiplier + _capivara_atk_speed_buff_amount + _esquivando_atk_buff() + arbusto_hide_atk_speed_bonus + _mare_atk_buff()
 	attack_timer.wait_time = attack_cooldown / atk_mult
 	sprite.speed_scale = atk_mult
 	attack_timer.start()
@@ -992,7 +1040,7 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 	if "play_shoot_sound" in arrow:
 		arrow.play_shoot_sound = play_sound
 	if "damage" in arrow:
-		arrow.damage = arrow.damage * arrow_damage_multiplier * dmg_mult
+		arrow.damage = arrow.damage * arrow_damage_multiplier * dmg_mult * _mare_damage_factor()
 		# Arbusto hide: +5 dmg flat por flecha enquanto escondido. Aplicado APÓS
 		# multiplicador pra não ser amplificado pelo arrow_damage_multiplier (é
 		# um buff fixo da mecânica do hide, não um stat status).
@@ -1129,6 +1177,25 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 			arrow.stone_stun_duration = _stone_stun_duration()
 		if "stone_size_scale" in arrow:
 			arrow.stone_size_scale = _stone_size_scale()
+	if tide_arrow_level > 0:
+		# Fúria da Maré: projétil de água lento; o dano vai no alvo (já com o −15%),
+		# e o IMPACTO aplica o debuff de Vulnerabilidade em ÁREA.
+		if "is_tide" in arrow:
+			arrow.is_tide = true
+		if "speed" in arrow:
+			arrow.speed = _tide_speed()
+		# Lifetime um pouco maior que a flecha normal (compensa a velocidade lenta).
+		# maxf preserva o alcance estendido da perfuração (4.0).
+		if "lifetime" in arrow:
+			arrow.lifetime = maxf(arrow.lifetime, TIDE_LIFETIME)
+		if "tide_radius" in arrow:
+			arrow.tide_radius = TIDE_AOE_RADIUS
+		if "tide_debuff_duration" in arrow:
+			arrow.tide_debuff_duration = TIDE_DEBUFF_DURATION
+		if "tide_debuff_max_stacks" in arrow:
+			arrow.tide_debuff_max_stacks = TIDE_DEBUFF_MAX_STACKS
+		if "tide_per_stack" in arrow:
+			arrow.tide_per_stack = _tide_per_stack()
 	if is_ricochet:
 		if "is_ricochet" in arrow:
 			arrow.is_ricochet = true
@@ -1362,13 +1429,16 @@ func _ice_freeze_duration() -> float:
 
 
 func _ice_freeze_dps() -> float:
-	# DoT contínuo enquanto congelado. Lv1=4 dps (8 total em 2s). Lv2+=8 dps
-	# (16 total em 2s — dobra como upgrade do L2). Escala com o stat "Dano"
-	# (arrow_damage_multiplier) via _apply_dmg_pct_to_dps — mesmo padrão de
-	# burn/curse, garante que stacks de Dano também buffem o gelo.
+	# DoT contínuo enquanto congelado. Lv1=4 dps (8 total em 2s). Lv2-3=8 dps
+	# (16 total em 2s — dobra como upgrade do L2). Lv4=10 dps (+2 do upgrade L4,
+	# 20 total em 2s). Escala com o stat "Dano" (arrow_damage_multiplier) via
+	# _apply_dmg_pct_to_dps — mesmo padrão de burn/curse, garante que stacks de
+	# Dano também buffem o gelo.
 	if ice_arrow_level <= 0:
 		return 0.0
 	var base: float = 8.0 if ice_arrow_level >= 2 else 4.0
+	if ice_arrow_level >= 4:
+		base += 2.0
 	return _apply_dmg_pct_to_dps(base)
 
 
@@ -1380,6 +1450,106 @@ func _ice_freeze_dps() -> float:
 func _stone_speed() -> float:
 	# "Pesada" — bem mais devagar que a flecha normal (220). Dá pra ver vindo.
 	return 150.0
+
+
+# ---------- Fúria da Maré (elemental) ----------
+
+func _tide_speed() -> float:
+	# Bolha de água — bem lenta (ainda mais devagar que a pedra=150).
+	return 110.0
+
+
+# Attack speed enquanto a Fúria da Maré ativa (escala por nível: L1=20/L2=25/L3=30%).
+func _mare_atk_buff() -> float:
+	return TIDE_ATK_SPEED_BY_LEVEL[clampi(tide_arrow_level, 0, 3)]
+
+
+# +dano recebido por stack do debuff de Vulnerabilidade (L1=15%, L2+=30%).
+func _tide_per_stack() -> float:
+	return TIDE_DEBUFF_PER_STACK_BY_LEVEL[clampi(tide_arrow_level, 0, 3)]
+
+
+# Escudo de Água (L3, skill Q): invulnerável (sem dano nem slow) por 4s, CD 15s.
+func _trigger_tide_shield() -> void:
+	if _tide_shield_cd_remaining > 0.0 or _tide_shield_active_remaining > 0.0:
+		return
+	_count_active_skill_use()
+	_tide_shield_active_remaining = TIDE_SHIELD_DURATION
+	_tide_shield_cd_remaining = TIDE_SHIELD_COOLDOWN
+	_spawn_tide_shield_visual()
+	if tide_arrow_level >= 4:
+		_spawn_tide_wave()
+	tide_shield_skill_cooldown_changed.emit(_tide_shield_cd_remaining, TIDE_SHIELD_COOLDOWN)
+
+
+func _update_tide_shield(delta: float) -> void:
+	if _tide_shield_active_remaining > 0.0:
+		_tide_shield_active_remaining = maxf(_tide_shield_active_remaining - delta, 0.0)
+		if _tide_shield_clock != null and is_instance_valid(_tide_shield_clock):
+			_tide_shield_clock.set_ratio(_tide_shield_active_remaining / TIDE_SHIELD_DURATION)
+		if _tide_shield_active_remaining <= 0.0:
+			_remove_tide_shield_visual()
+	if _tide_shield_cd_remaining > 0.0:
+		_tide_shield_cd_remaining = maxf(_tide_shield_cd_remaining - delta, 0.0)
+		tide_shield_skill_cooldown_changed.emit(_tide_shield_cd_remaining, TIDE_SHIELD_COOLDOWN)
+
+
+# Overlay animado do escudo sobre o player + relógio azul (tipo o do Pai do Verde)
+# acima da cabeça mostrando os 4s restantes.
+func _spawn_tide_shield_visual() -> void:
+	_remove_tide_shield_visual()
+	var spr := AnimatedSprite2D.new()
+	var sf := SpriteFrames.new()
+	sf.set_animation_loop(&"default", true)
+	sf.set_animation_speed(&"default", 2.5)
+	for i in 2:
+		var at := AtlasTexture.new()
+		at.atlas = TIDE_SHIELD_SHEET
+		at.region = Rect2(i * 32, 0, 32, 32)
+		sf.add_frame(&"default", at)
+	spr.sprite_frames = sf
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	spr.position = Vector2(0, -15)
+	spr.z_index = 9
+	spr.modulate.a = 0.5
+	add_child(spr)
+	spr.play(&"default")
+	_tide_shield_overlay = spr
+	var clock: Node2D = RUN_CLOCK_SCRIPT.new()
+	clock.position = Vector2(0, -36)
+	clock.z_index = 12
+	if "fill_color" in clock:
+		clock.fill_color = Color(0.45, 0.78, 1.0, 0.85)  # azul (vs verde do Pai do Verde)
+	if "radius" in clock:
+		clock.radius = 4.0
+	add_child(clock)
+	if clock.has_method("set_ratio"):
+		clock.set_ratio(1.0)
+	_tide_shield_clock = clock
+
+
+func _remove_tide_shield_visual() -> void:
+	if _tide_shield_overlay != null and is_instance_valid(_tide_shield_overlay):
+		_tide_shield_overlay.queue_free()
+	_tide_shield_overlay = null
+	if _tide_shield_clock != null and is_instance_valid(_tide_shield_clock):
+		_tide_shield_clock.queue_free()
+	_tide_shield_clock = null
+
+
+func _spawn_tide_wave() -> void:
+	# L4: parede de agua que desce o mapa (50 dano + 2 stacks). Bounds vem da camera.
+	var wave := TideWave.new()
+	wave.damage = 35.0
+	wave.debuff_stacks = TIDE_DEBUFF_MAX_STACKS
+	wave.debuff_per_stack = _tide_per_stack()
+	wave.debuff_duration = TIDE_DEBUFF_DURATION
+	get_tree().current_scene.add_child(wave)
+
+
+# −15% em todo dano de flecha enquanto a Fúria da Maré está ativa (fator no dano).
+func _mare_damage_factor() -> float:
+	return TIDE_DAMAGE_FACTOR if tide_arrow_level > 0 else 1.0
 
 
 func _stone_lifetime() -> float:
@@ -1453,6 +1623,10 @@ func _spawn_frostwisp() -> void:
 	if wisp is Node2D:
 		(wisp as Node2D).global_position = global_position + Vector2(48, -40)
 	_frostwisp = wisp as Node2D
+	# Safety net: se por algum motivo o player já está no L4 ao spawnar (normal
+	# é spawnar no L3 e buffar depois), aplica o +25% de dano de cara.
+	if ice_arrow_level >= 4 and _frostwisp.has_method("set_level4_bonus"):
+		_frostwisp.set_level4_bonus(true)
 
 
 func _ice_area_slow_factor() -> float:
@@ -1642,6 +1816,11 @@ func _try_fenda() -> void:
 		sprite.speed_scale = 1.0
 	_count_active_skill_use()  # conta pra quest da skin Urban
 	var from_pos: Vector2 = global_position
+	# Trava a mira dos inimigos no ponto pré-blink (onde o player está agora). No
+	# combo L3 cada teleporte recongela no novo ponto de partida. Dura o blink +
+	# folga; renovada a cada teleporte.
+	_fenda_frozen_aim = from_pos
+	_fenda_aim_freeze_remaining = FENDA_TELEPORT_DURATION + FENDA_AIM_FREEZE_GRACE
 	# Resolve o destino: clicou dentro de um objeto / fora do mapa → vai pro
 	# terreno válido mais próximo (marcha de volta em direção ao player).
 	var target: Vector2 = _fenda_resolve_target(get_global_mouse_position())
@@ -1695,9 +1874,30 @@ func _fenda_collect_destination_coins() -> void:
 			coin.collect(self)
 
 
+# Posição que os INIMIGOS devem mirar (via AimTarget). Durante o blink da Fenda
+# (+ folga) devolve o ponto onde o player estava ao teleportar, não a posição
+# live — chargers correm pro lugar errado, magos fincam o telegraph lá.
+func get_aim_position() -> Vector2:
+	if _fenda_aim_freeze_remaining > 0.0:
+		return _fenda_frozen_aim
+	return global_position
+
+
+# Velocidade "vista" pelos inimigos (via AimTarget). Mira congelada → zero, pra a
+# predição dos magos (lead = velocity × tempo) cair no ponto congelado.
+func get_aim_velocity() -> Vector2:
+	if _fenda_aim_freeze_remaining > 0.0:
+		return Vector2.ZERO
+	return velocity
+
+
 func _update_fenda(delta: float) -> void:
 	if fenda_level <= 0:
 		return
+	# Tick da trava de mira (blink + folga). Enquanto > 0, get_aim_position/velocity
+	# devolvem o ponto congelado pros inimigos.
+	if _fenda_aim_freeze_remaining > 0.0:
+		_fenda_aim_freeze_remaining = maxf(_fenda_aim_freeze_remaining - delta, 0.0)
 	# Coleta as moedas do destino 1 frame depois do blink terminar (overlap físico
 	# já atualizado pro ponto final).
 	if _fenda_pending_dest_pickup and not _fenda_teleporting:
@@ -2858,7 +3058,8 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# Elemental Gelo ("Fica Frio"). Lv1: congela 2s + 4 dps + cubo derretendo.
 			# Lv2: dobra dps (8) + área nevada com slow 37% por 5.5s.
 			# Lv3: spawn Frostwisp (aliada de bombardeio a cada 15s).
-			# Lv4: destrava skill Q (Time Freeze — pausa mundo 3s, cd 28s).
+			# Lv4: destrava skill Q (Time Freeze — pausa mundo 3s, cd 28s) +
+			#      +2 dps no DoT do gelo (vira 10) + +25% no dano da Frostwisp.
 			var was_below_3_ice: bool = ice_arrow_level < 3
 			var was_below_4_ice: bool = ice_arrow_level < 4
 			ice_arrow_level = mini(ice_arrow_level + 1, 4)
@@ -2868,6 +3069,10 @@ func apply_upgrade(upgrade_id: String) -> void:
 				_time_freeze_cd_remaining = 0.0
 				time_freeze_skill_unlocked.emit()
 				time_freeze_skill_cooldown_changed.emit(0.0, TIME_FREEZE_COOLDOWN)
+				# Buffa o dano da Frostwisp já spawnada (+25%).
+				if _frostwisp != null and is_instance_valid(_frostwisp) \
+						and _frostwisp.has_method("set_level4_bonus"):
+					_frostwisp.set_level4_bonus(true)
 		"stone_arrow":
 			# Elemental Pedra ("Disparo de Pedra"). Lv1: pedra (range curto+lento)
 			# + AoE dano/knockback/stun. Lv2: mais dano + pedra/stun maiores.
@@ -2879,6 +3084,15 @@ func apply_upgrade(upgrade_id: String) -> void:
 				_stone_skill_cd_remaining = 0.0
 				stone_skill_unlocked.emit()
 				stone_skill_cooldown_changed.emit(0.0, STONE_SKILL_COOLDOWN)
+		"tide_arrow":
+			# Elemental Furia da Mare (L1): projetil lento, -15% dano de flecha +
+			# 20% atk speed; o hit aplica Vulnerabilidade em area (+15%/stack, 3s, 2x = +30%).
+			var was_below_3_tide: bool = tide_arrow_level < 3
+			tide_arrow_level = mini(tide_arrow_level + 1, 4)
+			if was_below_3_tide and tide_arrow_level >= 3:
+				_tide_shield_cd_remaining = 0.0
+				tide_shield_skill_unlocked.emit()
+				tide_shield_skill_cooldown_changed.emit(0.0, TIDE_SHIELD_COOLDOWN)
 		"leno":
 			leno_level = mini(leno_level + 1, 4)
 			_refresh_lenos()
@@ -3005,6 +3219,7 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"curse_arrow": return curse_arrow_level
 		"ice_arrow": return ice_arrow_level
 		"stone_arrow": return stone_arrow_level
+		"tide_arrow": return tide_arrow_level
 		"claudio_druida": return claudio_druida_level
 		"leno": return leno_level
 		"capivara_joe": return capivara_joe_level
@@ -3626,6 +3841,79 @@ func reset_pet(id: String) -> void:
 			_cleanup_arbustos()
 
 
+# IDs dos 5 elementais (mutuamente exclusivos — só 1 por run).
+const ELEMENTAL_IDS: Array[String] = [
+	"fire_arrow", "curse_arrow", "chain_lightning", "ice_arrow", "stone_arrow", "tide_arrow",
+]
+
+
+# Retorna o elemental atual (lvl > 0) ou "" se nenhum. Como são mutex, no máx 1.
+func current_elemental_id() -> String:
+	for id in ELEMENTAL_IDS:
+		if get_upgrade_count(id) > 0:
+			return id
+	return ""
+
+
+# Carta "Roleta Elemental": remove o elemental atual e aplica um OUTRO elemental
+# aleatório no nível 4. Retorna o id do novo elemental, ou "" se não havia um pra
+# trocar (a shop só oferece a carta com elemental no L3, mas o guard é defensivo).
+func swap_current_elemental_for_random_l4() -> String:
+	var current: String = current_elemental_id()
+	if current == "":
+		return ""
+	var candidates: Array[String] = []
+	for id in ELEMENTAL_IDS:
+		if id != current:
+			candidates.append(id)
+	if candidates.is_empty():
+		return ""
+	var new_id: String = candidates[randi() % candidates.size()]
+	_remove_elemental(current)
+	# Aplica o novo do L1 ao L4 (reusa todo o setup por nível: spawns, unlocks de
+	# skill, sinais pro HUD). O elemental antigo já foi zerado → mutex não bloqueia.
+	for i in 4:
+		apply_upgrade(new_id)
+	elementals_changed.emit()
+	return new_id
+
+
+# Remove um elemental limpo: zera o nível, reseta cooldowns de skill e desfaz o
+# estado spawnado (frostwisp da ice, time-freeze ativo, rastro de fogo). NÃO emite
+# elementals_changed — quem chama (swap) emite depois de aplicar o novo.
+func _remove_elemental(id: String) -> void:
+	match id:
+		"fire_arrow":
+			fire_arrow_level = 0
+			_fire_skill_cd_remaining = 0.0
+			_player_fire_trail_initialized = false
+		"curse_arrow":
+			curse_arrow_level = 0
+			_curse_skill_cd_remaining = 0.0
+		"chain_lightning":
+			chain_lightning_level = 0
+			_chain_lightning_skill_cd_remaining = 0.0
+		"ice_arrow":
+			ice_arrow_level = 0
+			_time_freeze_cd_remaining = 0.0
+			# Encerra um time-freeze ativo (defensivo) e libera a Frostwisp.
+			if _time_freeze_active_remaining > 0.0:
+				_time_freeze_active_remaining = 0.0
+				_remove_time_freeze_world_pause()
+				_hide_freeze_overlay()
+			if _frostwisp != null and is_instance_valid(_frostwisp):
+				_frostwisp.queue_free()
+			_frostwisp = null
+		"stone_arrow":
+			stone_arrow_level = 0
+			_stone_skill_cd_remaining = 0.0
+		"tide_arrow":
+			tide_arrow_level = 0
+			_tide_shield_cd_remaining = 0.0
+			_tide_shield_active_remaining = 0.0
+			_remove_tide_shield_visual()
+
+
 func _compute_damage_reduction(level: int) -> float:
 	# Armor: L1=12%, L2=18%, L3=22%, L4=25%, L5+=+3% por stack após L4. Cap em
 	# 75% pra evitar invencibilidade absoluta. Curva front-loaded pra dar valor
@@ -3687,6 +3975,12 @@ func reset_all_cooldowns() -> void:
 	_stone_skill_cd_remaining = 0.0
 	if stone_arrow_level >= 3:
 		stone_skill_cooldown_changed.emit(0.0, STONE_SKILL_COOLDOWN)
+	_tide_shield_cd_remaining = 0.0
+	if _tide_shield_active_remaining > 0.0:
+		_tide_shield_active_remaining = 0.0
+		_remove_tide_shield_visual()
+	if tide_arrow_level >= 3:
+		tide_shield_skill_cooldown_changed.emit(0.0, TIDE_SHIELD_COOLDOWN)
 	_fenda_cd_remaining = 0.0
 	# Frostwisp (L3 do Gelo): força delay inicial de 7s antes do primeiro
 	# cast da wave — evita que ela já comece bombardeando enquanto o player
@@ -3726,6 +4020,9 @@ func reduce_all_skill_cooldowns() -> void:
 	_stone_skill_cd_remaining *= KEEP
 	if stone_arrow_level >= 3:
 		stone_skill_cooldown_changed.emit(_stone_skill_cd_remaining, STONE_SKILL_COOLDOWN)
+	_tide_shield_cd_remaining *= KEEP
+	if tide_arrow_level >= 3:
+		tide_shield_skill_cooldown_changed.emit(_tide_shield_cd_remaining, TIDE_SHIELD_COOLDOWN)
 	_boomerang_cd_remaining *= KEEP
 	_tiger_claws_cd_remaining *= KEEP
 	all_skills_reset.emit()
@@ -3736,6 +4033,9 @@ func take_damage(amount: float, source_id: String = "") -> void:
 		return
 	# Dev godmode: ignora dano (toggle no DevPanel). Persiste em GameState.
 	if GameState.dev_godmode:
+		return
+	# Escudo de Agua (L3 da Mare): invulneravel a TODO dano enquanto ativo.
+	if _tide_shield_active_remaining > 0.0:
 		return
 	# Escondido no Pai do Verde / Verde: invulnerável a TODO dano (direto, AoE,
 	# projétil em voo, DoT/burn/poison/curse já ativos). O aggro já é gerido por
@@ -3790,6 +4090,8 @@ func _die() -> void:
 		hp_bar.visible = false
 	# Lenos morrem com o player (spec do excalidraw).
 	_cleanup_lenos()
+	_tide_shield_active_remaining = 0.0
+	_remove_tide_shield_visual()
 	_cleanup_claudio_druidas()
 	_cleanup_capivaras()
 	_cleanup_tings()

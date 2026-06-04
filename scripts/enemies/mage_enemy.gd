@@ -113,10 +113,10 @@ func _physics_process(delta: float) -> void:
 	var anchor_pos: Vector2 = global_position
 
 	if current_target != null and is_instance_valid(current_target):
-		var to_target: Vector2 = current_target.global_position - global_position
+		var to_target: Vector2 = AimTarget.pos(current_target) - global_position
 		var dist: float = to_target.length()
 		var dir: Vector2 = to_target.normalized()
-		anchor_pos = current_target.global_position
+		anchor_pos = AimTarget.pos(current_target)
 
 		if not is_attacking:
 			if dist < preferred_distance - distance_tolerance:
@@ -156,7 +156,7 @@ func _try_shoot() -> void:
 		return
 	if current_target == null or not is_instance_valid(current_target):
 		return
-	var dist := global_position.distance_to(current_target.global_position)
+	var dist := global_position.distance_to(AimTarget.pos(current_target))
 	if dist > detection_range:
 		return
 
@@ -175,7 +175,7 @@ func _try_shoot() -> void:
 	# Não gateia o ataque em projectile_scene — subclasses (ex: fire_mage) podem
 	# usar uma cena diferente via override do _fire_projectile. Animation rolla
 	# sempre; o disparo em si é checado lá no _fire_projectile.
-	var target := current_target.global_position + Vector2(0, -12)
+	var target := AimTarget.pos(current_target) + Vector2(0, -12)
 	locked_attack_dir = (target - muzzle.global_position).normalized()
 	is_attacking = true
 	sprite.play("attack")
@@ -323,6 +323,7 @@ func _apply_summoner_projectile_skin(proj: Node) -> void:
 
 
 func take_damage(amount: float) -> void:
+	amount *= TideVulnerability.multiplier_for(self)
 	if not is_curse_ally:
 		var p := get_tree().get_first_node_in_group("player")
 		if p != null and p.has_method("notify_damage_dealt"):

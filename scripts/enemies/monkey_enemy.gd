@@ -154,20 +154,21 @@ func _physics_process(delta: float) -> void:
 	if current_target != null and is_instance_valid(current_target) and not is_attacking:
 		# Distância REAL ao alvo — usada pra trigger de attack_range (não
 		# orbitar pelo offset).
-		var to_target: Vector2 = current_target.global_position - global_position
+		var aim: Vector2 = AimTarget.pos(current_target)
+		var to_target: Vector2 = aim - global_position
 		var dist: float = to_target.length()
 		# Chase pos: quando longe, mira em ponto offset; quando perto, direto.
 		# - NORMAL: offset pequeno fixo (anti-clumping/halo).
 		# - FLANKER: offset PERPENDICULAR à linha monkey→player a cada frame, do
 		#   lado escolhido. Sempre aponta pra um lado, nunca pra trás.
-		var chase_pos: Vector2 = current_target.global_position
+		var chase_pos: Vector2 = aim
 		if dist > OFFSET_BLEND_DIST:
 			if _behavior == Behavior.FLANKER and dist > 0.01:
 				var dir_to: Vector2 = to_target / dist
 				var perp: Vector2 = Vector2(-dir_to.y, dir_to.x) * _flank_side
-				chase_pos = current_target.global_position + perp * _flank_distance
+				chase_pos = aim + perp * _flank_distance
 			else:
-				chase_pos = current_target.global_position + _chase_offset
+				chase_pos = aim + _chase_offset
 		var dir_offset: Vector2 = (chase_pos - global_position).normalized()
 		# Estruturas: range maior pra compensar o body grande (collision impede
 		# o monkey de chegar dentro de attack_range padrão do centro da torre).
@@ -279,6 +280,7 @@ func _on_attack_cooldown_done() -> void:
 
 
 func take_damage(amount: float) -> void:
+	amount *= TideVulnerability.multiplier_for(self)
 	# Stats: contabiliza dano dealt no player (dano em aliados convertidos não conta).
 	if not is_curse_ally:
 		var p := get_tree().get_first_node_in_group("player")

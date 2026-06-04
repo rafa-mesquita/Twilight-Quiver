@@ -403,7 +403,7 @@ func _fire_one_shot(giant: bool = false) -> void:
 		(proj_sound as AudioStreamPlayer2D).volume_db -= BOSS_PROJ_AUDIO_REDUCTION_DB
 	var spawn: Vector2 = muzzle.global_position
 	proj.global_position = spawn
-	var target_pos: Vector2 = player.global_position + Vector2(0, -12)
+	var target_pos: Vector2 = AimTarget.pos(player) + Vector2(0, -12)
 	var dir: Vector2 = (target_pos - spawn).normalized()
 	if proj.has_method("set_direction"):
 		proj.set_direction(dir)
@@ -432,14 +432,15 @@ func _cast_curse_beam() -> void:
 	# Origin = posição atual do player (centro do beam). Direction = velocity
 	# normalizada (player parado: usa direção boss→player como fallback).
 	# Player tem warmup_duration pra desviar mudando de direção.
-	var origin: Vector2 = player.global_position
+	var origin: Vector2 = AimTarget.pos(player)
 	var dir: Vector2 = Vector2.RIGHT
-	if "velocity" in player and (player.velocity as Vector2).length_squared() > 1.0:
-		dir = (player.velocity as Vector2).normalized()
+	var aim_vel: Vector2 = AimTarget.vel(player)
+	if aim_vel.length_squared() > 1.0:
+		dir = aim_vel.normalized()
 	else:
-		# Player parado: aponta o beam saindo do boss em direção ao player
-		# (atravessa o player).
-		var to_p: Vector2 = player.global_position - global_position
+		# Player parado (ou na Fenda, vel de mira = 0): aponta o beam saindo do boss
+		# em direção ao ponto de mira do player (atravessa o player / ponto antigo).
+		var to_p: Vector2 = AimTarget.pos(player) - global_position
 		if to_p.length_squared() > 0.001:
 			dir = to_p.normalized()
 	var beam: Node2D = curse_beam_scene.instantiate()
@@ -616,6 +617,7 @@ func take_damage(amount: float) -> void:
 	# Já morreu: skipa pra não rodar _die() múltiplas vezes (dropava 2-5× gold).
 	if _is_dead:
 		return
+	amount *= TideVulnerability.multiplier_for(self)
 	# SHIELDED: ignora completamente o dano. Só mostra um pequeno flash branco
 	# pra dar feedback de "tem shield".
 	if _is_shielded:

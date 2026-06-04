@@ -132,7 +132,7 @@ func _physics_process(delta: float) -> void:
 		# Durante slam: parado.
 		ai_velocity = Vector2.ZERO
 	elif current_target != null and is_instance_valid(current_target):
-		var to_target: Vector2 = current_target.global_position - global_position
+		var to_target: Vector2 = AimTarget.pos(current_target) - global_position
 		var dist: float = to_target.length()
 		var dir: Vector2 = Vector2.ZERO if dist < 0.001 else to_target / dist
 		# Transições de estado:
@@ -265,6 +265,7 @@ func _on_animation_finished() -> void:
 
 
 func take_damage(amount: float) -> void:
+	amount *= TideVulnerability.multiplier_for(self)
 	# Multiplicador de dano por estado:
 	#   DEFENSE + STAND: 0.05 (95% redução) — ou 0.70 se só restam stone cubes
 	#   DEFENSE + WALK:  0.35 (65% redução) — ou 0.85 se só restam stone cubes

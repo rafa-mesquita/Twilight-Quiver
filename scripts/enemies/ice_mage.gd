@@ -148,9 +148,10 @@ func _fire_ice_aoe() -> void:
 	# Previsão de movimento: lê target.velocity (CharacterBody2D) e mira em
 	# onde o alvo VAI estar quando a bola pousar. Clamp na distância máxima
 	# pra evitar lead absurdo durante dash do player.
-	var predicted: Vector2 = target.global_position
-	if "velocity" in target:
-		var lead: Vector2 = target.velocity * ICE_AOE_LEAD_TIME
+	var predicted: Vector2 = AimTarget.pos(target)
+	var aim_vel: Vector2 = AimTarget.vel(target)
+	if aim_vel.length_squared() > 0.0:
+		var lead: Vector2 = aim_vel * ICE_AOE_LEAD_TIME
 		if lead.length() > ICE_AOE_MAX_LEAD_DISTANCE:
 			lead = lead.normalized() * ICE_AOE_MAX_LEAD_DISTANCE
 		predicted += lead

@@ -35,7 +35,7 @@ func _physics_process(_delta: float) -> void:
 		velocity = Vector2.ZERO
 		return
 
-	var to_player := player.global_position - global_position
+	var to_player := AimTarget.pos(player) - global_position
 	var dist := to_player.length()
 	var dir := to_player.normalized()
 
@@ -55,12 +55,12 @@ func _try_shoot() -> void:
 		return
 	if enemy_arrow_scene == null:
 		return
-	var dist := global_position.distance_to(player.global_position)
+	var dist := global_position.distance_to(AimTarget.pos(player))
 	if dist > detection_range:
 		return
 
 	# Mira no centro de colisão do player (12px acima dos pés, devido ao refator do pivô).
-	var target := player.global_position + Vector2(0, -12)
+	var target := AimTarget.pos(player) + Vector2(0, -12)
 	# Direção é calculada do MUZZLE (não do centro do inimigo) pra evitar parallax.
 	var muzzle_world := muzzle.global_position
 	var dir := (target - muzzle_world).normalized()
@@ -72,6 +72,7 @@ func _try_shoot() -> void:
 
 
 func take_damage(amount: float) -> void:
+	amount *= TideVulnerability.multiplier_for(self)
 	hp = maxf(hp - amount, 0.0)
 	hp_bar.set_ratio(hp / max_hp)
 	_flash_damage()

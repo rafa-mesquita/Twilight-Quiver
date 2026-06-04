@@ -30,6 +30,7 @@ const UPGRADE_BTNS: Array = [
 	{"id": "curse_arrow", "node": "UpgCurseArrowBtn", "max": 4, "base_text": "+1 Disparo Profano"},
 	{"id": "ice_arrow", "node": "UpgIceArrowBtn", "max": 4, "base_text": "+1 Fica Frio"},
 	{"id": "stone_arrow", "node": "UpgStoneArrowBtn", "max": 4, "base_text": "+1 Disparo de Pedra"},
+	{"id": "tide_arrow", "node": "UpgTideBtn", "max": 4, "base_text": "+1 Fúria da Maré"},
 	{"id": "ricochet_arrow", "node": "UpgRicochetBtn", "max": 4, "base_text": "+1 Flecha Ricochete"},
 	{"id": "graviton", "node": "UpgGravitonBtn", "max": 4, "base_text": "+1 Graviton"},
 	{"id": "boomerang", "node": "UpgBoomerangBtn", "max": 4, "base_text": "+1 Boomerang Veloz"},
@@ -89,6 +90,7 @@ func _ready() -> void:
 	_refresh_godmode_label()
 	$UtilityBar/Row/ClockDropBtn.pressed.connect(_toggle_clock_drop)
 	_refresh_clock_drop_label()
+	$UtilityBar/Row/OpenShopRouletteBtn.pressed.connect(_open_shop_with_roulette)
 	# Aplica snapshot de upgrades pendente (se botão "Renascer" foi clicado na
 	# run anterior). Defer pra rodar APÓS o player carregar na nova cena.
 	_apply_pending_respawn_upgrades.call_deferred()
@@ -326,7 +328,7 @@ func _spawn_claudio_druida_at_player() -> void:
 const _ALL_UPGRADE_IDS: Array[String] = [
 	"hp", "armor", "damage", "perfuracao", "attack_speed", "multi_arrow",
 	"double_arrows", "chain_lightning", "move_speed", "life_steal",
-	"fire_arrow", "curse_arrow", "ice_arrow", "stone_arrow", "claudio_druida", "leno",
+	"fire_arrow", "curse_arrow", "ice_arrow", "stone_arrow", "tide_arrow", "claudio_druida", "leno",
 	"capivara_joe", "ting", "arbusto", "mini_mago", "gold_magnet",
 	"dash", "esquivando", "fenda", "ricochet_arrow", "graviton", "boomerang",
 	"tiger_claws", "critical_chance",
@@ -348,6 +350,23 @@ func _refresh_godmode_label() -> void:
 	else:
 		btn.text = "Vida Infinita: OFF"
 		btn.add_theme_color_override("font_color", Color(0.6, 1.0, 0.65, 1))
+
+
+func _open_shop_with_roulette() -> void:
+	# Força a carta "Roleta Elemental" no próximo shop e abre. Garante um elemental
+	# no L3 (se o player não tiver nenhum, dá Fogo até o L3) pra a troca ter efeito.
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null and player.has_method("apply_upgrade") and player.has_method("get_upgrade_count"):
+		var has_elem: bool = false
+		for eid in ["fire_arrow", "curse_arrow", "chain_lightning", "ice_arrow", "stone_arrow"]:
+			if int(player.get_upgrade_count(eid)) > 0:
+				has_elem = true
+				break
+		if not has_elem:
+			for i in 3:
+				player.apply_upgrade("fire_arrow")
+	GameState.dev_force_roulette_next_shop = true
+	_open_shop_directly()
 
 
 func _toggle_clock_drop() -> void:

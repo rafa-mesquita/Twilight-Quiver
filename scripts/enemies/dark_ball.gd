@@ -138,9 +138,9 @@ func _physics_process(delta: float) -> void:
 	var ai_velocity: Vector2 = Vector2.ZERO
 	var anchor_pos: Vector2 = global_position
 	if current_target != null and is_instance_valid(current_target) and not is_attacking:
-		var to_target: Vector2 = current_target.global_position - global_position
+		var to_target: Vector2 = AimTarget.pos(current_target) - global_position
 		var dist: float = to_target.length()
-		anchor_pos = current_target.global_position
+		anchor_pos = AimTarget.pos(current_target)
 		# Hysteresis pro dash: entra em dash dentro de dash_trigger_distance,
 		# sai só quando passa de dash_exit_distance. Bloqueia dash durante
 		# o post_attack_walk (período de "recuperação" pós-hit).
@@ -363,7 +363,7 @@ func _spawn_venom_puddle() -> void:
 	# de cuspir veneno pra frente, não exatamente em cima dela.
 	var offset_dir: Vector2 = Vector2(-1.0 if sprite.flip_h else 1.0, 0.0)
 	if current_target != null and is_instance_valid(current_target):
-		var to_target: Vector2 = current_target.global_position - global_position
+		var to_target: Vector2 = AimTarget.pos(current_target) - global_position
 		if to_target.length_squared() > 0.01:
 			offset_dir = to_target.normalized()
 	# Offset suficiente pra venom_center ficar além do player (que está a
@@ -469,6 +469,7 @@ func _on_attack_cooldown_done() -> void:
 
 
 func take_damage(amount: float) -> void:
+	amount *= TideVulnerability.multiplier_for(self)
 	if not is_curse_ally:
 		var p := get_tree().get_first_node_in_group("player")
 		if p != null and p.has_method("notify_damage_dealt"):

@@ -24,6 +24,10 @@ extends Node2D
 @export var field_scene: PackedScene
 @export var field_dps: float = 10.0  # +25% (era 8.0); dano contínuo do FrostwispField
 
+# L4 do Fica Frio: +25% no dano do Frostwisp (projeteis + campo). Aplicado em
+# cima do dano-base capturado no _ready (não compõe se chamado várias vezes).
+const LEVEL4_DAMAGE_MULT: float = 1.25
+
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 const CAST_SOUND: AudioStream = preload("res://audios/effects/Cast frostwisp.mp3")
@@ -48,11 +52,19 @@ var _avalanche_player: AudioStreamPlayer2D = null
 var _wander_target: Vector2 = Vector2.ZERO
 var _wander_pause_remaining: float = 0.0
 var _active_field: Node2D = null
+# Dano-base capturado no _ready (antes de qualquer bônus de nível). O L4 do Gelo
+# multiplica em cima destes, sem compor a cada chamada.
+var _base_projectile_damage: float = 0.0
+var _base_field_dps: float = 0.0
+var _level4_bonus: bool = false
 
 
 func _ready() -> void:
 	add_to_group("ally")
 	add_to_group("freeze_immune")  # L4 do Gelo não congela a Frostwisp
+	_base_projectile_damage = projectile_damage
+	_base_field_dps = field_dps
+	_apply_damage_bonus()
 	_attack_cd_remaining = attack_cycle_interval
 	_player = get_tree().get_first_node_in_group("player") as Node2D
 	if sprite != null:
@@ -212,6 +224,19 @@ func _find_enemy_centroid() -> Vector2:
 # começar a bombardear.
 func set_initial_cooldown(seconds: float) -> void:
 	_attack_cd_remaining = maxf(_attack_cd_remaining, seconds)
+
+
+# Chamado pelo player quando o Fica Frio chega no L4 (e no spawn, como safety net
+# caso o player já esteja no L4). Buffa o dano dos projeteis e do campo em +25%.
+func set_level4_bonus(active: bool) -> void:
+	_level4_bonus = active
+	_apply_damage_bonus()
+
+
+func _apply_damage_bonus() -> void:
+	var mult: float = LEVEL4_DAMAGE_MULT if _level4_bonus else 1.0
+	projectile_damage = _base_projectile_damage * mult
+	field_dps = _base_field_dps * mult
 
 
 func _spawn_field() -> void:

@@ -23,6 +23,10 @@ var dev_clock_always_drop: bool = false
 # dev_panel pra testar a feature sem depender de RNG.
 var dev_force_joker_next_shop: bool = false
 
+# Força a carta "Roleta Elemental" a aparecer no próximo roll do shop, ignorando
+# weight. Resetado pelo wave_shop ao consumir o flag. Setado pelo dev_panel.
+var dev_force_roulette_next_shop: bool = false
+
 # Snapshot de upgrades pra "renascer com os mesmos" (botão do dev panel).
 # Mapa upgrade_id → nível alvo. Aplicado pelo dev_panel após o player carregar
 # na nova run (cena recarregada), depois limpado. Vazio = sem respawn pendente.

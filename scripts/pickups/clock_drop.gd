@@ -11,16 +11,19 @@ extends RefCounted
 # ⚠ Os elementais só viram skill de Q a partir do nível que destrava o ativável
 # (fogo lv3, maldição lv4, pedra lv3, cadeia lv3, gelo/time-freeze lv4). Ter o
 # elemental no lv1-2 (passivo) NÃO conta — era o bug de dropar "sem skill".
+# ⚠ O Esquivando só ganha a skill do espaço no lv2 (ESQUIVANDO_ABILITY_MIN_LEVEL);
+# no lv1 é só passivo (stacks/dodge), sem cooldown pra resetar.
 #
 # Dev: GameState.dev_clock_always_drop força chance 100% e ignora o gate (teste).
 
 const CLOCK_SCENE: PackedScene = preload("res://scenes/pickups/clock.tscn")
 const DROP_CHANCE: float = 0.015
 const PICKUP_SPREAD: float = 16.0
-# id do upgrade → nível mínimo pra contar como "skill ativável". Espaço (dash/
-# esquivando/fenda) vale do lv1; Q (elementais) só no nível que libera o ativo.
+# id do upgrade → nível mínimo pra contar como "skill ativável". Dash/fenda valem
+# do lv1; esquivando só no lv2 (libera a skill do espaço); Q (elementais) só no
+# nível que libera o ativo.
 const ACTIVE_SKILL_REQS: Dictionary = {
-	"dash": 1, "esquivando": 1, "fenda": 1,
+	"dash": 1, "esquivando": 2, "fenda": 1,
 	"fire_arrow": 3, "curse_arrow": 4, "stone_arrow": 3,
 	"chain_lightning": 3, "ice_arrow": 4,
 }

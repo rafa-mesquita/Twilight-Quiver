@@ -45,6 +45,17 @@ const _CONTROL_TEX_SPACE: Texture2D = preload("res://assets/Hud/control_space.pn
 const _CONTROL_TEX_Q: Texture2D = preload("res://assets/Hud/control_q.png")
 var _leaderboard_client: Node = null
 
+# Toast de unlock de skin em TEMPO REAL (canto inferior direito). O death screen
+# continua mostrando a celebração completa; este é o aviso imediato. O HUD faz um
+# poll leve (a cada _SKIN_UNLOCK_POLL_INTERVAL) combinando stats persistentes +
+# live (read-only) via SkinLoadout.evaluate_live_unlocks, deduplica e enfileira.
+var _skin_unlock_toast: SkinUnlockToast = null
+const _SKIN_UNLOCK_POLL_INTERVAL: float = 0.5
+var _skin_unlock_poll_accum: float = 0.0
+var _skin_unlock_locked_at_start: Dictionary = {}
+var _skin_unlock_snapshot_done: bool = false
+var _skin_unlock_toasted: Dictionary = {}
+
 # Tracking pra exibir indicador quando torre sofre ataque off-screen
 const TOWER_ALERT_HOLD: float = 1.5
 const TOWER_ALERT_EDGE_MARGIN: float = 80.0
@@ -98,6 +109,8 @@ const HUD_RUNTIME_SCALE: Vector2 = Vector2(3, 3)
 @onready var ice_skill_cd_label: Label = $IceSkillIcon/CdLabel
 @onready var stone_skill_icon: Control = $StoneSkillIcon
 @onready var stone_skill_cd_label: Label = $StoneSkillIcon/CdLabel
+@onready var tide_shield_icon: Control = $TideShieldIcon
+@onready var tide_shield_cd_label: Label = $TideShieldIcon/CdLabel
 @onready var esquivando_skill_icon: Control = $EsquivandoSkillIcon
 @onready var esquivando_stack_label: Label = $EsquivandoSkillIcon/StackLabel
 @onready var perfurante_counter_icon: Control = $PerfuranteCounterIcon
@@ -272,6 +285,9 @@ func _ready() -> void:
 	_set_mouse_filter_recursive($UpgradeColumn)
 	# Conecta nos signals de gold/hp/dash do player. Defer pra player já estar pronto.
 	_connect_player_signals.call_deferred()
+	# Toast de unlock de skin em tempo real (canto inferior direito).
+	_skin_unlock_toast = SkinUnlockToast.new()
+	add_child(_skin_unlock_toast)
 
 
 func _set_mouse_filter_recursive(node: Node) -> void:
@@ -355,6 +371,16 @@ func _connect_player_signals() -> void:
 			player.all_skills_reset.connect(_on_all_skills_reset)
 	if "stone_arrow_level" in player and int(player.stone_arrow_level) >= 4:
 		_on_stone_skill_unlocked()
+	if player.has_signal("tide_shield_skill_unlocked") and not player.tide_shield_skill_unlocked.is_connected(_on_tide_shield_skill_unlocked):
+		player.tide_shield_skill_unlocked.connect(_on_tide_shield_skill_unlocked)
+	if player.has_signal("tide_shield_skill_cooldown_changed") and not player.tide_shield_skill_cooldown_changed.is_connected(_on_tide_shield_skill_cooldown_changed):
+		player.tide_shield_skill_cooldown_changed.connect(_on_tide_shield_skill_cooldown_changed)
+	if "tide_arrow_level" in player and int(player.tide_arrow_level) >= 3:
+		_on_tide_shield_skill_unlocked()
+	# Troca de elemental (carta "Roleta Elemental"): reavalia quais ícones de skill
+	# elemental ficam visíveis (esconde o antigo, mostra o novo).
+	if player.has_signal("elementals_changed") and not player.elementals_changed.is_connected(_refresh_elemental_skill_icons):
+		player.elementals_changed.connect(_refresh_elemental_skill_icons)
 	# Contador da flecha perfurante — visível a partir do lv1.
 	if player.has_signal("perfuracao_counter_changed") and not player.perfuracao_counter_changed.is_connected(_on_perfuracao_counter_changed):
 		player.perfuracao_counter_changed.connect(_on_perfuracao_counter_changed)
@@ -723,6 +749,8 @@ func _update_esquivando_icon_position(player: Node = null) -> void:
 		has_any_elemental = true
 	elif "stone_arrow_level" in player and int(player.stone_arrow_level) >= 4:
 		has_any_elemental = true
+	elif "tide_arrow_level" in player and int(player.tide_arrow_level) >= 3:
+		has_any_elemental = true
 	var new_x: float = ESQUIVANDO_ICON_ELEM_X if has_any_elemental else ESQUIVANDO_ICON_NO_ELEM_X
 	esquivando_skill_icon.offset_left = new_x
 	esquivando_skill_icon.offset_right = new_x + ESQUIVANDO_ICON_WIDTH
@@ -886,6 +914,24 @@ func _on_stone_skill_unlocked() -> void:
 	_show_q_hint_if_needed()
 
 
+# Reavalia a visibilidade dos ícones de skill elemental conforme o nível atual.
+# Chamado quando o elemental muda (carta "Roleta Elemental"): esconde o ícone do
+# elemental antigo e mostra o do novo. Os cooldowns/labels do novo já são emitidos
+# pelo apply_upgrade da troca.
+func _refresh_elemental_skill_icons() -> void:
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null:
+		return
+	fire_skill_icon.visible = ("fire_arrow_level" in p) and int(p.fire_arrow_level) >= 3
+	chain_lightning_skill_icon.visible = ("chain_lightning_level" in p) and int(p.chain_lightning_level) >= 3
+	curse_skill_icon.visible = ("curse_arrow_level" in p) and int(p.curse_arrow_level) >= 4
+	ice_skill_icon.visible = ("ice_arrow_level" in p) and int(p.ice_arrow_level) >= 4
+	stone_skill_icon.visible = ("stone_arrow_level" in p) and int(p.stone_arrow_level) >= 4
+	tide_shield_icon.visible = ("tide_arrow_level" in p) and int(p.tide_arrow_level) >= 3
+	_update_esquivando_icon_position()
+	_show_q_hint_if_needed()
+
+
 func _on_stone_skill_cooldown_changed(remaining: float, _total: float) -> void:
 	if remaining <= 0.001:
 		stone_skill_cd_label.text = ""
@@ -895,12 +941,27 @@ func _on_stone_skill_cooldown_changed(remaining: float, _total: float) -> void:
 		stone_skill_icon.modulate = Color(0.6, 0.55, 0.45, 1.0)
 
 
+func _on_tide_shield_skill_unlocked() -> void:
+	tide_shield_icon.visible = true
+	_update_esquivando_icon_position()
+	_show_q_hint_if_needed()
+
+
+func _on_tide_shield_skill_cooldown_changed(remaining: float, _total: float) -> void:
+	if remaining <= 0.001:
+		tide_shield_cd_label.text = ""
+		tide_shield_icon.modulate = Color.WHITE
+	else:
+		tide_shield_cd_label.text = "%d" % int(ceilf(remaining))
+		tide_shield_icon.modulate = Color(0.5, 0.62, 0.78, 1.0)
+
+
 func _on_all_skills_reset() -> void:
 	# Relógio de Reset coletado: flash de brilho nas barras/ícones de cooldown
 	# visíveis, sinalizando que todas as skills voltaram a ficar prontas. As barras
 	# em si já são atualizadas pelos *_cooldown_changed; isto é só o realce visual.
 	for node in [dash_cd_bar, esquivando_skill_icon, fire_skill_icon,
-			chain_lightning_skill_icon, curse_skill_icon, ice_skill_icon, stone_skill_icon]:
+			chain_lightning_skill_icon, curse_skill_icon, ice_skill_icon, stone_skill_icon, tide_shield_icon]:
 		_flash_skill_ui(node)
 
 
@@ -916,6 +977,7 @@ func _flash_skill_ui(node: Control) -> void:
 func _process(delta: float) -> void:
 	_update_tower_alert(delta)
 	_update_boss_hp_bar()
+	_poll_skin_unlocks(delta)
 	# Se o player passar atrás da HUD (canto do mapa), translúcido pra ver através.
 	if not hud_frame.visible:
 		return
@@ -1695,6 +1757,42 @@ func _auto_submit_score() -> void:
 	var payload: Dictionary = _build_run_payload(nick)
 	print("[leaderboard] submitting: ", payload)
 	_leaderboard_client.submit_run(payload)
+
+
+# Poll leve (a cada _SKIN_UNLOCK_POLL_INTERVAL) que detecta unlocks de skin em
+# tempo real e mostra o toast no canto. NÃO grava nada — o commit dos stats segue
+# no fim da run (record_run). Só notifica skins que estavam LOCKED no início desta
+# run e ainda não foram avisadas.
+func _poll_skin_unlocks(delta: float) -> void:
+	_skin_unlock_poll_accum += delta
+	if _skin_unlock_poll_accum < _SKIN_UNLOCK_POLL_INTERVAL:
+		return
+	_skin_unlock_poll_accum = 0.0
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null or not is_instance_valid(p):
+		return
+	# Durante a sequência de morte o death screen já cuida do unlock — não toasta.
+	if "is_dead" in p and bool(p.is_dead):
+		return
+	# Snapshot 1x: skins locked no início da run = não satisfeitas só com os stats
+	# PERSISTENTES (evaluate com dict vazio → contribuição da run = 0).
+	if not _skin_unlock_snapshot_done:
+		_skin_unlock_snapshot_done = true
+		var base_satisfied: Array = SkinLoadout.evaluate_live_unlocks({})
+		for skin_name in SkinLoadout.SKIN_QUESTS:
+			if not (String(skin_name) in base_satisfied):
+				_skin_unlock_locked_at_start[String(skin_name)] = true
+	var wave_num: int = 0
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm != null and "wave_number" in wm:
+		wave_num = int(wm.wave_number)
+	var rs: Dictionary = _collect_run_stats(wave_num)
+	for skin_name in SkinLoadout.evaluate_live_unlocks(rs):
+		var sn: String = String(skin_name)
+		if _skin_unlock_locked_at_start.has(sn) and not _skin_unlock_toasted.has(sn):
+			_skin_unlock_toasted[sn] = true
+			if _skin_unlock_toast != null:
+				_skin_unlock_toast.enqueue(sn)
 
 
 func _collect_run_stats(wave_num: int) -> Dictionary:

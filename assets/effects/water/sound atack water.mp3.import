@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://2cyliho5oq5t"
+path="res://.godot/imported/sound atack water.mp3-7ac4cb02ecd62f1366c0418303926794.mp3str"
+
+[deps]
+
+source_file="res://assets/effects/water/sound atack water.mp3"
+dest_files=["res://.godot/imported/sound atack water.mp3-7ac4cb02ecd62f1366c0418303926794.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

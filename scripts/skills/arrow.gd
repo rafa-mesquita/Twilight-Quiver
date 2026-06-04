@@ -106,6 +106,22 @@ var stone_size_scale: float = 1.0
 # % do dano de referência aplicada pelo AoE por gatilho.
 const STONE_SPLASH_PCT: float = 0.5  # hit direto: 50% nos OUTROS (alvo já levou 100%)
 const STONE_LAND_PCT: float = 0.8    # cair no range / estrutura / parede: 80% em todos
+# Elemental Fúria da Maré: projétil de água lento; o dano vai no alvo (normal),
+# mas o IMPACTO aplica o debuff de Vulnerabilidade (TideVulnerability, +15%/stack)
+# numa ÁREA (raio = stun da Pedra L1). Setado pelo player ANTES de add_child.
+var is_tide: bool = false
+var tide_radius: float = 31.0
+var tide_debuff_duration: float = 3.0
+var tide_debuff_max_stacks: int = 2
+var tide_per_stack: float = 0.15  # +dano recebido por stack (escala com o nível)
+const TIDE_PROJ_SHEET: Texture2D = preload("res://assets/effects/water/water.png")
+const TIDE_IMPACT_SHEET: Texture2D = preload("res://assets/effects/water/water_impact.png")
+const TIDE_AREA_SHEET: Texture2D = preload("res://assets/effects/water/area_debuff.png")
+const TIDE_HIT_SOUND: AudioStream = preload("res://assets/effects/water/water impact.mp3")
+const TIDE_SHOOT_SOUND: AudioStream = preload("res://assets/effects/water/sound atack water.mp3")
+const TIDE_PUDDLE_TEX: Texture2D = preload("res://assets/effects/water/poça chao.png")
+const TIDE_PUDDLE_DURATION: float = 2.5
+const TIDE_PUDDLE_SCALE: float = 1.4
 # Range do quique do ricochete (lifetime): quique CURTO, bem menor que o ataque
 # base (150 × 0.45 ≈ 67px vs ~105px base). Antes era 1.0 (150px), mais longo que
 # o tiro original — o quique voava longe demais. Atribuição fixa (não maxf), pra
@@ -150,6 +166,10 @@ const CHAIN_SOUND_VOLUME_DB: float = -10.0
 # Throttle global do som de chain — várias flechas (multi arrow) podem proccar
 # no mesmo frame e somar dB. Compartilhado entre todas as instâncias da arrow.
 static var _last_chain_sound_msec: int = -1000
+# Mesmo problema no splash da Fúria da Maré: multi-arrow estoura várias bolhas
+# juntas e o som soma. Throttle global → só 1 splash por janela curta.
+const TIDE_SOUND_THROTTLE_MS: int = 90
+static var _last_tide_sound_msec: int = -1000
 # Quem disparou a flecha. Usado pra ignorar colisão com o próprio shooter
 # (ex: torre não atira em si mesma, mas colide com flecha do player).
 var source: Node = null
@@ -217,6 +237,8 @@ func _ready() -> void:
 		_apply_ice_visuals()
 	if is_ricochet:
 		_apply_ricochet_visuals()
+	if is_tide:
+		_apply_tide_visuals()
 	# Pedra por último: esconde o sprite normal e mostra a pedra (vence o tint
 	# de perfuração/ricochete — flecha-pedra deve parecer pedra).
 	if is_stone:
@@ -265,6 +287,113 @@ func _apply_stone_visuals() -> void:
 		trail.width_curve = wc
 		# Rastro curto (~ tamanho do sprite na velocidade lenta da pedra).
 		trail_max_points = 7
+
+
+func _apply_tide_visuals() -> void:
+	# Bolha de água: esconde a flecha normal e mostra o sprite de água (2 frames).
+	# Estoura no impacto (não crava — ver _on_hit). Sons normais de flecha zerados;
+	# a bolha usa os próprios sons de água.
+	impact_sound = null
+	object_impact_sound = null
+	var normal_sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if normal_sprite != null:
+		normal_sprite.visible = false
+	var water := AnimatedSprite2D.new()
+	water.sprite_frames = _build_sheet_frames(TIDE_PROJ_SHEET, 15, 7, 2, 12.0, true)
+	water.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	water.z_index = 1
+	water.modulate.a = 0.8  # 80% — dá impressão de água levemente transparente
+	add_child(water)
+	water.play(&"default")
+	# Disparo soa como água (a flecha já toca o ShootSound no _ready — só troca o stream).
+	if shoot_sound != null:
+		shoot_sound.stream = TIDE_SHOOT_SOUND
+	# Rastro tipo o da pedra, mas azul claro (água).
+	if trail != null:
+		var grad := Gradient.new()
+		grad.offsets = PackedFloat32Array([0.0, 1.0])
+		grad.colors = PackedColorArray([
+			Color(0.55, 0.85, 1.0, 0.0),  # cauda: transparente
+			Color(0.6, 0.9, 1.0, 0.38),   # cabeça: azul claro, mais transparente
+		])
+		trail.gradient = grad
+		trail.default_color = Color.WHITE
+		trail.width = 4.0
+		var wc := Curve.new()
+		wc.add_point(Vector2(0.0, 0.12))  # cauda fina
+		wc.add_point(Vector2(1.0, 1.0))   # cabeça cheia
+		trail.width_curve = wc
+		trail_max_points = 7
+
+
+func _apply_tide_on_hit(center: Vector2) -> void:
+	# Debuff de Vulnerabilidade em ÁREA (raio = stun da Pedra L1) em todos os enemies.
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not is_instance_valid(e) or not (e is Node2D):
+			continue
+		if (e as Node).is_queued_for_deletion():
+			continue
+		if center.distance_to((e as Node2D).global_position) <= tide_radius:
+			TideVulnerability.apply_to(e, tide_debuff_duration, tide_debuff_max_stacks, tide_per_stack)
+	_spawn_tide_vfx(center)
+	# Som do impacto bem baixo (a bolha estoura — não é um baque forte). Throttle
+	# global: multi-arrow estoura várias bolhas juntas → toca só 1 splash por janela.
+	var now_ms: int = Time.get_ticks_msec()
+	if now_ms - _last_tide_sound_msec >= TIDE_SOUND_THROTTLE_MS:
+		_last_tide_sound_msec = now_ms
+		_play_oneshot(TIDE_HIT_SOUND, center, -24.0, 1.5)
+
+
+func _spawn_tide_vfx(center: Vector2) -> void:
+	# Poça no chão (atrás de tudo): dura 2.5s sumindo em fade gradual.
+	_spawn_tide_puddle(center)
+	# Splash do impacto. (O anel "ondas da área" foi removido — poluía a tela.)
+	_spawn_oneshot_anim(TIDE_IMPACT_SHEET, 32, 32, 4, center, 18.0, 5, 1.0, false)
+
+
+func _spawn_tide_puddle(center: Vector2) -> void:
+	var sp := Sprite2D.new()
+	sp.texture = TIDE_PUDDLE_TEX
+	sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sp.global_position = center
+	sp.scale = Vector2(TIDE_PUDDLE_SCALE, TIDE_PUDDLE_SCALE)
+	sp.z_index = -1  # decal no chão, abaixo dos inimigos/efeitos
+	get_tree().current_scene.add_child(sp)
+	# Fade gradual ao longo de toda a duração.
+	var tw := sp.create_tween()
+	tw.tween_property(sp, "modulate:a", 0.0, TIDE_PUDDLE_DURATION)
+	tw.tween_callback(sp.queue_free)
+
+
+func _spawn_oneshot_anim(sheet: Texture2D, fw: int, fh: int, frames: int, pos: Vector2, fps: float, z: int, scl: float, fade: bool = false) -> void:
+	if sheet == null:
+		return
+	var spr := AnimatedSprite2D.new()
+	spr.sprite_frames = _build_sheet_frames(sheet, fw, fh, frames, fps, false)
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	spr.z_index = z
+	spr.scale = Vector2(scl, scl)
+	spr.global_position = pos
+	get_tree().current_scene.add_child(spr)
+	spr.play(&"default")
+	spr.animation_finished.connect(spr.queue_free)
+	# Fade-out ao longo da animação (anel da área "evaporando").
+	if fade:
+		var dur: float = float(frames) / maxf(fps, 0.01)
+		var tw := spr.create_tween()
+		tw.tween_property(spr, "modulate:a", 0.0, dur)
+
+
+func _build_sheet_frames(sheet: Texture2D, fw: int, fh: int, frames: int, fps: float, loop: bool) -> SpriteFrames:
+	var sf := SpriteFrames.new()  # já vem com a animação "default"
+	sf.set_animation_loop(&"default", loop)
+	sf.set_animation_speed(&"default", fps)
+	for i in frames:
+		var at := AtlasTexture.new()
+		at.atlas = sheet
+		at.region = Rect2(i * fw, 0, fw, fh)
+		sf.add_frame(&"default", at)
+	return sf
 
 
 func _apply_piercing_visuals() -> void:
@@ -571,6 +700,10 @@ func _on_hit(body: Node) -> void:
 			# pra não cobrir a tela inteira com multi-arrow).
 			if ice_area_enabled and is_primary_arrow:
 				_spawn_ice_slow_area_at(global_position)
+		# Fúria da Maré: dano já foi no alvo (normal); aqui aplica o debuff de
+		# Vulnerabilidade em ÁREA (não só no alvo) + VFX/SFX de água.
+		if is_tide and is_instance_valid(target):
+			_apply_tide_on_hit(target.global_position)
 		# Pedra: stun no alvo direto (crit aumenta a duração) + AoE no ponto de
 		# impacto. O alvo direto fica excluído do dano splash (já tomou o hit
 		# cheio). Com perfuração, isso roda em CADA inimigo perfurado. O stun só
@@ -604,7 +737,7 @@ func _on_hit(body: Node) -> void:
 				return
 		# Pedra estilhaça no impacto (não crava na cabeça do inimigo). O feedback
 		# é a anim de impacto do AoE; evita a pedra "rolando" cravada no inimigo.
-		if is_stone:
+		if is_stone or is_tide:
 			_die()
 			return
 		_stick_in_body(body, stick_enemy_duration)
@@ -614,6 +747,8 @@ func _on_hit(body: Node) -> void:
 			_play_stone_impact(global_position)
 		else:
 			_play_oneshot(object_impact_sound, global_position, sound_volume_db, 0.7)
+		if is_tide:
+			_apply_tide_on_hit(global_position)
 		# Graviton: pulso ao bater na parede. Com perfuração, procca em CADA
 		# objeto atravessado (flecha continua viva).
 		if is_graviton:
@@ -630,7 +765,7 @@ func _on_hit(body: Node) -> void:
 			if _perform_ricochet(null):
 				return
 		# Pedra estilhaça (não crava) — feedback é a anim de impacto do AoE.
-		if is_stone:
+		if is_stone or is_tide:
 			_die()
 			return
 		_stick_in_place(stick_surface_duration)
@@ -812,6 +947,10 @@ func _on_lifetime_expired() -> void:
 		if is_stone:
 			_play_stone_impact(global_position)
 			_spawn_stone_aoe(null, STONE_LAND_PCT, _consume_stone_stun_token())
+		# Fúria da Maré: a bolha estoura no fim do alcance igual a um impacto
+		# (poça + splash + som + debuff em área onde parou).
+		if is_tide:
+			_apply_tide_on_hit(global_position)
 		_die()
 
 
@@ -1056,6 +1195,12 @@ func _spawn_ricochet_clone(target: Node2D, hops: int, splits: int) -> void:
 		clone.curse_dps = curse_dps
 		clone.curse_duration = curse_duration
 		clone.curse_slow_factor = curse_slow_factor
+	if "is_tide" in clone:
+		clone.is_tide = is_tide
+		clone.tide_radius = tide_radius
+		clone.tide_debuff_duration = tide_debuff_duration
+		clone.tide_debuff_max_stacks = tide_debuff_max_stacks
+		clone.tide_per_stack = tide_per_stack
 	if "chain_count" in clone:
 		clone.chain_count = chain_count
 		clone.chain_dmg_pct = chain_dmg_pct

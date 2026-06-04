@@ -103,9 +103,11 @@ func _override_target_alive() -> bool:
 
 func _target_position(t: Node2D) -> Vector2:
 	# Player tem offset (mira no peito); outros alvos miram na origem do node.
+	# Usa AimTarget pra, durante o blink da Fenda, o redirect homar no ponto antigo
+	# (não curvar pro player que já saiu).
 	if t.is_in_group("player"):
-		return t.global_position + PLAYER_NODE_TARGET_OFFSET
-	return t.global_position
+		return AimTarget.pos(t) + PLAYER_NODE_TARGET_OFFSET
+	return AimTarget.pos(t)
 
 
 func _physics_process(delta: float) -> void:
