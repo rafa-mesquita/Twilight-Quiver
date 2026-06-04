@@ -1012,10 +1012,9 @@ func _build_double_arrows_volley(primary: Vector2) -> Array:
 		burst_bonus = 1.30
 	elif count >= 3:
 		burst_bonus = 1.15
-	# Delay entre flechas extras (burst rápido pra cada uma ser distinta no spawn).
-	# Com a Pedra, o delay é maior — a 2ª flecha sai mais separada (dois estouros
-	# pesados saindo colados ficava estranho).
-	var DELAY_PER_EXTRA: float = 0.14 if stone_arrow_level > 0 else 0.04
+	# Delay entre flechas extras: separa cada flecha no spawn pra os hits não saírem
+	# colados. Mesma separação da Pedra (0.14s) — disparos colados ficava estranho.
+	var DELAY_PER_EXTRA: float = 0.14
 	# Ângulos APERTADOS: 1° de diferença entre flechas adjacentes — quase a mesma
 	# mira, mas separação suficiente pra não sobrepor visualmente no spawn.
 	if count == 1:

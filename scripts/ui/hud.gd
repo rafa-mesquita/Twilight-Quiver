@@ -156,7 +156,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 	"hp", "armor", "damage", "attack_speed", "move_speed",
 	# Upgrades de gameplay
 	"perfuracao", "ricochet_arrow", "multi_arrow", "double_arrows", "chain_lightning",
-	"fire_arrow", "curse_arrow", "ice_arrow", "stone_arrow", "graviton", "boomerang", "critical_chance", "life_steal", "dash", "esquivando", "fenda",
+	"fire_arrow", "curse_arrow", "ice_arrow", "stone_arrow", "tide_arrow", "graviton", "boomerang", "critical_chance", "life_steal", "dash", "esquivando", "fenda",
 	"gold_magnet",
 	"tiger_claws",
 	# Aliados
@@ -165,7 +165,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 # Caps onde "MAX" substitui "Lx" no badge (status escala infinito → sem cap).
 const _UPG_CAPS: Dictionary = {
 	"perfuracao": 4, "ricochet_arrow": 4, "multi_arrow": 4, "double_arrows": 4, "chain_lightning": 4,
-	"fire_arrow": 4, "curse_arrow": 4, "ice_arrow": 4, "stone_arrow": 4, "graviton": 4, "boomerang": 4, "critical_chance": 4, "life_steal": 4,
+	"fire_arrow": 4, "curse_arrow": 4, "ice_arrow": 4, "stone_arrow": 4, "tide_arrow": 4, "graviton": 4, "boomerang": 4, "critical_chance": 4, "life_steal": 4,
 	"dash": 4, "esquivando": 4, "fenda": 4, "gold_magnet": 4, "tiger_claws": 4,
 	"claudio_druida": 4, "leno": 4, "capivara_joe": 4, "ting": 4, "mini_mago": 4, "arbusto": 4,
 }
@@ -179,6 +179,7 @@ const _UPG_PATHS: Dictionary = {
 	"curse_arrow": "res://assets/Hud/shop/upgrade/curse_arrow.png",
 	"ice_arrow": "res://assets/Hud/shop/upgrade/ice arrow/sangue frio card design-Sheet.png",
 	"stone_arrow": "res://assets/Hud/shop/upgrade/disparo do pedra/disparo de pedra card-Sheet.png",
+	"tide_arrow": "res://assets/Hud/shop/upgrade/furia da maré/furia da maré.png",
 	"multi_arrow": "res://assets/Hud/shop/upgrade/multi_arrow.png",
 	"double_arrows": "res://assets/Hud/shop/upgrade/multi_arrow.png",  # compartilha arte do multi_arrow (mesma família marrom)
 	"chain_lightning": "res://assets/Hud/shop/upgrade/chain_lightning.png",
