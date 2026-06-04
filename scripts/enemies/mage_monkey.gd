@@ -91,7 +91,11 @@ const BODY_CENTER_OFFSET: Vector2 = Vector2(0, -32)
 # alto pra perseguir o player até bater), sprite/hitbox maior pra parecer
 # uma "esfera mágica" perigosa, e audio mais baixo (não estoura ouvido com
 # a rajada de 8 tiros).
-const BOSS_PROJ_LIFETIME: float = 999.0
+# 8s = atravessa a arena de sobra (speed 165 × 8 = 1320px) mas NÃO acumula. Era
+# 999.0 (~16min) → os tiros do boss que erravam nunca expiravam e persistiam pra
+# dentro das waves 8+, cada um com um PointLight2D, despencando o FPS (leak achado
+# via perf log: ~106 projéteis + ~140 luzes presos com 0 inimigos vivos).
+const BOSS_PROJ_LIFETIME: float = 8.0
 const BOSS_PROJ_SPRITE_SCALE: float = 1.4
 const BOSS_PROJ_HITBOX_SCALE: float = 1.5
 const BOSS_PROJ_AUDIO_REDUCTION_DB: float = 14.0
