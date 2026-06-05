@@ -2059,6 +2059,8 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 		"ally_kills": ally_kills,
 		"gold_spent": int(p.get("stats_gold_spent")) if p != null and "stats_gold_spent" in p else 0,
 		"waves_cleared": int(p.get("stats_waves_cleared")) if p != null and "stats_waves_cleared" in p else 0,
+		"elemental_roulette_buys": int(p.get("stats_roulette_buys")) if p != null and "stats_roulette_buys" in p else 0,
+		"low_hp_kills": int(p.get("stats_low_hp_kills")) if p != null and "stats_low_hp_kills" in p else 0,
 	}
 
 

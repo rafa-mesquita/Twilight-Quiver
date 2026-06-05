@@ -564,6 +564,8 @@ var stats_gold_spent: int = 0
 var stats_waves_cleared: int = 0
 # Compras da Roleta Elemental nesta run -> stat elemental_roulette_buys.
 var stats_roulette_buys: int = 0
+# Kills do PLAYER (nao-aliado) com HP <= 50% nesta run -> stat low_hp_kills (No Limite).
+var stats_low_hp_kills: int = 0
 # Lista de IDs de bosses mortos nesta run. Usada pelo skin_loadout.record_run
 # pra detectar unlocks de skins do tipo `boss_killed`.
 var stats_bosses_killed: Array[String] = []
@@ -4538,6 +4540,9 @@ func notify_kill_by_source(source_id: String) -> void:
 		return
 	var cur: int = int(stats_kills_by_source.get(source_id, 0))
 	stats_kills_by_source[source_id] = cur + 1
+	# No Limite: kill do player (nao-aliado) com HP <= 50% conta pro unlock.
+	if hp <= max_hp * 0.5 and not (source_id in InventoryItems.ALLY_KILL_SOURCES):
+		stats_low_hp_kills += 1
 
 
 func notify_damage_taken(amount: float, source_id: String = "") -> void:

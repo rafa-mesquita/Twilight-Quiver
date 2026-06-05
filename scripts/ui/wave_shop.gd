@@ -570,6 +570,13 @@ func _roll_status_slots() -> void:
 	# 2 rolls distintos do STATUS_POOL.
 	status_slots.clear()
 	var picks: Array = STATUS_POOL.duplicate()
+	# No Limite (item): tira o status de HP da loja.
+	if InventoryItems.disables_shop_hp():
+		var filtered: Array = []
+		for e in picks:
+			if String(e.get("id", "")) != "hp":
+				filtered.append(e)
+		picks = filtered
 	picks.shuffle()
 	var player := _get_player()
 	for i in 2:

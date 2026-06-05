@@ -84,6 +84,20 @@ const ITEMS: Dictionary = {
 			{"stat": &"waves_cleared_total", "value": 1, "label": "ITEM_REQ_LUCKY"},
 		]},
 	},
+	"no_limite": {
+		"name": "ITEM_NO_LIMITE_NAME",
+		"desc": "ITEM_NO_LIMITE_DESC",
+		"icon": "res://assets/Hud/itens/no_limite.png",
+		"effects": [
+			{"type": "max_hp_override", "value": 50},
+			{"type": "disable_shop_hp"},
+			{"type": "start_status", "status": "move_speed", "amount": 1},
+			{"type": "start_status", "status": "gold_magnet", "amount": 2},
+		],
+		"unlock": {"type": "quest", "reqs": [
+			{"stat": &"low_hp_kills_total", "value": 500, "label": "ITEM_REQ_NO_LIMITE"},
+		]},
+	},
 }
 
 
@@ -185,12 +199,31 @@ static func evaluate_live_unlocks(run_stats: Dictionary) -> Array:
 	return out
 
 
+# Lista de efeitos de um item (suporta "effects": [..] novo OU "effect": {..} antigo).
+static func _item_effects(id: Variant) -> Array:
+	var item: Dictionary = ITEMS.get(id, {})
+	if item.has("effects"):
+		return item.get("effects", [])
+	if item.has("effect"):
+		return [item.get("effect")]
+	return []
+
+
 # True se algum item equipado faz o welcome upgrade virar escolha de elemental.
 static func has_welcome_elemental_choice() -> bool:
 	for id in get_equipped():
-		var eff: Dictionary = ITEMS.get(id, {}).get("effect", {})
-		if String(eff.get("type", "")) == "welcome_elemental_choice":
-			return true
+		for eff in _item_effects(id):
+			if String(eff.get("type", "")) == "welcome_elemental_choice":
+				return true
+	return false
+
+
+# True se algum item equipado tira o status de HP da loja (No Limite).
+static func disables_shop_hp() -> bool:
+	for id in get_equipped():
+		for eff in _item_effects(id):
+			if String(eff.get("type", "")) == "disable_shop_hp":
+				return true
 	return false
 
 
@@ -198,9 +231,9 @@ static func has_welcome_elemental_choice() -> bool:
 static func equipped_pet_slot_bonus() -> int:
 	var bonus: int = 0
 	for id in get_equipped():
-		var eff: Dictionary = ITEMS.get(id, {}).get("effect", {})
-		if String(eff.get("type", "")) == "pet_slot":
-			bonus += int(eff.get("amount", 0))
+		for eff in _item_effects(id):
+			if String(eff.get("type", "")) == "pet_slot":
+				bonus += int(eff.get("amount", 0))
 	return bonus
 
 
@@ -208,9 +241,9 @@ static func equipped_pet_slot_bonus() -> int:
 static func equipped_gold_per_round() -> int:
 	var g: int = 0
 	for id in get_equipped():
-		var eff: Dictionary = ITEMS.get(id, {}).get("effect", {})
-		if String(eff.get("type", "")) == "gold_per_round":
-			g += int(eff.get("amount", 0))
+		for eff in _item_effects(id):
+			if String(eff.get("type", "")) == "gold_per_round":
+				g += int(eff.get("amount", 0))
 	return g
 
 
@@ -218,9 +251,9 @@ static func equipped_gold_per_round() -> int:
 static func equipped_free_first_roll_chance() -> float:
 	var c: float = 0.0
 	for id in get_equipped():
-		var eff: Dictionary = ITEMS.get(id, {}).get("effect", {})
-		if String(eff.get("type", "")) == "free_first_roll":
-			c = maxf(c, float(eff.get("chance", 0.0)))
+		for eff in _item_effects(id):
+			if String(eff.get("type", "")) == "free_first_roll":
+				c = maxf(c, float(eff.get("chance", 0.0)))
 	return c
 
 
@@ -272,9 +305,17 @@ static func apply_to_player(player: Node) -> void:
 	if player == null:
 		return
 	for id in get_equipped():
-		var item: Dictionary = ITEMS.get(id, {})
-		var eff: Dictionary = item.get("effect", {})
-		if String(eff.get("type", "")) == "start_status" and player.has_method("apply_upgrade"):
-			var status: String = String(eff.get("status", ""))
-			for _i in int(eff.get("amount", 0)):
-				player.apply_upgrade(status)
+		for eff in _item_effects(id):
+			var t: String = String(eff.get("type", ""))
+			if t == "start_status" and player.has_method("apply_upgrade"):
+				var status: String = String(eff.get("status", ""))
+				for _i in int(eff.get("amount", 0)):
+					player.apply_upgrade(status)
+			elif t == "max_hp_override":
+				var v: float = float(eff.get("value", 100))
+				if "max_hp" in player:
+					player.max_hp = v
+				if player.has_method("reset_hp"):
+					player.reset_hp()
+				elif "hp" in player:
+					player.hp = v

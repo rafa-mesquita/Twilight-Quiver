@@ -103,6 +103,9 @@ ITEM_LUCKY_NAME,Estou com Sorte,Feeling Lucky,Tengo Suerte,J'ai de la Chance
 ITEM_LUCKY_DESC,"Toda loja tem 40% de chance do primeiro roll custar 0 de gold","Every shop has a 40% chance the first roll costs 0 gold","Cada tienda tiene 40% de probabilidad de que la primera tirada cueste 0 de oro","Chaque boutique a 40% de chance que le premier tirage coûte 0 d'or"
 ITEM_REQ_LUCKY,Limpe uma wave em Twilight Quiver,Clear a wave in Twilight Quiver,Supera una oleada en Twilight Quiver,Terminez une vague dans Twilight Quiver
 ITEM_REQ_ELEMENTAL,Compre a Roleta Elemental 10 vezes,Buy the Elemental Roulette 10 times,Compra la Ruleta Elemental 10 veces,Achetez la Roulette Élémentaire 10 fois
+ITEM_NO_LIMITE_NAME,No Limite,On the Edge,Al Límite,À la Limite
+ITEM_NO_LIMITE_DESC,"HP máximo 50 e sem HP na loja; começa a run com +1 Vel. de Movimento e Chuva de Coins Lv2","Max HP 50 and no HP in the shop; start the run with +1 Move Speed and Coin Rain Lv2","HP máximo 50 y sin HP en la tienda; empiezas con +1 Vel. de Movimiento y Lluvia de Monedas Nv2","PV max 50 et pas de PV en boutique; commencez avec +1 Vitesse et Pluie de Pièces Niv2"
+ITEM_REQ_NO_LIMITE,Elimine 500 inimigos com 50% de HP ou menos,Kill 500 enemies while at 50% HP or less,Elimina 500 enemigos con 50% de HP o menos,Éliminez 500 ennemis avec 50% de PV ou moins
 PLAYER_STAT_MAX_WAVE,Wave máxima,Max raid,Raid máximo,Raid max
 PLAYER_STAT_KILLS,Inimigos mortos,Enemies killed,Enemigos eliminados,Ennemis tués
 PLAYER_STAT_DAMAGE,Dano causado,Damage dealt,Daño causado,Dégâts infligés

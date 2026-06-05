@@ -295,6 +295,8 @@ const STAT_WAVES_CLEARED: StringName = &"waves_cleared_total"
 # Total de compras da carta Roleta Elemental (qualquer run). Unlock do item
 # Mestre Elemental (comprar 10x).
 const STAT_ROULETTE_BUYS: StringName = &"elemental_roulette_buys_total"
+# Kills do player com HP <= 50% (qualquer run). Unlock do item No Limite.
+const STAT_LOW_HP_KILLS: StringName = &"low_hp_kills_total"
 # Set de boss IDs já abatidos (persistente entre runs). Armazenado como string
 # CSV no settings.cfg porque ConfigFile só aceita primitivos.
 const _KEY_BOSSES_KILLED_SET: String = "bosses_killed_set"
@@ -788,6 +790,9 @@ static func record_run(run_stats: Dictionary) -> Array:
 	var run_roulette_buys: int = int(run_stats.get("elemental_roulette_buys", 0))
 	if run_roulette_buys > 0:
 		set_stat(STAT_ROULETTE_BUYS, get_stat(STAT_ROULETTE_BUYS) + run_roulette_buys)
+	var run_low_hp_kills: int = int(run_stats.get("low_hp_kills", 0))
+	if run_low_hp_kills > 0:
+		set_stat(STAT_LOW_HP_KILLS, get_stat(STAT_LOW_HP_KILLS) + run_low_hp_kills)
 	# Flag persistente: chegou ao Lv4 de algum elemental nesta run (unlock Skeleton).
 	if bool(run_stats.get("elemental_l4_reached", false)) and get_stat(STAT_ELEMENTAL_L4) < 1:
 		set_stat(STAT_ELEMENTAL_L4, 1)
