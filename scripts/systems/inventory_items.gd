@@ -114,3 +114,7 @@ static func apply_to_player(player: Node) -> void:
 			var status: String = String(eff.get("status", ""))
 			for _i in int(eff.get("amount", 0)):
 				player.apply_upgrade(status)
+
+
+static func get_icon_path(id: String) -> String:
+	return String(ITEMS.get(id, {}).get("icon", ""))

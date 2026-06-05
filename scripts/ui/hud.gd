@@ -290,6 +290,7 @@ func _ready() -> void:
 	_set_mouse_filter_recursive($UpgradeColumn)
 	# Conecta nos signals de gold/hp/dash do player. Defer pra player já estar pronto.
 	_build_petal_display()
+	_build_equipped_items_display()
 	_connect_player_signals.call_deferred()
 	# Toast de unlock de skin em tempo real (canto inferior direito).
 	_skin_unlock_toast = SkinUnlockToast.new()
@@ -2339,3 +2340,64 @@ func _build_last_enemy_indicator_pool() -> void:
 
 func _on_restart_pressed() -> void:
 	get_tree().reload_current_scene()
+
+
+func _build_equipped_items_display() -> void:
+	# 3 slots de itens equipados (read-only), canto superior direito, ACIMA do
+	# gold/pétalas. Sempre visíveis: vazio = moldura limpa; equipado = ícone.
+	# Itens são fixos na run (equipados pré-jogo), então constrói só uma vez.
+	if has_node("EquippedItemsDisplay"):
+		return
+	var disp := Control.new()
+	disp.name = "EquippedItemsDisplay"
+	disp.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(disp)
+	var equipped: Array = InventoryItems.get_equipped()
+	var slot_size: float = 56.0
+	var gap: float = 8.0
+	var count: int = InventoryItems.MAX_SLOTS
+	var total_w: float = count * slot_size + (count - 1) * gap
+	# Alinhado à direita (borda ~1820), acima do gold/pétalas.
+	var start_x: float = 1820.0 - total_w
+	var start_y: float = 14.0
+	for i in count:
+		var id: String = String(equipped[i]) if i < equipped.size() else ""
+		var x: float = start_x + i * (slot_size + gap)
+		disp.add_child(_make_hud_item_slot(id, Vector2(x, start_y), slot_size))
+
+
+func _make_hud_item_slot(id: String, pos: Vector2, sz: float) -> Control:
+	var slot := Control.new()
+	slot.position = pos
+	slot.custom_minimum_size = Vector2(sz, sz)
+	slot.size = Vector2(sz, sz)
+	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Moldura limpa: borda + fundo translúcido (sem "—").
+	var frame := Panel.new()
+	frame.anchor_right = 1.0
+	frame.anchor_bottom = 1.0
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.06, 0.05, 0.08, 0.55)
+	sb.border_color = Color(0.62, 0.5, 0.7, 0.9)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(4)
+	frame.add_theme_stylebox_override("panel", sb)
+	slot.add_child(frame)
+	if id != "":
+		var tex := load(InventoryItems.get_icon_path(id)) as Texture2D
+		if tex != null:
+			var icon := TextureRect.new()
+			icon.texture = tex
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			icon.anchor_right = 1.0
+			icon.anchor_bottom = 1.0
+			icon.offset_left = 4.0
+			icon.offset_top = 4.0
+			icon.offset_right = -4.0
+			icon.offset_bottom = -4.0
+			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			slot.add_child(icon)
+	return slot

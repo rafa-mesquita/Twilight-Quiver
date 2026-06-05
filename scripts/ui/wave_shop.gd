@@ -348,6 +348,7 @@ const _AUGMENT_SLOT_SIZE: Vector2 = Vector2(60, 60)
 @onready var stats_box: VBoxContainer = $Root/StatsCard/StatsBox
 @onready var pets_box: HBoxContainer = $Root/StatsCard/PetsBox
 @onready var structures_box: HBoxContainer = $Root/StatsCard/StructuresBox
+@onready var items_box: HBoxContainer = $Root/StatsCard/ItemsBox
 
 # Aliados (pets) que aparecem no card do player. Ordem fixa.
 const _PETS_ROW_IDS: Array[String] = ["claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto"]
@@ -426,6 +427,7 @@ func _ready() -> void:
 	_refresh_stats_card()
 	_refresh_pets_box()
 	_refresh_structures_box()
+	_refresh_items_box()
 	# Free tower grant: wave_manager seta pending_free_tower_scene quando o
 	# player entra na wave 8. Dispara placement ANTES de liberar o shop.
 	if pending_free_tower_scene != "":
@@ -3682,3 +3684,67 @@ func _max_level_for(id: String) -> int:
 	if id == "hp" or id == "armor" or id == "damage" or id == "attack_speed" or id == "move_speed":
 		return 0  # sem cap
 	return 4
+
+
+func _refresh_items_box() -> void:
+	# Linha "ITENS" do StatsCard: 3 slots de itens equipados (read-only). Vazio =
+	# slot padrão (igual pets/estruturas); equipado = ícone do item + tooltip.
+	if items_box == null:
+		return
+	for c in items_box.get_children():
+		c.queue_free()
+	var hud := get_tree().get_first_node_in_group("hud")
+	var equipped: Array = InventoryItems.get_equipped()
+	for i in InventoryItems.MAX_SLOTS:
+		var id: String = String(equipped[i]) if i < equipped.size() else ""
+		items_box.add_child(_build_item_chip(id, hud))
+
+
+func _build_item_chip(id: String, hud: Node) -> Control:
+	# Slot vazio reusa o mini chip (traço "—"). Slot cheio = ícone do item (sprite
+	# próprio em assets/Hud/itens, NÃO o atlas de upgrades) + tooltip no hover.
+	if id == "":
+		return _build_mini_owned_chip("", 0, hud)
+	var chip := Control.new()
+	chip.custom_minimum_size = _MINI_CHIP_SIZE
+	chip.mouse_filter = Control.MOUSE_FILTER_STOP
+	var bg := ColorRect.new()
+	bg.color = Color(0.10, 0.07, 0.13, 0.85)
+	bg.anchor_right = 1.0
+	bg.anchor_bottom = 1.0
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chip.add_child(bg)
+	var tex := load(InventoryItems.get_icon_path(id)) as Texture2D
+	if tex != null:
+		var icon := TextureRect.new()
+		icon.texture = tex
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon.anchor_right = 1.0
+		icon.anchor_bottom = 1.0
+		icon.offset_left = 2.0
+		icon.offset_top = 2.0
+		icon.offset_right = -2.0
+		icon.offset_bottom = -2.0
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		chip.add_child(icon)
+	chip.mouse_entered.connect(_on_item_hovered.bind(id, chip))
+	chip.mouse_exited.connect(_on_augment_unhovered)
+	return chip
+
+
+func _on_item_hovered(id: String, chip: Control) -> void:
+	_ensure_augment_tooltip()
+	var item: Dictionary = InventoryItems.ITEMS.get(id, {})
+	var title: String = tr(String(item.get("name", "")))
+	var desc: String = tr(String(item.get("desc", "")))
+	_augment_tooltip_label.text = "[b]%s[/b]\n\n%s" % [title, desc]
+	_augment_tooltip.visible = true
+	var chip_global: Vector2 = chip.get_global_rect().position
+	await get_tree().process_frame
+	var tip_size: Vector2 = _augment_tooltip.size
+	var pos: Vector2 = Vector2(chip_global.x - tip_size.x - 16, chip_global.y)
+	pos.y = clampf(pos.y, 16.0, 1080.0 - tip_size.y - 16.0)
+	pos.x = maxf(pos.x, 16.0)
+	_augment_tooltip.position = pos
