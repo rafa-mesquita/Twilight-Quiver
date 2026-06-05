@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b0menucursor07x"]
+
+[ext_resource type="Script" path="res://scripts/ui/menu_cursor.gd" id="1_mc"]
+
+[node name="MenuCursor" type="Node"]
+script = ExtResource("1_mc")

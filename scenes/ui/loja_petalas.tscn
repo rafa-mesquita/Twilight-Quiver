@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://d1yudyw1cws7m"]
 
 [ext_resource type="Script" path="res://scripts/ui/loja_petalas.gd" id="1_loja"]
-[ext_resource type="PackedScene" path="res://scenes/player/cursor.tscn" id="2_cursor"]
+[ext_resource type="PackedScene" path="res://scenes/ui/menu_cursor.tscn" id="2_cursor"]
 
 [node name="LojaPetalas" type="Control"]
 layout_mode = 3

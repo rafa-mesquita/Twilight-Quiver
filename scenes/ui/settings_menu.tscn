@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/ui/settings_menu.gd" id="1_settings"]
 [ext_resource type="FontFile" path="res://font/Silver.ttf" id="2_font"]
 [ext_resource type="PackedScene" uid="uid://b8tw1gv0vqlbl" path="res://scenes/ui/version_label.tscn" id="3_version"]
-[ext_resource type="PackedScene" path="res://scenes/player/cursor.tscn" id="4_cursor"]
+[ext_resource type="PackedScene" path="res://scenes/ui/menu_cursor.tscn" id="4_cursor"]
 [ext_resource type="PackedScene" uid="uid://b3xwf12pa9hd5" path="res://scenes/ui/custom_select.tscn" id="5_select"]
 
 [sub_resource type="StyleBoxFlat" id="SBF_btn_normal"]
