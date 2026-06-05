@@ -93,6 +93,10 @@ const HUD_RUNTIME_SCALE: Vector2 = Vector2(3, 3)
 @onready var hud_frame: TextureRect = $HudFrame
 @onready var wave_number_label: Label = $HudFrame/WaveNumberLabel
 @onready var gold_count_label: Label = $GoldDisplay/CountLabel
+# PetalDisplay (construído em código em _build_petal_display) — meta-moeda.
+var _petal_count_label: Label = null
+var _petal_icon: Sprite2D = null
+var _petal_deposit_label: Label = null
 @onready var hp_bar: Control = $HpBar
 @onready var hp_bar_fill: ColorRect = $HpBar/Fill
 @onready var hp_bar_label: Label = $HpBar/Label
@@ -285,6 +289,7 @@ func _ready() -> void:
 	# Marca a coluna de upgrades como mouse-pass-through (consistente com resto da HUD).
 	_set_mouse_filter_recursive($UpgradeColumn)
 	# Conecta nos signals de gold/hp/dash do player. Defer pra player já estar pronto.
+	_build_petal_display()
 	_connect_player_signals.call_deferred()
 	# Toast de unlock de skin em tempo real (canto inferior direito).
 	_skin_unlock_toast = SkinUnlockToast.new()
@@ -306,6 +311,12 @@ func _connect_player_signals() -> void:
 		player.gold_changed.connect(_on_gold_changed)
 	if "gold" in player:
 		gold_count_label.text = str(player.gold)
+	if player.has_signal("petals_changed") and not player.petals_changed.is_connected(_on_petals_changed):
+		player.petals_changed.connect(_on_petals_changed)
+	if player.has_signal("petal_gain_fx") and not player.petal_gain_fx.is_connected(_on_petal_gain_fx):
+		player.petal_gain_fx.connect(_on_petal_gain_fx)
+	if "petals" in player and _petal_count_label != null:
+		_petal_count_label.text = str(player.petals)
 	# HP bar.
 	if player.has_signal("hp_changed") and not player.hp_changed.is_connected(_on_player_hp_changed):
 		player.hp_changed.connect(_on_player_hp_changed)
@@ -659,6 +670,104 @@ func _get_upgrade_icon_atlas(id: String, level: int) -> AtlasTexture:
 
 func _on_gold_changed(total: int) -> void:
 	gold_count_label.text = str(total)
+
+
+func _build_petal_display() -> void:
+	# Cria o display de pétalas em código, NA MESMA LINHA do GoldDisplay, à
+	# direita do número do gold. Ícone = sprite da pétala (assets/Hud/petals.png).
+	if has_node("PetalDisplay"):
+		return
+	# Aproxima o GoldDisplay da pétala (estava muito espaçado à esquerda).
+	var gold_disp := get_node_or_null("GoldDisplay") as Control
+	if gold_disp != null:
+		gold_disp.position.x += 55.0
+	var disp := Control.new()
+	disp.name = "PetalDisplay"
+	disp.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	disp.offset_left = 150.0
+	disp.offset_top = 80.0
+	disp.offset_right = 380.0
+	disp.offset_bottom = 132.0
+	add_child(disp)
+	var icon := Sprite2D.new()
+	icon.name = "PetalIcon"
+	icon.texture = load("res://assets/Hud/petals.png") as Texture2D
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.position = Vector2(1610, 24)
+	icon.scale = Vector2(1.8, 1.8)
+	disp.add_child(icon)
+	_petal_icon = icon
+	var lbl := Label.new()
+	lbl.name = "CountLabel"
+	lbl.offset_left = 1634.0
+	lbl.offset_right = 1764.0
+	lbl.offset_bottom = 52.0
+	lbl.text = "0"
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.62, 0.82, 1.0))
+	lbl.add_theme_font_size_override("font_size", 39)
+	var pf := load("res://font/Silver.ttf") as Font
+	if pf != null:
+		lbl.add_theme_font_override("font", pf)
+	disp.add_child(lbl)
+	_petal_count_label = lbl
+
+
+func _on_petals_changed(total: int) -> void:
+	if _petal_count_label != null:
+		_petal_count_label.text = str(total)
+
+
+func _on_petal_gain_fx(amount: int, world_pos: Vector2) -> void:
+	# Pétalas voando pra carteira: partículas rosa fazem tween da origem (player
+	# no level-up / pickup no drop) até o ícone do PetalDisplay.
+	if _petal_icon == null:
+		return
+	var target: Vector2 = _petal_icon.global_position
+	var origin: Vector2 = target + Vector2(0, 140)
+	if not is_inf(world_pos.x) and not is_inf(world_pos.y):
+		origin = get_viewport().get_canvas_transform() * world_pos
+	var n: int = clampi(amount, 1, 5)
+	for i in n:
+		var fx := Sprite2D.new()
+		fx.texture = load("res://assets/Hud/petals.png") as Texture2D
+		fx.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		fx.scale = Vector2(1.1, 1.1)
+		add_child(fx)
+		fx.global_position = origin + Vector2(randf_range(-24, 24), randf_range(-24, 24))
+		var d: float = float(i) * 0.06
+		var tw := fx.create_tween().set_parallel(true)
+		tw.tween_property(fx, "global_position", target, 0.5).set_delay(d).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.tween_property(fx, "modulate:a", 0.0, 0.5).set_delay(d + 0.18)
+		tw.chain().tween_callback(fx.queue_free)
+
+
+func _show_petal_deposit(run_petals: int, bank_total: int) -> void:
+	# Feedback de depósito no CANTO SUPERIOR DIREITO (do lado do contador de
+	# pétalas), não no meio dos stats da morte. Revelado no reveal final.
+	var parent := get_node_or_null("DeathTopLayer")
+	if parent == null:
+		return
+	if _petal_deposit_label == null:
+		var lbl := Label.new()
+		lbl.name = "PetalDepositLabel"
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		lbl.add_theme_font_size_override("font_size", 28)
+		lbl.add_theme_color_override("font_color", Color(1.0, 0.62, 0.82, 1.0))
+		var f := load("res://font/Silver.ttf") as Font
+		if f != null:
+			lbl.add_theme_font_override("font", f)
+		# Canto superior direito, logo abaixo dos contadores de moeda/pétala.
+		lbl.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+		lbl.offset_left = -760.0
+		lbl.offset_top = 138.0
+		lbl.offset_right = -24.0
+		lbl.offset_bottom = 182.0
+		parent.add_child(lbl)
+		_petal_deposit_label = lbl
+	_petal_deposit_label.text = tr("HUD_PETAL_DEPOSIT") % [run_petals, bank_total]
+	_petal_deposit_label.modulate.a = 0.0
 
 
 func _on_player_hp_changed(current: float, maximum: float) -> void:
@@ -1381,6 +1490,11 @@ func _show_restart_button() -> void:
 	# Atualiza stats persistentes e detecta novos unlocks NESSA run.
 	var run_stats: Dictionary = _collect_run_stats(wave_num)
 	var newly_unlocked: Array = SkinLoadout.record_run(run_stats)
+	# Pétalas: deposita o saldo da run no banco persistente + prepara a linha.
+	var _petal_player := get_tree().get_first_node_in_group("player")
+	var run_petals: int = int(_petal_player.petals) if _petal_player != null and "petals" in _petal_player else 0
+	var petal_bank_total: int = PetalBank.deposit(run_petals)
+	_show_petal_deposit(run_petals, petal_bank_total)
 
 	# Em release: auto-envia score + telemetria. Em debug: nada é enviado,
 	# botões manuais (criados abaixo em _show_dev_send_buttons) fazem o envio.
@@ -1414,6 +1528,8 @@ func _show_restart_button() -> void:
 	if breakdown_label.visible:
 		reveal.tween_property(breakdown_label, "modulate:a", 1.0, 0.4)
 	reveal.tween_property(replay_btn, "modulate:a", 1.0, 0.4)
+	if _petal_deposit_label != null:
+		reveal.tween_property(_petal_deposit_label, "modulate:a", 1.0, 0.4)
 
 
 func _show_unlock_notification(skin_name: String) -> void:
@@ -2100,6 +2216,12 @@ func _save_run_progress_like_death() -> void:
 	if wm != null and "wave_number" in wm:
 		wave_num = int(wm.wave_number)
 	SkinLoadout.record_run(_collect_run_stats(wave_num))
+	# Pétalas: deposita o saldo da run no banco também ao sair pro menu (ESC) sem
+	# morrer — senão as pétalas coletadas se perderiam. Caminho mutuamente
+	# exclusivo do death screen (player vivo), sem risco de depósito duplo.
+	var _pp := get_tree().get_first_node_in_group("player")
+	if _pp != null and "petals" in _pp:
+		PetalBank.deposit(int(_pp.petals))
 	if not OS.is_debug_build():
 		_auto_submit_score()
 		_track_run_end(wave_num)

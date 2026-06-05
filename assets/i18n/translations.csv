@@ -102,6 +102,7 @@ DMG_PANEL_MINI_MAGO,Mini Mago,Mini Mage,Mini Mago,Mini Mage
 DMG_PANEL_CURSE_ALLY,Aliados Flecha Profana,Curse Arrow Allies,Aliados Flecha Profana,Alliés Flèche Maudite
 HUD_DEATH_SCORE,SCORE %d,SCORE %d,SCORE %d,SCORE %d
 HUD_DEATH_SURVIVAL,Sobreviveu %d waves,Survived %d raids,Sobreviviste %d raids,Survécu à %d raids
+HUD_PETAL_DEPOSIT,+%d pétalas depositadas (banco: %d),+%d petals deposited (bank: %d),+%d pétalos depositados (banco: %d),+%d pétales déposés (banque : %d)
 HUD_REPLAY_DEATH_BUTTON,Ver replay da morte,Watch death replay,Ver repetición,Revoir la mort
 HUD_REPLAY_TITLE,REPLAY,REPLAY,REPLAY,REJOUER
 HUD_DEATH_BY_UNKNOWN,Morto por causa desconhecida,Killed by unknown cause,Muerto por causa desconocida,Tué par cause inconnue

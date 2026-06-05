@@ -417,6 +417,7 @@ func _ready() -> void:
 	global_reroll_btn.pressed.connect(_on_global_reroll)
 	_setup_bonus_label()
 	_refresh_gold_label()
+	_build_petal_label()
 	_roll_all_slots()
 	_build_all_cards()
 	_connect_card_buttons()
@@ -2327,6 +2328,46 @@ func _refresh_gold_label() -> void:
 	gold_label.text = tr("SHOP_GOLD_LABEL") % available
 
 
+
+
+func _build_petal_label() -> void:
+	# Display de pétalas no shop, à DIREITA do header "ESTRUTURAS" — essa seção
+	# vira a loja de pétalas no P2. Só informativo no P1 (sem gasto ainda).
+	if gold_label == null:
+		return
+	var parent := gold_label.get_parent()
+	if parent == null or parent.has_node("PetalLabel"):
+		return
+	# Base = à direita do texto do header de Estruturas (fallback fixo).
+	var hx: float = 360.0
+	var hy: float = 460.0
+	var header := parent.get_node_or_null("EstrutHeader") as Control
+	if header != null:
+		hx = header.offset_left + 290.0
+		hy = header.offset_top
+	var icon := Sprite2D.new()
+	icon.name = "PetalShopIcon"
+	icon.texture = load("res://assets/Hud/petals.png") as Texture2D
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.scale = Vector2(1.8, 1.8)
+	icon.position = Vector2(hx, hy + 22.0)
+	parent.add_child(icon)
+	var lbl := Label.new()
+	lbl.name = "PetalLabel"
+	lbl.offset_left = hx + 24.0
+	lbl.offset_top = hy - 2.0
+	lbl.offset_right = hx + 170.0
+	lbl.offset_bottom = hy + 42.0
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.62, 0.82, 1.0))
+	lbl.add_theme_font_size_override("font_size", 39)
+	var gf := gold_label.get_theme_font("font")
+	if gf != null:
+		lbl.add_theme_font_override("font", gf)
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	var pl := _get_player()
+	lbl.text = str(pl.petals) if pl != null and "petals" in pl else "0"
+	parent.add_child(lbl)
 func _get_player() -> Node:
 	return get_tree().get_first_node_in_group("player")
 

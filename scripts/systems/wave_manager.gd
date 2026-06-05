@@ -983,6 +983,21 @@ func _finish_wave() -> void:
 		# Sputnik: passou da wave sem disparo manual de flecha → unlock (qualquer wave >= 1).
 		if wave_number >= 1 and "fired_arrow_this_wave" in _p_fw and not _p_fw.fired_arrow_this_wave and "stats_no_arrow_round" in _p_fw:
 			_p_fw.stats_no_arrow_round = true
+		# Pétalas (meta-moeda): recompensa por concluir a wave. Faixa fixa por
+		# round (escassa); boss dropa mais. Voa pra carteira (HUD anima).
+		if _p_fw.has_method("add_petals"):
+			var prange: Vector2i = Vector2i(1, 2)
+			if _is_boss_wave(wave_number):
+				prange = Vector2i(4, 5)
+			elif wave_number <= 5:
+				prange = Vector2i(1, 2)
+			elif wave_number <= 10:
+				prange = Vector2i(2, 3)
+			else:
+				prange = Vector2i(3, 4)
+			var rolled: int = randi_range(prange.x, prange.y)
+			var p_origin: Vector2 = (_p_fw as Node2D).global_position if _p_fw is Node2D else Vector2.INF
+			_p_fw.add_petals(rolled, p_origin)
 	# Pós-boss: segura tudo (cleanup, magnet, tela "Wave Limpa") por
 	# `boss_kill_hold` segundos pras moedas dropadas pelo boss ficarem visíveis,
 	# saltarem e o player ter tempo de coletar/ver a animação.

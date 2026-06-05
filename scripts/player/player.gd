@@ -2,6 +2,11 @@ extends CharacterBody2D
 
 signal hp_changed(current: float, maximum: float)
 signal gold_changed(total: int)
+# Pétalas (meta-moeda): carteira por-run. petals_changed atualiza a HUD;
+# petal_gain_fx dispara a animação "pétalas voando pra carteira" (world_pos =
+# origem do voo na tela; Vector2.INF = sem origem específica).
+signal petals_changed(total: int)
+signal petal_gain_fx(amount: int, world_pos: Vector2)
 signal died
 # Dash: emitido ao comprar o upgrade (HUD mostra a barra) e a cada frame
 # durante o cooldown (HUD atualiza progress).
@@ -76,6 +81,9 @@ const POISON_TICK_INTERVAL: float = 0.5
 
 var hp: float
 var gold: int = 0
+# Pétalas da run atual (carteira por-run, zera junto com o player a cada run).
+# O banco persistente fica no PetalBank (settings.cfg) — depositado na morte.
+var petals: int = 0
 # Upgrade tracking — incrementa ao comprar na shop pós-wave.
 var hp_upgrades: int = 0
 # Armor (status): reduz % do dano recebido E % do slow recebido (resistência).
@@ -3100,6 +3108,17 @@ func spend_gold(amount: int) -> bool:
 	gold -= amount
 	gold_changed.emit(gold)
 	return true
+
+
+func add_petals(amount: int, world_pos: Vector2 = Vector2.INF) -> void:
+	# Soma pétalas na carteira da run. world_pos = de onde a animação de voo
+	# pra carteira sai (posição do player no level-up, do pickup no drop).
+	# Sem spend_petals no P1 — não há loja ainda; o banco só acumula na morte.
+	if amount <= 0:
+		return
+	petals += amount
+	petals_changed.emit(petals)
+	petal_gain_fx.emit(amount, world_pos)
 
 
 # Aplicação dos upgrades comprados na shop pós-wave.

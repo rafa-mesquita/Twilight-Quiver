@@ -665,6 +665,7 @@ func _die() -> void:
 			gold_drop_chance, amount, amount)
 		# Relógio de Reset (4%, só se player tem skill ativa de Espaço/Q).
 		ClockDrop.try_drop(_get_world(), global_position)
+		PetalDrop.try_drop(_get_world(), global_position)
 	# Boss drop garantido de hearts (1 por stack de Mestre da Cura), sem
 	# random/penalty — recompensa proporcional ao investimento. try_drop
 	# normal seria 7-22% e single — usuário esperava drop confiável aqui.
