@@ -964,7 +964,7 @@ anchors_preset = 0
 offset_left = 1440.0
 offset_top = 80.0
 offset_right = 1900.0
-offset_bottom = 1040.0
+offset_bottom = 970.0
 
 [node name="Bg" type="Panel" parent="Root/StatsCard" unique_id=971991615]
 layout_mode = 0
@@ -1040,7 +1040,7 @@ theme_override_font_sizes/font_size = 25
 text = "SHOP_HEADER_ALLIES"
 horizontal_alignment = 1
 
-[node name="StructuresHeader" type="Label" parent="Root/StatsCard" unique_id=95004346]
+[node name="ItemsHeader" type="Label" parent="Root/StatsCard" unique_id=95004346]
 layout_mode = 0
 offset_left = 234.0
 offset_top = 720.0
@@ -1049,7 +1049,7 @@ offset_bottom = 754.0
 theme_override_colors/font_color = Color(0.78, 0.78, 0.92, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 25
-text = "SHOP_HEADER_STRUCTURES"
+text = "SHOP_HEADER_ITEMS"
 horizontal_alignment = 1
 
 [node name="PetsBox" type="HBoxContainer" parent="Root/StatsCard" unique_id=1775917895]
@@ -1061,33 +1061,12 @@ offset_bottom = 830.0
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="StructuresBox" type="HBoxContainer" parent="Root/StatsCard" unique_id=1439552136]
+[node name="ItemsBox" type="HBoxContainer" parent="Root/StatsCard" unique_id=1439552136]
 layout_mode = 0
 offset_left = 234.0
 offset_top = 764.0
 offset_right = 444.0
 offset_bottom = 830.0
-theme_override_constants/separation = 8
-alignment = 1
-
-[node name="ItemsHeader" type="Label" parent="Root/StatsCard"]
-layout_mode = 0
-offset_left = 16.0
-offset_top = 842.0
-offset_right = 444.0
-offset_bottom = 876.0
-theme_override_colors/font_color = Color(0.78, 0.78, 0.92, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 25
-text = "SHOP_HEADER_ITEMS"
-horizontal_alignment = 1
-
-[node name="ItemsBox" type="HBoxContainer" parent="Root/StatsCard"]
-layout_mode = 0
-offset_left = 16.0
-offset_top = 886.0
-offset_right = 444.0
-offset_bottom = 952.0
 theme_override_constants/separation = 8
 alignment = 1
 

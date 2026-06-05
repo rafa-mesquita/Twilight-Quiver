@@ -40,6 +40,9 @@ const ALIADO_SHOP_INTERVAL: int = 2
 # Cap de tipos distintos de aliados que o player pode ter ao mesmo tempo.
 # Pra ter o 3o, precisa vender um (StatsCard.PetsBox: right-click no chip).
 const MAX_DISTINCT_PETS: int = 2
+# Slots de pet EXIBIDOS no card (cap de compra continua MAX_DISTINCT_PETS).
+# O slot extra fica reservado vazio pro futuro item que abre vaga de pet.
+const PETS_DISPLAY_SLOTS: int = 3
 const ESTRUT_UNLOCK_INTERVAL: int = 4
 
 # Pool dos cards de status (passive stats — escalonáveis ilimitadamente).
@@ -347,7 +350,6 @@ const _AUGMENT_SLOT_SIZE: Vector2 = Vector2(60, 60)
 @onready var augments_box: GridContainer = $Root/StatsCard/SlotsBox
 @onready var stats_box: VBoxContainer = $Root/StatsCard/StatsBox
 @onready var pets_box: HBoxContainer = $Root/StatsCard/PetsBox
-@onready var structures_box: HBoxContainer = $Root/StatsCard/StructuresBox
 @onready var items_box: HBoxContainer = $Root/StatsCard/ItemsBox
 
 # Aliados (pets) que aparecem no card do player. Ordem fixa.
@@ -426,7 +428,6 @@ func _ready() -> void:
 	_refresh_augments_column()
 	_refresh_stats_card()
 	_refresh_pets_box()
-	_refresh_structures_box()
 	_refresh_items_box()
 	# Free tower grant: wave_manager seta pending_free_tower_scene quando o
 	# player entra na wave 8. Dispara placement ANTES de liberar o shop.
@@ -2330,8 +2331,6 @@ func _refresh_gold_label() -> void:
 	gold_label.text = tr("SHOP_GOLD_LABEL") % available
 
 
-
-
 func _build_petal_label() -> void:
 	# Display de pétalas no shop, à DIREITA do header "ESTRUTURAS" — essa seção
 	# vira a loja de pétalas no P2. Só informativo no P1 (sem gasto ainda).
@@ -2649,34 +2648,12 @@ func _refresh_pets_box() -> void:
 				owned.append({"id": id, "lvl": lvl})
 	# Renderiza até MAX_DISTINCT_PETS slots: comprados primeiro, depois padding
 	# vazio.
-	for i in MAX_DISTINCT_PETS:
+	for i in PETS_DISPLAY_SLOTS:
 		if i < owned.size():
 			var entry: Dictionary = owned[i]
 			pets_box.add_child(_build_mini_owned_chip(String(entry["id"]), int(entry["lvl"]), hud, true))
 		else:
 			pets_box.add_child(_build_mini_owned_chip("", 0, hud, false))
-
-
-# Estruturas: por enquanto só arrow_tower. Conta instâncias em
-# wave_manager.owned_structures filtrando pelo scene_path.
-func _refresh_structures_box() -> void:
-	if structures_box == null:
-		return
-	for c in structures_box.get_children():
-		c.queue_free()
-	var hud := get_tree().get_first_node_in_group("hud")
-	if hud == null:
-		return
-	var wm := get_tree().get_first_node_in_group("wave_manager")
-	for entry in _STRUCTURES_ROW:
-		var id: String = String(entry["id"])
-		var scene_path: String = String(entry["scene_path"])
-		var count: int = 0
-		if wm != null and "owned_structures" in wm:
-			for s in (wm.owned_structures as Array):
-				if String(s.get("scene_path", "")) == scene_path:
-					count += 1
-		structures_box.add_child(_build_mini_owned_chip(id, count, hud))
 
 
 # Mini chip versão menor do augment chip (60x60). Usado pra Pets/Structures.
