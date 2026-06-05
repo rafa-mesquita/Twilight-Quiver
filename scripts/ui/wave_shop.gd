@@ -2200,6 +2200,8 @@ func _commit_upgrades_and_close() -> void:
 				# Roleta Elemental: paga + troca o elemental atual por outro no L4.
 				# O L4 sorteado é revelado no modal pós-compra.
 				if player.spend_gold(int(slot.get("price", 0))):
+					if "stats_roulette_buys" in player:
+						player.stats_roulette_buys += 1
 					if player.has_method("swap_current_elemental_for_random_l4"):
 						roulette_new_id = String(player.swap_current_elemental_for_random_l4())
 				continue

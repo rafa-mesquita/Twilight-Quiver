@@ -51,7 +51,9 @@ const ITEMS: Dictionary = {
 		"desc": "ITEM_ELEMENTAL_MASTER_DESC",
 		"icon": "res://assets/Hud/itens/elemental_master.png",
 		"effect": {"type": "welcome_elemental_choice"},
-		"unlock": {"type": "default"},
+		"unlock": {"type": "quest", "reqs": [
+			{"stat": &"elemental_roulette_buys_total", "value": 10, "label": "ITEM_REQ_ELEMENTAL"},
+		]},
 	},
 	"adopt_one_more": {
 		"name": "ITEM_ADOPT_ONE_MORE_NAME",
