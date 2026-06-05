@@ -52,18 +52,15 @@ func _build_ui() -> void:
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 
-	# Frame com margem da borda da tela.
-	var margin := MarginContainer.new()
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 60)
-	margin.add_theme_constant_override("margin_right", 60)
-	margin.add_theme_constant_override("margin_top", 44)
-	margin.add_theme_constant_override("margin_bottom", 44)
-	add_child(margin)
+	# Frame centralizado, tamanho parecido com o Inventário (1440x820).
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(center)
 
 	var frame := PanelContainer.new()
+	frame.custom_minimum_size = Vector2(1440, 820)
 	frame.add_theme_stylebox_override("panel", _sb(Color(0.10, 0.08, 0.15, 0.96), Color(0.42, 0.32, 0.6, 1.0), 12))
-	margin.add_child(frame)
+	center.add_child(frame)
 
 	var pad := MarginContainer.new()
 	for s in ["left", "right", "top", "bottom"]:
