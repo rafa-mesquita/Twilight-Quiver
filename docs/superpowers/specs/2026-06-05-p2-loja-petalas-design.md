@@ -2,11 +2,13 @@
 
 **Data:** 2026-06-05
 **Subprojeto:** P2 da [Economia de Pétalas](2026-06-04-economia-petalas-visao.md)
-**Status:** Design aprovado, pronto pro plano de implementação
+**Status:** Design aprovado — **implementação ADIADA pro FIM** (pedido do user
+2026-06-05). É o último subprojeto a implementar. Spec fica pronto pra quando
+chegar a vez.
 **Depende de:** P1 (pétalas moeda-base) — já implementado.
 
-> **Prioridade do roadmap (pedido do user):** implementar **P2 (loja) + P3
-> (inventário)** primeiro; a loja meta fora do jogo (P4) vem depois.
+> ⚠ **Ordem de implementação reordenada:** P1 ✅ → **Inventário** → **Loja meta
+> (fora do jogo)** → **esta loja in-game POR ÚLTIMO**. Pular pro Inventário agora.
 
 ## Contexto
 
