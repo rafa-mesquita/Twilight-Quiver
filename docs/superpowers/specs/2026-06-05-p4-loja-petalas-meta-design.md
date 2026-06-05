@@ -21,14 +21,26 @@ skin **World Cup** + itens **Adaga da Meia-Noite** e **Arco Dourado**.
 
 ## Tela (`scenes/ui/loja_petalas.tscn` + `scripts/ui/loja_petalas.gd`)
 
-Estrutura mínima na cena (resto construído em código, padrão do `skin_select`):
-- Título "LOJA" (`LOJA_TITLE`).
-- **Saldo do banco**: ícone da pétala (`assets/Hud/petals.png`) + total (`PetalBank.get_total()`),
-  no topo. Atualiza após cada compra.
-  - ⚠ Decisão (user 2026-06-05): o banco aparece **só no Inventário (ambas as abas) e na
-    Loja** — **nunca no menu principal** (já é o caso hoje; nada a remover de lá).
-- `GridContainer` de **cards** (construído em `_build_catalog`).
-- Botão **Voltar** (`COMMON_BACK`) → volta pro `main_menu.tscn`.
+**Layout C** (escolhido via mockup 2026-06-05): loja categorizada estilo loja de jogo —
+**sidebar de categorias + grid + painel de detalhe** (referências: LoL/Dota/Archero). Tudo
+dentro de um frame com borda; inclui o nó **Cursor** (cursor.tscn) como os outros menus.
+
+- **Topo:** título "LOJA" (`LOJA_TITLE`, esquerda) + **saldo do banco** (ícone `petals.png` +
+  `PetalBank.get_total()`, direita). Atualiza após cada compra.
+  - ⚠ Decisão (user): banco só no Inventário (2 abas) e na Loja — **nunca no menu principal**.
+- **Sidebar** (esquerda, coluna): botões de **categoria** — **Skins** / **Itens**
+  (`LOJA_CAT_SKINS`/`LOJA_CAT_ITEMS`). Categoria ativa destacada (amarelo).
+- **Grid** (centro): cards da categoria selecionada (thumbnail + nome + preço). Clicar um card
+  **seleciona** (não compra) → atualiza o painel de detalhe. Card selecionado destacado.
+- **Painel de detalhe** (direita): **preview grande** + nome + preço + **descrição** (abaixo do
+  preço, ocupando o espaço) + no rodapé o estado de compra:
+  - **Comprar** (verde, se banco ≥ preço) → modal de confirmação.
+  - desabilitado + `LOJA_INSUFFICIENT` (sem saldo).
+  - `LOJA_OWNED` (já comprado).
+- **Voltar** (`COMMON_BACK`) → `main_menu.tscn`.
+
+Descrição no detalhe: itens usam `tr(ITEMS[id].desc)`; skins usam uma key própria no catálogo
+(World_Cup → `LOJA_DESC_WORLD_CUP`).
 
 ### Catálogo (v1) — dado no script
 ```
