@@ -556,6 +556,10 @@ var stats_damage_dealt_by_source: Dictionary = {}
 var wave_damage_by_source: Dictionary = {}
 # Breakdown de kills por fonte. Ex: { "arrow_base": 12, "fire_arrow": 5 }
 var stats_kills_by_source: Dictionary = {}
+# Cura recebida POR ALIADO (capivara/arbusto) nesta run -> stat ally_heal.
+var stats_ally_heal: float = 0.0
+# Gold gasto nesta run (spend_gold) -> stat gold_spent.
+var stats_gold_spent: int = 0
 # Lista de IDs de bosses mortos nesta run. Usada pelo skin_loadout.record_run
 # pra detectar unlocks de skins do tipo `boss_killed`.
 var stats_bosses_killed: Array[String] = []
@@ -3084,7 +3088,7 @@ func reset_hp() -> void:
 	_clear_status_effects()
 
 
-func heal(amount: float) -> void:
+func heal(amount: float, by_ally: bool = false) -> void:
 	# Cura usada pelo coração de Life Steal, capivara, claudio druida e
 	# qualquer outra fonte. Spawna +N verde acima do player como feedback.
 	if is_dead or amount <= 0.0:
@@ -3097,6 +3101,8 @@ func heal(amount: float) -> void:
 		hp_bar.set_ratio(hp / max_hp)
 	if actual > 0.0:
 		_spawn_heal_number(actual)
+	if by_ally and actual > 0.0:
+		stats_ally_heal += actual
 
 
 func add_gold(amount: int) -> void:
@@ -3111,6 +3117,7 @@ func spend_gold(amount: int) -> bool:
 		return false
 	gold -= amount
 	gold_changed.emit(gold)
+	stats_gold_spent += amount
 	return true
 
 
@@ -4503,16 +4510,8 @@ func notify_damage_dealt(amount: float) -> void:
 # que sai de dentro do bush garante o heal mesmo se o player sair antes do
 # projétil chegar).
 func arbusto_heal_on_arrow_hit(amount: float) -> void:
-	if amount <= 0.0 or is_dead:
-		return
-	var before: float = hp
-	hp = minf(hp + amount, max_hp)
-	var actual: float = hp - before
-	hp_changed.emit(hp, max_hp)
-	if hp_bar != null:
-		hp_bar.set_ratio(hp / max_hp)
-	if actual > 0.0:
-		_spawn_heal_number(actual)
+	# Cura por aliado (arbusto) — roteia pelo heal() com by_ally pra contar o stat.
+	heal(amount, true)
 
 
 func notify_damage_dealt_by_source(amount: float, source_id: String) -> void:

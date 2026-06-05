@@ -1955,6 +1955,9 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 			if lvl_prop in p and int(p.get(lvl_prop)) >= 4:
 				elemental_l4 = true
 				break
+	var ally_kills: int = 0
+	for src in InventoryItems.ALLY_KILL_SOURCES:
+		ally_kills += int(kills_by_src.get(src, 0))
 	return {
 		"wave": wave_num,
 		"kills": kills,
@@ -1978,6 +1981,9 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 		"long_mage_kill": bool(p.get("stats_long_mage_kill")) if p != null and "stats_long_mage_kill" in p else false,
 		# Passou de um round sem disparo manual de flecha nesta run (unlock Sputnik).
 		"no_arrow_round": bool(p.get("stats_no_arrow_round")) if p != null and "stats_no_arrow_round" in p else false,
+		"ally_heal": int(round(float(p.get("stats_ally_heal")))) if p != null and "stats_ally_heal" in p else 0,
+		"ally_kills": ally_kills,
+		"gold_spent": int(p.get("stats_gold_spent")) if p != null and "stats_gold_spent" in p else 0,
 	}
 
 

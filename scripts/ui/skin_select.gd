@@ -922,10 +922,21 @@ func _refresh_equip_ui() -> void:
 	var owned_grid: Node = _equip_panel.get_node("OwnedPanel/OwnedGrid")
 	for c in owned_grid.get_children():
 		c.queue_free()
+	# Liberados primeiro (arrastáveis), depois travados (cadeado + requisito).
+	var unlocked_ids: Array = []
+	var locked_ids: Array = []
 	for id in InventoryItems.all_ids():
 		var sid: String = String(id)
-		if InventoryItems.is_owned(sid) and not InventoryItems.is_equipped(sid):
-			owned_grid.add_child(_make_owned_item(sid))
+		if InventoryItems.is_equipped(sid):
+			continue
+		if InventoryItems.is_unlocked(sid):
+			unlocked_ids.append(sid)
+		else:
+			locked_ids.append(sid)
+	for sid in unlocked_ids:
+		owned_grid.add_child(_make_owned_item(sid))
+	for sid in locked_ids:
+		owned_grid.add_child(_make_locked_item(sid))
 
 
 func _make_item_texture(id: String, box: float) -> TextureRect:
@@ -941,7 +952,18 @@ func _make_item_texture(id: String, box: float) -> TextureRect:
 
 func _item_tooltip(id: String) -> String:
 	var item: Dictionary = InventoryItems.ITEMS.get(id, {})
-	return tr(String(item.get("name", id))) + "\n" + tr(String(item.get("desc", "")))
+	var name_line: String = tr(String(item.get("name", id)))
+	if InventoryItems.is_unlocked(id):
+		return name_line + "\n" + tr(String(item.get("desc", "")))
+	# Travado: nome + como liberar + requisitos ([x] cumprido / [ ] falta).
+	var ut: String = String(item.get("unlock", {}).get("type", ""))
+	if ut == "shop":
+		return name_line + "\n\n" + tr("ITEM_UNLOCK_SHOP")
+	var out: String = name_line + "\n\n" + tr("ITEM_UNLOCK_HOW")
+	for req in InventoryItems.get_unlock_reqs(id):
+		var mark: String = "[x] " if bool(req.get("met", false)) else "[ ] "
+		out += "\n" + mark + tr(String(req.get("label", "")))
+	return out
 
 
 func _ensure_item_tip() -> void:
@@ -974,6 +996,8 @@ func _ensure_item_tip() -> void:
 func _show_item_tooltip(id: String) -> void:
 	_ensure_item_tip()
 	_item_tip_label.text = _item_tooltip(id)
+	var col: Color = Color(0.95, 0.9, 1, 1) if InventoryItems.is_unlocked(id) else Color(1.0, 0.55, 0.55, 1)
+	_item_tip_label.add_theme_color_override("font_color", col)
 	_item_tip_panel.visible = true
 	_position_item_tip()
 
@@ -1002,6 +1026,22 @@ func _make_owned_item(id: String) -> Control:
 	t.mouse_exited.connect(_hide_item_tooltip)
 	t.set_drag_forwarding(_get_item_drag_data.bind(id, "owned", t), Callable(), Callable())
 	return t
+
+
+func _make_locked_item(id: String) -> Control:
+	# Item travado: ícone escurecido/avermelhado + "!" no canto, NÃO arrastável.
+	# Hover mostra o requisito de desbloqueio (igual skin bloqueada).
+	var root := Control.new()
+	root.custom_minimum_size = Vector2(88, 88)
+	root.mouse_filter = Control.MOUSE_FILTER_STOP
+	var t := _make_item_texture(id, 88.0)
+	t.modulate = Color(0.5, 0.32, 0.36, 0.9)
+	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(t)
+	root.add_child(_make_lock_badge(30))
+	root.mouse_entered.connect(_show_item_tooltip.bind(id))
+	root.mouse_exited.connect(_hide_item_tooltip)
+	return root
 
 
 func _make_slot(idx: int, equipped_id: String) -> Control:

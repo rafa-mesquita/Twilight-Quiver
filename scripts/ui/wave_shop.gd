@@ -703,7 +703,7 @@ func _build_ally_slot(ally_id: String, p: Node, distinct_owned: int) -> Dictiona
 	if p != null and p.has_method("get_upgrade_count"):
 		lvl = int(p.get_upgrade_count(ally_id))
 	var maxed: bool = lvl >= 4
-	var pet_capped: bool = lvl == 0 and distinct_owned >= MAX_DISTINCT_PETS
+	var pet_capped: bool = lvl == 0 and distinct_owned >= _effective_pet_cap()
 	var price_table: Array = _pet_price_table_for(ally_id)
 	var price: int = 0
 	if not price_table.is_empty():
@@ -2945,15 +2945,8 @@ func _on_augment_hovered(id: String, lvl: int, chip: Control) -> void:
 	_augment_tooltip.visible = true
 	# Posiciona à esquerda do chip (a coluna fica colada na borda direita).
 	var chip_global: Vector2 = chip.get_global_rect().position
-	var tip_size: Vector2 = _augment_tooltip.size
-	# Aguarda 1 frame pra size atualizar com novo conteúdo.
-	await get_tree().process_frame
-	tip_size = _augment_tooltip.size
-	var pos: Vector2 = Vector2(chip_global.x - tip_size.x - 16, chip_global.y)
-	# Clamp pra não sair da tela em cima.
-	pos.y = clampf(pos.y, 16.0, 1080.0 - tip_size.y - 16.0)
-	pos.x = maxf(pos.x, 16.0)
-	_augment_tooltip.position = pos
+	var tip_size: Vector2 = await _await_tooltip_size()
+	_apply_tooltip_pos(Vector2(chip_global.x - tip_size.x - 16.0, chip_global.y), tip_size)
 
 
 func _on_augment_unhovered() -> void:
@@ -3015,22 +3008,7 @@ func _show_card_tooltip(card: Control) -> void:
 	var body: String = header + "\n" + cat_line + "\n" + "\n".join(lines)
 	_augment_tooltip_label.text = body
 	_augment_tooltip.visible = true
-	# Posiciona à direita ou esquerda do card baseado em onde tá na tela.
-	await get_tree().process_frame
-	var card_rect: Rect2 = card.get_global_rect()
-	var tip_size: Vector2 = _augment_tooltip.size
-	var pos: Vector2
-	var card_center_x: float = card_rect.position.x + card_rect.size.x / 2.0
-	if card_center_x < 960.0:
-		# Card no lado esquerdo — tooltip à direita do card.
-		pos = Vector2(card_rect.position.x + card_rect.size.x + 16.0, card_rect.position.y)
-	else:
-		# Card no lado direito — tooltip à esquerda.
-		pos = Vector2(card_rect.position.x - tip_size.x - 16.0, card_rect.position.y)
-	# Clamp pra não sair da tela.
-	pos.x = clampf(pos.x, 16.0, 1920.0 - tip_size.x - 16.0)
-	pos.y = clampf(pos.y, 16.0, 1080.0 - tip_size.y - 16.0)
-	_augment_tooltip.position = pos
+	_position_card_tooltip(card)
 
 
 # ---------- Joker modal ----------
@@ -3568,18 +3546,15 @@ func _show_roulette_tooltip(card: Control) -> void:
 # Extraído do _show_joker_tooltip pra reuso (joker + roleta).
 func _position_card_tooltip(card: Control) -> void:
 	# Posicionamento mesmo padrão do tooltip normal.
-	await get_tree().process_frame
+	var tip_size: Vector2 = await _await_tooltip_size()
 	var card_rect: Rect2 = card.get_global_rect()
-	var tip_size: Vector2 = _augment_tooltip.size
-	var pos: Vector2
 	var card_center_x: float = card_rect.position.x + card_rect.size.x / 2.0
+	var pos: Vector2
 	if card_center_x < 960.0:
 		pos = Vector2(card_rect.position.x + card_rect.size.x + 16.0, card_rect.position.y)
 	else:
 		pos = Vector2(card_rect.position.x - tip_size.x - 16.0, card_rect.position.y)
-	pos.x = clampf(pos.x, 16.0, 1920.0 - tip_size.x - 16.0)
-	pos.y = clampf(pos.y, 16.0, 1080.0 - tip_size.y - 16.0)
-	_augment_tooltip.position = pos
+	_apply_tooltip_pos(pos, tip_size)
 
 
 func _ensure_augment_tooltip() -> void:
@@ -3719,9 +3694,29 @@ func _on_item_hovered(id: String, chip: Control) -> void:
 	_augment_tooltip_label.text = "[b]%s[/b]\n\n%s" % [title, desc]
 	_augment_tooltip.visible = true
 	var chip_global: Vector2 = chip.get_global_rect().position
+	var tip_size: Vector2 = await _await_tooltip_size()
+	_apply_tooltip_pos(Vector2(chip_global.x - tip_size.x - 16.0, chip_global.y), tip_size)
+
+
+# Cap de pets distintos compráveis = base + bônus de item (Adote Mais Um).
+func _effective_pet_cap() -> int:
+	return MAX_DISTINCT_PETS + InventoryItems.equipped_pet_slot_bonus()
+
+
+# Espera o layout do tooltip assentar (fit_content precisa de 1-2 frames) e
+# devolve o tamanho REAL (max entre .size e o minimo combinado). Evita medir
+# uma altura menor que o conteudo (causava overflow pra baixo da tela).
+func _await_tooltip_size() -> Vector2:
 	await get_tree().process_frame
-	var tip_size: Vector2 = _augment_tooltip.size
-	var pos: Vector2 = Vector2(chip_global.x - tip_size.x - 16, chip_global.y)
-	pos.y = clampf(pos.y, 16.0, 1080.0 - tip_size.y - 16.0)
-	pos.x = maxf(pos.x, 16.0)
+	await get_tree().process_frame
+	var sz: Vector2 = _augment_tooltip.size
+	var mn: Vector2 = _augment_tooltip.get_combined_minimum_size()
+	return Vector2(maxf(sz.x, mn.x), maxf(sz.y, mn.y))
+
+
+# Clampa o tooltip pra caber 100% na tela (1920x1080, margem 16). Se for maior
+# que a tela, ancora no topo/esquerda. maxf garante max >= min (sem degenerar).
+func _apply_tooltip_pos(pos: Vector2, tip_size: Vector2) -> void:
+	pos.x = clampf(pos.x, 16.0, maxf(16.0, 1920.0 - tip_size.x - 16.0))
+	pos.y = clampf(pos.y, 16.0, maxf(16.0, 1080.0 - tip_size.y - 16.0))
 	_augment_tooltip.position = pos

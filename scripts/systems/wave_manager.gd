@@ -998,6 +998,10 @@ func _finish_wave() -> void:
 			var rolled: int = randi_range(prange.x, prange.y)
 			var p_origin: Vector2 = (_p_fw as Node2D).global_position if _p_fw is Node2D else Vector2.INF
 			_p_fw.add_petals(rolled, p_origin)
+		# Dividendo Arcano (item): +N gold no fim de cada round.
+		var _gpr: int = InventoryItems.equipped_gold_per_round()
+		if _gpr > 0 and _p_fw.has_method("add_gold"):
+			_p_fw.add_gold(_gpr)
 	# Pós-boss: segura tudo (cleanup, magnet, tela "Wave Limpa") por
 	# `boss_kill_hold` segundos pras moedas dropadas pelo boss ficarem visíveis,
 	# saltarem e o player ter tempo de coletar/ver a animação.

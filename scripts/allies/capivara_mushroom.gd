@@ -85,7 +85,7 @@ func _apply_buff_to_player(player: Node) -> void:
 	# atk speed) continua igual.
 	var heal_mult: float = 0.5 if _is_boss_wave() else 1.0
 	if should_heal and player.has_method("heal"):
-		player.heal(heal_amount * heal_mult)
+		player.heal(heal_amount * heal_mult, true)
 	if should_speed and player.has_method("apply_capivara_speed_buff"):
 		player.apply_capivara_speed_buff(buff_speed_amount, buff_duration)
 	if lvl >= 3 and player.has_method("apply_capivara_atk_speed_buff"):

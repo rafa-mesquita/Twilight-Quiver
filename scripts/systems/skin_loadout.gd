@@ -280,6 +280,15 @@ const STAT_NO_ARROW_ROUND: StringName = &"no_arrow_round_done"
 # Total de inimigos mortos enquanto estavam vulneráveis pela Fúria da Maré
 # (debuff TideVulnerability ativo). Acumula entre runs — unlock da skin Nautica.
 const STAT_TIDE_KILLS: StringName = &"tide_vulnerable_kills_total"
+# Vida total curada POR ALIADO (capivara/arbusto). Acumula entre runs — unlock
+# do item Adote Mais Um (junto com STAT_ALLY_KILLS).
+const STAT_ALLY_HEAL: StringName = &"ally_heal_total"
+# Total de inimigos mortos por um Aliado (fontes em InventoryItems.ALLY_KILL_SOURCES).
+# Acumula entre runs — unlock do item Adote Mais Um.
+const STAT_ALLY_KILLS: StringName = &"ally_kills_total"
+# Total de gold gasto (player.spend_gold). Acumula entre runs — unlock do item
+# Dividendo Arcano.
+const STAT_GOLD_SPENT: StringName = &"gold_spent_total"
 # Set de boss IDs já abatidos (persistente entre runs). Armazenado como string
 # CSV no settings.cfg porque ConfigFile só aceita primitivos.
 const _KEY_BOSSES_KILLED_SET: String = "bosses_killed_set"
@@ -731,6 +740,16 @@ static func record_run(run_stats: Dictionary) -> Array:
 		set_stat(STAT_ACTIVE_SKILLS, get_stat(STAT_ACTIVE_SKILLS) + run_active_skills)
 	if run_tide_kills > 0:
 		set_stat(STAT_TIDE_KILLS, get_stat(STAT_TIDE_KILLS) + run_tide_kills)
+	# Itens desbloqueaveis: cura por aliado, kills de aliado, gold gasto.
+	var run_ally_heal: int = int(run_stats.get("ally_heal", 0))
+	if run_ally_heal > 0:
+		set_stat(STAT_ALLY_HEAL, get_stat(STAT_ALLY_HEAL) + run_ally_heal)
+	var run_ally_kills: int = int(run_stats.get("ally_kills", 0))
+	if run_ally_kills > 0:
+		set_stat(STAT_ALLY_KILLS, get_stat(STAT_ALLY_KILLS) + run_ally_kills)
+	var run_gold_spent: int = int(run_stats.get("gold_spent", 0))
+	if run_gold_spent > 0:
+		set_stat(STAT_GOLD_SPENT, get_stat(STAT_GOLD_SPENT) + run_gold_spent)
 	# Flag persistente: chegou ao Lv4 de algum elemental nesta run (unlock Skeleton).
 	if bool(run_stats.get("elemental_l4_reached", false)) and get_stat(STAT_ELEMENTAL_L4) < 1:
 		set_stat(STAT_ELEMENTAL_L4, 1)

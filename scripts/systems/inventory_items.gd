@@ -1,43 +1,76 @@
 class_name InventoryItems
 extends RefCounted
 
-# Catálogo de itens equipáveis do Inventário (buffs PRÉ-JOGO). O jogador equipa
-# itens e começa a run já com os efeitos aplicados. v1:
-#   - midnight_dagger (Adaga da Meia-Noite): começa com +1 de Dano.
-#   - golden_bow (Arco Dourado): começa com +1 de Velocidade de Ataque.
+# Catálogo de itens equipáveis (buffs PRÉ-JOGO) + sistema de DESBLOQUEIO análogo às
+# skins. Cada item tem um efeito e um requisito de unlock:
+#   - "default": sempre liberado (ex.: elemental_master — exemplo de item liberado).
+#   - "shop":    libera comprando na loja meta (ainda NÃO existe -> travado por ora).
+#   - "quest":   libera cumprindo requisitos (stats persistentes via SkinLoadout).
+# Itens liberados equipam (máx MAX_SLOTS); travados aparecem no inventário com visual
+# de bloqueio + requisito no hover (ver skin_select.gd) e NUNCA ficam ativos.
 #
-# Posse: por enquanto TODO item do catálogo é "possuído" (a loja meta que vai
-# gatear a posse de verdade vem depois). Equipados salvos em settings.cfg
-# [inventory] equipped (CSV de ids). Máx MAX_SLOTS equipados.
+# Equipados salvos em settings.cfg [inventory] equipped (CSV de ids).
 
 const _SETTINGS_PATH: String = "user://settings.cfg"
 const _SECTION: String = "inventory"
 const _KEY_EQUIPPED: String = "equipped"
 const MAX_SLOTS: int = 3
 
-# effect.type "start_status": aplica `amount` níveis de apply_upgrade(`status`)
-# no início da run.
+# DEV: em debug build, true libera TODO item (pra testar efeitos). Default FALSE pra
+# enxergar o estado travado no editor. Ignorado em release (lá vale o unlock real).
+const DEV_UNLOCK_ALL_ITEMS: bool = false
+
+# Fontes de kill consideradas "de Aliado" (creditadas via player.notify_kill_by_source).
+# Usado pra contar o stat ally_kills (quest do Adote Mais Um).
+const ALLY_KILL_SOURCES: Array[String] = [
+	"frostwisp", "ting_turret", "capivara_joe", "leno", "claudio_druida",
+]
+
+# effect.type:
+#   "start_status"           — aplica `amount` níveis de apply_upgrade(`status`) no início.
+#   "welcome_elemental_choice" — welcome upgrade vira escolha de elemental (wave_manager).
+#   "pet_slot"               — +`amount` slot(s) de aliado (lido por wave_shop).
+#   "gold_per_round"         — +`amount` gold no fim de cada round (lido por wave_manager).
 const ITEMS: Dictionary = {
 	"midnight_dagger": {
 		"name": "ITEM_MIDNIGHT_DAGGER_NAME",
 		"desc": "ITEM_MIDNIGHT_DAGGER_DESC",
 		"icon": "res://assets/Hud/itens/midnight_dagger.png",
 		"effect": {"type": "start_status", "status": "damage", "amount": 1},
+		"unlock": {"type": "shop"},
 	},
 	"golden_bow": {
 		"name": "ITEM_GOLDEN_BOW_NAME",
 		"desc": "ITEM_GOLDEN_BOW_DESC",
 		"icon": "res://assets/Hud/itens/golden_bow.png",
 		"effect": {"type": "start_status", "status": "attack_speed", "amount": 1},
+		"unlock": {"type": "shop"},
 	},
-	# Mestre Elemental: NÃO é start_status. Faz o upgrade de boas-vindas (pós-wave-1)
-	# virar uma escolha de 1 entre 3 elementais aleatórios (tratado no wave_manager
-	# via has_welcome_elemental_choice()).
 	"elemental_master": {
 		"name": "ITEM_ELEMENTAL_MASTER_NAME",
 		"desc": "ITEM_ELEMENTAL_MASTER_DESC",
 		"icon": "res://assets/Hud/itens/elemental_master.png",
 		"effect": {"type": "welcome_elemental_choice"},
+		"unlock": {"type": "default"},
+	},
+	"adopt_one_more": {
+		"name": "ITEM_ADOPT_ONE_MORE_NAME",
+		"desc": "ITEM_ADOPT_ONE_MORE_DESC",
+		"icon": "res://assets/Hud/itens/adopt_one_more.png",
+		"effect": {"type": "pet_slot", "amount": 1},
+		"unlock": {"type": "quest", "reqs": [
+			{"stat": &"ally_heal_total", "value": 1500, "label": "ITEM_REQ_ADOPT_HEAL"},
+			{"stat": &"ally_kills_total", "value": 1000, "label": "ITEM_REQ_ADOPT_KILLS"},
+		]},
+	},
+	"arcane_dividend": {
+		"name": "ITEM_ARCANE_DIVIDEND_NAME",
+		"desc": "ITEM_ARCANE_DIVIDEND_DESC",
+		"icon": "res://assets/Hud/itens/arcane_dividend.png",
+		"effect": {"type": "gold_per_round", "amount": 1},
+		"unlock": {"type": "quest", "reqs": [
+			{"stat": &"gold_spent_total", "value": 2500, "label": "ITEM_REQ_ARCANE_GOLD"},
+		]},
 	},
 }
 
@@ -46,13 +79,58 @@ static func all_ids() -> Array:
 	return ITEMS.keys()
 
 
-static func is_owned(_id: String) -> bool:
-	# v1: todo item definido é possuído (sem loja meta ainda).
-	return ITEMS.has(_id)
+static func get_icon_path(id: String) -> String:
+	return String(ITEMS.get(id, {}).get("icon", ""))
 
 
-# True se algum item equipado faz o upgrade de boas-vindas virar escolha de
-# elemental (Mestre Elemental). Lido pelo wave_manager no free upgrade.
+# True se o item está liberado (equipável). "default" sempre; "shop" travado até a
+# loja meta existir; "quest" depende dos stats persistentes (SkinLoadout).
+static func is_unlocked(id: String) -> bool:
+	var item: Dictionary = ITEMS.get(id, {})
+	if item.is_empty():
+		return false
+	var unlock: Dictionary = item.get("unlock", {"type": "default"})
+	var t: String = String(unlock.get("type", "default"))
+	if t == "default":
+		return true
+	if DEV_UNLOCK_ALL_ITEMS and OS.is_debug_build():
+		return true
+	match t:
+		"shop":
+			return false
+		"quest":
+			for req in unlock.get("reqs", []):
+				if SkinLoadout.get_stat(req.get("stat")) < int(req.get("value", 0)):
+					return false
+			return true
+	return false
+
+
+# Compat: "owned" agora é sinônimo de "unlocked".
+static func is_owned(id: String) -> bool:
+	return is_unlocked(id)
+
+
+# Linhas de "como liberar" pro tooltip. Cada entry: {label, met}. "default" -> vazio.
+static func get_unlock_reqs(id: String) -> Array:
+	var item: Dictionary = ITEMS.get(id, {})
+	var unlock: Dictionary = item.get("unlock", {"type": "default"})
+	var t: String = String(unlock.get("type", "default"))
+	match t:
+		"shop":
+			return [{"label": "ITEM_UNLOCK_SHOP", "met": false}]
+		"quest":
+			var out: Array = []
+			for req in unlock.get("reqs", []):
+				out.append({
+					"label": String(req.get("label", "")),
+					"met": SkinLoadout.get_stat(req.get("stat")) >= int(req.get("value", 0)),
+				})
+			return out
+	return []
+
+
+# True se algum item equipado faz o welcome upgrade virar escolha de elemental.
 static func has_welcome_elemental_choice() -> bool:
 	for id in get_equipped():
 		var eff: Dictionary = ITEMS.get(id, {}).get("effect", {})
@@ -61,6 +139,27 @@ static func has_welcome_elemental_choice() -> bool:
 	return false
 
 
+# Bônus de slots de pet vindo de itens equipados (effect pet_slot).
+static func equipped_pet_slot_bonus() -> int:
+	var bonus: int = 0
+	for id in get_equipped():
+		var eff: Dictionary = ITEMS.get(id, {}).get("effect", {})
+		if String(eff.get("type", "")) == "pet_slot":
+			bonus += int(eff.get("amount", 0))
+	return bonus
+
+
+# Gold extra no fim do round (soma dos itens equipados com gold_per_round).
+static func equipped_gold_per_round() -> int:
+	var g: int = 0
+	for id in get_equipped():
+		var eff: Dictionary = ITEMS.get(id, {}).get("effect", {})
+		if String(eff.get("type", "")) == "gold_per_round":
+			g += int(eff.get("amount", 0))
+	return g
+
+
+# Equipados liberados (filtra ids órfãos E itens travados — nunca ficam ativos).
 static func get_equipped() -> Array:
 	var cfg := ConfigFile.new()
 	if cfg.load(_SETTINGS_PATH) != OK:
@@ -70,7 +169,7 @@ static func get_equipped() -> Array:
 		return []
 	var out: Array = []
 	for s in raw.split(",", false):
-		if ITEMS.has(s):  # ignora ids órfãos (item removido do catálogo)
+		if ITEMS.has(s) and is_unlocked(s):
 			out.append(s)
 	return out
 
@@ -86,10 +185,10 @@ static func set_equipped(ids: Array) -> void:
 	cfg.save(_SETTINGS_PATH)
 
 
-# Alterna o estado de equipado. Retorna true se ficou EQUIPADO, false se
-# desequipou OU se não coube (slots cheios).
+# Alterna o estado de equipado. Só itens LIBERADOS. Retorna true se ficou EQUIPADO,
+# false se desequipou OU não coube (slots cheios) OU está travado.
 static func toggle_equipped(id: String) -> bool:
-	if not is_owned(id):
+	if not is_unlocked(id):
 		return false
 	var eq: Array = get_equipped()
 	if id in eq:
@@ -103,7 +202,7 @@ static func toggle_equipped(id: String) -> bool:
 	return true
 
 
-# Aplica os efeitos dos itens equipados no player no INÍCIO da run.
+# Aplica os efeitos start_status dos itens equipados no INÍCIO da run.
 static func apply_to_player(player: Node) -> void:
 	if player == null:
 		return
@@ -114,7 +213,3 @@ static func apply_to_player(player: Node) -> void:
 			var status: String = String(eff.get("status", ""))
 			for _i in int(eff.get("amount", 0)):
 				player.apply_upgrade(status)
-
-
-static func get_icon_path(id: String) -> String:
-	return String(ITEMS.get(id, {}).get("icon", ""))
