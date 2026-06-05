@@ -45,3 +45,4 @@ miro_response.json
 
 # Bug reports / vídeos de repro (dev only)
 bug report/
+.superpowers/
