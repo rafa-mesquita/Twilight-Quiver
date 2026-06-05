@@ -1678,6 +1678,10 @@ func _grant_free_owned_upgrade() -> void:
 			continue
 		if cur >= 4:
 			continue
+		# No Limite/itens: nao sobe upgrade que so veio do item (sem investimento do
+		# player alem do baseline). Ex: gold_magnet L2 do No Limite nao vira L3.
+		if cur <= InventoryItems.start_granted_amount(id):
+			continue
 		pool.append(entry)
 	if pool.is_empty():
 		return

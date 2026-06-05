@@ -227,6 +227,17 @@ static func disables_shop_hp() -> bool:
 	return false
 
 
+# Quantos niveis de um status os itens equipados ja deram no inicio (start_status).
+# Usado pra os presentes de boas-vindas NAO subirem um upgrade que so veio do item.
+static func start_granted_amount(status_id: String) -> int:
+	var total: int = 0
+	for id in get_equipped():
+		for eff in _item_effects(id):
+			if String(eff.get("type", "")) == "start_status" and String(eff.get("status", "")) == status_id:
+				total += int(eff.get("amount", 0))
+	return total
+
+
 # Bônus de slots de pet vindo de itens equipados (effect pet_slot).
 static func equipped_pet_slot_bonus() -> int:
 	var bonus: int = 0

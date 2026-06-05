@@ -13,10 +13,10 @@ const _IDLE_REGION: Rect2 = Rect2(0, 0, 32, 32)
 
 # Catálogo: cat ("skins"|"itens"), kind ("skin"|"item"), id, price, desc (key opcional).
 const CATALOG: Array[Dictionary] = [
-	{"cat": "skins", "kind": "skin", "id": "World_Cup", "price": 120, "desc": "LOJA_DESC_WORLD_CUP"},
-	{"cat": "skins", "kind": "part", "id": "Red_Hair", "slot": "hair", "price": 60, "name_key": "LOJA_NAME_RED_HAIR", "desc": "LOJA_DESC_RED_HAIR"},
-	{"cat": "itens", "kind": "item", "id": "midnight_dagger", "price": 200},
-	{"cat": "itens", "kind": "item", "id": "golden_bow", "price": 200},
+	{"cat": "skins", "kind": "skin", "id": "World_Cup", "price": 350, "desc": "LOJA_DESC_WORLD_CUP"},
+	{"cat": "skins", "kind": "part", "id": "Red_Hair", "slot": "hair", "price": 150, "name_key": "LOJA_NAME_RED_HAIR", "desc": "LOJA_DESC_RED_HAIR"},
+	{"cat": "itens", "kind": "item", "id": "midnight_dagger", "price": 750},
+	{"cat": "itens", "kind": "item", "id": "golden_bow", "price": 750},
 ]
 const CATEGORIES: Array[Dictionary] = [
 	{"key": "skins", "label": "LOJA_CAT_SKINS"},
