@@ -29,6 +29,11 @@ normais). Pétala é a moeda **estratégica/premium**. As duas convivem; gold N�
    **aleatório dentro de uma faixa fixa por round** (ex.: round 1 = 1–2 pétalas).
    Mobs têm chance **bem rara** de dropar pétala. A HUD mostra o saldo ao lado do
    gold, **começando do zero a cada run**.
+   - **Duração da pétala dropada por mob:** fica no chão com a mesma duração que
+     uma moeda sob **Chuva de Coins L2** (= dobro da duração base de moeda; hoje
+     `9.5s × 2 = ~19s`, com o mesmo pisca-alerta no fim). Janela de coleta
+     generosa de propósito, já que o drop é raro — não depende do jogador ter o
+     upgrade. (Pétala de level-up vai direto pro saldo, sem cair no chão.)
 2. **Gasto in-game:** a antiga loja de estruturas **morre e renasce** como a
    **loja de pétalas** — estruturas + itens fortes (ex.: second-life,
    super-upgrade de upgrade), todos por pétala.
