@@ -235,12 +235,9 @@ func _on_body_entered(body: Node) -> void:
 		return
 	if not body.has_method("add_gold"):
 		return
-	# Fenda Crepuscular: durante o blink o player atravessa as moedas no caminho.
-	# NÃO coleta em trânsito — só as do destino (varridas no fim do blink por
-	# player._fenda_collect_destination_coins). Sem isso a fenda sugaria a linha
-	# A→B inteira, ficando forte demais.
-	if body.get("_fenda_teleporting") == true:
-		return
+	# Fenda Crepuscular: agora COLETA as moedas no caminho do blink também (pedido
+	# do user — a fenda voltou a pegar coins). O sweep do destino segue como
+	# backstop pro ponto de chegada.
 	collect(body)
 
 

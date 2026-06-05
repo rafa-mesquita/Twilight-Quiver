@@ -26,6 +26,8 @@ const _MENU_SCENES: Array[String] = [
 
 var _music: AudioStreamPlayer
 var _click: AudioStreamPlayer
+# SFX one-shot tocado manualmente (ex: soltar item no inventário) via play_drop().
+var _drop: AudioStreamPlayer
 
 
 func _ready() -> void:
@@ -34,6 +36,9 @@ func _ready() -> void:
 	for path in _list_audio_files():
 		# SFX de clique = arquivo cujo nome tem "click"/"sound"/"sfx"; música = o resto.
 		var fname: String = path.get_file().to_lower()
+		# "drop ..." = SFX one-shot tocado manualmente (play_drop), NÃO é música/clique.
+		if fname.find("drop") != -1:
+			continue
 		if fname.find("click") != -1 or fname.find("sound") != -1 or fname.find("sfx") != -1:
 			click_stream = load(path) as AudioStream
 		else:
@@ -54,6 +59,15 @@ func _ready() -> void:
 		_set_loop(click_stream, false)
 		_click.stream = click_stream
 	add_child(_click)
+
+	_drop = AudioStreamPlayer.new()
+	_drop.bus = &"SFX"
+	_drop.volume_db = _CLICK_VOLUME_DB
+	var drop_stream: AudioStream = load("res://audios/Menu/sound drop 2.mp3") as AudioStream
+	if drop_stream != null:
+		_set_loop(drop_stream, false)
+		_drop.stream = drop_stream
+	add_child(_drop)
 
 	# Conecta depois de adicionar os players próprios (pra não auto-disparar).
 	get_tree().node_added.connect(_on_node_added)
@@ -97,6 +111,18 @@ func _on_button_pressed() -> void:
 	var cur: Node = get_tree().current_scene
 	if cur != null and _MENU_SCENES.has(cur.scene_file_path):
 		_click.play()
+
+
+# Toca o SFX de clique padrão sob demanda (ex: pegar item no inventário).
+func play_click() -> void:
+	if _click != null and _click.stream != null:
+		_click.play()
+
+
+# Toca o SFX de soltar item (drop item.mp3) sob demanda.
+func play_drop() -> void:
+	if _drop != null and _drop.stream != null:
+		_drop.play()
 
 
 func _update_music(scene_path: String) -> void:

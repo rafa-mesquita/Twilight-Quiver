@@ -1476,9 +1476,106 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 ]
 
 
+signal _elemental_choice_picked(id: String)
+# Elementais sorteados pela escolha do Mestre Elemental (item do inventário).
+const _ELEMENTAL_IDS: Array[String] = ["fire_arrow", "curse_arrow", "chain_lightning", "ice_arrow", "stone_arrow", "tide_arrow"]
+
+
+func _grant_elemental_choice(player: Node) -> void:
+	# Sorteia 3 elementais distintos e deixa o player escolher 1 (aplica no L1).
+	var pool: Array = _ELEMENTAL_IDS.duplicate()
+	pool.shuffle()
+	var three: Array = pool.slice(0, 3)
+	var chosen: String = await _show_elemental_choice_popup(three)
+	if chosen != "" and player.has_method("apply_upgrade"):
+		player.apply_upgrade(chosen)
+
+
+func _show_elemental_choice_popup(ids: Array) -> String:
+	var layer := CanvasLayer.new()
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	layer.layer = 50
+	var bg := ColorRect.new()
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.color = Color(0, 0, 0, 0.82)
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	layer.add_child(bg)
+	var font: Font = load("res://font/Silver.ttf")
+	var title := Label.new()
+	title.set_anchors_preset(Control.PRESET_CENTER)
+	title.position = Vector2(-800, -320)
+	title.size = Vector2(1600, 100)
+	title.text = tr("HUD_ELEMENTAL_CHOICE_TITLE")
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3, 1.0))
+	if font != null:
+		title.add_theme_font_override("font", font)
+	title.add_theme_font_size_override("font_size", 56)
+	bg.add_child(title)
+	var card_w: float = 260.0
+	var card_h: float = 322.0
+	var sep: float = 44.0
+	var total_w: float = card_w * 3.0 + sep * 2.0
+	var hb := HBoxContainer.new()
+	hb.set_anchors_preset(Control.PRESET_CENTER)
+	hb.add_theme_constant_override("separation", int(sep))
+	hb.position = Vector2(-total_w / 2.0, -card_h / 2.0)
+	hb.size = Vector2(total_w, card_h)
+	bg.add_child(hb)
+	for eid in ids:
+		var seid: String = String(eid)
+		var btn := Button.new()
+		btn.custom_minimum_size = Vector2(card_w, card_h)
+		btn.flat = true
+		btn.focus_mode = Control.FOCUS_NONE
+		btn.pivot_offset = Vector2(card_w, card_h) * 0.5  # escala a partir do centro
+		var tex := TextureRect.new()
+		tex.set_anchors_preset(Control.PRESET_FULL_RECT)
+		tex.texture = _reward_load_card_texture(seid, "upgrade", 1)
+		tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tex.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tex.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		btn.add_child(tex)
+		# Hover: cresce um pouco (feedback visual).
+		btn.mouse_entered.connect(func() -> void:
+			if is_instance_valid(btn):
+				btn.scale = Vector2(1.08, 1.08))
+		btn.mouse_exited.connect(func() -> void:
+			if is_instance_valid(btn):
+				btn.scale = Vector2.ONE)
+		# Escolher: som de compra + resolve.
+		btn.pressed.connect(func() -> void:
+			_play_buy_sfx()
+			_elemental_choice_picked.emit(seid))
+		hb.add_child(btn)
+	get_tree().current_scene.add_child(layer)
+	var chosen: String = await _elemental_choice_picked
+	if is_instance_valid(layer):
+		layer.queue_free()
+	return chosen
+
+
+func _play_buy_sfx() -> void:
+	# SFX de compra (mesmo do shop). Tocado no current_scene pra sobreviver ao
+	# queue_free do popup (senão o som corta).
+	var p := AudioStreamPlayer.new()
+	p.bus = &"SFX"
+	p.stream = load("res://audios/effects/buy_1.mp3") as AudioStream
+	p.volume_db = -16.0  # mesmo volume do shop (_play_buy_sound)
+	get_tree().current_scene.add_child(p)
+	p.play()
+	p.finished.connect(p.queue_free)
+
+
 func _grant_free_random_upgrade() -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	if player == null or not player.has_method("apply_upgrade"):
+		return
+	# Mestre Elemental (item do inventário): substitui o presente de boas-vindas
+	# por uma ESCOLHA de 1 entre 3 elementais aleatórios.
+	if InventoryItems.has_welcome_elemental_choice():
+		await _grant_elemental_choice(player)
 		return
 	# Filtra pares exclusivos:
 	#  - perfuracao ↔ ricochet_arrow (perfura e ricocheia não combinam)
@@ -1496,6 +1593,11 @@ func _grant_free_random_upgrade() -> void:
 	var pool: Array[Dictionary] = []
 	for entry in FREE_UPGRADE_POOL:
 		var id: String = entry["id"]
+		# Itens de status (Adaga = +1 Dano, Arco Dourado = +1 Vel. Ataque) já dão
+		# o status no L1 no início da run. O upgrade de boas-vindas NÃO pode ser
+		# esse status (seria L2) — geral: pula qualquer upgrade que o player já tem.
+		if player.has_method("get_upgrade_count") and int(player.get_upgrade_count(id)) > 0:
+			continue
 		if id == "perfuracao" and has_ric:
 			continue
 		if id == "ricochet_arrow" and has_perf:
@@ -1538,6 +1640,8 @@ const FREE_REWARD_CARD_PATHS: Dictionary = {
 	"life_steal": "res://assets/Hud/shop/upgrade/life steal.png",
 	"fire_arrow": "res://assets/Hud/shop/upgrade/fire_arrow2.png",
 	"ice_arrow": "res://assets/Hud/shop/upgrade/ice arrow/sangue frio card design-Sheet.png",
+	"stone_arrow": "res://assets/Hud/shop/upgrade/disparo do pedra/disparo de pedra card-Sheet.png",
+	"tide_arrow": "res://assets/Hud/shop/upgrade/furia da maré/furia da maré.png",
 	"boomerang": "res://assets/Hud/shop/upgrade/boomerang/boomerang card design.png",
 	"critical_chance": "res://assets/Hud/shop/upgrade/flechas criticas/felchas criticas card design.png",
 	"tiger_claws": "res://assets/Hud/shop/upgrade/garras de tigre/garras de tigre hud-Sheet.png",

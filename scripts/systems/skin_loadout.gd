@@ -71,9 +71,9 @@ const KIT_PART_OVERRIDE: Dictionary = {
 	# Nautica: legs/shirt/quiver/cape/hair/bow próprios; corpo/rosto = Default
 	# (cor de pele default, sem corpo próprio gateado na aba Corpo).
 	"Nautica":   {&"body": "Default"},
-	# World_Cup: legs/shirt/quiver/cape/hair/bow próprios; corpo/rosto = Default
-	# (mesmo padrão da Nautica/Sputnik).
-	"World_Cup": {&"body": "Default"},
+	# World_Cup: legs/shirt/quiver/cape/hair/bow próprios; corpo/rosto = a cor de
+	# pele do Hawk_Destiny (pedido do user).
+	"World_Cup": {&"body": "Hawk_Destiny"},
 }
 
 # Peças PARTILHADAS entre kits (resolvidas via KIT_PART_OVERRIDE), NÃO kits

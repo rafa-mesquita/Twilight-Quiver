@@ -596,6 +596,10 @@ func _ready() -> void:
 	# usuário ter peças configuradas em assets/player/skin_parts/ e selecionadas
 	# pela UI de skin.
 	SkinLoadout.apply_to(self)
+	# Itens equipáveis do inventário (buffs pré-jogo): aplica os efeitos no
+	# início da run (ex: Adaga = +1 Dano, Arco Dourado = +1 Vel. Ataque). Antes
+	# do free upgrade da wave 1, que exclui status já dados por item.
+	InventoryItems.apply_to_player(self)
 	# Birthday event: chapéu de festa pro eliyeolio durante a janela do evento.
 	_apply_birthday_hat()
 

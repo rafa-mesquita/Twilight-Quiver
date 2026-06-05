@@ -11,7 +11,7 @@ COMMON_LOCKED,Bloqueada,Locked,Bloqueada,Verrouillée
 MENU_TITLE,TWILIGHT QUIVER,TWILIGHT QUIVER,TWILIGHT QUIVER,TWILIGHT QUIVER
 MENU_SUBTITLE,top-down archer roguelike,top-down archer roguelike,roguelike de arquero top-down,roguelike d'archer en vue de dessus
 MENU_START,Iniciar Jogo,Start Game,Empezar,Commencer
-MENU_PLAYER,Skins,Skins,Skins,Skins
+MENU_PLAYER,Inventário,Inventory,Inventario,Inventaire
 MENU_LEADERBOARD,Leaderboard,Leaderboard,Clasificación,Classement
 MENU_SETTINGS,Configurações,Settings,Ajustes,Paramètres
 MENU_DEV_MODE,Dev Mode,Dev Mode,Modo Dev,Mode Dev
@@ -51,7 +51,7 @@ LEADERBOARD_COL_DAMAGE,Dano,Damage,Daño,Dégâts
 LEADERBOARD_COL_VERSION,Versão,Version,Versión,Version
 LEADERBOARD_NO_SCORES,Nenhum score nessa versão.,No scores for this version.,Sin puntuaciones para esta versión.,Aucun score pour cette version.
 LEADERBOARD_ERROR,Erro: %s,Error: %s,Error: %s,Erreur : %s
-PLAYER_TITLE,PLAYER,PLAYER,PERSONAJE,PERSONNAGE
+PLAYER_TITLE,INVENTÁRIO,INVENTORY,INVENTARIO,INVENTAIRE
 PLAYER_PROGRESS_HEADER,PROGRESSO,PROGRESS,PROGRESO,PROGRÈS
 PLAYER_EMPTY,"Nenhuma skin disponível.
 Drop PNGs em assets/player/<slot>/ pra criar variantes.","No skins available.
@@ -67,6 +67,17 @@ PLAYER_SLOT_QUIVER,Aljava,Quiver,Aljaba,Carquois
 PLAYER_SLOT_HAIR,Cabelo,Hair,Cabello,Cheveux
 PLAYER_SLOT_BOW,Arco,Bow,Arco,Arc
 PLAYER_SLOT_KITS,Kits,Kits,Kits,Kits
+INVENTORY_ITEMS_TAB,Itens,Items,Objetos,Objets
+INVENTORY_MODE_SKINS,Skins,Skins,Skins,Skins
+INVENTORY_MODE_EQUIP,Equipamentos,Equipment,Equipamiento,Équipement
+INVENTORY_EQUIPPED,Equipado,Equipped,Equipado,Équipé
+INVENTORY_EQUIP,Equipar,Equip,Equipar,Équiper
+ITEM_MIDNIGHT_DAGGER_NAME,Adaga da Meia-Noite,Midnight Dagger,Daga de Medianoche,Dague de Minuit
+ITEM_MIDNIGHT_DAGGER_DESC,Começa a run com 1 status de Dano,Start the run with 1 Damage status,Empieza la partida con 1 estado de Daño,Commencez la partie avec 1 statut de Dégâts
+ITEM_GOLDEN_BOW_NAME,Arco Dourado,Golden Bow,Arco Dorado,Arc Doré
+ITEM_GOLDEN_BOW_DESC,Começa a run com 1 status de Velocidade de Ataque,Start the run with 1 Attack Speed status,Empieza la partida con 1 estado de Velocidad de Ataque,Commencez la partie avec 1 statut de Vitesse d'Attaque
+ITEM_ELEMENTAL_MASTER_NAME,Mestre Elemental,Elemental Master,Maestro Elemental,Maître Élémentaire
+ITEM_ELEMENTAL_MASTER_DESC,No presente de boas-vindas você escolhe 1 de 3 elementais,On the welcome gift you choose 1 of 3 elementals,En el regalo de bienvenida eliges 1 de 3 elementales,Dans le cadeau de bienvenue vous choisissez 1 élémentaire sur 3
 PLAYER_STAT_MAX_WAVE,Wave máxima,Max raid,Raid máximo,Raid max
 PLAYER_STAT_KILLS,Inimigos mortos,Enemies killed,Enemigos eliminados,Ennemis tués
 PLAYER_STAT_DAMAGE,Dano causado,Damage dealt,Daño causado,Dégâts infligés
@@ -402,6 +413,7 @@ SHOP_CD_DESC_2,Os ataques do Cláudio passam a te curar +25 HP,Claudio's attacks
 SHOP_CD_DESC_3,+1 cópia do Cláudio e a cura sobe para +30 HP,+1 Claudio copy and the heal rises to +30 HP,+1 copia de Claudio y la cura sube a +30 HP,+1 copie de Claudio et le soin passe à +30 PV
 SHOP_CD_DESC_4,Cláudio ganha +150 HP e mais dano e velocidade de ataque,Claudio gains +150 HP and more damage and attack speed,Claudio gana +150 HP y más daño y velocidad de ataque,Claudio gagne +150 PV et plus de dégâts et de vitesse d'attaque
 HUD_FREE_UPGRADE_TITLE,BÔNUS DE BOAS-VINDAS,WELCOME BONUS,BONUS DE BIENVENIDA,BONUS DE BIENVENUE
+HUD_ELEMENTAL_CHOICE_TITLE,ESCOLHA UM ELEMENTAL DE BOAS-VINDAS,CHOOSE A WELCOME ELEMENTAL,ELIGE UN ELEMENTAL DE BIENVENIDA,CHOISISSEZ UN ÉLÉMENTAIRE DE BIENVENUE
 HUD_FREE_PET_TITLE,ALIADO GRÁTIS!,FREE ALLY!,¡ALIADO GRATIS!,ALLIE GRATUIT !
 SHOP_UPG_DAMAGE,Dano,Damage,Daño,Dégâts
 SHOP_UPG_ATTACK_SPEED,Velocidade de Ataque,Attack Speed,Velocidad de Ataque,Vitesse d'Attaque

@@ -88,6 +88,18 @@ var _face_badge: Label
 var _req_label: Label
 var _last_locked_quest_key: String = ""
 var _last_unlocked_quest_key: String = ""
+var _inv_mode: String = "skins"
+var _mode_bar: HBoxContainer = null
+var _mode_skins_btn: Button = null
+var _mode_equip_btn: Button = null
+var _equip_panel: Control = null
+# Ícone sendo arrastado (escondido durante o drag → sensação de "mover"; restaurado
+# no _process se o drag terminar sem drop válido).
+var _dragging_icon: Control = null
+# Tooltip custom de item (hover) — o tooltip default não aparece com o cursor
+# custom; este é um painel próprio mostrado no mouse_entered.
+var _item_tip_panel: PanelContainer = null
+var _item_tip_label: Label = null
 
 
 func _ready() -> void:
@@ -115,6 +127,10 @@ func _ready() -> void:
 	stats_vbox.hide()
 	#_build_stats_panel()
 	_build_tabs()
+	_build_petal_bank_display()
+	_build_mode_bar()
+	_build_equip_panel()
+	_set_inv_mode("skins")
 	# Abre na tab de Kits se existir, senão no primeiro slot com peças.
 	var first_slot: StringName = _KIT_SLOT if not _list_available_kits().is_empty() else _first_slot_with_parts()
 	if first_slot != &"":
@@ -776,3 +792,289 @@ func _on_save() -> void:
 
 func _on_back() -> void:
 	get_tree().change_scene_to_file(_MAIN_MENU_PATH)
+
+
+# ---------- Inventário: modos (Skins / Equipamentos) + banco ----------
+
+func _build_petal_bank_display() -> void:
+	var holder := Control.new()
+	holder.name = "PetalBankDisplay"
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	holder.offset_left = -260.0
+	holder.offset_top = 24.0
+	holder.offset_right = -24.0
+	holder.offset_bottom = 70.0
+	add_child(holder)
+	var icon := Sprite2D.new()
+	icon.texture = load("res://assets/Hud/petals.png") as Texture2D
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.position = Vector2(16, 22)
+	icon.scale = Vector2(1.8, 1.8)
+	holder.add_child(icon)
+	var lbl := Label.new()
+	lbl.offset_left = 40.0
+	lbl.offset_right = 240.0
+	lbl.offset_bottom = 46.0
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	if _font != null:
+		lbl.add_theme_font_override("font", _font)
+	lbl.add_theme_font_size_override("font_size", 34)
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.62, 0.82, 1.0))
+	lbl.text = str(PetalBank.get_total())
+	holder.add_child(lbl)
+
+
+func _build_mode_bar() -> void:
+	var edit: Node = tabs_container.get_parent()
+	_mode_bar = HBoxContainer.new()
+	_mode_bar.name = "ModeBar"
+	_mode_bar.add_theme_constant_override("separation", 8)
+	edit.add_child(_mode_bar)
+	edit.move_child(_mode_bar, 0)
+	_mode_skins_btn = _make_mode_button("INVENTORY_MODE_SKINS", "skins")
+	_mode_equip_btn = _make_mode_button("INVENTORY_MODE_EQUIP", "equip")
+	_mode_bar.add_child(_mode_skins_btn)
+	_mode_bar.add_child(_mode_equip_btn)
+
+
+func _make_mode_button(key: String, mode: String) -> Button:
+	var b := Button.new()
+	b.text = tr(key)
+	b.custom_minimum_size = Vector2(0, 56)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.focus_mode = Control.FOCUS_NONE
+	if _font != null:
+		b.add_theme_font_override("font", _font)
+	b.add_theme_font_size_override("font_size", 30)
+	b.pressed.connect(_set_inv_mode.bind(mode))
+	return b
+
+
+func _set_inv_mode(mode: String) -> void:
+	_inv_mode = mode
+	var is_skins: bool = mode == "skins"
+	tabs_container.visible = is_skins
+	cards_scroll.visible = is_skins
+	if not is_skins:
+		empty_label.visible = false
+	if _equip_panel != null:
+		_equip_panel.visible = not is_skins
+		if not is_skins:
+			_refresh_equip_ui()
+	var on := Color(1, 0.92, 0.4, 1)
+	var off := Color(0.7, 0.7, 0.85, 1)
+	if _mode_skins_btn != null:
+		_mode_skins_btn.add_theme_color_override("font_color", on if is_skins else off)
+	if _mode_equip_btn != null:
+		_mode_equip_btn.add_theme_color_override("font_color", off if is_skins else on)
+
+
+# ---------- Equipamentos (slots + drag-and-drop) ----------
+
+func _build_equip_panel() -> void:
+	var edit: Node = tabs_container.get_parent()
+	_equip_panel = HBoxContainer.new()
+	_equip_panel.name = "EquipPanel"
+	_equip_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_equip_panel.add_theme_constant_override("separation", 24)
+	edit.add_child(_equip_panel)
+	# Coluna VERTICAL dos 3 slots (à direita do preview da skin).
+	var slots_row := VBoxContainer.new()
+	slots_row.name = "SlotsRow"
+	slots_row.add_theme_constant_override("separation", 14)
+	slots_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_equip_panel.add_child(slots_row)
+	# Área de itens possuídos à DIREITA dos slots (drop zone pra desequipar).
+	var owned_panel := PanelContainer.new()
+	owned_panel.name = "OwnedPanel"
+	owned_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	owned_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var osb := StyleBoxFlat.new()
+	osb.bg_color = Color(0.08, 0.07, 0.11, 0.6)
+	osb.set_corner_radius_all(6)
+	osb.content_margin_left = 12.0
+	osb.content_margin_top = 12.0
+	osb.content_margin_right = 12.0
+	osb.content_margin_bottom = 12.0
+	owned_panel.add_theme_stylebox_override("panel", osb)
+	owned_panel.set_drag_forwarding(Callable(), _owned_can_drop, _owned_drop)
+	_equip_panel.add_child(owned_panel)
+	var owned_grid := GridContainer.new()
+	owned_grid.name = "OwnedGrid"
+	owned_grid.columns = 4
+	owned_grid.add_theme_constant_override("h_separation", 12)
+	owned_grid.add_theme_constant_override("v_separation", 12)
+	owned_panel.add_child(owned_grid)
+	_equip_panel.visible = false
+
+
+func _refresh_equip_ui() -> void:
+	if _equip_panel == null:
+		return
+	var slots_row: Node = _equip_panel.get_node("SlotsRow")
+	for c in slots_row.get_children():
+		c.queue_free()
+	var equipped: Array = InventoryItems.get_equipped()
+	for idx in InventoryItems.MAX_SLOTS:
+		var eid: String = String(equipped[idx]) if idx < equipped.size() else ""
+		slots_row.add_child(_make_slot(idx, eid))
+	var owned_grid: Node = _equip_panel.get_node("OwnedPanel/OwnedGrid")
+	for c in owned_grid.get_children():
+		c.queue_free()
+	for id in InventoryItems.all_ids():
+		var sid: String = String(id)
+		if InventoryItems.is_owned(sid) and not InventoryItems.is_equipped(sid):
+			owned_grid.add_child(_make_owned_item(sid))
+
+
+func _make_item_texture(id: String, box: float) -> TextureRect:
+	var item: Dictionary = InventoryItems.ITEMS.get(id, {})
+	var t := TextureRect.new()
+	t.texture = load(String(item.get("icon", ""))) as Texture2D
+	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_SCALE
+	t.custom_minimum_size = Vector2(box, box)
+	return t
+
+
+func _item_tooltip(id: String) -> String:
+	var item: Dictionary = InventoryItems.ITEMS.get(id, {})
+	return tr(String(item.get("name", id))) + "\n" + tr(String(item.get("desc", "")))
+
+
+func _ensure_item_tip() -> void:
+	if _item_tip_panel != null:
+		return
+	_item_tip_panel = PanelContainer.new()
+	_item_tip_panel.name = "ItemTooltip"
+	_item_tip_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_item_tip_panel.z_index = 300
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.08, 0.06, 0.12, 0.97)
+	sb.border_color = Color(0.6, 0.45, 0.8, 1)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(5)
+	sb.content_margin_left = 12.0
+	sb.content_margin_right = 12.0
+	sb.content_margin_top = 8.0
+	sb.content_margin_bottom = 8.0
+	_item_tip_panel.add_theme_stylebox_override("panel", sb)
+	_item_tip_label = Label.new()
+	if _font != null:
+		_item_tip_label.add_theme_font_override("font", _font)
+	_item_tip_label.add_theme_font_size_override("font_size", 22)
+	_item_tip_label.add_theme_color_override("font_color", Color(0.95, 0.9, 1, 1))
+	_item_tip_panel.add_child(_item_tip_label)
+	add_child(_item_tip_panel)
+	_item_tip_panel.visible = false
+
+
+func _show_item_tooltip(id: String) -> void:
+	_ensure_item_tip()
+	_item_tip_label.text = _item_tooltip(id)
+	_item_tip_panel.visible = true
+	_position_item_tip()
+
+
+func _hide_item_tooltip() -> void:
+	if _item_tip_panel != null:
+		_item_tip_panel.visible = false
+
+
+func _position_item_tip() -> void:
+	if _item_tip_panel == null or not _item_tip_panel.visible:
+		return
+	var mp: Vector2 = get_global_mouse_position()
+	var sz: Vector2 = _item_tip_panel.size
+	var vp: Vector2 = get_viewport_rect().size
+	var pos: Vector2 = mp + Vector2(22, 18)
+	pos.x = clampf(pos.x, 8.0, maxf(8.0, vp.x - sz.x - 8.0))
+	pos.y = clampf(pos.y, 8.0, maxf(8.0, vp.y - sz.y - 8.0))
+	_item_tip_panel.global_position = pos
+
+
+func _make_owned_item(id: String) -> Control:
+	var t := _make_item_texture(id, 88.0)
+	t.mouse_filter = Control.MOUSE_FILTER_STOP
+	t.mouse_entered.connect(_show_item_tooltip.bind(id))
+	t.mouse_exited.connect(_hide_item_tooltip)
+	t.set_drag_forwarding(_get_item_drag_data.bind(id, "owned", t), Callable(), Callable())
+	return t
+
+
+func _make_slot(idx: int, equipped_id: String) -> Control:
+	var slot := PanelContainer.new()
+	slot.custom_minimum_size = Vector2(104, 104)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.10, 0.09, 0.14, 0.9)
+	sb.set_corner_radius_all(6)
+	sb.set_border_width_all(2)
+	sb.border_color = Color(0.45, 0.42, 0.6, 1)
+	slot.add_theme_stylebox_override("panel", sb)
+	slot.set_drag_forwarding(Callable(), _slot_can_drop, _slot_drop)
+	if equipped_id != "":
+		var t := _make_item_texture(equipped_id, 88.0)
+		t.mouse_filter = Control.MOUSE_FILTER_STOP
+		t.mouse_entered.connect(_show_item_tooltip.bind(equipped_id))
+		t.mouse_exited.connect(_hide_item_tooltip)
+		t.set_drag_forwarding(_get_item_drag_data.bind(equipped_id, "slot", t), Callable(), Callable())
+		slot.add_child(t)
+	return slot
+
+
+func _make_drag_preview(id: String) -> Control:
+	# Preview do mesmo tamanho do ícone (88), CENTRADO no cursor (filho deslocado
+	# -metade) — senão o Godot ancora o canto superior-esquerdo no cursor.
+	var root := Control.new()
+	var box: float = 88.0
+	var t := _make_item_texture(id, box)
+	t.size = Vector2(box, box)
+	t.position = Vector2(-box / 2.0, -box / 2.0)
+	root.add_child(t)
+	return root
+
+
+func _get_item_drag_data(_at: Vector2, id: String, source: String, ctrl: Control) -> Variant:
+	MenuAudio.play_click()  # som padrão ao PEGAR o item
+	_hide_item_tooltip()  # esconde o tooltip enquanto arrasta
+	set_drag_preview(_make_drag_preview(id))
+	# Esconde o ícone de origem enquanto arrasta (parece que MOVE, não duplica).
+	if is_instance_valid(ctrl):
+		ctrl.modulate.a = 0.0
+		_dragging_icon = ctrl
+	return {"id": id, "source": source}
+
+
+func _process(_delta: float) -> void:
+	# Restaura o ícone escondido quando o drag termina sem drop válido (drop
+	# válido rebuilda a UI e o ícone antigo é liberado).
+	if _dragging_icon != null and not get_viewport().gui_is_dragging():
+		if is_instance_valid(_dragging_icon):
+			_dragging_icon.modulate.a = 1.0
+		_dragging_icon = null
+	_position_item_tip()
+
+
+func _slot_can_drop(_at: Vector2, data: Variant) -> bool:
+	return data is Dictionary and String(data.get("source", "")) == "owned"
+
+
+func _slot_drop(_at: Vector2, data: Variant) -> void:
+	if data is Dictionary and String(data.get("source", "")) == "owned":
+		InventoryItems.toggle_equipped(String(data.get("id", "")))
+		MenuAudio.play_drop()  # som ao SOLTAR no slot
+		_refresh_equip_ui()
+
+
+func _owned_can_drop(_at: Vector2, data: Variant) -> bool:
+	return data is Dictionary and String(data.get("source", "")) == "slot"
+
+
+func _owned_drop(_at: Vector2, data: Variant) -> void:
+	if data is Dictionary and String(data.get("source", "")) == "slot":
+		InventoryItems.toggle_equipped(String(data.get("id", "")))
+		# Sem som ao desequipar (soltar "pra fora" do slot) — só toca ao soltar
+		# DENTRO de um slot (em _slot_drop).
+		_refresh_equip_ui()
