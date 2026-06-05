@@ -88,6 +88,8 @@ func _on_body_entered(body: Node) -> void:
 		return
 	_picked = true
 	body.add_petals(value, global_position)
+	# Mesmo som do drop de item do inventário ao catar a pétala (MenuAudio é autoload).
+	MenuAudio.play_drop()
 	# Anim de coleta: sobe e some.
 	var t := create_tween().set_parallel(true)
 	t.tween_property(visual, "position:y", VISUAL_OFFSET_Y - 12.0, 0.2)
