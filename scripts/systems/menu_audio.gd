@@ -20,6 +20,7 @@ const _CLICK_VOLUME_DB: float = -14.0
 const _MENU_SCENES: Array[String] = [
 	"res://scenes/ui/main_menu.tscn",
 	"res://scenes/ui/skin_select.tscn",
+	"res://scenes/ui/loja_petalas.tscn",
 	"res://scenes/ui/leaderboard.tscn",
 	"res://scenes/ui/settings_menu.tscn",
 ]

@@ -14,6 +14,7 @@ extends RefCounted
 const _SETTINGS_PATH: String = "user://settings.cfg"
 const _SECTION: String = "inventory"
 const _KEY_EQUIPPED: String = "equipped"
+const _KEY_PURCHASED: String = "purchased"
 const MAX_SLOTS: int = 3
 
 # DEV: em debug build, true libera TODO item (pra testar efeitos). Default FALSE pra
@@ -108,7 +109,7 @@ static func is_unlocked(id: String) -> bool:
 		return true
 	match t:
 		"shop":
-			return false
+			return is_purchased(id)
 		"quest":
 			for req in unlock.get("reqs", []):
 				if SkinLoadout.get_stat(req.get("stat")) < int(req.get("value", 0)):
@@ -120,6 +121,26 @@ static func is_unlocked(id: String) -> bool:
 # Compat: "owned" agora é sinônimo de "unlocked".
 static func is_owned(id: String) -> bool:
 	return is_unlocked(id)
+
+
+# Compra persistente na loja meta (itens tipo "shop"). settings.cfg [inventory] purchased.
+static func is_purchased(id: String) -> bool:
+	var cfg := ConfigFile.new()
+	if cfg.load(_SETTINGS_PATH) != OK:
+		return false
+	return id in str(cfg.get_value(_SECTION, _KEY_PURCHASED, "")).split(",", false)
+
+
+static func mark_purchased(id: String) -> void:
+	var cfg := ConfigFile.new()
+	cfg.load(_SETTINGS_PATH)
+	var ids: Array = []
+	for s in str(cfg.get_value(_SECTION, _KEY_PURCHASED, "")).split(",", false):
+		ids.append(s)
+	if not (id in ids):
+		ids.append(id)
+		cfg.set_value(_SECTION, _KEY_PURCHASED, ",".join(PackedStringArray(ids)))
+		cfg.save(_SETTINGS_PATH)
 
 
 # Linhas de "como liberar" pro tooltip. Cada entry: {label, met}. "default" -> vazio.

@@ -7,6 +7,7 @@ const _RELEASE_NOTES_MODAL_SCRIPT := preload("res://scripts/ui/release_notes_mod
 
 @onready var start_button: Button = $Center/VBox/StartButton
 @onready var skins_button: Button = $Center/VBox/SkinsButton
+@onready var loja_button: Button = $Center/VBox/LojaButton
 @onready var leaderboard_button: Button = $Center/VBox/LeaderboardButton
 @onready var settings_button: Button = $Center/VBox/SettingsButton
 @onready var dev_button: Button = $Center/VBox/DevButton
@@ -20,6 +21,7 @@ const _RELEASE_NOTES_MODAL_SCRIPT := preload("res://scripts/ui/release_notes_mod
 func _ready() -> void:
 	start_button.pressed.connect(_on_start_pressed)
 	skins_button.pressed.connect(_on_skins_pressed)
+	loja_button.pressed.connect(_on_loja_pressed)
 	leaderboard_button.pressed.connect(_on_leaderboard_pressed)
 	settings_button.pressed.connect(_on_settings_pressed)
 	dev_button.pressed.connect(_on_dev_pressed)
@@ -155,6 +157,10 @@ func _on_start_pressed() -> void:
 
 func _on_skins_pressed() -> void:
 	get_tree().change_scene_to_file("res://scenes/ui/skin_select.tscn")
+
+
+func _on_loja_pressed() -> void:
+	get_tree().change_scene_to_file("res://scenes/ui/loja_petalas.tscn")
 
 
 func _on_leaderboard_pressed() -> void:

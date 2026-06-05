@@ -29,3 +29,17 @@ static func deposit(amount: int) -> int:
 	cfg.set_value(_SECTION, _KEY, new_total)
 	cfg.save(_SETTINGS_PATH)
 	return new_total
+
+
+static func spend(amount: int) -> bool:
+	# Debita `amount` do banco se houver saldo. Retorna true se gastou.
+	if amount <= 0:
+		return false
+	var cfg := ConfigFile.new()
+	cfg.load(_SETTINGS_PATH)
+	var total: int = int(cfg.get_value(_SECTION, _KEY, 0))
+	if total < amount:
+		return false
+	cfg.set_value(_SECTION, _KEY, total - amount)
+	cfg.save(_SETTINGS_PATH)
+	return true

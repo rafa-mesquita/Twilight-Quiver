@@ -247,7 +247,7 @@ const DEV_UNLOCK_ALL: bool = true
 # DEV: skins que respeitam a quest REAL mesmo com DEV_UNLOCK_ALL=true (o resto
 # continua livre no dev). Use pra testar a liberação de skins específicas sem
 # relockar tudo. Esvaziar ([]) quando terminar de testar.
-const DEV_QUEST_LOCKED: Array[String] = ["World_Cup"]
+const DEV_QUEST_LOCKED: Array[String] = []
 
 # Stats persistentes em [progress]. Chaves usadas pelo sistema.
 const STAT_MAX_WAVE: StringName = &"max_wave_reached"
@@ -298,6 +298,7 @@ const STAT_ROULETTE_BUYS: StringName = &"elemental_roulette_buys_total"
 # Set de boss IDs já abatidos (persistente entre runs). Armazenado como string
 # CSV no settings.cfg porque ConfigFile só aceita primitivos.
 const _KEY_BOSSES_KILLED_SET: String = "bosses_killed_set"
+const _KEY_PURCHASED_SKINS: String = "purchased_skins"
 
 
 # ---------- Loadout (load/save) ----------
@@ -476,6 +477,26 @@ static func set_stat(key: StringName, value: int) -> void:
 	cfg.save(_SETTINGS_PATH)
 
 
+# Skins compradas na loja meta (quest tipo shop_petals). [progress] purchased_skins.
+static func is_skin_purchased(name: String) -> bool:
+	var cfg := ConfigFile.new()
+	if cfg.load(_SETTINGS_PATH) != OK:
+		return false
+	return name in str(cfg.get_value(_PROGRESS_SECTION, _KEY_PURCHASED_SKINS, "")).split(",", false)
+
+
+static func mark_skin_purchased(name: String) -> void:
+	var cfg := ConfigFile.new()
+	cfg.load(_SETTINGS_PATH)
+	var arr: Array = []
+	for s2 in str(cfg.get_value(_PROGRESS_SECTION, _KEY_PURCHASED_SKINS, "")).split(",", false):
+		arr.append(s2)
+	if not (name in arr):
+		arr.append(name)
+		cfg.set_value(_PROGRESS_SECTION, _KEY_PURCHASED_SKINS, ",".join(PackedStringArray(arr)))
+		cfg.save(_SETTINGS_PATH)
+
+
 # ---------- Quest evaluation ----------
 
 static func _is_quest_satisfied(quest: Dictionary) -> bool:
@@ -638,6 +659,9 @@ static func progress_suffix_for_label(label_key: String) -> String:
 static func is_unlocked(part: SkinPart) -> bool:
 	if part == null:
 		return true
+	# shop_petals (ex: World_Cup): libera se comprada na loja meta.
+	if String(SKIN_QUESTS.get(part.display_name, {}).get("type", "")) == "shop_petals":
+		return is_skin_purchased(part.display_name)
 	# Debug build libera tudo SÓ se DEV_UNLOCK_ALL (atalho de teste de visuais).
 	# Com DEV_UNLOCK_ALL=false, debug respeita a quest real (skins relockadas pra
 	# testar os unlocks). DEV_FORCE_LOCKED força locked mesmo com DEV_UNLOCK_ALL.
@@ -689,6 +713,8 @@ static func is_kit_unlocked(kit_name: String) -> bool:
 	# checar o unlock pela peça body resolveria a quest errada: a peça partilhada
 	# "Linked_Pink" não tem quest, então Linked/Rosa_Onyx desbloqueavam sem o
 	# desafio. Aqui a quest é buscada pelo nome do kit (que casa com SKIN_QUESTS).
+	if String(SKIN_QUESTS.get(kit_name, {}).get("type", "")) == "shop_petals":
+		return is_skin_purchased(kit_name)
 	if OS.is_debug_build() and DEV_UNLOCK_ALL:
 		if DEV_QUEST_LOCKED.has(kit_name):
 			var q: Dictionary = SKIN_QUESTS.get(kit_name, {})

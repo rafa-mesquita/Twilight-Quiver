@@ -2,6 +2,7 @@ keys,pt_BR,en,es,fr
 COMMON_BACK,Voltar,Back,Volver,Retour
 COMMON_SAVE,Salvar,Save,Guardar,Sauvegarder
 COMMON_CANCEL,Cancelar,Cancel,Cancelar,Annuler
+COMMON_CONFIRM,Confirmar,Confirm,Confirmar,Confirmer
 COMMON_LOADING,Carregando...,Loading...,Cargando...,Chargement...
 COMMON_SAVED,Salvo!,Saved!,¡Guardado!,Sauvegardé !
 COMMON_NONE,Nenhum,None,Ninguno,Aucun
@@ -12,6 +13,12 @@ MENU_TITLE,TWILIGHT QUIVER,TWILIGHT QUIVER,TWILIGHT QUIVER,TWILIGHT QUIVER
 MENU_SUBTITLE,top-down archer roguelike,top-down archer roguelike,roguelike de arquero top-down,roguelike d'archer en vue de dessus
 MENU_START,Iniciar Jogo,Start Game,Empezar,Commencer
 MENU_PLAYER,Inventário,Inventory,Inventario,Inventaire
+MENU_SHOP,Loja,Shop,Tienda,Boutique
+LOJA_TITLE,LOJA,SHOP,TIENDA,BOUTIQUE
+LOJA_BUY,Comprar,Buy,Comprar,Acheter
+LOJA_OWNED,Comprado,Owned,Comprado,Acheté
+LOJA_INSUFFICIENT,Pétalas insuficientes,Not enough petals,Pétalos insuficientes,Pétales insuffisants
+LOJA_CONFIRM,"Comprar %s por %d pétalas?","Buy %s for %d petals?","¿Comprar %s por %d pétalos?","Acheter %s pour %d pétales ?"
 MENU_LEADERBOARD,Leaderboard,Leaderboard,Clasificación,Classement
 MENU_SETTINGS,Configurações,Settings,Ajustes,Paramètres
 MENU_DEV_MODE,Dev Mode,Dev Mode,Modo Dev,Mode Dev
