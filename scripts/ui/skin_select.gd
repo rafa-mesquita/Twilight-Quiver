@@ -99,7 +99,7 @@ var _dragging_icon: Control = null
 # Tooltip custom de item (hover) — o tooltip default não aparece com o cursor
 # custom; este é um painel próprio mostrado no mouse_entered.
 var _item_tip_panel: PanelContainer = null
-var _item_tip_label: Label = null
+var _item_tip_label: RichTextLabel = null
 
 
 func _ready() -> void:
@@ -902,7 +902,7 @@ func _build_equip_panel() -> void:
 	_equip_panel.add_child(owned_panel)
 	var owned_grid := GridContainer.new()
 	owned_grid.name = "OwnedGrid"
-	owned_grid.columns = 4
+	owned_grid.columns = 6
 	owned_grid.add_theme_constant_override("h_separation", 12)
 	owned_grid.add_theme_constant_override("v_separation", 12)
 	owned_panel.add_child(owned_grid)
@@ -934,9 +934,9 @@ func _refresh_equip_ui() -> void:
 		else:
 			locked_ids.append(sid)
 	for sid in unlocked_ids:
-		owned_grid.add_child(_make_owned_item(sid))
+		owned_grid.add_child(_make_item_card(sid, true))
 	for sid in locked_ids:
-		owned_grid.add_child(_make_locked_item(sid))
+		owned_grid.add_child(_make_item_card(sid, false))
 
 
 func _make_item_texture(id: String, box: float) -> TextureRect:
@@ -953,16 +953,22 @@ func _make_item_texture(id: String, box: float) -> TextureRect:
 func _item_tooltip(id: String) -> String:
 	var item: Dictionary = InventoryItems.ITEMS.get(id, {})
 	var name_line: String = tr(String(item.get("name", id)))
+	var desc: String = tr(String(item.get("desc", "")))
+	# Efeito (o que o item FAZ) aparece SEMPRE, mesmo travado.
+	var out: String = "[b]%s[/b]\n[color=#cdbfe6]%s[/color]" % [name_line, desc]
 	if InventoryItems.is_unlocked(id):
-		return name_line + "\n" + tr(String(item.get("desc", "")))
-	# Travado: nome + como liberar + requisitos ([x] cumprido / [ ] falta).
+		return out
+	# Travado: secao "como liberar" com requisitos coloridos (verde=feito, vermelho=falta).
 	var ut: String = String(item.get("unlock", {}).get("type", ""))
+	out += "\n\n[color=#c9a6ff]%s[/color]" % tr("ITEM_UNLOCK_HOW")
 	if ut == "shop":
-		return name_line + "\n\n" + tr("ITEM_UNLOCK_SHOP")
-	var out: String = name_line + "\n\n" + tr("ITEM_UNLOCK_HOW")
+		out += "\n[color=#bfd4e8]%s[/color]" % tr("ITEM_UNLOCK_SHOP")
+		return out
 	for req in InventoryItems.get_unlock_reqs(id):
-		var mark: String = "[x] " if bool(req.get("met", false)) else "[ ] "
-		out += "\n" + mark + tr(String(req.get("label", "")))
+		var met: bool = bool(req.get("met", false))
+		var col: String = "#8de88d" if met else "#ff8a8a"
+		var mark: String = "·" if met else "▸"
+		out += "\n[color=%s]%s %s[/color]" % [col, mark, tr(String(req.get("label", "")))]
 	return out
 
 
@@ -983,11 +989,18 @@ func _ensure_item_tip() -> void:
 	sb.content_margin_top = 8.0
 	sb.content_margin_bottom = 8.0
 	_item_tip_panel.add_theme_stylebox_override("panel", sb)
-	_item_tip_label = Label.new()
+	_item_tip_panel.custom_minimum_size = Vector2(340, 0)
+	_item_tip_label = RichTextLabel.new()
+	_item_tip_label.bbcode_enabled = true
+	_item_tip_label.fit_content = true
+	_item_tip_label.scroll_active = false
+	_item_tip_label.custom_minimum_size = Vector2(312, 0)
 	if _font != null:
-		_item_tip_label.add_theme_font_override("font", _font)
-	_item_tip_label.add_theme_font_size_override("font_size", 22)
-	_item_tip_label.add_theme_color_override("font_color", Color(0.95, 0.9, 1, 1))
+		_item_tip_label.add_theme_font_override("normal_font", _font)
+		_item_tip_label.add_theme_font_override("bold_font", _font)
+	_item_tip_label.add_theme_font_size_override("normal_font_size", 20)
+	_item_tip_label.add_theme_font_size_override("bold_font_size", 25)
+	_item_tip_label.add_theme_color_override("default_color", Color(0.92, 0.86, 1, 1))
 	_item_tip_panel.add_child(_item_tip_label)
 	add_child(_item_tip_panel)
 	_item_tip_panel.visible = false
@@ -996,8 +1009,6 @@ func _ensure_item_tip() -> void:
 func _show_item_tooltip(id: String) -> void:
 	_ensure_item_tip()
 	_item_tip_label.text = _item_tooltip(id)
-	var col: Color = Color(0.95, 0.9, 1, 1) if InventoryItems.is_unlocked(id) else Color(1.0, 0.55, 0.55, 1)
-	_item_tip_label.add_theme_color_override("font_color", col)
 	_item_tip_panel.visible = true
 	_position_item_tip()
 
@@ -1019,29 +1030,40 @@ func _position_item_tip() -> void:
 	_item_tip_panel.global_position = pos
 
 
-func _make_owned_item(id: String) -> Control:
+func _make_item_card(id: String, unlocked: bool) -> Control:
+	# Card do item: ícone + nome embaixo. Espalha pela largura (size flags expand).
+	# Liberado = arrastável (equipar). Travado = ícone escurecido + "!" + nome vermelho.
+	var card := VBoxContainer.new()
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.add_theme_constant_override("separation", 4)
+	var icon_wrap := Control.new()
+	icon_wrap.custom_minimum_size = Vector2(88, 88)
+	icon_wrap.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	icon_wrap.mouse_filter = Control.MOUSE_FILTER_STOP
+	icon_wrap.mouse_entered.connect(_show_item_tooltip.bind(id))
+	icon_wrap.mouse_exited.connect(_hide_item_tooltip)
 	var t := _make_item_texture(id, 88.0)
-	t.mouse_filter = Control.MOUSE_FILTER_STOP
-	t.mouse_entered.connect(_show_item_tooltip.bind(id))
-	t.mouse_exited.connect(_hide_item_tooltip)
-	t.set_drag_forwarding(_get_item_drag_data.bind(id, "owned", t), Callable(), Callable())
-	return t
-
-
-func _make_locked_item(id: String) -> Control:
-	# Item travado: ícone escurecido/avermelhado + "!" no canto, NÃO arrastável.
-	# Hover mostra o requisito de desbloqueio (igual skin bloqueada).
-	var root := Control.new()
-	root.custom_minimum_size = Vector2(88, 88)
-	root.mouse_filter = Control.MOUSE_FILTER_STOP
-	var t := _make_item_texture(id, 88.0)
-	t.modulate = Color(0.5, 0.32, 0.36, 0.9)
 	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(t)
-	root.add_child(_make_lock_badge(30))
-	root.mouse_entered.connect(_show_item_tooltip.bind(id))
-	root.mouse_exited.connect(_hide_item_tooltip)
-	return root
+	if not unlocked:
+		t.modulate = Color(0.5, 0.32, 0.36, 0.9)
+	icon_wrap.add_child(t)
+	if unlocked:
+		icon_wrap.set_drag_forwarding(_get_item_drag_data.bind(id, "owned", icon_wrap), Callable(), Callable())
+	else:
+		icon_wrap.add_child(_make_lock_badge(28))
+	card.add_child(icon_wrap)
+	var name_lbl := Label.new()
+	name_lbl.text = tr(String(InventoryItems.ITEMS.get(id, {}).get("name", id)))
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_lbl.custom_minimum_size = Vector2(110, 0)
+	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if _font != null:
+		name_lbl.add_theme_font_override("font", _font)
+	name_lbl.add_theme_font_size_override("font_size", 16)
+	name_lbl.add_theme_color_override("font_color", _card_label_color(unlocked, false))
+	card.add_child(name_lbl)
+	return card
 
 
 func _make_slot(idx: int, equipped_id: String) -> Control:
