@@ -30,6 +30,7 @@ const _TEXT: Color = Color(0.92, 0.86, 1.0, 1.0)
 var _font: Font
 var _category: String = "skins"
 var _selected: Dictionary = {}
+var _parts_cache: Dictionary = {}  # id -> parts (cache do scan, evita re-varredura)
 
 var _bank_label: Label = null
 var _cat_box: VBoxContainer = null
@@ -192,8 +193,7 @@ func _set_category(key: String) -> void:
 		btn.add_theme_stylebox_override("normal", sb)
 		btn.add_theme_stylebox_override("hover", sb)
 		btn.add_theme_stylebox_override("pressed", sb)
-	_rebuild_grid()
-	# Seleciona o primeiro da categoria.
+	# Seleciona o primeiro da categoria (o _select reconstroi o grid).
 	var items := _catalog_for(key)
 	_select(items[0] if not items.is_empty() else {})
 
@@ -326,17 +326,26 @@ func _refresh_detail() -> void:
 # ---------- Thumbnails ----------
 
 func _make_thumb(entry: Dictionary, box: float) -> Control:
-	match String(entry["kind"]):
-		"skin":
-			return _thumb_from_parts(SkinLoadout.get_parts_by_skin_name(String(entry["id"])), box)
-		"part":
-			var parts: Dictionary = SkinLoadout.get_parts_by_skin_name("Default").duplicate()
-			var sp: SkinPart = SkinLoadout.find_part(StringName(String(entry["slot"])), String(entry["id"]))
-			if sp != null:
-				parts[StringName(String(entry["slot"]))] = sp
-			return _thumb_from_parts(parts, box)
-		_:
-			return _make_item_thumb(String(entry["id"]), box)
+	if String(entry["kind"]) == "item":
+		return _make_item_thumb(String(entry["id"]), box)
+	return _thumb_from_parts(_parts_for(entry), box)
+
+
+# Parts pro thumbnail de skin/peca, cacheadas por id (o scan eh caro).
+func _parts_for(entry: Dictionary) -> Dictionary:
+	var id: String = String(entry["id"])
+	if _parts_cache.has(id):
+		return _parts_cache[id]
+	var parts: Dictionary
+	if String(entry["kind"]) == "part":
+		parts = SkinLoadout.get_parts_by_skin_name("Default").duplicate()
+		var sp: SkinPart = SkinLoadout.find_part(StringName(String(entry["slot"])), id)
+		if sp != null:
+			parts[StringName(String(entry["slot"]))] = sp
+	else:
+		parts = SkinLoadout.get_parts_by_skin_name(id)
+	_parts_cache[id] = parts
+	return parts
 
 
 func _thumb_from_parts(parts: Dictionary, box: float) -> Control:
