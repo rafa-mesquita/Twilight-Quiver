@@ -890,22 +890,19 @@ func _build_equip_panel() -> void:
 	owned_panel.name = "OwnedPanel"
 	owned_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	owned_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	var osb := StyleBoxFlat.new()
-	osb.bg_color = Color(0.08, 0.07, 0.11, 0.6)
-	osb.set_corner_radius_all(6)
-	osb.content_margin_left = 12.0
-	osb.content_margin_top = 12.0
-	osb.content_margin_right = 12.0
-	osb.content_margin_bottom = 12.0
-	owned_panel.add_theme_stylebox_override("panel", osb)
+	owned_panel.add_theme_stylebox_override("panel", _pool_stylebox(false))
 	owned_panel.set_drag_forwarding(Callable(), _owned_can_drop, _owned_drop)
 	_equip_panel.add_child(owned_panel)
-	var owned_grid := GridContainer.new()
-	owned_grid.name = "OwnedGrid"
-	owned_grid.columns = 6
-	owned_grid.add_theme_constant_override("h_separation", 12)
-	owned_grid.add_theme_constant_override("v_separation", 12)
-	owned_panel.add_child(owned_grid)
+	# Pool: LIBERADOS (fileira de cima) separados dos TRAVADOS (fileira de baixo).
+	var content := VBoxContainer.new()
+	content.name = "OwnedContent"
+	content.add_theme_constant_override("separation", 8)
+	owned_panel.add_child(content)
+	content.add_child(_make_section_label("INVENTORY_UNLOCKED", Color(0.78, 0.74, 0.92, 1)))
+	content.add_child(_make_owned_grid("UnlockedGrid"))
+	content.add_child(HSeparator.new())
+	content.add_child(_make_section_label("INVENTORY_LOCKED", Color(0.9, 0.55, 0.55, 1)))
+	content.add_child(_make_owned_grid("LockedGrid"))
 	_equip_panel.visible = false
 
 
@@ -919,24 +916,20 @@ func _refresh_equip_ui() -> void:
 	for idx in InventoryItems.MAX_SLOTS:
 		var eid: String = String(equipped[idx]) if idx < equipped.size() else ""
 		slots_row.add_child(_make_slot(idx, eid))
-	var owned_grid: Node = _equip_panel.get_node("OwnedPanel/OwnedGrid")
-	for c in owned_grid.get_children():
+	var unlocked_grid: Node = _equip_panel.get_node("OwnedPanel/OwnedContent/UnlockedGrid")
+	var locked_grid: Node = _equip_panel.get_node("OwnedPanel/OwnedContent/LockedGrid")
+	for c in unlocked_grid.get_children():
 		c.queue_free()
-	# Liberados primeiro (arrastáveis), depois travados (cadeado + requisito).
-	var unlocked_ids: Array = []
-	var locked_ids: Array = []
+	for c in locked_grid.get_children():
+		c.queue_free()
 	for id in InventoryItems.all_ids():
 		var sid: String = String(id)
 		if InventoryItems.is_equipped(sid):
 			continue
 		if InventoryItems.is_unlocked(sid):
-			unlocked_ids.append(sid)
+			unlocked_grid.add_child(_make_item_card(sid, true))
 		else:
-			locked_ids.append(sid)
-	for sid in unlocked_ids:
-		owned_grid.add_child(_make_item_card(sid, true))
-	for sid in locked_ids:
-		owned_grid.add_child(_make_item_card(sid, false))
+			locked_grid.add_child(_make_item_card(sid, false))
 
 
 func _make_item_texture(id: String, box: float) -> TextureRect:
@@ -1069,12 +1062,7 @@ func _make_item_card(id: String, unlocked: bool) -> Control:
 func _make_slot(idx: int, equipped_id: String) -> Control:
 	var slot := PanelContainer.new()
 	slot.custom_minimum_size = Vector2(104, 104)
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.10, 0.09, 0.14, 0.9)
-	sb.set_corner_radius_all(6)
-	sb.set_border_width_all(2)
-	sb.border_color = Color(0.45, 0.42, 0.6, 1)
-	slot.add_theme_stylebox_override("panel", sb)
+	slot.add_theme_stylebox_override("panel", _slot_stylebox(false))
 	slot.set_drag_forwarding(Callable(), _slot_can_drop, _slot_drop)
 	if equipped_id != "":
 		var t := _make_item_texture(equipped_id, 88.0)
@@ -1106,6 +1094,11 @@ func _get_item_drag_data(_at: Vector2, id: String, source: String, ctrl: Control
 	if is_instance_valid(ctrl):
 		ctrl.modulate.a = 0.0
 		_dragging_icon = ctrl
+	# Placeholder verde nos destinos válidos do drop.
+	if source == "owned":
+		_set_slots_highlight(true)
+	else:
+		_set_pool_highlight(true)
 	return {"id": id, "source": source}
 
 
@@ -1116,6 +1109,7 @@ func _process(_delta: float) -> void:
 		if is_instance_valid(_dragging_icon):
 			_dragging_icon.modulate.a = 1.0
 		_dragging_icon = null
+		_clear_drop_highlights()
 	_position_item_tip()
 
 
@@ -1140,3 +1134,81 @@ func _owned_drop(_at: Vector2, data: Variant) -> void:
 		# Sem som ao desequipar (soltar "pra fora" do slot) — só toca ao soltar
 		# DENTRO de um slot (em _slot_drop).
 		_refresh_equip_ui()
+
+
+# ---------- Inventário: secoes + highlight de drop ----------
+
+func _make_section_label(key: String, col: Color) -> Label:
+	var l := Label.new()
+	l.text = tr(key)
+	if _font != null:
+		l.add_theme_font_override("font", _font)
+	l.add_theme_font_size_override("font_size", 18)
+	l.add_theme_color_override("font_color", col)
+	return l
+
+
+func _make_owned_grid(grid_name: String) -> GridContainer:
+	var g := GridContainer.new()
+	g.name = grid_name
+	g.columns = 6
+	g.add_theme_constant_override("h_separation", 12)
+	g.add_theme_constant_override("v_separation", 12)
+	g.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return g
+
+
+func _slot_stylebox(highlight: bool) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.set_corner_radius_all(6)
+	if highlight:
+		sb.bg_color = Color(0.12, 0.24, 0.14, 0.95)
+		sb.set_border_width_all(3)
+		sb.border_color = Color(0.4, 0.92, 0.46, 1)
+	else:
+		sb.bg_color = Color(0.10, 0.09, 0.14, 0.9)
+		sb.set_border_width_all(2)
+		sb.border_color = Color(0.45, 0.42, 0.6, 1)
+	return sb
+
+
+func _pool_stylebox(highlight: bool) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.set_corner_radius_all(6)
+	sb.content_margin_left = 12.0
+	sb.content_margin_top = 12.0
+	sb.content_margin_right = 12.0
+	sb.content_margin_bottom = 12.0
+	if highlight:
+		sb.bg_color = Color(0.10, 0.20, 0.12, 0.78)
+		sb.set_border_width_all(3)
+		sb.border_color = Color(0.4, 0.92, 0.46, 1)
+	else:
+		sb.bg_color = Color(0.08, 0.07, 0.11, 0.6)
+		sb.set_border_width_all(0)
+	return sb
+
+
+func _set_slots_highlight(on: bool) -> void:
+	if _equip_panel == null:
+		return
+	var slots_row := _equip_panel.get_node_or_null("SlotsRow")
+	if slots_row == null:
+		return
+	for c in slots_row.get_children():
+		var pc := c as PanelContainer
+		if pc != null:
+			pc.add_theme_stylebox_override("panel", _slot_stylebox(on))
+
+
+func _set_pool_highlight(on: bool) -> void:
+	if _equip_panel == null:
+		return
+	var pool := _equip_panel.get_node_or_null("OwnedPanel") as PanelContainer
+	if pool != null:
+		pool.add_theme_stylebox_override("panel", _pool_stylebox(on))
+
+
+func _clear_drop_highlights() -> void:
+	_set_slots_highlight(false)
+	_set_pool_highlight(false)

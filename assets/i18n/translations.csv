@@ -22,6 +22,8 @@ LOJA_CONFIRM,"Comprar %s por %d pétalas?","Buy %s for %d petals?","¿Comprar %s
 LOJA_CAT_SKINS,Skins,Skins,Skins,Apparences
 LOJA_CAT_ITEMS,Itens,Items,Objetos,Objets
 LOJA_DESC_WORLD_CUP,Skin temática de Copa do Mundo,World Cup themed skin,Skin temática del Mundial,Apparence sur le thème de la Coupe du Monde
+INVENTORY_UNLOCKED,Liberados,Unlocked,Desbloqueados,Débloqués
+INVENTORY_LOCKED,Bloqueados,Locked,Bloqueados,Verrouillés
 MENU_LEADERBOARD,Leaderboard,Leaderboard,Clasificación,Classement
 MENU_SETTINGS,Configurações,Settings,Ajustes,Paramètres
 MENU_DEV_MODE,Dev Mode,Dev Mode,Modo Dev,Mode Dev
