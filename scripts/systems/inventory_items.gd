@@ -19,7 +19,7 @@ const MAX_SLOTS: int = 3
 
 # DEV: em debug build, true libera TODO item (pra testar efeitos). Default FALSE pra
 # enxergar o estado travado no editor. Ignorado em release (lá vale o unlock real).
-const DEV_UNLOCK_ALL_ITEMS: bool = false
+const DEV_UNLOCK_ALL_ITEMS: bool = true
 
 # Fontes de kill consideradas "de Aliado" (creditadas via player.notify_kill_by_source).
 # Usado pra contar o stat ally_kills (quest do Adote Mais Um).
