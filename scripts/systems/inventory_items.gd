@@ -72,6 +72,15 @@ const ITEMS: Dictionary = {
 			{"stat": &"gold_spent_total", "value": 2500, "label": "ITEM_REQ_ARCANE_GOLD"},
 		]},
 	},
+	"feeling_lucky": {
+		"name": "ITEM_LUCKY_NAME",
+		"desc": "ITEM_LUCKY_DESC",
+		"icon": "res://assets/Hud/itens/feeling_lucky.png",
+		"effect": {"type": "free_first_roll", "chance": 0.40},
+		"unlock": {"type": "quest", "reqs": [
+			{"stat": &"waves_cleared_total", "value": 1, "label": "ITEM_REQ_LUCKY"},
+		]},
+	},
 }
 
 
@@ -157,6 +166,16 @@ static func equipped_gold_per_round() -> int:
 		if String(eff.get("type", "")) == "gold_per_round":
 			g += int(eff.get("amount", 0))
 	return g
+
+
+# Maior chance de "primeiro roll grátis" entre os itens equipados (Estou com Sorte).
+static func equipped_free_first_roll_chance() -> float:
+	var c: float = 0.0
+	for id in get_equipped():
+		var eff: Dictionary = ITEMS.get(id, {}).get("effect", {})
+		if String(eff.get("type", "")) == "free_first_roll":
+			c = maxf(c, float(eff.get("chance", 0.0)))
+	return c
 
 
 # Equipados liberados (filtra ids órfãos E itens travados — nunca ficam ativos).

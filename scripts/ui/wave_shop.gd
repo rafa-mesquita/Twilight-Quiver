@@ -340,6 +340,8 @@ var _selected_upgrade_idxs: Array[int] = []
 const GLOBAL_REROLL_COSTS: Array[int] = [1, 3, 6]
 const MAX_GLOBAL_REROLLS: int = 3
 var _global_rerolls_used: int = 0
+# Estou com Sorte (item): se true, o PRIMEIRO reroll deste shop custa 0.
+var _lucky_first_roll_free: bool = false
 @onready var global_reroll_btn: TextureButton = $Root/GlobalReroll/Btn
 @onready var global_reroll_cost: Label = $Root/GlobalReroll/CostLabel
 
@@ -418,6 +420,8 @@ func _ready() -> void:
 	continue_btn.text = tr("SHOP_NEXT_WAVE_FMT") % next_wn
 	continue_btn.pressed.connect(_on_continue_pressed)
 	global_reroll_btn.pressed.connect(_on_global_reroll)
+	# Estou com Sorte: rola a chance do primeiro reroll deste shop ser grátis.
+	_lucky_first_roll_free = randf() < InventoryItems.equipped_free_first_roll_chance()
 	_setup_bonus_label()
 	_refresh_gold_label()
 	_build_petal_label()
@@ -2482,6 +2486,8 @@ func _setup_bonus_label() -> void:
 # mesmo tempo. Mais simples e mais limpo visualmente.
 
 func _next_global_reroll_cost() -> int:
+	if _global_rerolls_used == 0 and _lucky_first_roll_free:
+		return 0
 	var idx: int = clampi(_global_rerolls_used, 0, GLOBAL_REROLL_COSTS.size() - 1)
 	return GLOBAL_REROLL_COSTS[idx]
 
@@ -2491,7 +2497,9 @@ func _on_global_reroll() -> void:
 		return
 	var cost: int = _next_global_reroll_cost()
 	var player := _get_player()
-	if player == null or not player.spend_gold(cost):
+	if player == null:
+		return
+	if cost > 0 and not player.spend_gold(cost):
 		return
 	_global_rerolls_used += 1
 	# Telemetria: registra reroll com wave atual + custo + qual uso é esse.

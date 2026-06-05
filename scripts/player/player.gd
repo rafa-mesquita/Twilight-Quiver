@@ -560,6 +560,8 @@ var stats_kills_by_source: Dictionary = {}
 var stats_ally_heal: float = 0.0
 # Gold gasto nesta run (spend_gold) -> stat gold_spent.
 var stats_gold_spent: int = 0
+# Waves limpas nesta run -> stat waves_cleared (unlock Estou com Sorte).
+var stats_waves_cleared: int = 0
 # Lista de IDs de bosses mortos nesta run. Usada pelo skin_loadout.record_run
 # pra detectar unlocks de skins do tipo `boss_killed`.
 var stats_bosses_killed: Array[String] = []

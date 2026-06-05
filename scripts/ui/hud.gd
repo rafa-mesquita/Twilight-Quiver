@@ -1984,6 +1984,7 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 		"ally_heal": int(round(float(p.get("stats_ally_heal")))) if p != null and "stats_ally_heal" in p else 0,
 		"ally_kills": ally_kills,
 		"gold_spent": int(p.get("stats_gold_spent")) if p != null and "stats_gold_spent" in p else 0,
+		"waves_cleared": int(p.get("stats_waves_cleared")) if p != null and "stats_waves_cleared" in p else 0,
 	}
 
 

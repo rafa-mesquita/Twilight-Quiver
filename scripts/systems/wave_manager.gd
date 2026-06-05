@@ -1002,6 +1002,9 @@ func _finish_wave() -> void:
 		var _gpr: int = InventoryItems.equipped_gold_per_round()
 		if _gpr > 0 and _p_fw.has_method("add_gold"):
 			_p_fw.add_gold(_gpr)
+		# Conta wave limpa (unlock do item Estou com Sorte).
+		if "stats_waves_cleared" in _p_fw:
+			_p_fw.stats_waves_cleared += 1
 	# Pós-boss: segura tudo (cleanup, magnet, tela "Wave Limpa") por
 	# `boss_kill_hold` segundos pras moedas dropadas pelo boss ficarem visíveis,
 	# saltarem e o player ter tempo de coletar/ver a animação.

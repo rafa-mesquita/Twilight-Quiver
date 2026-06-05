@@ -87,6 +87,9 @@ ITEM_UNLOCK_SHOP,Disponível na loja,Available in the shop,Disponible en la tien
 ITEM_REQ_ADOPT_HEAL,Cure 1500 de vida usando um Aliado,Heal 1500 HP using an Ally,Cura 1500 de vida usando un Aliado,Soignez 1500 PV avec un Allié
 ITEM_REQ_ADOPT_KILLS,Acumule 1000 eliminações de um Aliado,Get 1000 kills from an Ally,Acumula 1000 eliminaciones de un Aliado,Accumulez 1000 éliminations d'un Allié
 ITEM_REQ_ARCANE_GOLD,Gaste 2500 de gold no total,Spend 2500 gold in total,Gasta 2500 de oro en total,Dépensez 2500 d'or au total
+ITEM_LUCKY_NAME,Estou com Sorte,Feeling Lucky,Tengo Suerte,J'ai de la Chance
+ITEM_LUCKY_DESC,"Toda loja tem 40% de chance do primeiro roll custar 0 de gold","Every shop has a 40% chance the first roll costs 0 gold","Cada tienda tiene 40% de probabilidad de que la primera tirada cueste 0 de oro","Chaque boutique a 40% de chance que le premier tirage coûte 0 d'or"
+ITEM_REQ_LUCKY,Limpe uma wave em Twilight Quiver,Clear a wave in Twilight Quiver,Supera una oleada en Twilight Quiver,Terminez une vague dans Twilight Quiver
 PLAYER_STAT_MAX_WAVE,Wave máxima,Max raid,Raid máximo,Raid max
 PLAYER_STAT_KILLS,Inimigos mortos,Enemies killed,Enemigos eliminados,Ennemis tués
 PLAYER_STAT_DAMAGE,Dano causado,Damage dealt,Daño causado,Dégâts infligés

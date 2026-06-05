@@ -289,6 +289,9 @@ const STAT_ALLY_KILLS: StringName = &"ally_kills_total"
 # Total de gold gasto (player.spend_gold). Acumula entre runs — unlock do item
 # Dividendo Arcano.
 const STAT_GOLD_SPENT: StringName = &"gold_spent_total"
+# Total de waves limpas (qualquer run). Acumula entre runs — unlock do item
+# Estou com Sorte (limpar 1 wave).
+const STAT_WAVES_CLEARED: StringName = &"waves_cleared_total"
 # Set de boss IDs já abatidos (persistente entre runs). Armazenado como string
 # CSV no settings.cfg porque ConfigFile só aceita primitivos.
 const _KEY_BOSSES_KILLED_SET: String = "bosses_killed_set"
@@ -750,6 +753,9 @@ static func record_run(run_stats: Dictionary) -> Array:
 	var run_gold_spent: int = int(run_stats.get("gold_spent", 0))
 	if run_gold_spent > 0:
 		set_stat(STAT_GOLD_SPENT, get_stat(STAT_GOLD_SPENT) + run_gold_spent)
+	var run_waves_cleared: int = int(run_stats.get("waves_cleared", 0))
+	if run_waves_cleared > 0:
+		set_stat(STAT_WAVES_CLEARED, get_stat(STAT_WAVES_CLEARED) + run_waves_cleared)
 	# Flag persistente: chegou ao Lv4 de algum elemental nesta run (unlock Skeleton).
 	if bool(run_stats.get("elemental_l4_reached", false)) and get_stat(STAT_ELEMENTAL_L4) < 1:
 		set_stat(STAT_ELEMENTAL_L4, 1)
