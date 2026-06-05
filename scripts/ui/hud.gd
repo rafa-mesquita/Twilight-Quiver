@@ -55,6 +55,11 @@ var _skin_unlock_poll_accum: float = 0.0
 var _skin_unlock_locked_at_start: Dictionary = {}
 var _skin_unlock_snapshot_done: bool = false
 var _skin_unlock_toasted: Dictionary = {}
+# Mesmo esquema pros ITENS desbloqueáveis (toast em tempo real + death screen).
+var _item_unlock_toast: ItemUnlockToast = null
+var _item_unlock_locked_at_start: Dictionary = {}
+var _item_unlock_toasted: Dictionary = {}
+var _item_unlock_icon: TextureRect = null
 
 # Tracking pra exibir indicador quando torre sofre ataque off-screen
 const TOWER_ALERT_HOLD: float = 1.5
@@ -295,6 +300,8 @@ func _ready() -> void:
 	# Toast de unlock de skin em tempo real (canto inferior direito).
 	_skin_unlock_toast = SkinUnlockToast.new()
 	add_child(_skin_unlock_toast)
+	_item_unlock_toast = ItemUnlockToast.new()
+	add_child(_item_unlock_toast)
 
 
 func _set_mouse_filter_recursive(node: Node) -> void:
@@ -1490,7 +1497,17 @@ func _show_restart_button() -> void:
 
 	# Atualiza stats persistentes e detecta novos unlocks NESSA run.
 	var run_stats: Dictionary = _collect_run_stats(wave_num)
+	# Snapshot dos itens travados ANTES do record_run (que commita os stats da run).
+	var items_locked_before: Array = []
+	for iid in InventoryItems.all_ids():
+		if not InventoryItems.is_unlocked(String(iid)):
+			items_locked_before.append(String(iid))
 	var newly_unlocked: Array = SkinLoadout.record_run(run_stats)
+	# Itens que LIBERARAM com os stats commitados nesta run.
+	var newly_unlocked_items: Array = []
+	for iid in items_locked_before:
+		if InventoryItems.is_unlocked(String(iid)):
+			newly_unlocked_items.append(String(iid))
 	# Pétalas: deposita o saldo da run no banco persistente + prepara a linha.
 	var _petal_player := get_tree().get_first_node_in_group("player")
 	var run_petals: int = int(_petal_player.petals) if _petal_player != null and "petals" in _petal_player else 0
@@ -1519,6 +1536,21 @@ func _show_restart_button() -> void:
 			var unlock_out := create_tween()
 			unlock_out.tween_property(unlock_panel, "modulate:a", 0.0, 0.3)
 			await unlock_out.finished
+	# Itens desbloqueados: mesma sequência, painel com o ícone do item.
+	if newly_unlocked.size() > 0 and newly_unlocked_items.size() > 0:
+		var trans_out := create_tween()
+		trans_out.tween_property(unlock_panel, "modulate:a", 0.0, 0.3)
+		await trans_out.finished
+	for i in range(newly_unlocked_items.size()):
+		_show_item_unlock_notification(String(newly_unlocked_items[i]))
+		var iu_in := create_tween()
+		iu_in.tween_property(unlock_panel, "modulate:a", 1.0, 0.5)
+		await iu_in.finished
+		await get_tree().create_timer(2.5).timeout
+		if i < newly_unlocked_items.size() - 1:
+			var iu_out := create_tween()
+			iu_out.tween_property(unlock_panel, "modulate:a", 0.0, 0.3)
+			await iu_out.finished
 
 	# Reveal final: score, stats, botões aparecem juntos.
 	var reveal := create_tween().set_parallel(true)
@@ -1535,6 +1567,11 @@ func _show_restart_button() -> void:
 
 func _show_unlock_notification(skin_name: String) -> void:
 	# Aplica a skin desbloqueada no preview animado e mostra o painel.
+	unlock_title.text = tr("HUD_UNLOCK_TITLE")
+	if unlock_preview is CanvasItem:
+		(unlock_preview as CanvasItem).visible = true
+	if _item_unlock_icon != null:
+		_item_unlock_icon.visible = false
 	# Usa as sprite_frames do AnimatedSprite2D do player do hud (acessível via grupo).
 	var preview_body: AnimatedSprite2D = unlock_preview.get_node_or_null("Body") as AnimatedSprite2D
 	var preview_skin: Node = unlock_preview.get_node_or_null("Skin")
@@ -1558,6 +1595,33 @@ func _show_unlock_notification(skin_name: String) -> void:
 	# o jogador entender o que fez pra liberar. quest.label é translation key.
 	var quest: Dictionary = SkinLoadout.get_quest_for(skin_name)
 	unlock_quest_label.text = String(quest.get("label", ""))
+	unlock_panel.modulate.a = 0.0
+	unlock_panel.visible = true
+
+
+func _show_item_unlock_notification(id: String) -> void:
+	# Reusa o unlock_panel trocando o preview de skin pelo ÍCONE do item.
+	if unlock_preview is CanvasItem:
+		(unlock_preview as CanvasItem).visible = false
+	if _item_unlock_icon == null:
+		var preview_box := unlock_preview.get_parent() as Control
+		_item_unlock_icon = TextureRect.new()
+		_item_unlock_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_item_unlock_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		_item_unlock_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		_item_unlock_icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_item_unlock_icon.offset_left = 40.0
+		_item_unlock_icon.offset_top = 40.0
+		_item_unlock_icon.offset_right = -40.0
+		_item_unlock_icon.offset_bottom = -40.0
+		_item_unlock_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if preview_box != null:
+			preview_box.add_child(_item_unlock_icon)
+	_item_unlock_icon.texture = load(InventoryItems.get_icon_path(id)) as Texture2D
+	_item_unlock_icon.visible = true
+	unlock_title.text = tr("HUD_ITEM_UNLOCK_TITLE")
+	unlock_name_label.text = tr(String(InventoryItems.ITEMS.get(id, {}).get("name", id)))
+	unlock_quest_label.text = tr(String(InventoryItems.ITEMS.get(id, {}).get("desc", "")))
 	unlock_panel.modulate.a = 0.0
 	unlock_panel.visible = true
 
@@ -1900,6 +1964,10 @@ func _poll_skin_unlocks(delta: float) -> void:
 		for skin_name in SkinLoadout.SKIN_QUESTS:
 			if not (String(skin_name) in base_satisfied):
 				_skin_unlock_locked_at_start[String(skin_name)] = true
+		var item_base: Array = InventoryItems.evaluate_live_unlocks({})
+		for iid in InventoryItems.all_ids():
+			if not (String(iid) in item_base):
+				_item_unlock_locked_at_start[String(iid)] = true
 	var wave_num: int = 0
 	var wm := get_tree().get_first_node_in_group("wave_manager")
 	if wm != null and "wave_number" in wm:
@@ -1911,6 +1979,12 @@ func _poll_skin_unlocks(delta: float) -> void:
 			_skin_unlock_toasted[sn] = true
 			if _skin_unlock_toast != null:
 				_skin_unlock_toast.enqueue(sn)
+	for item_id in InventoryItems.evaluate_live_unlocks(rs):
+		var iid2: String = String(item_id)
+		if _item_unlock_locked_at_start.has(iid2) and not _item_unlock_toasted.has(iid2):
+			_item_unlock_toasted[iid2] = true
+			if _item_unlock_toast != null:
+				_item_unlock_toast.enqueue(iid2)
 
 
 func _collect_run_stats(wave_num: int) -> Dictionary:

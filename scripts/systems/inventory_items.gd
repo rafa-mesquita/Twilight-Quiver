@@ -139,6 +139,29 @@ static func get_unlock_reqs(id: String) -> Array:
 	return []
 
 
+# Itens (quest) cujos requisitos estão satisfeitos com stats PERSISTENTES + os
+# deltas da run atual (run_stats: mesmo dict do hud._collect_run_stats). Cada
+# stat persistente "<x>_total" lê o delta da run pela chave "<x>". Usado pelo
+# HUD pra o toast de desbloqueio em tempo real.
+static func evaluate_live_unlocks(run_stats: Dictionary) -> Array:
+	var out: Array = []
+	for id in ITEMS.keys():
+		var unlock: Dictionary = ITEMS[id].get("unlock", {})
+		if String(unlock.get("type", "")) != "quest":
+			continue
+		var all_met: bool = true
+		for req in unlock.get("reqs", []):
+			var stat: StringName = req.get("stat")
+			var run_key: String = String(stat).trim_suffix("_total")
+			var live_val: int = SkinLoadout.get_stat(stat) + int(run_stats.get(run_key, 0))
+			if live_val < int(req.get("value", 0)):
+				all_met = false
+				break
+		if all_met:
+			out.append(String(id))
+	return out
+
+
 # True se algum item equipado faz o welcome upgrade virar escolha de elemental.
 static func has_welcome_elemental_choice() -> bool:
 	for id in get_equipped():
