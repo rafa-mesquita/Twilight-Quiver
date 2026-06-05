@@ -96,6 +96,8 @@ var _equip_panel: Control = null
 # Ícone sendo arrastado (escondido durante o drag → sensação de "mover"; restaurado
 # no _process se o drag terminar sem drop válido).
 var _dragging_icon: Control = null
+var _drag_source: String = ""
+var _drop_highlighted: Control = null
 # Tooltip custom de item (hover) — o tooltip default não aparece com o cursor
 # custom; este é um painel próprio mostrado no mouse_entered.
 var _item_tip_panel: PanelContainer = null
@@ -1094,11 +1096,7 @@ func _get_item_drag_data(_at: Vector2, id: String, source: String, ctrl: Control
 	if is_instance_valid(ctrl):
 		ctrl.modulate.a = 0.0
 		_dragging_icon = ctrl
-	# Placeholder verde nos destinos válidos do drop.
-	if source == "owned":
-		_set_slots_highlight(true)
-	else:
-		_set_pool_highlight(true)
+	_drag_source = source
 	return {"id": id, "source": source}
 
 
@@ -1109,7 +1107,11 @@ func _process(_delta: float) -> void:
 		if is_instance_valid(_dragging_icon):
 			_dragging_icon.modulate.a = 1.0
 		_dragging_icon = null
+		_drag_source = ""
 		_clear_drop_highlights()
+		_drop_highlighted = null
+	elif _dragging_icon != null:
+		_update_drop_highlight()
 	_position_item_tip()
 
 
@@ -1162,9 +1164,9 @@ func _slot_stylebox(highlight: bool) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.set_corner_radius_all(6)
 	if highlight:
-		sb.bg_color = Color(0.12, 0.24, 0.14, 0.95)
-		sb.set_border_width_all(3)
-		sb.border_color = Color(0.4, 0.92, 0.46, 1)
+		sb.bg_color = Color(0.45, 0.9, 0.55, 0.15)
+		sb.set_border_width_all(2)
+		sb.border_color = Color(0.55, 0.95, 0.62, 0.7)
 	else:
 		sb.bg_color = Color(0.10, 0.09, 0.14, 0.9)
 		sb.set_border_width_all(2)
@@ -1180,9 +1182,9 @@ func _pool_stylebox(highlight: bool) -> StyleBoxFlat:
 	sb.content_margin_right = 12.0
 	sb.content_margin_bottom = 12.0
 	if highlight:
-		sb.bg_color = Color(0.10, 0.20, 0.12, 0.78)
-		sb.set_border_width_all(3)
-		sb.border_color = Color(0.4, 0.92, 0.46, 1)
+		sb.bg_color = Color(0.45, 0.9, 0.55, 0.12)
+		sb.set_border_width_all(2)
+		sb.border_color = Color(0.55, 0.95, 0.62, 0.65)
 	else:
 		sb.bg_color = Color(0.08, 0.07, 0.11, 0.6)
 		sb.set_border_width_all(0)
@@ -1212,3 +1214,43 @@ func _set_pool_highlight(on: bool) -> void:
 func _clear_drop_highlights() -> void:
 	_set_slots_highlight(false)
 	_set_pool_highlight(false)
+
+
+# So acende o destino que esta SOB o mouse e que aceita o drop (por-hover).
+func _update_drop_highlight() -> void:
+	var target: Control = _drop_target_under_mouse()
+	if target == _drop_highlighted:
+		return
+	if _drop_highlighted != null and is_instance_valid(_drop_highlighted):
+		_set_target_green(_drop_highlighted, false)
+	_drop_highlighted = target
+	if target != null:
+		_set_target_green(target, true)
+
+
+func _drop_target_under_mouse() -> Control:
+	if _equip_panel == null:
+		return null
+	var mp: Vector2 = get_global_mouse_position()
+	if _drag_source == "owned":
+		var sr := _equip_panel.get_node_or_null("SlotsRow")
+		if sr != null:
+			for c in sr.get_children():
+				var pc := c as PanelContainer
+				if pc != null and pc.get_global_rect().has_point(mp):
+					return pc
+	elif _drag_source == "slot":
+		var pool := _equip_panel.get_node_or_null("OwnedPanel") as Control
+		if pool != null and pool.get_global_rect().has_point(mp):
+			return pool
+	return null
+
+
+func _set_target_green(node: Control, on: bool) -> void:
+	var pc := node as PanelContainer
+	if pc == null:
+		return
+	if node.name == "OwnedPanel":
+		pc.add_theme_stylebox_override("panel", _pool_stylebox(on))
+	else:
+		pc.add_theme_stylebox_override("panel", _slot_stylebox(on))
