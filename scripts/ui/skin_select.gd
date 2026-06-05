@@ -97,6 +97,7 @@ var _equip_panel: Control = null
 # no _process se o drag terminar sem drop válido).
 var _dragging_icon: Control = null
 var _drag_source: String = ""
+var _drag_active: bool = false
 var _drop_highlighted: Control = null
 # Tooltip custom de item (hover) — o tooltip default não aparece com o cursor
 # custom; este é um painel próprio mostrado no mouse_entered.
@@ -911,6 +912,9 @@ func _build_equip_panel() -> void:
 func _refresh_equip_ui() -> void:
 	if _equip_panel == null:
 		return
+	# Limpa qualquer highlight de drop preso (ex.: após soltar no pool).
+	_drop_highlighted = null
+	_clear_drop_highlights()
 	var slots_row: Node = _equip_panel.get_node("SlotsRow")
 	for c in slots_row.get_children():
 		c.queue_free()
@@ -1097,20 +1101,22 @@ func _get_item_drag_data(_at: Vector2, id: String, source: String, ctrl: Control
 		ctrl.modulate.a = 0.0
 		_dragging_icon = ctrl
 	_drag_source = source
+	_drag_active = true
 	return {"id": id, "source": source}
 
 
 func _process(_delta: float) -> void:
 	# Restaura o ícone escondido quando o drag termina sem drop válido (drop
 	# válido rebuilda a UI e o ícone antigo é liberado).
-	if _dragging_icon != null and not get_viewport().gui_is_dragging():
-		if is_instance_valid(_dragging_icon):
+	if _drag_active and not get_viewport().gui_is_dragging():
+		_drag_active = false
+		if _dragging_icon != null and is_instance_valid(_dragging_icon):
 			_dragging_icon.modulate.a = 1.0
 		_dragging_icon = null
 		_drag_source = ""
 		_clear_drop_highlights()
 		_drop_highlighted = null
-	elif _dragging_icon != null:
+	elif _drag_active:
 		_update_drop_highlight()
 	_position_item_tip()
 
