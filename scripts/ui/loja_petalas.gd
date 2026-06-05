@@ -14,6 +14,7 @@ const _IDLE_REGION: Rect2 = Rect2(0, 0, 32, 32)
 # Catálogo: cat ("skins"|"itens"), kind ("skin"|"item"), id, price, desc (key opcional).
 const CATALOG: Array[Dictionary] = [
 	{"cat": "skins", "kind": "skin", "id": "World_Cup", "price": 120, "desc": "LOJA_DESC_WORLD_CUP"},
+	{"cat": "skins", "kind": "part", "id": "Red_Hair", "slot": "hair", "price": 60, "name_key": "LOJA_NAME_RED_HAIR", "desc": "LOJA_DESC_RED_HAIR"},
 	{"cat": "itens", "kind": "item", "id": "midnight_dagger", "price": 200},
 	{"cat": "itens", "kind": "item", "id": "golden_bow", "price": 200},
 ]
@@ -325,13 +326,20 @@ func _refresh_detail() -> void:
 # ---------- Thumbnails ----------
 
 func _make_thumb(entry: Dictionary, box: float) -> Control:
-	if String(entry["kind"]) == "skin":
-		return _make_skin_thumb(String(entry["id"]), box)
-	return _make_item_thumb(String(entry["id"]), box)
+	match String(entry["kind"]):
+		"skin":
+			return _thumb_from_parts(SkinLoadout.get_parts_by_skin_name(String(entry["id"])), box)
+		"part":
+			var parts: Dictionary = SkinLoadout.get_parts_by_skin_name("Default").duplicate()
+			var sp: SkinPart = SkinLoadout.find_part(StringName(String(entry["slot"])), String(entry["id"]))
+			if sp != null:
+				parts[StringName(String(entry["slot"]))] = sp
+			return _thumb_from_parts(parts, box)
+		_:
+			return _make_item_thumb(String(entry["id"]), box)
 
 
-func _make_skin_thumb(skin_name: String, box: float) -> Control:
-	var parts: Dictionary = SkinLoadout.get_parts_by_skin_name(skin_name)
+func _thumb_from_parts(parts: Dictionary, box: float) -> Control:
 	var holder := Control.new()
 	holder.custom_minimum_size = Vector2(box, box)
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -377,6 +385,8 @@ func _make_item_thumb(id: String, box: float) -> Control:
 # ---------- Dados ----------
 
 func _display_name(entry: Dictionary) -> String:
+	if entry.has("name_key"):
+		return tr(String(entry["name_key"]))
 	if String(entry["kind"]) == "item":
 		return tr(String(InventoryItems.ITEMS.get(String(entry["id"]), {}).get("name", entry["id"])))
 	return String(entry["id"]).replace("_", " ")

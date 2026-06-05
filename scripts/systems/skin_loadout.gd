@@ -232,6 +232,13 @@ const SKIN_QUESTS: Dictionary = {
 		"label": "PLAYER_QUEST_WORLD_CUP",
 		"hidden": false,
 	},
+	"Red_Hair": {
+		# Peca de cabelo vendida na loja por petalas.
+		"type": "shop_petals",
+		"value": 1,
+		"label": "PLAYER_QUEST_SHOP_PETALS",
+		"hidden": false,
+	},
 }
 
 # DEV: skins que ficam BLOQUEADAS mesmo em debug build, pra testar a UI de skin
@@ -707,6 +714,15 @@ static func _kits_using_shared_part(part_name: String) -> Array:
 
 static func get_quest_for(display_name: String) -> Dictionary:
 	return SKIN_QUESTS.get(display_name, {})
+
+
+# Acha uma SkinPart pelo slot + display_name (escaneando os PNGs disponiveis).
+static func find_part(slot: StringName, display_name: String) -> SkinPart:
+	for p in (scan_available_parts().get(slot, []) as Array):
+		var part: SkinPart = p
+		if part != null and part.display_name == display_name:
+			return part
+	return null
 
 
 static func is_kit_unlocked(kit_name: String) -> bool:
