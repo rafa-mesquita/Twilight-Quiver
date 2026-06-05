@@ -9,14 +9,14 @@ extends CanvasLayer
 
 const _FONT: FontFile = preload("res://font/Silver.ttf")
 
-const PANEL_SIZE: Vector2 = Vector2(430, 150)
+const PANEL_SIZE: Vector2 = Vector2(322, 112)
 const MARGIN_RIGHT: float = 14.0
 const MARGIN_BOTTOM: float = 58.0
 const HIDE_SHIFT: float = 470.0
 const SHOW_IN: float = 0.4
 const HOLD: float = 3.2
 const SHOW_OUT: float = 0.35
-const ICON_BOX: Vector2 = Vector2(120, PANEL_SIZE.y - 20)
+const ICON_BOX: Vector2 = Vector2(90, PANEL_SIZE.y - 20)
 
 var _root: Control = null
 var _panel: Panel = null
@@ -87,7 +87,7 @@ func _build_ui() -> void:
 	_title_label = Label.new()
 	_title_label.text = "HUD_ITEM_UNLOCK_TITLE"  # auto-traduz (Control)
 	_title_label.add_theme_font_override("font", _FONT)
-	_title_label.add_theme_font_size_override("font_size", 28)
+	_title_label.add_theme_font_size_override("font_size", 21)
 	_title_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35, 1.0))
 	_title_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 	_title_label.add_theme_constant_override("outline_size", 4)
@@ -97,7 +97,7 @@ func _build_ui() -> void:
 	_name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_name_label.custom_minimum_size = Vector2(PANEL_SIZE.x - ICON_BOX.x - 40, 0)
 	_name_label.add_theme_font_override("font", _FONT)
-	_name_label.add_theme_font_size_override("font_size", 34)
+	_name_label.add_theme_font_size_override("font_size", 26)
 	_name_label.add_theme_color_override("font_color", Color(0.95, 0.85, 1.0, 1.0))
 	_name_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 	_name_label.add_theme_constant_override("outline_size", 4)

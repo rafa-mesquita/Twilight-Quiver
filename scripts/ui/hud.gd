@@ -1611,9 +1611,9 @@ func _show_item_unlock_notification(id: String) -> void:
 		_item_unlock_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		_item_unlock_icon.set_anchors_preset(Control.PRESET_FULL_RECT)
 		_item_unlock_icon.offset_left = 40.0
-		_item_unlock_icon.offset_top = 40.0
+		_item_unlock_icon.offset_top = 70.0
 		_item_unlock_icon.offset_right = -40.0
-		_item_unlock_icon.offset_bottom = -40.0
+		_item_unlock_icon.offset_bottom = -70.0
 		_item_unlock_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		if preview_box != null:
 			preview_box.add_child(_item_unlock_icon)
