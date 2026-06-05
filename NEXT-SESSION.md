@@ -1,86 +1,78 @@
 # Próxima Sessão
 
-> Última atualização: 2026-06-04 06:00
-> Sessão anterior: drop grande de conteúdo (0.9.0: Fúria da Maré + Roleta + toast de skin) → skin **Náutica** (0.9.1) → vários fixes/balance (0.9.2–0.9.3) → **caça e correção do leak de FPS pós-wave-7** (boss com tiros de lifetime 999s) via um **perf logger** de diagnóstico → 0.9.5 pública.
+> Última atualização: 2026-06-05 03:00
+> Sessão anterior: deploy **0.9.7** (Fogo L2 escolha de rastro + Cadeia multi-alvo + skin World Cup) → desenho da **Economia de Pétalas** (4 subprojetos) → implementação do **P1 (pétalas moeda-base)** + **Inventário v1** (3 itens equipáveis com drag-and-drop) → 2 fixes pontuais (Fenda pega coins, World Cup body).
 
 ## Estado atual
 
-- **v0.9.5 publicada como `Latest` (pública), pushada e deployada.** `pre-alpha-0.9.5` em [project.godot](project.godot). Site + launcher de todos recebem o fix do leak de FPS.
-- ⚠️ **`main` está 1 commit À FRENTE de `origin/main`** (NÃO pushado de propósito): `59b46ce` — re-export dos sprites da HUD shop da **Náutica** (correções na camisa/máscara que o user fez no `.aseprite`). O user pediu pra **deixar local e só subir junto da PRÓXIMA versão**. **NÃO pushar sozinho** (push dispara deploy). Entra no próximo bump.
-- ⚠️ **Working tree:** `assets/effects/water/onda.aseprite` modificado (WIP do user, não-relacionado — não commitei; decidir com ele).
-- **0.9.4 = PRERELEASE de diagnóstico** (NÃO é latest) — build com perf log + dev mode que o **amigo do user** baixou pra reproduzir o leak. Link direto: `https://github.com/rafa-mesquita/twilight-quiver-releases/releases/download/pre-alpha-0.9.4/TwilightQuiver-windows.zip`. Deletar quando o amigo confirmar que a 0.9.5 resolveu.
-- **🎮 Site:** https://rafa-mesquita.github.io/Twilight-Quiver/ — auto-deploy a CADA push pro `main` (⚠️ inclusive prerelease: o site sempre pega o último push, independente da flag da release).
-- **🚀 Launcher:** `/releases/latest` = 0.9.5.
+- **PÚBLICO = `pre-alpha-0.9.7`** (deployado nesta sessão, `main` pushada). Fogo L2 escolha de rastro, Cadeia de Raios auto-raio multi-alvo (L3/L4), Auto-raio separado no TAB, skin **World Cup** (bloqueada, easter egg "loja por pétalas"). Site + launcher já têm.
+- **⚠️ Branch ativa = `feature/economia-petalas` (NÃO é `main`, NÃO foi pushada).** TODO o trabalho de economia/inventário vive aqui, **só local**. Último commit: `35fab68` (Inventário v1 + Fenda + World Cup body). É experimental — não mergear/pushar até o user aprovar a economia inteira.
+- **P1 (pétalas moeda-base) implementado** (`f0e1a96`): `player.petals` (carteira por-run) + `PetalBank` (banco persistente em `settings.cfg [progress]`). Ganho por level-up (tabela de round) + drop 0.75%/mob. HUD mostra ao lado do gold; banco depositado na morte E ao sair pro menu.
+- **Inventário v1 implementado** (`35fab68`): tela "Skins"→"Inventário", 2 modos (Skins/**Equipamentos**). Equipamentos = preview + 3 slots verticais + lista de itens, **drag-and-drop** equip/desequip. **3 itens funcionais**: Adaga(+1 dano), Arco Dourado(+1 atk speed), Mestre Elemental (welcome upgrade vira escolha de 1 de 3 elementais).
 
-## Por onde começar
+## Por onde começar (pedido do user, nesta ordem)
 
-1. **Confirmar com o amigo que a 0.9.5 resolveu a queda de FPS.** Era o boss (Mage Monkey, wave 7) com `BOSS_PROJ_LIFETIME=999.0` → tiros que erravam NUNCA expiravam, acumulavam (~106, cada um com PointLight2D → ~140 luzes) pra dentro das waves 8+. Fix: `8.0` em [mage_monkey.gd:94](scripts/enemies/mage_monkey.gd). Se OK → `gh release delete pre-alpha-0.9.4 --repo rafa-mesquita/twilight-quiver-releases --cleanup-tag --yes`.
-2. **No PRÓXIMO deploy, lembrar que o commit `59b46ce` (sprites Náutica) já está em `main` local** e vai junto — é só bumpar versão + criar release + push normal. Não esquecer que ele existe.
-3. **Playtest da 0.9.5 in-game** (reabrir Godot 1× pra reimportar PNGs/CSV): leak de FPS sumiu nas waves 8+; bolha de água com mais range; rastro de fogo (Fogo L2+) +1 DPS por status de Dano; DoT não tomar tick durante dash/fenda; sprites da HUD shop da Náutica corretos (camisa/máscara).
-4. **(Opcional) Linha de patch notes sobre a melhoria de performance** — deixei as notas limpas (preferência do user de não listar fixes), mas ofereci adicionar "performance melhorada em waves avançadas". Ele não decidiu.
+1. **Polir o Inventário** — drag-and-drop + layout já funcionam, mas o user estava iterando no visual. Conferir: feel do "mover" (esconde origem ok), tamanho/posição dos slots e da lista, tooltip custom, os 3 cards do popup de elemental. Playtest visual obrigatório (não dá pra ver no headless).
+2. **Bloquear os itens (só liberar quando COMPRADOS)** — hoje `InventoryItems.is_owned()` retorna `true` pra TODO item (placeholder). Precisa gatear a posse: item só aparece equipável depois de comprado na loja meta. Adicionar uma flag de posse persistente (ex: `settings.cfg [inventory] owned`) + `is_owned` real.
+3. **Fazer a Loja de Pétalas (loja META, fora do jogo)** — onde se GASTA o `PetalBank` em skins + itens. É a "P4" do roadmap (spec do P2/loja-in-game está ADIADO pro fim). Provável nova tela/aba. Destrava a skin World Cup (`shop_petals`) e vende os 3 itens. Vai precisar de brainstorm/spec próprio.
+4. **(Depois)** A loja de pétalas IN-GAME (seção ESPECIAL, spec `2026-06-05-p2-loja-petalas-design.md`) é o ÚLTIMO subprojeto.
 
 ## Contexto crítico
 
-### O perf logger (FERRAMENTA reutilizável — está no projeto, DESLIGADO)
-- [scripts/systems/perf_log.gd](scripts/systems/perf_log.gd), autoload `PerfLog`. `const ENABLED` controla. **Está `false`** (release limpa). Pra caçar leak futuro: `ENABLED=true`, overlay no canto (F3 toggle) + grava `user://perf_log.txt` (`%APPDATA%\Godot\app_userdata\Twilight Quiver\perf_log.txt`) a cada 2s com fps/nodes/**orphans**/res/mem/draws + contagem por grupo + **top 6 classes** de nó. Ver [[tool_perf_log_and_projectile_leak]] na memória.
-- **Pra entregar build de diagnóstico sem afetar o público:** publicar como **prerelease** (não-latest) + link direto do `.zip`; e forçar `dev_button.visible=true` em [main_menu.gd:30](scripts/ui/main_menu.gd) pra o testador pular waves. (Ambos já revertidos na 0.9.5.) ⚠️ o SITE deploya de qualquer jeito no push.
+### Economia de Pétalas (roadmap — ordem reordenada pelo user)
+- Ordem de IMPLEMENTAR: **P1 ✅ → Inventário ✅ → Loja meta (gasta o banco) → Loja in-game ESPECIAL (por último)**.
+- Specs em `docs/superpowers/specs/`: `2026-06-04-economia-petalas-visao.md` (norte), `-p1-petalas-moeda-base-`, `-p2-loja-petalas-` (in-game, ADIADO), `-inventario-v1-casca-`.
+- **Pétala**: carteira por-run (começa do 0) + banco persistente. Gasta in-game (loja ESPECIAL, futura) E fora (loja meta, próxima). Banco NÃO aparece no menu — só no inventário e shop.
+- Ganho: level-up (1-5→1-2, 6-10→2-3, 11+→3-4, boss→4-5) no `_finish_wave`; drop 0.75%/mob (pickup `petal.tscn`, ~19s). Sprite `assets/Hud/petals.png`.
+- Ver memória [[project_petal_economy]], [[feature_world_cup_skin]].
 
-### Releases / deploy / patch notes (IGUAL à sessão anterior, confirmado de novo)
-- **Deploy = push pro `main`** (deploy.yml: build win/mac/web + Pages + anexa zips na release). **Bump `config/version` ANTES.**
-- **Patch notes:** criar a release ANTES do push (`gh release create pre-alpha-X.Y.Z --repo rafa-mesquita/twilight-quiver-releases --notes-file ...`). CI faz `gh release upload --clobber` → **preserva flags** (latest/prerelease) e as notas. Se a release não existe, CI cria como latest.
-- **Notas cumulativas:** o user quis que cada versão MANTENHA as notas da anterior (só bumpa o header `(pre-alpha X.Y.Z)`) e **NÃO liste os fixes pequenos**. Base a notas da nova versão no `body` da última PÚBLICA (não da prerelease de diagnóstico): `gh release view <ultima> --json body --jq .body | sed '1s/X.Y.Z/X.Y.Z+1/' > /tmp/notes.md`.
-- **Hotfix na MESMA tag NÃO chega no launcher** (compara tag → não re-baixa); só o site atualiza. Pra todo mundo pegar, **bumpar versão**.
-- Release pública = NÃO-prerelease + `--latest` (senão `/releases/latest` ignora). gh: conta `rafa-mesquita`.
+### Inventário / itens (estado da implementação)
+- [scripts/systems/inventory_items.gd](scripts/systems/inventory_items.gd) — catálogo `ITEMS` (3 itens), `get_equipped`/`toggle_equipped` (settings.cfg `[inventory] equipped`, máx 3 slots), `apply_to_player` (efeitos `start_status`), `has_welcome_elemental_choice`. ⚠️ `is_owned()` é PLACEHOLDER (sempre true) — gatear na próxima sessão.
+- [scripts/ui/skin_select.gd](scripts/ui/skin_select.gd) — toda a UI do inventário appendada no fim: `_build_mode_bar`/`_set_inv_mode`, `_build_equip_panel`/`_refresh_equip_ui`, `_make_slot`/`_make_owned_item`, drag-drop via `set_drag_forwarding`, tooltip custom (`_show_item_tooltip`, o tooltip DEFAULT não aparece com o cursor custom do jogo), `_build_petal_bank_display`. Sons via `MenuAudio.play_click/play_drop`.
+- [scripts/systems/wave_manager.gd](scripts/systems/wave_manager.gd) — Mestre Elemental: `_grant_free_random_upgrade` chama `_grant_elemental_choice`→`_show_elemental_choice_popup` (3 cards, hover cresce, `_play_buy_sfx` -16db). `FREE_REWARD_CARD_PATHS` ganhou stone/tide (estavam faltando → cards invisíveis). Free upgrade exclui status que item já deu (`get_upgrade_count > 0`).
+- [scripts/systems/menu_audio.gd](scripts/systems/menu_audio.gd) — `play_click()`/`play_drop()` públicos; `_drop` = `sound drop 2.mp3`; scan ignora arquivos com "drop" (senão viravam música/clique).
 
-### Decoder de `.aseprite` (nesta sessão usei PYTHON, validado pixel-a-pixel)
-- Sem Aseprite CLI nesta máquina. Decoder em **Python (struct + zlib + PIL)**: header u16@6(frames)/8(W)/10(H)/12(depth); chunks 0x2004=layer (name STRING@16), 0x2005=cel (`<HhhBH` em body[0:9]; tipo 2 = zlib@20 → `zlib.decompress`; tipo 0 raw; tipo 1 linked). **Validado 0px** contra outputs existentes (Sputnik std layers, Urban bow).
-- **WORLD in-game (`fullSkins/<Skin>.aseprite`, 31 frames 32×32 → 192×256 grid 6×8):** 8 TAGS na ordem = 8 ROWS (Idle/WALK/Atack/damage/arrow hit/indicador/Death/dash), col = frame−tag.from. Layers→slots: Legs/Shirt/Aljava(quiver)/Cape/Hair (192×256); `Arco`→`bow/<Skin>_back.png` (192×224, rows 0..6); `Arco Front`→`bow/<Skin>_front.png` (160×64, Atack→row0 Death→row1). Pula `Player Skin`(body=default) + layers de efeito.
-- **HUD shop-face (`playerHud/<Skin>.aseprite`, 13 frames 66×66 → sheets 858×66 por layer):** `Roupa`→`shirt/<skin>.png`, `Mask`→`cape/<skin>.png`, `Cabelo`→`hair/<skin>.png` (**lowercase**; ShopPlayerFace usa `display_name.to_lower()`). `head`=default (não gera). Descarta FUNDO/Borda. Ver [[feature_nautica_skin]].
+### Editar `.gd`/`.csv` deste repo (GOTCHA crítico, vale a sessão toda)
+- ⚠️ **Edit tool FALHA muito com indentação por TAB** do GDScript (mismatch tab/espaço; "modified since read" do linter; acentos). Workaround usado a sessão toda: **script Python** (`open(...,encoding='utf-8',newline='\n')` + insere por âncora `strip()==...` ou `startswith`, copia a indentação real com `l[:len(l)-len(l.lstrip('\t'))]`). Pra blocos grandes: escrever o bloco num arquivo temp via Write e anexar/inserir com Python.
+- Validar sempre: `Godot ... --headless --editor --quit` (compila com autoloads). `--check-only --script` dá falso-positivo "GameState not found" (autoloads não carregam).
 
-### Editar `.gd`/`.csv` deste repo (GOTCHAS)
-- ⚠️ **Edit tool FALHA muito com indentação por TAB** do GDScript (mismatch tab/espaço). Workaround que usei a sessão toda: **script Python** (`io.open(...,encoding='utf-8',newline='')` + `.replace()` com `\t` literal, `assert count==1`). Confiável pra acentos e tabs.
-- Arquivos CRLF? Não — o repo usa LF nos `.gd` (o Python edit com `newline=''` preserva). i18n CSV é LF.
+### Decoder de `.aseprite` (Python, validado 0px) — pros itens 32×32
+- Itens em `assets/Hud/itens/<Nome>.aseprite` (32×32, **TODAS as layers compostas** = tile completo com fundo). Decoder: header u16@6/8/10 (frames/W/H); chunk 0x2004=layer, 0x2005=cel (x=i16@8,y=i16@10,type@13; type2=zlib@26 pulando header). `canvas.alpha_composite(im,(x,y))` por layer. Export → `assets/Hud/itens/<id>.png`. Importar no Godot (`--import`) gera `.import`.
+- Skins (mundo + HUD): ver [[feature_skin_tinting]] / [[feature_nautica_skin]] (grid 6×8, +nada de offset).
 
-### Invuln / Pai do Verde (auditado nesta sessão)
-- Invuln do Pai do Verde = group **`bush_hidden`** no player. `take_damage` E `_apply_poison_tick` checam (e agora `_iframes_remaining` também — fix do DoT furando dash/fenda). Dark Ball NÃO fura (impacto/burn/poça → take_damage/apply_poison, todos checam).
-
-### Evergreen
-- **Fúria da Maré** = 6º elemental água (`tide_arrow`, mutex). L3 Q Escudo de Água (CD **25s**, texto hardcoded em `SHOP_TIDE_ARROW_DESC_3`), L4 onda. Ver [[feature_tide_fury]].
-- **Náutica** = skin 0.9.1, unlock 500 kills com debuff da Maré (quest `tide_vulnerable_kills`). Ver [[feature_nautica_skin]].
-- **Botão `?` patch notes:** só no main menu (`version_label` `@export show_help`, ligado só na instância do main_menu.tscn).
-- **Fica Frio = Gelo:** freeze fixo 2s + slow 37% são placeholders (candidatos a escalar por nível). L4 +25% Frostwisp +2 DoT (0.9.0).
+### Releases / deploy (evergreen — confirmado na 0.9.7 desta sessão)
+- **Deploy = push pro `main`** (deploy.yml builda win/mac/web + Pages + anexa zips na release `twilight-quiver-releases`, tag = `config/version`). **Bump `config/version` ANTES.**
+- **Patch notes:** pré-criar a release ANTES do push (`gh release create pre-alpha-X.Y.Z --repo rafa-mesquita/twilight-quiver-releases --notes-file ...`); CI faz `upload --clobber` preservando notas/flags. User quer notas **cumulativas** (novo em cima, mantém as antigas; sem listar fixes técnicos; tom pra jogador). gh login = `rafa-mesquita`.
+- **A economia está numa branch separada — quando for deployar 0.9.8+, decidir se a economia entra (merge na main) ou se deploya só fixes da main.**
 
 ## Pendências conhecidas
 
-- [ ] **Pushar o commit `59b46ce` (sprites Náutica) junto do PRÓXIMO bump de versão** — está só em `main` local de propósito.
-- [ ] Amigo confirmar 0.9.5 → deletar prerelease `pre-alpha-0.9.4` de diagnóstico.
-- [ ] `assets/effects/water/onda.aseprite` modificado (WIP do user) — decidir commitar/descartar.
-- [ ] (Opcional) linha de patch notes sobre performance.
-- [ ] Antigas: tradução JP (estrutura pronta, fonte Silver.ttf OK; trocar at01/ByteBounce/PixelifySans que são só-latinas); escalar Gelo por nível; deletar branches mergeadas se ainda existirem.
+- [ ] **`is_owned()` placeholder** (InventoryItems) — gatear posse por compra (item 2 acima).
+- [ ] **Loja meta de pétalas** não existe (item 3) — gasta o banco; vende skins + itens; destrava World Cup.
+- [ ] **Loja de pétalas in-game (ESPECIAL)** — spec pronto, implementação adiada pro fim.
+- [ ] **Branch `feature/economia-petalas` não mergeada/pushada** — toda a economia é experimental local.
+- [ ] Playtest visual do inventário (drag-drop, popup de elemental, tooltip) — não validável no headless.
+- [ ] Mestre Elemental: confirmar in-game que os 3 cards aparecem (incl. Maré/Pedra) e a escolha aplica.
+- [ ] Carryover 0.9.x: deletar prerelease de diagnóstico `pre-alpha-0.9.4` se o amigo confirmou que o leak sumiu (`gh release delete pre-alpha-0.9.4 --repo rafa-mesquita/twilight-quiver-releases --cleanup-tag --yes`).
 
 ## Arquivos / locais relevantes
 
-- [scripts/enemies/mage_monkey.gd](scripts/enemies/mage_monkey.gd) — `BOSS_PROJ_LIFETIME=8.0` (era 999, causava o leak).
-- [scripts/enemies/mage_projectile.gd](scripts/enemies/mage_projectile.gd) — `_die` (só free se `is_inside_tree()`), timer de `lifetime`, **despawn off-map** novo (`_bounds_*` lidos da câmera no `_ready`, check no `_physics_process`). ⚠ cada projétil tem PointLight2D (scenes/enemies/mage_projectile.tscn) — luzes 2D em quantidade matam FPS.
-- [scripts/systems/perf_log.gd](scripts/systems/perf_log.gd) — perf logger (ENABLED=false).
-- [scripts/player/player.gd](scripts/player/player.gd) — `_apply_poison_tick` (guards godmode/tide/bush_hidden/**iframes**), `TIDE_LIFETIME=2.4`, `_spawn_player_fire_trail_segment` (`+float(damage_upgrades)`), `notify_enemy_killed(enemy)` (conta `tide_vulnerable_kills`), `arbusto_hide`/`_iframes_remaining`.
-- [scripts/systems/skin_loadout.gd](scripts/systems/skin_loadout.gd) — `SKIN_QUESTS["Nautica"]` (tipo `tide_vulnerable_kills`, 500), `KIT_PART_OVERRIDE["Nautica"]={body:Default}`, `STAT_TIDE_KILLS`.
-- `assets/Hud/playerHud/Nautica.aseprite` + `{shirt,cape,hair}/nautica.png` — HUD shop (re-exportadas, commit local 59b46ce). `assets/player/fullSkins/Nautica.aseprite` + `{legs,shirt,quiver,cape,hair}/Nautica.png` + `bow/Nautica_{front,back}.png` — in-game.
+- `scripts/systems/inventory_items.gd` — catálogo de itens + equip + apply. ⚠️ `is_owned` placeholder.
+- `scripts/ui/skin_select.gd` — UI do inventário (modos, equip panel, drag-drop, tooltip) no fim do arquivo.
+- `scripts/systems/petal_bank.gd` — banco persistente (`get_total`/`deposit`, key `petal_bank_total`).
+- `scripts/pickups/petal.gd` + `scenes/pickups/petal.tscn` + `scripts/pickups/petal_drop.gd` — pickup de pétala.
+- `scripts/systems/wave_manager.gd` — ganho de pétala (`_finish_wave`), Mestre Elemental (popup de escolha).
+- `assets/Hud/itens/` — sprites dos itens (aseprite + png) + `petals.png`.
+- `docs/superpowers/specs/2026-06-0*-*.md` — specs da economia.
 
 ## Comandos úteis
 
 ```bash
-rtk git status && rtk git log --oneline origin/main..main   # ver o commit não-pushado
+# Validar compile (Godot no Desktop):
+& "C:\Users\rafam\Desktop\Godot_v4.6.2-stable_win64.exe" --headless --editor --quit --path .
+# Importar assets novos (gera .import/.ctex):
+& "C:\Users\rafam\Desktop\Godot_v4.6.2-stable_win64.exe" --headless --import --path .
 
-# Deploy público: bump version, criar release ANTES, push.
-gh release create pre-alpha-X.Y.Z --repo rafa-mesquita/twilight-quiver-releases --title pre-alpha-X.Y.Z --notes-file /tmp/notes.md --latest
-git push origin main && gh run list --repo rafa-mesquita/Twilight-Quiver --limit 1
-
-# Build de diagnóstico (sem afetar público): perf_log ENABLED=true + dev gate=true,
-# criar release --prerelease (NÃO --latest), push, dar link direto do .zip.
-
-# Deletar a prerelease de diagnóstico quando não precisar:
-gh release delete pre-alpha-0.9.4 --repo rafa-mesquita/twilight-quiver-releases --cleanup-tag --yes
-
+rtk git status && rtk git log --oneline -8   # branch feature/economia-petalas, NÃO pushar ainda
 gh api user --jq .login   # rafa-mesquita
 ```
