@@ -25,6 +25,8 @@ Estrutura mínima na cena (resto construído em código, padrão do `skin_select
 - Título "LOJA" (`LOJA_TITLE`).
 - **Saldo do banco**: ícone da pétala (`assets/Hud/petals.png`) + total (`PetalBank.get_total()`),
   no topo. Atualiza após cada compra.
+  - ⚠ Decisão (user 2026-06-05): o banco aparece **só no Inventário (ambas as abas) e na
+    Loja** — **nunca no menu principal** (já é o caso hoje; nada a remover de lá).
 - `GridContainer` de **cards** (construído em `_build_catalog`).
 - Botão **Voltar** (`COMMON_BACK`) → volta pro `main_menu.tscn`.
 
