@@ -278,6 +278,9 @@ const STAT_ACTIVE_SKILLS: StringName = &"active_skills_used_total"
 # Flag (0/1): jogador já passou das waves 1, 2 e 3 sem tomar dano em alguma run.
 # Unlock da skin Hawk.
 const STAT_FLAWLESS_W3: StringName = &"flawless_through_w3"
+# Flag (0/1): em alguma run, COMPROU Armadura antes da wave 4 E matou o 1º boss
+# (mage_monkey) na mesma run. Unlock do item Capacete Veloz.
+const STAT_CAPACETE_VELOZ: StringName = &"capacete_veloz_unlock"
 # Flag (0/1): jogador já comprou Armadura até o Lv5 em alguma run. Unlock da skin Warrior.
 const STAT_ARMOR_LV5: StringName = &"armor_lv5_reached"
 # Flag (0/1): matou um mago longe (>= 350px) com flecha perfurante. Unlock da skin Patriota.
@@ -302,6 +305,9 @@ const STAT_WAVES_CLEARED: StringName = &"waves_cleared_total"
 # Total de compras da carta Roleta Elemental (qualquer run). Unlock do item
 # Mestre Elemental (comprar 10x).
 const STAT_ROULETTE_BUYS: StringName = &"elemental_roulette_buys_total"
+# Total de jokers (Último Desejo) usados (qualquer run). Unlock do Chamado do
+# Palhaço (usar 25x).
+const STAT_JOKER_USED: StringName = &"joker_used_total"
 # Kills do player com HP <= 50% (qualquer run). Unlock do item No Limite.
 const STAT_LOW_HP_KILLS: StringName = &"low_hp_kills_total"
 # Set de boss IDs já abatidos (persistente entre runs). Armazenado como string
@@ -806,6 +812,9 @@ static func record_run(run_stats: Dictionary) -> Array:
 	var run_roulette_buys: int = int(run_stats.get("elemental_roulette_buys", 0))
 	if run_roulette_buys > 0:
 		set_stat(STAT_ROULETTE_BUYS, get_stat(STAT_ROULETTE_BUYS) + run_roulette_buys)
+	var run_joker_used: int = int(run_stats.get("joker_used", 0))
+	if run_joker_used > 0:
+		set_stat(STAT_JOKER_USED, get_stat(STAT_JOKER_USED) + run_joker_used)
 	var run_low_hp_kills: int = int(run_stats.get("low_hp_kills", 0))
 	if run_low_hp_kills > 0:
 		set_stat(STAT_LOW_HP_KILLS, get_stat(STAT_LOW_HP_KILLS) + run_low_hp_kills)
@@ -815,6 +824,10 @@ static func record_run(run_stats: Dictionary) -> Array:
 	# Flag persistente: passou das waves 1-3 sem dano nesta run (unlock Hawk).
 	if bool(run_stats.get("flawless_through_w3", false)) and get_stat(STAT_FLAWLESS_W3) < 1:
 		set_stat(STAT_FLAWLESS_W3, 1)
+	# Flag persistente: comprou Armadura antes da wave 4 + matou o 1º boss nesta run
+	# (unlock do item Capacete Veloz).
+	if bool(run_stats.get("capacete_veloz_unlock", false)) and get_stat(STAT_CAPACETE_VELOZ) < 1:
+		set_stat(STAT_CAPACETE_VELOZ, 1)
 	# Flag persistente: comprou Armadura até o Lv5 nesta run (unlock Warrior).
 	if bool(run_stats.get("armor_lv5_reached", false)) and get_stat(STAT_ARMOR_LV5) < 1:
 		set_stat(STAT_ARMOR_LV5, 1)

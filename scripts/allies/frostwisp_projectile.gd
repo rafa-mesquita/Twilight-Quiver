@@ -61,6 +61,9 @@ func _land() -> void:
 				if bool(crit.get("crit", false)):
 					CritFeedback.mark_next_hit_crit(e)
 			var was_alive: bool = (not ("hp" in e)) or float(e.hp) > 0.0
+			# Cajado do Crepúsculo: +35% no dano de aliados.
+			if p != null and p.has_method("_cajado_power_factor"):
+				dmg *= p._cajado_power_factor()
 			e.take_damage(dmg)
 			if p != null and p.has_method("notify_damage_dealt_by_source"):
 				p.notify_damage_dealt_by_source(dmg, "frostwisp")

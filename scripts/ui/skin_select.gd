@@ -967,7 +967,13 @@ func _item_tooltip(id: String) -> String:
 		var met: bool = bool(req.get("met", false))
 		var col: String = "#8de88d" if met else "#ff8a8a"
 		var mark: String = "·" if met else "▸"
-		out += "\n[color=%s]%s %s[/color]" % [col, mark, tr(String(req.get("label", "")))]
+		# Sufixo de progresso "X / Y" (igual às skins). Só pra requisitos de
+		# contagem (target > 1); binarios/flag não mostram contador.
+		var suffix: String = ""
+		var target: int = int(req.get("target", 0))
+		if target > 1:
+			suffix = "  |  %d / %d" % [int(req.get("current", 0)), target]
+		out += "\n[color=%s]%s %s%s[/color]" % [col, mark, tr(String(req.get("label", ""))), suffix]
 	return out
 
 
@@ -1010,6 +1016,11 @@ func _show_item_tooltip(id: String) -> void:
 	_item_tip_label.text = _item_tooltip(id)
 	_item_tip_panel.visible = true
 	_position_item_tip()
+	# A altura do RichTextLabel (fit_content) só é recalculada no layout do próximo
+	# frame. Reposiciona depois disso pra o clamp usar a altura REAL e o tooltip
+	# nunca vazar / cortar o rodapé na borda de baixo.
+	await get_tree().process_frame
+	_position_item_tip()
 
 
 func _hide_item_tooltip() -> void:
@@ -1021,7 +1032,13 @@ func _position_item_tip() -> void:
 	if _item_tip_panel == null or not _item_tip_panel.visible:
 		return
 	var mp: Vector2 = get_global_mouse_position()
+	# Maior entre size e combined_minimum_size: ao trocar o texto o size pode estar
+	# defasado (altura recalculada só no próximo layout), e o clamp deixaria o
+	# tooltip vazar a borda de baixo. O min_size dá a melhor estimativa imediata.
 	var sz: Vector2 = _item_tip_panel.size
+	var minsz: Vector2 = _item_tip_panel.get_combined_minimum_size()
+	sz.x = maxf(sz.x, minsz.x)
+	sz.y = maxf(sz.y, minsz.y)
 	var vp: Vector2 = get_viewport_rect().size
 	var pos: Vector2 = mp + Vector2(22, 18)
 	pos.x = clampf(pos.x, 8.0, maxf(8.0, vp.x - sz.x - 8.0))
@@ -1069,13 +1086,16 @@ func _make_slot(idx: int, equipped_id: String) -> Control:
 	var slot := PanelContainer.new()
 	slot.custom_minimum_size = Vector2(104, 104)
 	slot.add_theme_stylebox_override("panel", _slot_stylebox(false))
-	slot.set_drag_forwarding(Callable(), _slot_can_drop, _slot_drop)
+	slot.set_drag_forwarding(Callable(), _slot_can_drop, _slot_drop.bind(idx))
 	if equipped_id != "":
 		var t := _make_item_texture(equipped_id, 88.0)
 		t.mouse_filter = Control.MOUSE_FILTER_STOP
 		t.mouse_entered.connect(_show_item_tooltip.bind(equipped_id))
 		t.mouse_exited.connect(_hide_item_tooltip)
-		t.set_drag_forwarding(_get_item_drag_data.bind(equipped_id, "slot", t), Callable(), Callable())
+		# O ícone equipado cobre o slot (MOUSE_FILTER_STOP), então PRECISA aceitar o
+		# drop também — senão soltar um item em cima de um slot ocupado não substitui
+		# (o evento morre no ícone). Mesmo can_drop/drop do slot, + continua arrastável.
+		t.set_drag_forwarding(_get_item_drag_data.bind(equipped_id, "slot", t), _slot_can_drop, _slot_drop.bind(idx))
 		slot.add_child(t)
 	return slot
 
@@ -1125,9 +1145,11 @@ func _slot_can_drop(_at: Vector2, data: Variant) -> bool:
 	return data is Dictionary and String(data.get("source", "")) == "owned"
 
 
-func _slot_drop(_at: Vector2, data: Variant) -> void:
+func _slot_drop(_at: Vector2, data: Variant, idx: int) -> void:
 	if data is Dictionary and String(data.get("source", "")) == "owned":
-		InventoryItems.toggle_equipped(String(data.get("id", "")))
+		# Equipa no slot ESPECÍFICO — se já tiver um item ali, substitui (o antigo
+		# volta pro pool). Slot vazio: só adiciona.
+		InventoryItems.equip_in_slot(String(data.get("id", "")), idx)
 		MenuAudio.play_drop()  # som ao SOLTAR no slot
 		_refresh_equip_ui()
 

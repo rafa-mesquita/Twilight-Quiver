@@ -40,7 +40,13 @@ static func try_drop(world: Node, drop_position: Vector2) -> void:
 	# Gate de skill (pulado no modo dev de drop forçado).
 	if not force and not _player_has_active_skill(player):
 		return
-	var chance: float = 1.0 if force else DROP_CHANCE
+	# Cajado do Crepúsculo (item) sobe a chance pra 4% via override no player.
+	var base_chance: float = DROP_CHANCE
+	if player.has_method("clock_drop_chance_override"):
+		var ov: float = float(player.clock_drop_chance_override())
+		if ov > 0.0:
+			base_chance = ov
+	var chance: float = 1.0 if force else base_chance
 	if randf() > chance:
 		return
 

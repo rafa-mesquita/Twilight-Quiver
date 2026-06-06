@@ -161,6 +161,9 @@ func _current_damage() -> float:
 	var mult: float = 1.0
 	if _player != null and "arrow_damage_multiplier" in _player:
 		mult = float(_player.arrow_damage_multiplier)
+	# Ting é aliado → recebe o +35% do Cajado do Crepúsculo.
+	if _player != null and _player.has_method("_cajado_power_factor"):
+		mult *= _player._cajado_power_factor()
 	return BASE_ARROW_DAMAGE * mult
 
 

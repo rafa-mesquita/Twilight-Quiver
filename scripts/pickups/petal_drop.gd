@@ -14,6 +14,14 @@ const PICKUP_SPREAD: float = 16.0
 static func try_drop(world: Node, drop_position: Vector2) -> void:
 	if world == null:
 		return
+	# Boss rounds (waves 7/14/21) não dropam pétala — nem o boss nem os minions.
+	# Pétala é meta-moeda de grind contínuo; rounds de boss são pico de inimigos
+	# e dariam um surto desproporcional de drops.
+	var tree := world.get_tree()
+	if tree != null:
+		var wm := tree.get_first_node_in_group("wave_manager")
+		if wm != null and wm.has_method("is_boss_wave_now") and wm.is_boss_wave_now():
+			return
 	if randf() > DROP_CHANCE:
 		return
 	var petal: Node2D = PETAL_SCENE.instantiate()

@@ -75,6 +75,9 @@ func _on_hit(body: Node) -> void:
 			if bool(crit_ln.get("crit", false)):
 				dmg_ln *= float(crit_ln.get("mult", 1.0))
 				CritFeedback.mark_next_hit_crit(body)
+		# Cajado do Crepúsculo: +35% no dano de aliados.
+		if p_for_crit != null and p_for_crit.has_method("_cajado_power_factor"):
+			dmg_ln *= p_for_crit._cajado_power_factor()
 		body.take_damage(dmg_ln)
 		_notify_player_dmg_kill(dmg_ln, "leno", was_alive_ln, body)
 	_play_hit_sound()

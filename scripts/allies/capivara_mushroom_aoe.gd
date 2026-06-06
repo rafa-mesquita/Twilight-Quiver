@@ -48,6 +48,9 @@ func _apply_tick_damage() -> void:
 				dmg_cap = float(crit_cap.get("dmg", dmg_cap))
 				if bool(crit_cap.get("crit", false)):
 					CritFeedback.mark_next_hit_crit(body)
+			# Cajado do Crepúsculo: +35% no dano de aliados.
+			if p_for_crit != null and p_for_crit.has_method("_cajado_power_factor"):
+				dmg_cap *= p_for_crit._cajado_power_factor()
 			body.take_damage(dmg_cap)
 			_notify_player_dmg_kill(dmg_cap, "capivara_joe", was_alive_cap, body)
 
