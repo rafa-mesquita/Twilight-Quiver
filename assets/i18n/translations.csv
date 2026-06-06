@@ -71,6 +71,16 @@ LEADERBOARD_TAB_TIME21,Tempo até o 21,Time to 21,Tiempo al 21,Temps jusqu'au 21
 LEADERBOARD_BEST_TIME21,Seu melhor tempo até o 21,Your best time to 21,Tu mejor tiempo al 21,Votre meilleur temps jusqu'au 21
 LEADERBOARD_TIME21_NONE,Vença o 2º boss para registrar seu tempo.,Beat the 2nd boss to log your time.,Vence al 2º jefe para registrar tu tiempo.,Battez le 2e boss pour enregistrer votre temps.
 LEADERBOARD_TIME21_GLOBAL_SOON,Ranking global em breve.,Global ranking coming soon.,Ranking global muy pronto.,Classement mondial bientôt.
+LEADERBOARD_TIME21_EMPTY,Ninguém venceu a wave 21 ainda. Seja o primeiro!,Nobody has beaten wave 21 yet. Be the first!,¡Nadie ha vencido la oleada 21 todavía. Sé el primero!,Personne n'a encore battu la vague 21. Soyez le premier !
+LEADERBOARD_VIEW_BUILD,Ver build,View build,Ver build,Voir le build
+LEADERBOARD_BUILD_NONE,Build não registrada nesta run.,Build not recorded for this run.,Build no registrada en esta partida.,Build non enregistré pour cette partie.
+LEADERBOARD_BUILD_CAT_ELEMENTAL,Elemental,Elemental,Elemental,Élémentaire
+LEADERBOARD_BUILD_CAT_STANDARD,Upgrades padrão,Standard upgrades,Mejoras estándar,Améliorations standard
+LEADERBOARD_BUILD_CAT_STATUS,Status,Status,Estado,Statut
+LEADERBOARD_BUILD_CAT_ALLIES,Aliados,Allies,Aliados,Alliés
+LEADERBOARD_BUILD_CAT_ITEMS,Itens,Items,Objetos,Objets
+LEADERBOARD_ARCHIVE_TOOLTIP,Runs antigas (temporada anterior),Old runs (previous season),Partidas antiguas (temporada anterior),Anciennes parties (saison précédente)
+LEADERBOARD_ARCHIVE_BACK,Voltar ao ranking atual,Back to current ranking,Volver al ranking actual,Retour au classement actuel
 PLAYER_TITLE,INVENTÁRIO,INVENTORY,INVENTARIO,INVENTAIRE
 PLAYER_PROGRESS_HEADER,PROGRESSO,PROGRESS,PROGRESO,PROGRÈS
 PLAYER_EMPTY,"Nenhuma skin disponível.

@@ -28,7 +28,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="Panel" type="Panel" parent="Center"]
-custom_minimum_size = Vector2(1240, 880)
+custom_minimum_size = Vector2(1240, 1000)
 layout_mode = 2
 
 [node name="Margin" type="MarginContainer" parent="Center/Panel"]
@@ -49,7 +49,7 @@ theme_override_constants/separation = 16
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 69
+theme_override_font_sizes/font_size = 56
 text = "LEADERBOARD_TITLE"
 horizontal_alignment = 1
 

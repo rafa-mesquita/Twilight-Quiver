@@ -19,12 +19,16 @@ signal upload_succeeded()
 signal upload_failed(message: String)
 signal fetch_succeeded(rows: Array)
 signal fetch_failed(message: String)
+signal time21_fetched(rows: Array)
+signal time21_fetch_failed(message: String)
+signal archive_fetched(rows: Array)
+signal archive_fetch_failed(message: String)
 signal versions_fetched(versions: Array)
 signal versions_fetch_failed(message: String)
 
 const _CONFIG := preload("res://scripts/systems/api_config.gd")
 
-enum _Op { UPLOAD, FETCH, FETCH_VERSIONS }
+enum _Op { UPLOAD, FETCH, FETCH_TIME21, FETCH_ARCHIVE, FETCH_VERSIONS }
 
 var _http: HTTPRequest
 var _queue: Array = []
@@ -60,6 +64,42 @@ func fetch_top(limit: int = 20, version_filter: String = "") -> void:
 		url += "&version=%s" % version_filter.uri_encode()
 	_enqueue({
 		"op": _Op.FETCH,
+		"url": url,
+		"headers": _CONFIG.build_headers(),
+		"method": HTTPClient.METHOD_GET,
+		"body": "",
+	})
+
+
+func fetch_time21(limit: int = 20, version_filter: String = "") -> void:
+	# Ranking "Tempo até o 21": o backend filtra runs que venceram a wave 21
+	# (time_to_w21_ms >= 0) e ordena por menor tempo. Resposta no mesmo formato
+	# de fetch_top, com o campo time_to_w21_ms em cada linha.
+	if not _CONFIG.is_configured():
+		time21_fetch_failed.emit("API nao configurada")
+		return
+	var url: String = "%s%s?limit=%d&board=time_w21" % [_CONFIG.API_BASE_URL, _CONFIG.RUNS_ENDPOINT, limit]
+	if not version_filter.is_empty():
+		url += "&version=%s" % version_filter.uri_encode()
+	_enqueue({
+		"op": _Op.FETCH_TIME21,
+		"url": url,
+		"headers": _CONFIG.build_headers(),
+		"method": HTTPClient.METHOD_GET,
+		"body": "",
+	})
+
+
+func fetch_archive(limit: int = 20) -> void:
+	# Arquivo: runs da(s) temporada(s) anterior(es) (version_num < SEASON_MIN no
+	# backend), board "Por Waves" antigo ordenado por score. Resposta no mesmo
+	# formato de fetch_top.
+	if not _CONFIG.is_configured():
+		archive_fetch_failed.emit("API nao configurada")
+		return
+	var url: String = "%s%s?limit=%d&archive=true" % [_CONFIG.API_BASE_URL, _CONFIG.RUNS_ENDPOINT, limit]
+	_enqueue({
+		"op": _Op.FETCH_ARCHIVE,
 		"url": url,
 		"headers": _CONFIG.build_headers(),
 		"method": HTTPClient.METHOD_GET,
@@ -113,6 +153,8 @@ func _emit_failure(op: int, message: String) -> void:
 	match op:
 		_Op.UPLOAD: upload_failed.emit(message)
 		_Op.FETCH:  fetch_failed.emit(message)
+		_Op.FETCH_TIME21: time21_fetch_failed.emit(message)
+		_Op.FETCH_ARCHIVE: archive_fetch_failed.emit(message)
 		_Op.FETCH_VERSIONS: versions_fetch_failed.emit(message)
 
 
@@ -144,6 +186,24 @@ func _on_request_completed(result: int, response_code: int, _headers: PackedStri
 					fetch_failed.emit("Resposta invalida do servidor")
 				else:
 					fetch_succeeded.emit(parsed)
+		_Op.FETCH_TIME21:
+			if not ok:
+				time21_fetch_failed.emit("HTTP %d: %s" % [response_code, body_str])
+			else:
+				var parsed_t: Variant = JSON.parse_string(body_str)
+				if typeof(parsed_t) != TYPE_ARRAY:
+					time21_fetch_failed.emit("Resposta invalida do servidor")
+				else:
+					time21_fetched.emit(parsed_t)
+		_Op.FETCH_ARCHIVE:
+			if not ok:
+				archive_fetch_failed.emit("HTTP %d: %s" % [response_code, body_str])
+			else:
+				var parsed_a: Variant = JSON.parse_string(body_str)
+				if typeof(parsed_a) != TYPE_ARRAY:
+					archive_fetch_failed.emit("Resposta invalida do servidor")
+				else:
+					archive_fetched.emit(parsed_a)
 		_Op.FETCH_VERSIONS:
 			if not ok:
 				versions_fetch_failed.emit("HTTP %d: %s" % [response_code, body_str])

@@ -2090,7 +2090,37 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 		# Tempo efetivo (só combate) até vencer o dual boss da wave 21. -1 = não
 		# chegou. Vai pro payload do leaderboard e pro recorde pessoal local.
 		"time_to_w21_ms": int(p.get("stats_time_to_w21_ms")) if p != null and "stats_time_to_w21_ms" in p else -1,
+		# Build da run (upgrades + itens equipados) pro modal do leaderboard.
+		"build": _collect_build(p),
 	}
+
+
+# Lista COMPLETA de upgrade ids (espelha dev_panel._ALL_UPGRADE_IDS e cobre as
+# categorias do RunBuildModal). NÃO usar _DEV_RESPAWN_UPGRADE_IDS aqui — aquela
+# lista está incompleta (sem stone_arrow/tide_arrow/fenda).
+const _BUILD_UPGRADE_IDS: Array[String] = [
+	# Elemental
+	"fire_arrow", "curse_arrow", "ice_arrow", "stone_arrow", "tide_arrow",
+	# Upgrades padrão
+	"perfuracao", "multi_arrow", "double_arrows", "chain_lightning", "life_steal",
+	"gold_magnet", "dash", "esquivando", "fenda", "ricochet_arrow", "graviton",
+	"boomerang", "critical_chance", "tiger_claws",
+	# Status
+	"hp", "damage", "attack_speed", "move_speed", "armor",
+	# Aliados
+	"claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto",
+]
+
+
+# Snapshot da build da run: { upgrades: {id: level>0}, items: [equipped ids] }.
+func _collect_build(p: Node) -> Dictionary:
+	var upgrades: Dictionary = {}
+	if p != null and p.has_method("get_upgrade_count"):
+		for id in _BUILD_UPGRADE_IDS:
+			var lvl: int = int(p.get_upgrade_count(id))
+			if lvl > 0:
+				upgrades[id] = lvl
+	return {"upgrades": upgrades, "items": InventoryItems.get_equipped().duplicate()}
 
 
 func _build_run_payload(nick: String) -> Dictionary:
