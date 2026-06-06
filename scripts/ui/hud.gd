@@ -97,6 +97,7 @@ const HUD_RUNTIME_SCALE: Vector2 = Vector2(3, 3)
 
 @onready var hud_frame: TextureRect = $HudFrame
 @onready var wave_number_label: Label = $HudFrame/WaveNumberLabel
+@onready var run_timer_label: Label = $RunTimerLabel
 @onready var gold_count_label: Label = $GoldDisplay/CountLabel
 # PetalDisplay (construído em código em _build_petal_display) — meta-moeda.
 var _petal_count_label: Label = null
@@ -1100,10 +1101,25 @@ func _flash_skill_ui(node: Control) -> void:
 	t.tween_property(node, "modulate", base, 0.4).set_trans(Tween.TRANS_SINE)
 
 
+func _update_run_timer_label() -> void:
+	if run_timer_label == null:
+		return
+	# Acompanha a visibilidade da moldura da HUD (some em cinematics/cantos).
+	run_timer_label.visible = hud_frame == null or hud_frame.visible
+	if not run_timer_label.visible:
+		return
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not player.has_method("get_run_time_msec"):
+		return
+	var total_sec: int = int(player.get_run_time_msec()) / 1000
+	run_timer_label.text = "%d:%02d" % [total_sec / 60, total_sec % 60]
+
+
 func _process(delta: float) -> void:
 	_update_tower_alert(delta)
 	_update_boss_hp_bar()
 	_poll_skin_unlocks(delta)
+	_update_run_timer_label()
 	# Se o player passar atrás da HUD (canto do mapa), translúcido pra ver através.
 	if not hud_frame.visible:
 		return
@@ -2071,6 +2087,9 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 		"joker_used": int(p.get("stats_joker_used")) if p != null and "stats_joker_used" in p else 0,
 		"capacete_veloz_unlock": (p != null and "stats_armor_before_w4" in p and bool(p.get("stats_armor_before_w4")) and "stats_bosses_killed" in p and ("mage_monkey" in p.get("stats_bosses_killed"))),
 		"low_hp_kills": int(p.get("stats_low_hp_kills")) if p != null and "stats_low_hp_kills" in p else 0,
+		# Tempo efetivo (só combate) até vencer o dual boss da wave 21. -1 = não
+		# chegou. Vai pro payload do leaderboard e pro recorde pessoal local.
+		"time_to_w21_ms": int(p.get("stats_time_to_w21_ms")) if p != null and "stats_time_to_w21_ms" in p else -1,
 	}
 
 

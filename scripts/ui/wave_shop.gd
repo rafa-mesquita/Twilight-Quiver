@@ -297,6 +297,7 @@ const _JOKER_STATUS_IDS: Array[String] = ["hp", "damage", "attack_speed", "move_
 const _JOKER_PET_IDS: Array[String] = ["claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto"]
 
 @onready var gold_label: Label = $Root/GoldLabel
+@onready var cleared_info_label: Label = $Root/ClearedInfoLabel
 @onready var continue_btn: Button = $Root/ContinueBtn
 @onready var placement_hint: Label = $PlacementHint
 @onready var bg_rect: ColorRect = $Bg
@@ -415,6 +416,10 @@ func _ready() -> void:
 		next_wn = wn + 1
 		if wn == 3 or (wn >= 4 and wn % 2 == 0):
 			max_upgrades_this_round = 2
+		# Info da wave recém-limpa + tempo efetivo acumulado (timer já parado no
+		# _finish_wave). wn aqui é a wave que acabou de ser limpa (ainda não
+		# incrementada pra próxima).
+		_set_cleared_info(wn)
 		# Wave 3: pet grátis aleatório é entregue ANTES do shop abrir pelo
 		# wave_manager._grant_free_random_pet (que mostra popup com card art).
 		# Chamada antiga aqui removida pra não duplicar o grant.
@@ -440,6 +445,51 @@ func _ready() -> void:
 		call_deferred("_start_free_tower_placement")
 	# Birthday event: fireworks entre waves — gated em nick + janela (ou dev toggle).
 	_maybe_spawn_fireworks()
+
+
+func _notification(what: int) -> void:
+	# Locale trocado em runtime (ex: player muda idioma no meio da run pelo menu).
+	# Controls com auto_translate re-resolvem sozinhos, mas os textos de card são
+	# bakeados via tr() na hora do _build_card, então precisam de re-render manual.
+	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		_relocalize()
+
+
+func _relocalize() -> void:
+	# Só re-renderiza se a loja já montou os slots (evita rodar antes do _ready).
+	if status_slots.is_empty():
+		return
+	_build_all_cards()
+	_refresh_button_states()
+	_refresh_augments_column()
+	_refresh_stats_card()
+	_refresh_pets_box()
+	_refresh_items_box()
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm != null and "wave_number" in wm:
+		var wn: int = int(wm.wave_number)
+		continue_btn.text = tr("SHOP_NEXT_WAVE_FMT") % (wn + 1)
+		_set_cleared_info(wn)
+
+
+func _set_cleared_info(cleared_wave: int) -> void:
+	if cleared_info_label == null:
+		return
+	var wave_str: String = "0:00"
+	var total_str: String = "0:00"
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null and player.has_method("get_run_time_msec"):
+		if player.has_method("get_wave_time_msec"):
+			wave_str = _fmt_mmss(int(player.get_wave_time_msec()))
+		total_str = _fmt_mmss(int(player.get_run_time_msec()))
+	var line1: String = tr("SHOP_CLEARED_INFO_FMT") % [cleared_wave, wave_str]
+	var line2: String = tr("SHOP_RUN_TOTAL_FMT") % total_str
+	cleared_info_label.text = "%s  |  %s" % [line1, line2]
+
+
+func _fmt_mmss(msec: int) -> String:
+	var total_sec: int = msec / 1000
+	return "%d:%02d" % [total_sec / 60, total_sec % 60]
 
 
 func _maybe_spawn_fireworks() -> void:

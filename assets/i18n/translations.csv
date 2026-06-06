@@ -66,6 +66,11 @@ LEADERBOARD_COL_DAMAGE,Dano,Damage,Daño,Dégâts
 LEADERBOARD_COL_VERSION,Versão,Version,Versión,Version
 LEADERBOARD_NO_SCORES,Nenhum score nessa versão.,No scores for this version.,Sin puntuaciones para esta versión.,Aucun score pour cette version.
 LEADERBOARD_ERROR,Erro: %s,Error: %s,Error: %s,Erreur : %s
+LEADERBOARD_TAB_WAVES,Por Waves,By Raids,Por Raids,Par Raids
+LEADERBOARD_TAB_TIME21,Tempo até o 21,Time to 21,Tiempo al 21,Temps jusqu'au 21
+LEADERBOARD_BEST_TIME21,Seu melhor tempo até o 21,Your best time to 21,Tu mejor tiempo al 21,Votre meilleur temps jusqu'au 21
+LEADERBOARD_TIME21_NONE,Vença o 2º boss para registrar seu tempo.,Beat the 2nd boss to log your time.,Vence al 2º jefe para registrar tu tiempo.,Battez le 2e boss pour enregistrer votre temps.
+LEADERBOARD_TIME21_GLOBAL_SOON,Ranking global em breve.,Global ranking coming soon.,Ranking global muy pronto.,Classement mondial bientôt.
 PLAYER_TITLE,INVENTÁRIO,INVENTORY,INVENTARIO,INVENTAIRE
 PLAYER_PROGRESS_HEADER,PROGRESSO,PROGRESS,PROGRESO,PROGRÈS
 PLAYER_EMPTY,"Nenhuma skin disponível.
@@ -218,6 +223,8 @@ HUD_QUIT_CONFIRM_YES,Sim,Yes,Sí,Oui
 HUD_QUIT_CONFIRM_NO,Não,No,No,Non
 SHOP_NEXT_WAVE,Próxima Wave,Next Raid,Siguiente Raid,Raid suivant
 SHOP_NEXT_WAVE_FMT,Próxima Wave: %d,Next Raid: %d,Siguiente Raid: %d,Raid suivant : %d
+SHOP_CLEARED_INFO_FMT,Limpou a wave %d em %s,Cleared raid %d in %s,Limpiaste la raid %d en %s,Raid %d nettoyée en %s
+SHOP_RUN_TOTAL_FMT,Tempo total da run: %s,Total run time: %s,Tiempo total de run: %s,Temps total: %s
 SHOP_GOLD_LABEL,%d moedas,%d coins,%d monedas,%d pièces
 SHOP_HEADER_STRUCTURES,ESTRUTURAS,STRUCTURES,ESTRUCTURAS,STRUCTURES
 SHOP_HEADER_STATUS,STATUS,STATUS,ESTADO,STATS

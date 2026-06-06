@@ -310,6 +310,10 @@ const STAT_ROULETTE_BUYS: StringName = &"elemental_roulette_buys_total"
 const STAT_JOKER_USED: StringName = &"joker_used_total"
 # Kills do player com HP <= 50% (qualquer run). Unlock do item No Limite.
 const STAT_LOW_HP_KILLS: StringName = &"low_hp_kills_total"
+# Recorde pessoal: menor tempo efetivo (ms, só combate) até vencer o dual boss
+# da wave 21. 0 = nunca venceu. Usado pelo leaderboard "tempo até o 21" enquanto
+# o ranking global (backend) não existe.
+const STAT_BEST_TIME_W21: StringName = &"best_time_to_w21_ms"
 # Set de boss IDs já abatidos (persistente entre runs). Armazenado como string
 # CSV no settings.cfg porque ConfigFile só aceita primitivos.
 const _KEY_BOSSES_KILLED_SET: String = "bosses_killed_set"
@@ -818,6 +822,13 @@ static func record_run(run_stats: Dictionary) -> Array:
 	var run_low_hp_kills: int = int(run_stats.get("low_hp_kills", 0))
 	if run_low_hp_kills > 0:
 		set_stat(STAT_LOW_HP_KILLS, get_stat(STAT_LOW_HP_KILLS) + run_low_hp_kills)
+	# Recorde pessoal de tempo até o 21: só conta se a run venceu o dual boss
+	# (time_to_w21_ms >= 0). Guarda o MENOR tempo (0 = ainda sem recorde).
+	var run_time_w21: int = int(run_stats.get("time_to_w21_ms", -1))
+	if run_time_w21 >= 0:
+		var best_w21: int = get_stat(STAT_BEST_TIME_W21)
+		if best_w21 <= 0 or run_time_w21 < best_w21:
+			set_stat(STAT_BEST_TIME_W21, run_time_w21)
 	# Flag persistente: chegou ao Lv4 de algum elemental nesta run (unlock Skeleton).
 	if bool(run_stats.get("elemental_l4_reached", false)) and get_stat(STAT_ELEMENTAL_L4) < 1:
 		set_stat(STAT_ELEMENTAL_L4, 1)

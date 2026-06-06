@@ -453,6 +453,9 @@ func _start_next_wave() -> void:
 	if stopped:
 		return
 	wave_active = true
+	# Cronômetro de tempo efetivo: liga junto com o combate.
+	if player != null and player.has_method("set_run_timer_active"):
+		player.set_run_timer_active(true)
 	_spawn_capivara_starter_mushrooms()
 	_spawn_stone_cube_allies()
 	_emit_progress()
@@ -976,10 +979,18 @@ func _finish_wave() -> void:
 	#  - Destiny: concluir a Raid 21 (os 2 bosses mortos) → reporta "raid21".
 	var _p_fw := get_tree().get_first_node_in_group("player")
 	if _p_fw != null:
+		# Cronômetro de tempo efetivo: desliga no fim do combate (não conta
+		# loja/entre-waves). Religa no início da próxima wave (_start_next_wave).
+		if _p_fw.has_method("set_run_timer_active"):
+			_p_fw.set_run_timer_active(false)
 		if wave_number == 3 and "stats_damage_taken" in _p_fw and float(_p_fw.stats_damage_taken) <= 0.0 and "stats_flawless_through_w3" in _p_fw:
 			_p_fw.stats_flawless_through_w3 = true
 		if wave_number == boss_dual_wave and _p_fw.has_method("notify_boss_killed"):
 			_p_fw.notify_boss_killed("raid21")
+			# Leaderboard "tempo até o 21": snapshot do cronômetro no instante em
+			# que o dual boss cai (timer já parado acima → reflete só o combate).
+			if "stats_time_to_w21_ms" in _p_fw and _p_fw.stats_time_to_w21_ms < 0:
+				_p_fw.stats_time_to_w21_ms = _p_fw.get_run_time_msec()
 		# Sputnik: passou da wave sem disparo manual de flecha → unlock (qualquer wave >= 1).
 		if wave_number >= 1 and "fired_arrow_this_wave" in _p_fw and not _p_fw.fired_arrow_this_wave and "stats_no_arrow_round" in _p_fw:
 			_p_fw.stats_no_arrow_round = true
@@ -1317,6 +1328,9 @@ func _open_shop() -> void:
 func _on_player_died() -> void:
 	stopped = true
 	wave_active = false
+	var _p_died := get_tree().get_first_node_in_group("player")
+	if _p_died != null and _p_died.has_method("set_run_timer_active"):
+		_p_died.set_run_timer_active(false)
 
 
 # Chamado pelo wave_shop quando o player confirma o placement de uma estrutura.

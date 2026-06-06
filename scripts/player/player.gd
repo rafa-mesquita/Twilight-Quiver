@@ -553,7 +553,17 @@ var _poison_number_color_override: Color = Color(0, 0, 0, 0)  # alpha 0 = sem ov
 var _poison_plays_sound: bool = false
 
 # Run stats — exibidos na tela de morte. Tudo zerado em _ready.
-var _run_start_msec: int = 0
+# Cronômetro de tempo EFETIVO de jogo (só combate). Acumula em _physics_process
+# enquanto _run_timer_active; pause congela naturalmente (process PAUSABLE) e a
+# loja/entre-waves não conta porque o wave_manager liga/desliga via wave_active.
+var _run_time_ms: float = 0.0
+var _run_timer_active: bool = false
+# Valor do cronômetro no início do combate da wave atual. Tempo só-dessa-wave =
+# get_run_time_msec() - _wave_start_time_ms. Usado pela loja.
+var _wave_start_time_ms: int = 0
+# Snapshot do cronômetro no instante em que a wave 21 (dual boss) é limpa.
+# -1 = não chegou a vencer o 2º boss nesta run. Vai pro payload do leaderboard.
+var stats_time_to_w21_ms: int = -1
 var stats_enemies_killed: int = 0
 # Inimigos mortos com o debuff de vulnerabilidade da Fúria da Maré ativo —
 # acumulado entre runs pro unlock da skin Nautica.
@@ -630,7 +640,10 @@ func _ready() -> void:
 	reset_hp()
 	hp_changed.emit(hp, max_hp)
 	hp_bar.set_ratio(1.0)
-	_run_start_msec = Time.get_ticks_msec()
+	_run_time_ms = 0.0
+	_run_timer_active = false
+	_wave_start_time_ms = 0
+	stats_time_to_w21_ms = -1
 
 	attack_timer.wait_time = attack_cooldown
 	attack_timer.one_shot = true
@@ -662,6 +675,8 @@ func _apply_birthday_hat() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if _run_timer_active:
+		_run_time_ms += delta * 1000.0
 	_update_status_effects(delta)
 	_sync_sanguinario_overlay()
 	# Stun: trava player completamente (sem movimento, sem auto-cast de skills,
@@ -4697,4 +4712,18 @@ func notify_damage_taken(amount: float, source_id: String = "") -> void:
 
 
 func get_run_time_msec() -> int:
-	return Time.get_ticks_msec() - _run_start_msec
+	return int(_run_time_ms)
+
+
+# Tempo efetivo (só combate) decorrido SÓ na wave atual / recém-limpa.
+func get_wave_time_msec() -> int:
+	return int(_run_time_ms) - _wave_start_time_ms
+
+
+# Liga/desliga o cronômetro de tempo efetivo. Chamado pelo wave_manager quando
+# wave_active muda: ON no início do combate, OFF no fim da wave / morte / loja.
+# Ao ligar, marca o início da wave pra medir o tempo só-dessa-wave.
+func set_run_timer_active(active: bool) -> void:
+	if active:
+		_wave_start_time_ms = int(_run_time_ms)
+	_run_timer_active = active
