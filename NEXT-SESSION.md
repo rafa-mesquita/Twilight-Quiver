@@ -1,74 +1,70 @@
 # Próxima Sessão
 
-> Última atualização: 2026-06-05 17:30
-> Sessão anterior: deploy da **pre-alpha-0.10.0** — economia de pétalas inteira (P1+P3+P4): inventário de itens equipáveis (7 itens), loja meta de pétalas, animação de unlock de item, cursor de menu pixel-art, balance. Mergeado na `main`, no ar.
+> Última atualização: 2026-06-06 05:30
+> Sessão anterior: deploy da **pre-alpha-0.10.1** — 4 itens novos (Cajado do Crepúsculo, Sanguinário, Chamado do Palhaço, Capacete Veloz) + melhorias de loja de pétalas/UI + polimento. Mergeado na `main`, CI passou, no ar. Patch notes limpos (só 0.10.0 + 0.10.1).
 
 ## Estado atual
 
-- **PÚBLICO = `pre-alpha-0.10.0`** (deploy 2026-06-05). `main` sincronizada com origin, tree limpo. Site + launcher já têm. Release é Latest com zips win/mac. A branch `feature/economia-petalas` foi **mergeada (ff) na main** — não é mais experimental.
-- **Economia de pétalas: P1 (moeda) + P3 (inventário) + P4 (loja meta) SHIPPADOS.** Falta só o **P2 (loja in-game "ESPECIAL")** — é o que o user quer fazer a seguir pra fechar a economia.
-- `DEV_UNLOCK_ALL_ITEMS = false` (revertido pro release). `DEV_UNLOCK_ALL = true` no skin_loadout (libera skins em debug; ignorado em release).
+- **PÚBLICO = `pre-alpha-0.10.1`** (deploy 2026-06-06). `main` sincronizada, tree limpo. CI (`deploy.yml`) buildou + publicou no launcher + deployou web. 🌐 https://rafa-mesquita.github.io/Twilight-Quiver/
+- **Patch notes consolidados:** launcher (`twilight-quiver-releases`) tem **só `0.10.1`** (Latest, notas 0.10.0+0.10.1 combinadas, com binários) e **`0.10.0`** (notas enxugadas pra só ele). Tudo antes do 0.10.0 foi **apagado** nos dois repos (launcher: release+tag; repo do jogo: releases, tags mantidas). **A partir de agora as notas NÃO são mais cumulativas** — a cadeia histórica foi cortada no 0.10.0.
+- **Economia de pétalas: ainda falta o P2 (loja in-game "ESPECIAL").** Continua sendo o próximo subprojeto pra fechar a economia.
+- ⚠️ **`DEV_UNLOCK_ALL_ITEMS = true`** em [inventory_items.gd:22](scripts/systems/inventory_items.gd#L22) — foi ligado pra testar os itens novos e **NÃO** revertido. É **ignorado em release** (gate `OS.is_debug_build()`, e o CI builda `--export-release`), então o build no ar está OK. Mas reverter pra `false` na próxima oportunidade pra seguir a convenção (não precisa redeploy só por isso — release ignora).
 
 ## Por onde começar
 
-1. **P2 — Loja de pétalas IN-GAME ("ESPECIAL"), no lugar das Estruturas.** É o último subprojeto da economia. Spec PRONTO: [docs/superpowers/specs/2026-06-05-p2-loja-petalas-design.md](docs/superpowers/specs/2026-06-05-p2-loja-petalas-design.md). Resumo: a seção **Estruturas do `wave_shop`** vira a loja ESPECIAL — aparece **10%/shop a partir da wave 6** + pity (≥1× antes da wave 14); pool de 3 (Torre comprada em pétala, Segunda Vida = revive 50% HP empilhável, Super-Upgrade = +1 em cada status), rola 2. Precisa de `player.spend_petals` (já tem `add_petals`; `PetalBank.spend` existe mas é só pro banco/loja meta — a loja in-game gasta a **carteira por-run** `player.petals`). Custo em pétala SEPARADO do gold. **Brainstorm rápido + writing-plans antes** (revisar o spec, que é de 2026-06-05 e pode precisar de ajuste pós-0.10.0).
-2. **Deletar a prerelease de diagnóstico `pre-alpha-0.9.4`** se o amigo confirmou que o leak de FPS sumiu: `gh release delete pre-alpha-0.9.4 --repo rafa-mesquita/twilight-quiver-releases --cleanup-tag --yes`.
-3. **(Opcional) Tunar a economia** — drop de pétalas até W21 ≈ **52-73 por wave-clear (média ~62) + ~8-18 de drop de mob** = ~60-90/run. Preços loja meta: Cabelo 150, World Cup 350, Adaga/Arco 750. Faixas por round no `wave_manager._finish_wave`; `DROP_CHANCE = 0.0075` em `petal_drop.gd`.
+1. **Playtest da 0.10.1 (validar os 4 itens novos in-game).** Nada foi rodado localmente nesta sessão (deploy direto, CI compilou OK). Testar: dodge do Capacete Veloz (reusa o "miss" do Esquivando); glow vermelho do Sanguinário (HP<40%) na HUD + no player; Cajado (−30% flecha / +35% skill+aliado, relógio 4%); coringa 4×/2-por-run do Palhaço. Os 4 já estão equipáveis em debug (DEV_UNLOCK_ALL_ITEMS).
+2. **P2 — Loja de pétalas IN-GAME ("ESPECIAL"), no lugar das Estruturas.** Spec antigo: [docs/superpowers/specs/2026-06-05-p2-loja-petalas-design.md](docs/superpowers/specs/2026-06-05-p2-loja-petalas-design.md) (revisar pós-0.10.1; brainstorm rápido + writing-plans antes). Usa a carteira por-run `player.petals` (precisa `spend_petals`).
+3. **Reverter `DEV_UNLOCK_ALL_ITEMS = false`** quando não estiver mais testando os itens.
+4. **(Opcional) Tunar economia/preços** dos itens novos na loja de pétalas: Cajado 400, Sanguinário 660 (loja, `unlock: shop`); Chamado do Palhaço e Capacete Veloz são **quest** (sem preço).
 
 ## Contexto crítico
 
-### Itens equipáveis (sistema, [scripts/systems/inventory_items.gd](scripts/systems/inventory_items.gd))
-- Cada item tem **`effects: []`** (múltiplos efeitos) OU `effect: {}` (single, legado) — `_item_effects(id)` abstrai. Tipos: `start_status` (apply_upgrade ×amount), `welcome_elemental_choice`, `pet_slot`, `gold_per_round`, `free_first_roll`, `max_hp_override`, `disable_shop_hp`.
-- **Unlock:** `default` (sempre), `shop` (→ `is_purchased`, comprado na loja meta), `quest` (reqs com stat persistente >= value). Guard `shop_petals` pra skins em `is_unlocked`/`is_kit_unlocked` do skin_loadout.
-- **7 itens:** Adaga(+1 dano, loja), Arco(+1 atk speed, loja), Mestre Elemental(escolha elemental, quest: 10× roleta), Adote Mais Um(+1 slot pet, quest: 1500 cura aliado + 1000 kills aliado), Dividendo Arcano(+1 gold/round, quest: 2500 gold gasto), Estou com Sorte(40% 1º reroll grátis, quest: 1 wave limpa), **No Limite**(glass cannon: HP 50 + sem HP na loja + começa move_speed+chuva coins L2, quest: 500 kills com player ≤50% HP).
-- **Stats persistentes novos (SkinLoadout):** ally_heal_total, ally_kills_total, gold_spent_total, waves_cleared_total, elemental_roulette_buys_total, low_hp_kills_total. Trackeados no player (`stats_*`) → `hud._collect_run_stats` → `SkinLoadout.record_run`. ⚠ **Sempre que adicionar stat: tem que aparecer no `_collect_run_stats` E no `record_run`** (um edit antigo da Roleta falhou no meio e o stat nunca foi exposto — corrigido nesta sessão).
-- `InventoryItems.start_granted_amount(status)` impede o presente pós-boss (wave 14) subir um upgrade que só veio do item (No Limite não vira gold_magnet L3 / move_speed L2).
+### Os 4 itens novos da 0.10.1 (mecânicas não-óbvias)
+- **Cajado do Crepúsculo** (loja 400): dois fatores no player — `_cajado_arrow_factor()` (×0.70, aplicado 1× no spawn da flecha, linha ~1088 do player.gd) e `_cajado_power_factor()` (×1.35). O +35% vai nos call sites de skill via `_apply_dmg_pct_to_dps(base, is_skill=true)` + terremoto/bumerangue + **dano de aliados** (cada script de aliado multiplica reusando a ref de player que já busca pro crit). DoTs/splash/AoE-pedra/proc-cadeia/graviton ficam **neutros**. AoE da pedra divide de volta pra anular o −30%. Relógio: `clock_drop_chance_override()` → 4%.
+- **Sanguinário** (loja 660): `arrow_damage_multiplier` virou **derivado** = `_damage_base × _sanguinario_factor()` (1.30 se HP<40%). Upgrade de Dano agora soma em `_damage_base` + `_refresh_damage_multiplier()`. Flip dirigido por `hp_changed` (sinal `sanguinario_active_changed`). HUD: glow vermelho pulsante no slot; player: overlay aditivo que espelha a silhueta (não mexe em `sprite.modulate`, pra não brigar com hit-flash).
+- **Chamado do Palhaço** (quest: usar Último Desejo 25×): `InventoryItems.equipped_joker_weight_mult()` (×4 no peso do coringa) + `joker_allows_twice()` (2 usos/run, 2ª custa 20g via `_joker_price_now`). Stat persistente `joker_used_total` (player.stats_joker_used → hud → record_run).
+- **Capacete Veloz** (quest composto): `_capacete_dodge_chance()` = `armor_level × 3%`, somado ao Esquivando no roll de dodge do `take_damage` (reusa `_spawn_miss_number`). Unlock = **comprar Armadura antes da wave 4** (flag `stats_armor_before_w4` em `_commit_status_only` quando `wave_number<4`) **E** matar o 1º boss (`"mage_monkey" in stats_bosses_killed`). Combinado em `hud._collect_run_stats` → stat `capacete_veloz_unlock`.
 
-### Loja meta ([scripts/ui/loja_petalas.gd](scripts/ui/loja_petalas.gd) + .tscn)
-- Tela própria via botão "Loja" no menu (abaixo de Inventário). Layout C: sidebar categorias + grid + painel de detalhe à direita. Frame 1440×820 centralizado (igual inventário). Inclui nó **Cursor** (`menu_cursor.tscn`) como os outros menus.
-- Vende `kind`: "skin", "part" (peça avulsa, ex Cabelo Vermelho — thumbnail = Default + a peça via `SkinLoadout.find_part`), "item". `PetalBank.spend` + `mark_purchased`/`mark_skin_purchased`. ⚠ `_parts_cache` evita re-scan caro do filesystem.
+### ⚠ Stat persistente novo: 5 pontos (SEMPRE)
+Adicionar stat: (1) const `&"..."` no skin_loadout, (2) `var stats_*` no player, (3) increment no gameplay, (4) `hud._collect_run_stats`, (5) `skin_loadout.record_run`. Esqueci nenhum nesta sessão.
 
-### Cursor de menu ([scripts/ui/menu_cursor.gd](scripts/ui/menu_cursor.gd))
-- Mãozinha pixel-art (hardware cursor). Mapeia `menu_grab` nas shapes de drag (DRAG/CAN_DROP/FORBIDDEN) — senão o Godot mostrava o "bloqueado". As 5 telas de menu trocaram `cursor.tscn` (mira) por `menu_cursor.tscn`. In-game mantém a mira animada.
-
-### Editar `.gd`/`.csv` (GOTCHA crítico)
-- ⚠ **Edit tool falha com TAB do GDScript.** Workaround: **Python** (`open(...,encoding='utf-8')` universal-read + `newline='\r\n' ou '\n'` detectado por arquivo, replace por âncora exata; assert `count(old)==1`). **player.gd e skin_loadout.gd são CRLF**; hud/wave_shop/inventory_items/skin_select/loja são LF. Acento no anchor quebra às vezes — prefira âncora ASCII.
-- Validar: `Godot --headless --editor --quit --path .` (carrega autoloads). Depois `git checkout project.godot` (o editor suja com import noise).
+### Assets / decoder de aseprite
+- Escrevi um **decoder Python de `.aseprite`** (validado pixel-a-pixel contra PNGs existentes) pra exportar os ícones sem abrir o Aseprite. Não foi commitado (temp). Recriar se precisar: decode header (magic 0xA5E0, depth 32 RGBA), frame 0, chunks 0x2004 (layer) / 0x2005 (cel, zlib), composita normal. **As bordas dos ícones de item foram unificadas no dourado `(255,158,4)`** (cor da borda do Arco Dourado) — recolor por cor dominante do anel externo.
+- Os PNGs novos já têm `.import` (editor foi aberto na sessão). O CI roda `--import` de qualquer forma.
 
 ### Deploy (evergreen)
-- Deploy = push pro `main` (deploy.yml builda + Pages + anexa zips na release `twilight-quiver-releases`, tag = `config/version`). **Bump `config/version` ANTES.**
-- Patch notes: **pré-criar a release ANTES do push** (`gh release create pre-alpha-X.Y.Z --repo rafa-mesquita/twilight-quiver-releases --notes-file ...`); CI faz `upload --clobber` preservando notas. **Cumulativas** (novo em cima, mantém antigas; tom de jogador, sem detalhe técnico). gh logado = **rafaelmesquita-spec** (tem acesso à releases repo). git push = rafa-mesquita.
+- **Godot local:** `C:\Users\rafam\Desktop\Godot_v4.6.2-stable_win64.exe` (NÃO no PATH). Use pra validar compile antes do push: `& "...Godot...exe" --headless --import --path .` depois `--editor --quit`. (Esta sessão pulou — CI compilou OK.)
+- Deploy = bump `config/version` → merge `main` → **push** (`deploy.yml` builda Web/Win/Mac + Pages + cria/atualiza release no `twilight-quiver-releases` com tag=versão, notas auto "Build automatico").
+- **Patch notes:** o CI cria a release com nota auto; **edite depois** com `gh release edit <tag> --repo rafa-mesquita/twilight-quiver-releases --notes-file <arquivo> --title "..."`. (O NEXT antigo dizia pré-criar antes do push — também funciona; o `--clobber` do CI preserva notas.) Tom de jogador, sem detalhe técnico. gh logado tem acesso à releases repo.
+- ⚠ **Não consegui rodar Godot CLI via PATH** ("godot" não existe) — use o caminho completo do .exe acima.
 
 ## Pendências conhecidas
 
-- [ ] **P2 — loja in-game ESPECIAL** (último subprojeto da economia; spec pronto).
-- [ ] Deletar prerelease `pre-alpha-0.9.4` (diagnóstico) se o leak foi confirmado resolvido.
-- [ ] Playtest in-game da 0.10.0 (a maior parte foi validada só no headless): efeitos do No Limite, compra na loja meta refletindo no inventário, toast/death-screen de unlock de item, highlight verde de drop, cursor de menu + grab.
-- [ ] (Tuning) calibrar economia de pétalas vs preços se sentir desbalanceado.
+- [ ] **Playtest in-game da 0.10.1** (4 itens novos — nada validado localmente).
+- [ ] **Reverter `DEV_UNLOCK_ALL_ITEMS = false`** (ignorado em release, mas convenção).
+- [ ] **P2 — loja in-game ESPECIAL** (último subprojeto da economia; spec de 2026-06-05 a revisar).
+- [ ] Specs do Sanguinário e Cajado foram commitadas (`docs/superpowers/specs/2026-06-06-*`); os do Chamado/Capacete **não** têm spec (foram implementados direto após brainstorm verbal).
 
 ## Arquivos / locais relevantes
 
-- `scripts/systems/inventory_items.gd` — catálogo de itens, effects, unlock, purchased.
-- `scripts/ui/loja_petalas.gd` + `scenes/ui/loja_petalas.tscn` — loja meta.
-- `scripts/ui/wave_shop.gd` — **seção Estruturas é o que o P2 transforma**; roll de status (filtro de HP do No Limite em `_roll_status_slots`); StatsCard.
-- `scripts/systems/wave_manager.gd` — `_finish_wave` (recompensa de pétala + gold/round), `_grant_free_random_upgrade`/`_grant_free_owned_upgrade` (presentes), `_build_wave_config`.
-- `scripts/systems/skin_loadout.gd` — STAT_*, record_run, is_unlocked/is_kit_unlocked (guard shop_petals), find_part, mark_skin_purchased.
-- `scripts/player/player.gd` — stats_* da run, notify_kill_by_source (low_hp_kills), apply_upgrade, add_petals/spend_gold.
-- `scripts/ui/skin_select.gd` — inventário (aba Equipamentos: cards, drag-drop, highlight verde de drop, seções liberados/travados).
-- `scripts/ui/menu_cursor.gd` + `scenes/ui/menu_cursor.tscn` — cursor de menu.
-- `docs/superpowers/specs/2026-06-05-p2-loja-petalas-design.md` — spec do P2.
-- `assets/Hud/itens/` — sprites + aseprite dos 7 itens. `assets/Hud/cursor/` — mãozinhas.
+- `scripts/systems/inventory_items.gd` — 11 itens agora (catálogo, effects, unlock, helpers `equipped_joker_*`/`equipped_joker_weight_mult`).
+- `scripts/player/player.gd` — fatores Cajado/Sanguinário, `_capacete_dodge_chance`, dodge total no `take_damage`, stats_* da run.
+- `scripts/ui/wave_shop.gd` — coringa (peso×4, 2 usos, preço 10/20), flag armor-before-w4 em `_commit_status_only`.
+- `scripts/ui/loja_petalas.gd` — grid centralizado (CenterContainer, 4 col), ordem por preço (`_catalog_for`), som de compra `buy_1.mp3` (-16dB).
+- `scripts/ui/skin_select.gd` — drag-drop com substituição (`equip_in_slot` + idx), tooltip reposiciona pós-layout, progresso X/Y nos itens.
+- `scripts/ui/custom_select.gd` — dropdown abre pra cima perto do rodapé.
+- `assets/Hud/itens/` — sprites + aseprite dos 11 itens (bordas douradas unificadas).
+- `audios/upgrades/cadeia de raios/Cadeia de raios effect_02.mp3` — som novo da Cadeia.
 
 ## Comandos úteis
 
 ```bash
-# Validar compile (Godot no Desktop):
-& "C:\Users\rafam\Desktop\Godot_v4.6.2-stable_win64.exe" --headless --editor --quit --path .
-git checkout project.godot   # descarta o import-noise do editor
-
-# Importar assets novos:
+# Validar compile (Godot no Desktop, caminho completo):
 & "C:\Users\rafam\Desktop\Godot_v4.6.2-stable_win64.exe" --headless --import --path .
+& "C:\Users\rafam\Desktop\Godot_v4.6.2-stable_win64.exe" --headless --editor --quit --path .
+git checkout project.godot   # descarta import-noise do editor
 
 rtk git status && rtk git log --oneline -8
-gh release list --repo rafa-mesquita/twilight-quiver-releases --limit 3
+gh run list --repo rafa-mesquita/Twilight-Quiver --limit 3          # status do CI/deploy
+gh release list --repo rafa-mesquita/twilight-quiver-releases --limit 5
 ```
