@@ -59,6 +59,9 @@ func setup(start_pos: Vector2, dir: Vector2, player_node: Node) -> void:
 	source = player_node
 	if source != null and "arrow_damage_multiplier" in source:
 		_arrow_damage_mult = float(source.arrow_damage_multiplier)
+		# Bumerangue conta como skill → recebe o +35% do Cajado do Crepúsculo.
+		if source.has_method("_cajado_power_factor"):
+			_arrow_damage_mult *= source._cajado_power_factor()
 
 
 func _ready() -> void:

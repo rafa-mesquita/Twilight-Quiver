@@ -19,7 +19,7 @@ const MAX_SLOTS: int = 3
 
 # DEV: em debug build, true libera TODO item (pra testar efeitos). Default FALSE pra
 # enxergar o estado travado no editor. Ignorado em release (lá vale o unlock real).
-const DEV_UNLOCK_ALL_ITEMS: bool = false
+const DEV_UNLOCK_ALL_ITEMS: bool = true
 
 # Fontes de kill consideradas "de Aliado" (creditadas via player.notify_kill_by_source).
 # Usado pra contar o stat ally_kills (quest do Adote Mais Um).
@@ -98,6 +98,45 @@ const ITEMS: Dictionary = {
 			{"stat": &"low_hp_kills_total", "value": 500, "label": "ITEM_REQ_NO_LIMITE"},
 		]},
 	},
+	"cajado_crepusculo": {
+		"name": "ITEM_CAJADO_CREPUSCULO_NAME",
+		"desc": "ITEM_CAJADO_CREPUSCULO_DESC",
+		"icon": "res://assets/Hud/itens/cajado_crepusculo.png",
+		"effects": [
+			{"type": "arrow_damage_mult", "amount": 0.70},
+			{"type": "skill_ally_damage_mult", "amount": 1.35},
+			{"type": "clock_drop_chance", "amount": 0.04},
+		],
+		"unlock": {"type": "shop"},
+	},
+	"sanguinario": {
+		"name": "ITEM_SANGUINARIO_NAME",
+		"desc": "ITEM_SANGUINARIO_DESC",
+		"icon": "res://assets/Hud/itens/sanguinario.png",
+		"effect": {"type": "low_hp_damage", "threshold_pct": 40, "bonus": 0.30},
+		"unlock": {"type": "shop"},
+	},
+	"chamado_palhaco": {
+		"name": "ITEM_CHAMADO_PALHACO_NAME",
+		"desc": "ITEM_CHAMADO_PALHACO_DESC",
+		"icon": "res://assets/Hud/itens/chamado_palhaco.png",
+		"effects": [
+			{"type": "joker_weight_mult", "amount": 4.0},
+			{"type": "joker_twice"},
+		],
+		"unlock": {"type": "quest", "reqs": [
+			{"stat": &"joker_used_total", "value": 25, "label": "ITEM_REQ_JOKER"},
+		]},
+	},
+	"capacete_veloz": {
+		"name": "ITEM_CAPACETE_VELOZ_NAME",
+		"desc": "ITEM_CAPACETE_VELOZ_DESC",
+		"icon": "res://assets/Hud/itens/capacete_veloz.png",
+		"effect": {"type": "armor_dodge", "pct_per_level": 0.03},
+		"unlock": {"type": "quest", "reqs": [
+			{"stat": &"capacete_veloz_unlock", "value": 1, "label": "ITEM_REQ_CAPACETE"},
+		]},
+	},
 }
 
 
@@ -157,20 +196,26 @@ static func mark_purchased(id: String) -> void:
 		cfg.save(_SETTINGS_PATH)
 
 
-# Linhas de "como liberar" pro tooltip. Cada entry: {label, met}. "default" -> vazio.
+# Linhas de "como liberar" pro tooltip. Cada entry: {label, met, current, target}.
+# current/target alimentam o sufixo de progresso "X / Y" (igual às skins); current
+# vem clampado no alvo. "default" -> vazio.
 static func get_unlock_reqs(id: String) -> Array:
 	var item: Dictionary = ITEMS.get(id, {})
 	var unlock: Dictionary = item.get("unlock", {"type": "default"})
 	var t: String = String(unlock.get("type", "default"))
 	match t:
 		"shop":
-			return [{"label": "ITEM_UNLOCK_SHOP", "met": false}]
+			return [{"label": "ITEM_UNLOCK_SHOP", "met": false, "current": 0, "target": 0}]
 		"quest":
 			var out: Array = []
 			for req in unlock.get("reqs", []):
+				var target: int = int(req.get("value", 0))
+				var current: int = mini(SkinLoadout.get_stat(req.get("stat")), target)
 				out.append({
 					"label": String(req.get("label", "")),
-					"met": SkinLoadout.get_stat(req.get("stat")) >= int(req.get("value", 0)),
+					"met": current >= target,
+					"current": current,
+					"target": target,
 				})
 			return out
 	return []
@@ -268,6 +313,26 @@ static func equipped_free_first_roll_chance() -> float:
 	return c
 
 
+# Chamado do Palhaço: multiplicador do PESO do coringa (Último Desejo) no wave shop.
+# Produto dos itens equipados; 1.0 sem nenhum (×4 com o Chamado equipado).
+static func equipped_joker_weight_mult() -> float:
+	var m: float = 1.0
+	for id in get_equipped():
+		for eff in _item_effects(id):
+			if String(eff.get("type", "")) == "joker_weight_mult":
+				m *= float(eff.get("amount", 1.0))
+	return m
+
+
+# Chamado do Palhaço: true se algum item equipado libera 2 usos do coringa por run.
+static func joker_allows_twice() -> bool:
+	for id in get_equipped():
+		for eff in _item_effects(id):
+			if String(eff.get("type", "")) == "joker_twice":
+				return true
+	return false
+
+
 # Equipados liberados (filtra ids órfãos E itens travados — nunca ficam ativos).
 static func get_equipped() -> Array:
 	var cfg := ConfigFile.new()
@@ -311,6 +376,23 @@ static func toggle_equipped(id: String) -> bool:
 	return true
 
 
+# Equipa `id` num slot específico, SUBSTITUINDO o ocupante (se houver). Usado pelo
+# drag-and-drop: arrastar um item pra um slot que já tem outro troca os dois. Slots
+# ocupados são os índices 0..size-1 (lista compacta); idx >= size = slot vazio →
+# adiciona no fim. Retorna true se equipou.
+static func equip_in_slot(id: String, idx: int) -> bool:
+	if not is_unlocked(id) or idx < 0 or idx >= MAX_SLOTS:
+		return false
+	var eq: Array = get_equipped()
+	eq.erase(id)  # evita duplicar caso já estivesse equipado
+	if idx < eq.size():
+		eq[idx] = id   # substitui o item que estava nesse slot
+	else:
+		eq.append(id)  # slot vazio → adiciona
+	set_equipped(eq)
+	return true
+
+
 # Aplica os efeitos start_status dos itens equipados no INÍCIO da run.
 static func apply_to_player(player: Node) -> void:
 	if player == null:
@@ -330,3 +412,26 @@ static func apply_to_player(player: Node) -> void:
 					player.reset_hp()
 				elif "hp" in player:
 					player.hp = v
+			elif t == "arrow_damage_mult":
+				# Cajado do Crepúsculo: −30% no dano das flechas.
+				if "_cajado_arrow_mult" in player:
+					player._cajado_arrow_mult = float(eff.get("amount", 1.0))
+			elif t == "skill_ally_damage_mult":
+				# Cajado do Crepúsculo: +35% no dano de skills e aliados.
+				if "_cajado_power_mult" in player:
+					player._cajado_power_mult = float(eff.get("amount", 1.0))
+			elif t == "clock_drop_chance":
+				# Cajado do Crepúsculo: override da chance de drop do Relógio (4%).
+				if "_cajado_clock_chance" in player:
+					player._cajado_clock_chance = float(eff.get("amount", 0.0))
+			elif t == "low_hp_damage":
+				# Sanguinário: +bonus de dano enquanto HP < limiar. Liga a flag e
+				# avalia o estado já no início (caso a run comece com HP baixo).
+				if "_sanguinario_bonus" in player:
+					player._sanguinario_bonus = float(eff.get("bonus", 0.30))
+					if player.has_method("_update_sanguinario_state"):
+						player._update_sanguinario_state()
+			elif t == "armor_dodge":
+				# Capacete Veloz: liga o dodge por nível de Armadura comprada.
+				if "_capacete_veloz_equipped" in player:
+					player._capacete_veloz_equipped = true

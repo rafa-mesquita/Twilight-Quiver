@@ -112,6 +112,9 @@ func _apply_tick() -> void:
 			if is_crit:
 				CritFeedback.mark_next_hit_crit(enemy)
 		var was_alive: bool = (not ("hp" in enemy)) or float(enemy.hp) > 0.0
+		# Cajado do Crepúsculo: +35% no dano de aliados.
+		if p_for_crit != null and p_for_crit.has_method("_cajado_power_factor"):
+			dmg *= p_for_crit._cajado_power_factor()
 		enemy.take_damage(dmg)
 		if p_for_crit != null and p_for_crit.has_method("notify_damage_dealt_by_source"):
 			p_for_crit.notify_damage_dealt_by_source(dmg, "frostwisp")

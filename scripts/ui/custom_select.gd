@@ -101,7 +101,15 @@ func _open_popup() -> void:
 	var w: int = int(size.x)
 	var content_h: int = _OPTION_HEIGHT * _items.size() + _OPTIONS_SEP * max(0, _items.size() - 1)
 	var h: int = content_h + _POPUP_PAD * 2 + 8  # extra pra borda do panel
-	_popup.popup(Rect2i(int(screen_pos.x), int(screen_pos.y + size.y + 4), w, h))
+	# Abre pra baixo por padrão; se não couber até a borda inferior, abre pra CIMA
+	# (acima do botão) pra não cortar as últimas opções. Em último caso, clampa.
+	var vp_h: float = get_viewport_rect().size.y
+	var below_y: float = screen_pos.y + size.y + 4
+	var pos_y: float = below_y
+	if below_y + float(h) > vp_h:
+		var above_y: float = screen_pos.y - 4 - float(h)
+		pos_y = above_y if above_y >= 0.0 else maxf(0.0, vp_h - float(h))
+	_popup.popup(Rect2i(int(screen_pos.x), int(pos_y), w, h))
 
 
 func _on_option_pressed(idx: int) -> void:

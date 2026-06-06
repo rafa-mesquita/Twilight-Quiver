@@ -308,6 +308,9 @@ func _apply_hit() -> void:
 			if bool(crit_ww.get("crit", false)):
 				dmg *= float(crit_ww.get("mult", 1.0))
 				CritFeedback.mark_next_hit_crit(current_target)
+		# Cajado do Crepúsculo: +35% no dano de aliados.
+		if p_for_crit != null and p_for_crit.has_method("_cajado_power_factor"):
+			dmg *= p_for_crit._cajado_power_factor()
 		current_target.take_damage(dmg)
 		_notify_player_dmg_kill(dmg, "claudio_druida", was_alive_ww, current_target)
 	# Stun em área: todos os inimigos no aoe_stun_radius em volta do alvo

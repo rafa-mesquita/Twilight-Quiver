@@ -1,6 +1,9 @@
 extends CharacterBody2D
 
 signal hp_changed(current: float, maximum: float)
+# Sanguinário (item): emitido quando o buff de HP-baixo liga/desliga (HP cruza 40%).
+# A HUD escuta pra ligar/desligar o glow vermelho pulsante no slot do item.
+signal sanguinario_active_changed(active: bool)
 signal gold_changed(total: int)
 # Pétalas (meta-moeda): carteira por-run. petals_changed atualiza a HUD;
 # petal_gain_fx dispara a animação "pétalas voando pra carteira" (world_pos =
@@ -219,6 +222,10 @@ var _fire_skill_cd_remaining: float = 0.0
 # player escolhe um upgrade no modal pós-compra. Resetado por new run via
 # reset dos demais campos do player na criação do node.
 var joker_used: bool = false
+# Quantos jokers (Último Desejo) foram COMPRADOS nesta run. Normalmente cap 1 (uso
+# único); com o item Chamado do Palhaço sobe pra 2 (a 2ª custa o dobro). Gate em
+# wave_shop._joker_can_appear / _joker_max_uses.
+var joker_uses_this_run: int = 0
 
 # Chain Lightning lv3: skill ativa que invoca um raio (lightning_bolt do
 # electric_mage) no ponto alvo. Cast instantâneo na posição do cursor.
@@ -477,6 +484,28 @@ const DASH_FIRST_ARROW_DELAY: float = 0.60
 # Delay entre 1ª e 2ª flecha (1.3.1) — referente ao tempo da primeira.
 const DASH_DOUBLE_ARROW_DELAY: float = 0.40
 var arrow_damage_multiplier: float = 1.0  # aplicado ao dano da arrow no spawn
+# Cajado do Crepúsculo (item): caster build. −30% nas flechas, +35% em skills e
+# aliados, e drop de Relógio em 4%. Setados por InventoryItems.apply_to_player.
+# 1.0/0.0 = item NÃO equipado (no-op). Fatores aplicados em pontos específicos do
+# pipeline; ver _cajado_arrow_factor/_cajado_power_factor.
+var _cajado_arrow_mult: float = 1.0    # 0.70 quando equipado (flechas)
+var _cajado_power_mult: float = 1.0    # 1.35 quando equipado (skills + aliados)
+var _cajado_clock_chance: float = 0.0  # 0.04 quando equipado (0 = sem override)
+# Sanguinário (item): +30% de dano em TODAS as fontes enquanto HP < 40%. Em vez de
+# tocar em cada fonte, recompõe o arrow_damage_multiplier (= _damage_base × fator),
+# então todo leitor (flecha/DoT/skill/aliado) herda o bônus. _damage_base é o que os
+# upgrades/itens de Dano somam; o arrow_damage_multiplier acima vira derivado.
+# Ver _refresh_damage_multiplier / _update_sanguinario_state.
+const SANGUINARIO_THRESHOLD: float = 0.40
+const SANGUINARIO_BONUS: float = 0.30
+var _damage_base: float = 1.0          # acumulado pelos upgrades/itens de Dano
+var _sanguinario_bonus: float = 0.0    # SANGUINARIO_BONUS quando o item está equipado
+var _sanguinario_active: bool = false  # cache do estado (HP < limiar) p/ detectar flip
+var _sanguinario_overlay: AnimatedSprite2D = null  # tint vermelho que espelha o player
+var _sanguinario_blink_tween: Tween = null
+# Capacete Veloz (item): cada nível de Armadura COMPRADA dá +3% de dodge. Setado
+# por InventoryItems.apply_to_player. Lido em _capacete_dodge_chance.
+var _capacete_veloz_equipped: bool = false
 var attack_speed_multiplier: float = 1.0  # 1.0 base, +0.27 por stack
 var move_speed_multiplier: float = 1.0  # 1.0 base, +0.10 por stack
 # Conta ataques pra decidir quando proca a flecha perfurante (a cada 3 ataques).
@@ -564,6 +593,9 @@ var stats_gold_spent: int = 0
 var stats_waves_cleared: int = 0
 # Compras da Roleta Elemental nesta run -> stat elemental_roulette_buys.
 var stats_roulette_buys: int = 0
+# Jokers (Último Desejo) usados nesta run -> stat joker_used_total (unlock do item
+# Chamado do Palhaço: usar 25x).
+var stats_joker_used: int = 0
 # Kills do PLAYER (nao-aliado) com HP <= 50% nesta run -> stat low_hp_kills (No Limite).
 var stats_low_hp_kills: int = 0
 # Lista de IDs de bosses mortos nesta run. Usada pelo skin_loadout.record_run
@@ -572,6 +604,10 @@ var stats_bosses_killed: Array[String] = []
 # Flag por-run: passou das waves 1, 2 e 3 sem tomar dano. Setada pelo
 # wave_manager no fim da wave 3 (se stats_damage_taken == 0). Unlock da Hawk.
 var stats_flawless_through_w3: bool = false
+# Flag por-run: COMPROU (na loja) ao menos 1 status de Armadura antes da wave 4.
+# Setada pelo wave_shop. Combinada com matar o 1º boss (mage_monkey) = unlock do
+# item Capacete Veloz.
+var stats_armor_before_w4: bool = false
 # Flag por-run: matou um mago a >= 480px com a flecha (lançamento longo).
 # Setada pelo arrow.gd via notify_long_mage_kill. Unlock da skin Patriota.
 var stats_long_mage_kill: bool = false
@@ -610,6 +646,9 @@ func _ready() -> void:
 	# início da run (ex: Adaga = +1 Dano, Arco Dourado = +1 Vel. Ataque). Antes
 	# do free upgrade da wave 1, que exclui status já dados por item.
 	InventoryItems.apply_to_player(self)
+	# Sanguinário (item): liga/desliga o buff de HP-baixo a cada mudança de HP.
+	# unbind(2) descarta os args (current, maximum) do hp_changed.
+	hp_changed.connect(_update_sanguinario_state.unbind(2))
 	# Birthday event: chapéu de festa pro eliyeolio durante a janela do evento.
 	_apply_birthday_hat()
 
@@ -624,6 +663,7 @@ func _apply_birthday_hat() -> void:
 
 func _physics_process(delta: float) -> void:
 	_update_status_effects(delta)
+	_sync_sanguinario_overlay()
 	# Stun: trava player completamente (sem movimento, sem auto-cast de skills,
 	# sem ataque). Mantém anim "idle" + ícone de stun acima da cabeça. Checa
 	# ANTES dos _update_*_skill pra autocasts não dispararem durante stun.
@@ -1085,7 +1125,7 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 	if "play_shoot_sound" in arrow:
 		arrow.play_shoot_sound = play_sound
 	if "damage" in arrow:
-		arrow.damage = arrow.damage * arrow_damage_multiplier * dmg_mult * _mare_damage_factor()
+		arrow.damage = arrow.damage * arrow_damage_multiplier * dmg_mult * _mare_damage_factor() * _cajado_arrow_factor()
 		# Arbusto hide: +5 dmg flat por flecha enquanto escondido. Aplicado APÓS
 		# multiplicador pra não ser amplificado pelo arrow_damage_multiplier (é
 		# um buff fixo da mecânica do hide, não um stat status).
@@ -1219,7 +1259,9 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 		# aplica uma % disso por gatilho: 50% splash no hit direto / 80% em todos
 		# quando cai no fim do range ou bate em estrutura/parede.
 		if "stone_aoe_damage" in arrow:
-			arrow.stone_aoe_damage = arrow.damage
+			# AoE da pedra é "inalterado" pelo Cajado: anula o −30% das flechas que
+			# já está embutido em arrow.damage (divide de volta pelo fator).
+			arrow.stone_aoe_damage = arrow.damage / _cajado_arrow_factor()
 		if "stone_aoe_knockback" in arrow:
 			arrow.stone_aoe_knockback = _stone_knockback()
 		if "stone_stun_duration" in arrow:
@@ -1457,18 +1499,21 @@ func _curse_dps() -> float:
 	return _apply_dmg_pct_to_dps(base)
 
 
-func _apply_dmg_pct_to_dps(base: float) -> float:
+func _apply_dmg_pct_to_dps(base: float, is_skill: bool = false) -> float:
 	# Aplica o arrow_damage_multiplier (stat "Dano") no dps de DoT.
 	# Garante incremento mínimo de +1 POR STACK comprado de "Dano" — DoTs de
 	# base baixa (ex: curse lv1 = 3 dps × 1.20 = 3.6) sentiriam pouco do stat
 	# sem isso. Sem stacks (damage_upgrades = 0), retorna base sem mudança.
+	# is_skill=true: aplica o +35% do Cajado (skills). DoTs/efeitos neutros
+	# chamam com is_skill=false (default) e não recebem o bônus.
+	var power: float = _cajado_power_factor() if is_skill else 1.0
 	if base <= 0.0 or damage_upgrades <= 0:
-		return base
+		return base * power
 	var scaled: float = base * arrow_damage_multiplier
 	var min_scaled: float = base + float(damage_upgrades)
 	if scaled < min_scaled:
 		scaled = min_scaled
-	return scaled
+	return scaled * power
 
 
 func _curse_duration() -> float:
@@ -1634,6 +1679,93 @@ func _spawn_tide_wave() -> void:
 # −15% em todo dano de flecha enquanto a Fúria da Maré está ativa (fator no dano).
 func _mare_damage_factor() -> float:
 	return TIDE_DAMAGE_FACTOR if tide_arrow_level > 0 else 1.0
+
+
+# Cajado do Crepúsculo. Fator das flechas (0.70 equipado) e fator de skills+aliados
+# (1.35 equipado). 1.0 quando o item não está equipado.
+func _cajado_arrow_factor() -> float:
+	return _cajado_arrow_mult
+
+
+func _cajado_power_factor() -> float:
+	return _cajado_power_mult
+
+
+# Override da chance de drop do Relógio (lido pelo ClockDrop). 0 = sem override
+# (usa o DROP_CHANCE padrão); 0.04 com o Cajado equipado.
+func clock_drop_chance_override() -> float:
+	return _cajado_clock_chance
+
+
+# Sanguinário. Fator de +30% enquanto HP < 40% (e o item equipado); 1.0 senão.
+func _sanguinario_factor() -> float:
+	if _sanguinario_bonus > 0.0 and hp < max_hp * SANGUINARIO_THRESHOLD:
+		return 1.0 + _sanguinario_bonus
+	return 1.0
+
+
+# Recompõe o multiplicador efetivo de Dano = base × fator do Sanguinário. Chamado
+# quando a base muda (upgrade de Dano) ou quando o estado HP-baixo flipa.
+func _refresh_damage_multiplier() -> void:
+	arrow_damage_multiplier = _damage_base * _sanguinario_factor()
+
+
+# Detecta a transição do estado HP-baixo (HP cruza 40%) e, ao mudar, recompõe o
+# multiplicador e avisa a HUD (glow). Dirigido por hp_changed (dano/cura/max_hp).
+func _update_sanguinario_state() -> void:
+	var active: bool = _sanguinario_bonus > 0.0 and hp < max_hp * SANGUINARIO_THRESHOLD
+	if active == _sanguinario_active:
+		return
+	_sanguinario_active = active
+	_refresh_damage_multiplier()
+	_set_sanguinario_visual(active)
+	sanguinario_active_changed.emit(active)
+
+
+# Tint vermelho "de leve" no player enquanto o Sanguinário está ativo. Usa um
+# overlay que espelha a silhueta do player (NÃO mexe em sprite.modulate, pra não
+# brigar com o hit-flash). Blend aditivo + alpha pulsado = brilho vermelho piscando.
+func _set_sanguinario_visual(active: bool) -> void:
+	if not active:
+		if _sanguinario_blink_tween != null and _sanguinario_blink_tween.is_valid():
+			_sanguinario_blink_tween.kill()
+		_sanguinario_blink_tween = null
+		if _sanguinario_overlay != null and is_instance_valid(_sanguinario_overlay):
+			_sanguinario_overlay.queue_free()
+		_sanguinario_overlay = null
+		return
+	if sprite == null or (_sanguinario_overlay != null and is_instance_valid(_sanguinario_overlay)):
+		return
+	var ov := AnimatedSprite2D.new()
+	ov.centered = sprite.centered
+	ov.offset = sprite.offset
+	ov.position = sprite.position
+	# Halo ligeiramente maior que o player pra o brilho vermelho "vazar" das bordas.
+	ov.scale = sprite.scale * 1.12
+	ov.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	ov.z_index = sprite.z_index + 1
+	ov.modulate = Color(1.0, 0.0, 0.0, 0.0)  # vermelho; alpha pulsa entre 0 e ~0.35
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	ov.material = mat
+	add_child(ov)
+	_sanguinario_overlay = ov
+	_sync_sanguinario_overlay()
+	_sanguinario_blink_tween = create_tween().set_loops()
+	_sanguinario_blink_tween.tween_property(ov, "modulate:a", 0.5, 0.5).set_trans(Tween.TRANS_SINE)
+	_sanguinario_blink_tween.tween_property(ov, "modulate:a", 0.0, 0.5).set_trans(Tween.TRANS_SINE)
+
+
+# Espelha frame/animação/flip do sprite do player no overlay vermelho (por frame).
+func _sync_sanguinario_overlay() -> void:
+	if _sanguinario_overlay == null or not is_instance_valid(_sanguinario_overlay) or sprite == null:
+		return
+	if _sanguinario_overlay.sprite_frames != sprite.sprite_frames:
+		_sanguinario_overlay.sprite_frames = sprite.sprite_frames
+	if _sanguinario_overlay.animation != sprite.animation:
+		_sanguinario_overlay.animation = sprite.animation
+	_sanguinario_overlay.frame = sprite.frame
+	_sanguinario_overlay.flip_h = sprite.flip_h
 
 
 func _stone_lifetime() -> float:
@@ -2146,7 +2278,7 @@ func _handle_fire_skill_press() -> void:
 	var proj: Node = FIRE_SKILL_PROJECTILE_SCENE.instantiate()
 	if "field_dps" in proj:
 		# Skill do player escala com stat "Dano" + bônus L4 do Fogo.
-		proj.field_dps = _apply_dmg_pct_to_dps(FIRE_SKILL_DPS) * _fire_burn_multiplier()
+		proj.field_dps = _apply_dmg_pct_to_dps(FIRE_SKILL_DPS, true) * _fire_burn_multiplier()
 	if "field_duration" in proj:
 		proj.field_duration = FIRE_SKILL_DURATION
 	if "field_scale" in proj:
@@ -2183,7 +2315,7 @@ func _spawn_player_fire_trail_segment() -> void:
 	var seg: Node = PLAYER_FIRE_TRAIL_SCENE.instantiate()
 	if "damage_per_second" in seg:
 		# Base por nível (× burn_mult) + 1 de DPS por status de Dano comprado.
-		seg.damage_per_second = _fire_player_trail_dps() + float(damage_upgrades)
+		seg.damage_per_second = (_fire_player_trail_dps() + float(damage_upgrades)) * _cajado_power_factor()
 	_get_world().add_child(seg)
 	if seg is Node2D:
 		(seg as Node2D).global_position = global_position
@@ -2210,7 +2342,7 @@ func _handle_chain_lightning_skill_press() -> void:
 		var dmg_mult: float = CHAIN_LIGHTNING_LV4_DAMAGE_MULT if chain_lightning_level >= 4 else 1.0
 		if "damage" in bolt:
 			# Skill do player escala com stat "Dano".
-			bolt.damage = _apply_dmg_pct_to_dps(CHAIN_LIGHTNING_SKILL_BOLT_DAMAGE) * dmg_mult
+			bolt.damage = _apply_dmg_pct_to_dps(CHAIN_LIGHTNING_SKILL_BOLT_DAMAGE, true) * dmg_mult
 		if "damage_radius" in bolt:
 			bolt.damage_radius = CHAIN_LIGHTNING_SKILL_AREA_RADIUS
 		if "is_enemy_source" in bolt:
@@ -2270,7 +2402,7 @@ func _try_cast_chain_auto_bolt() -> bool:
 	for i in count:
 		var target: Node2D = candidates[i]
 		# Dano escala com o stat "Dano" (é poder do player), e rola crítico igual o proc.
-		var dmg: float = _apply_dmg_pct_to_dps(CHAIN_AUTO_BOLT_DAMAGE)
+		var dmg: float = _apply_dmg_pct_to_dps(CHAIN_AUTO_BOLT_DAMAGE, true)
 		var crit: Dictionary = roll_crit()
 		if bool(crit.get("crit", false)):
 			dmg *= float(crit.get("mult", 1.0))
@@ -2377,7 +2509,7 @@ func _try_cast_tiger_claws() -> bool:
 	candidates.shuffle()
 	var target_count: int = mini(TIGER_CLAWS_TARGETS_BY_LEVEL[tiger_claws_level], candidates.size())
 	# Skill do player escala com stat "Dano".
-	var dmg: float = _apply_dmg_pct_to_dps(TIGER_CLAWS_DMG_PER_SCRATCH_BY_LEVEL[tiger_claws_level])
+	var dmg: float = _apply_dmg_pct_to_dps(TIGER_CLAWS_DMG_PER_SCRATCH_BY_LEVEL[tiger_claws_level], true)
 	for i in target_count:
 		_spawn_tiger_claws_vfx(candidates[i], dmg)
 	return true
@@ -2522,7 +2654,7 @@ func _cast_curse_beam() -> void:
 	var beam: Node = CURSE_BEAM_SCENE.instantiate()
 	if "damage_per_tick" in beam:
 		# Skill do player escala com stat "Dano".
-		beam.damage_per_tick = _apply_dmg_pct_to_dps(CURSE_SKILL_DAMAGE_PER_TICK)
+		beam.damage_per_tick = _apply_dmg_pct_to_dps(CURSE_SKILL_DAMAGE_PER_TICK, true)
 	if "max_range_per_side" in beam:
 		beam.max_range_per_side = CURSE_SKILL_RANGE
 	if "lifetime" in beam:
@@ -2572,7 +2704,7 @@ func _cast_earthquake() -> void:
 	# com raio grande, centrado no player). damage_pct 1.0 = dano cheio.
 	var quake: Node2D = STONE_AOE_QUAKE_SCRIPT.new()
 	quake.radius = STONE_QUAKE_RADIUS
-	quake.damage = STONE_QUAKE_DAMAGE * arrow_damage_multiplier
+	quake.damage = STONE_QUAKE_DAMAGE * arrow_damage_multiplier * _cajado_power_factor()
 	quake.damage_pct = 1.0
 	quake.knockback_strength = STONE_QUAKE_KNOCKBACK
 	quake.stun_duration = STONE_QUAKE_STUN
@@ -2863,6 +2995,13 @@ func _esquivando_dodge_chance() -> float:
 	if esquivando_level <= 0:
 		return 0.0
 	return ESQUIVANDO_DODGE_BY_LEVEL[mini(esquivando_level - 1, ESQUIVANDO_LEVEL_MAX - 1)]
+
+
+# Capacete Veloz (item): +3% de dodge por nível de Armadura. 0 sem o item equipado.
+func _capacete_dodge_chance() -> float:
+	if _capacete_veloz_equipped:
+		return float(armor_level) * 0.03
+	return 0.0
 
 
 func _esquivando_ability_cd_total() -> float:
@@ -3171,8 +3310,10 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"damage":
 			damage_upgrades += 1
 			# +24% no dano da flecha por stack (equalizado com atk_speed pra DPS
-			# idêntico por nível — ambos somam 0.24 ao multiplier).
-			arrow_damage_multiplier += 0.24
+			# idêntico por nível — ambos somam 0.24 ao multiplier). Soma na BASE; o
+			# arrow_damage_multiplier efetivo é recomposto (base × fator Sanguinário).
+			_damage_base += 0.24
+			_refresh_damage_multiplier()
 		"perfuracao":
 			perfuracao_level = mini(perfuracao_level + 1, 4)
 			perfuracao_counter_changed.emit(_perf_shot_counter, perfuracao_level)
@@ -4213,10 +4354,12 @@ func take_damage(amount: float, source_id: String = "") -> void:
 	# I-frames do dash: ignora dano (inclui DoT/curse/burn que chamem take_damage).
 	if _iframes_remaining > 0.0:
 		return
-	# Esquivando: % de chance de esquivar o ataque inteiro (2% lv1-2, 5% lv3-4).
-	# Nota: DoT/poison/burn também passam por aqui — esquivar um tick de DoT é
-	# ok como design (cada tick é um "ataque" independente).
-	if esquivando_level > 0 and randf() < _esquivando_dodge_chance():
+	# Dodge: % de chance de esquivar o ataque inteiro. Soma Esquivando (2% lv1-2,
+	# 5% lv3-4) + Capacete Veloz (item: 3% por nível de Armadura comprada). Reusa o
+	# indicativo "miss" da skill. DoT/poison/burn também passam por aqui — esquivar
+	# um tick de DoT é ok como design (cada tick é um "ataque" independente).
+	var dodge_chance: float = _esquivando_dodge_chance() + _capacete_dodge_chance()
+	if dodge_chance > 0.0 and randf() < dodge_chance:
 		_spawn_miss_number()
 		return
 	# Armor: reduz dano antes de aplicar — número/notify usam o valor reduzido,

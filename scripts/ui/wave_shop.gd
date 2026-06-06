@@ -281,6 +281,7 @@ const TIGER_CLAWS_DESCS: Array[String] = [
 # escolher 1 status/pet/upgrade já owned pra subir +1 nível.
 const JOKER_ID: String = "joker"
 const JOKER_PRICE: int = 10
+const JOKER_SECOND_PRICE: int = 20  # 2ª aparição na run (só com Chamado do Palhaço)
 const JOKER_FIRST_WAVE: int = 5
 const JOKER_WEIGHT: float = 0.20  # ~20% da chance de uma carta normal por slot
 # Carta "Roleta Elemental": troca o elemental atual (precisa estar no L3) por OUTRO
@@ -1053,7 +1054,8 @@ func _roll_upg_slots() -> void:
 		# nesta shop (evita 2 jokers ao mesmo tempo nos 3 slots).
 		if joker_eligible and not (JOKER_ID in already_picked_ids):
 			pool.append(_make_joker_entry())
-			weights.append(JOKER_WEIGHT)
+			# Chamado do Palhaço (item) multiplica o peso do coringa (×4).
+			weights.append(JOKER_WEIGHT * InventoryItems.equipped_joker_weight_mult())
 		# Roleta Elemental: entra com peso baixo, 1× por shop.
 		if roulette_eligible and not (ROULETTE_ID in already_picked_ids):
 			pool.append(_make_roulette_entry())
@@ -1084,14 +1086,14 @@ func _roll_upg_slots() -> void:
 		already_picked_ids.append(picked["id"])
 		var picked_id: String = picked["id"]
 		var is_joker_pick: bool = bool(picked.get("is_joker", false))
-		# Joker: target_level cosmético = 1 (não escala via current_level — só
-		# pode ser comprado uma vez por run). Preço fixo, desc vazio (só tooltip).
+		# Joker: target_level cosmético = 1 (não escala via current_level). Preço do
+		# próximo uso (10g; 20g na 2ª vez com o Chamado do Palhaço), desc vazio.
 		if is_joker_pick:
 			upg_slots.append({
 				"id": picked_id,
 				"name": picked["name"],
 				"desc": "",
-				"price": JOKER_PRICE,
+				"price": _joker_price_now(player),
 				"available": true,
 				"target_level": 1,
 				"is_joker": true,
@@ -1127,7 +1129,7 @@ func _roll_upg_slots() -> void:
 
 func _get_upgrade_price(id: String, player_current_level: int) -> int:
 	if id == JOKER_ID:
-		return JOKER_PRICE
+		return _joker_price_now(_get_player())
 	if id == ROULETTE_ID:
 		return ROULETTE_PRICE
 	if id in UPGRADE_PRICE_OVERRIDES:
@@ -1179,9 +1181,22 @@ func _joker_can_appear(player: Node) -> bool:
 		return false
 	if player == null:
 		return false
-	if "joker_used" in player and bool(player.joker_used):
+	# Uso único por run; com o Chamado do Palhaço equipado, até 2 usos.
+	var used: int = int(player.joker_uses_this_run) if "joker_uses_this_run" in player else 0
+	if used >= _joker_max_uses():
 		return false
 	return _joker_has_any_target(player)
+
+
+# Máximo de jokers por run: 2 com o Chamado do Palhaço equipado, senão 1.
+func _joker_max_uses() -> int:
+	return 2 if InventoryItems.joker_allows_twice() else 1
+
+
+# Preço do PRÓXIMO joker desta run: 1º = 10g, 2º (Chamado do Palhaço) = 20g.
+func _joker_price_now(player: Node) -> int:
+	var used: int = int(player.joker_uses_this_run) if (player != null and "joker_uses_this_run" in player) else 0
+	return JOKER_SECOND_PRICE if used >= 1 else JOKER_PRICE
 
 
 # Retorna true se o player tem ao menos 1 item que o joker pode upar:
@@ -2159,6 +2174,10 @@ func _commit_status_only() -> void:
 		var slot: Dictionary = status_slots[_selected_status_idx]
 		if slot.get("available", false):
 			if player.spend_gold(int(slot.get("price", 0))):
+				# Capacete Veloz: COMPRAR Armadura antes da wave 4 marca metade do
+				# unlock (a outra metade é matar o 1º boss na mesma run).
+				if String(slot.get("id", "")) == "armor" and _current_wave_number() < 4 and "stats_armor_before_w4" in player:
+					player.stats_armor_before_w4 = true
 				if player.has_method("apply_upgrade"):
 					player.apply_upgrade(slot["id"])
 		_selected_status_idx = -1
@@ -2201,6 +2220,10 @@ func _commit_upgrades_and_close() -> void:
 				if player.spend_gold(int(slot.get("price", 0))):
 					if "joker_used" in player:
 						player.joker_used = true
+					if "joker_uses_this_run" in player:
+						player.joker_uses_this_run += 1
+					if "stats_joker_used" in player:
+						player.stats_joker_used += 1  # progresso do unlock do Chamado do Palhaço
 					joker_bought = true
 				continue
 			if bool(slot.get("is_roulette", false)):

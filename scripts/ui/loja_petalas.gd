@@ -17,11 +17,15 @@ const CATALOG: Array[Dictionary] = [
 	{"cat": "skins", "kind": "part", "id": "Red_Hair", "slot": "hair", "price": 150, "name_key": "LOJA_NAME_RED_HAIR", "desc": "LOJA_DESC_RED_HAIR"},
 	{"cat": "itens", "kind": "item", "id": "midnight_dagger", "price": 750},
 	{"cat": "itens", "kind": "item", "id": "golden_bow", "price": 750},
+	{"cat": "itens", "kind": "item", "id": "cajado_crepusculo", "price": 400},
+	{"cat": "itens", "kind": "item", "id": "sanguinario", "price": 660},
 ]
 const CATEGORIES: Array[Dictionary] = [
 	{"key": "skins", "label": "LOJA_CAT_SKINS"},
 	{"key": "itens", "label": "LOJA_CAT_ITEMS"},
 ]
+# Mesmo som de compra da loja in-game (wave_shop).
+const BUY_SOUND: AudioStream = preload("res://audios/effects/buy_1.mp3")
 
 const _ACCENT: Color = Color(1.0, 0.82, 0.4, 1.0)
 const _MUTED: Color = Color(0.66, 0.58, 0.8, 1.0)
@@ -123,12 +127,17 @@ func _build_ui() -> void:
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	body.add_child(scroll)
+	# CenterContainer centra o grid na largura disponível (o scroll força a largura
+	# total com h-scroll desabilitado), deixando o grid equidistante das bordas em
+	# vez de colado à esquerda com um vazião à direita.
+	var grid_center := CenterContainer.new()
+	grid_center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(grid_center)
 	_grid = GridContainer.new()
-	_grid.columns = 3
+	_grid.columns = 4
 	_grid.add_theme_constant_override("h_separation", 14)
 	_grid.add_theme_constant_override("v_separation", 14)
-	_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(_grid)
+	grid_center.add_child(_grid)
 
 	body.add_child(_vsep())
 
@@ -203,6 +212,8 @@ func _catalog_for(key: String) -> Array:
 	for e in CATALOG:
 		if String(e["cat"]) == key:
 			out.append(e)
+	# Ordena do mais barato pro mais caro (também define qual fica pré-selecionado).
+	out.sort_custom(func(a, b): return int(a.get("price", 0)) < int(b.get("price", 0)))
 	return out
 
 
@@ -488,7 +499,7 @@ func _confirm_purchase(entry: Dictionary) -> void:
 			InventoryItems.mark_purchased(String(entry["id"]))
 		else:
 			SkinLoadout.mark_skin_purchased(String(entry["id"]))
-		MenuAudio.play_drop()  # som de compra
+		_play_buy_sound()  # mesmo som da loja in-game
 	if _confirm_modal != null:
 		_confirm_modal.queue_free()
 		_confirm_modal = null
@@ -500,6 +511,19 @@ func _confirm_purchase(entry: Dictionary) -> void:
 func _on_back_pressed() -> void:
 	MenuAudio.play_click()
 	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+
+
+# Som de compra (buy_1.mp3) — idêntico ao da loja in-game (wave_shop._play_buy_sound).
+func _play_buy_sound() -> void:
+	if BUY_SOUND == null:
+		return
+	var p := AudioStreamPlayer.new()
+	p.bus = &"SFX"
+	p.stream = BUY_SOUND
+	p.volume_db = -16.0
+	add_child(p)
+	p.play()
+	p.finished.connect(p.queue_free)
 
 
 # ---------- Helpers ----------

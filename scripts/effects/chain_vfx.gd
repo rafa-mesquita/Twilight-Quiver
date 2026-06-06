@@ -6,7 +6,7 @@ extends Object
 # (player.gd). Centraliza o desenho da faísca e o som (com throttle global) pra
 # não duplicar entre os dois.
 
-const CHAIN_SOUND: AudioStream = preload("res://audios/upgrades/cadeia de raios/Cadeia de raios effect.mp3")
+const CHAIN_SOUND: AudioStream = preload("res://audios/upgrades/cadeia de raios/Cadeia de raios effect_02.mp3")
 const CHAIN_SOUND_THROTTLE_MS: int = 80
 const CHAIN_SOUND_VOLUME_DB: float = -10.0
 

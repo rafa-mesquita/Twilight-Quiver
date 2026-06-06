@@ -132,12 +132,17 @@ var _petal_deposit_label: Label = null
 # Glow ativo (skill do espaço): durante esse período, modulate do ícone é
 # sobrescrito pelo "active color" e ignora o estado de stacks.
 var _esquivando_ability_glow_active: bool = false
+# Sanguinário: ref do glow vermelho no slot do item (HUD equipados) + tween do pulso.
+var _sanguinario_slot_glow: ColorRect = null
+var _sanguinario_glow_tween: Tween = null
 # Posições do ícone do Esquivando. SEM elemental ativo: ocupa o slot do elemental
 # (x=150, que está livre). COM um elemental (Fire/Chain lv3+, Curse/Ice/Stone
-# lv4+): desloca pra ESQUERDA (x=60) pra não sobrepor o cooldown do elemental —
-# Esquivando e elemental NÃO são mutex (dá pra ter os dois ao mesmo tempo).
+# lv4+): desloca pra DIREITA (x=330, slot livre entre o Chain e o contador
+# Perfurante/Ricochete) pra não sobrepor o cooldown do elemental nem o frame da
+# contagem de wave (canto superior esquerdo). Esquivando e elemental NÃO são
+# mutex (dá pra ter os dois ao mesmo tempo).
 const ESQUIVANDO_ICON_NO_ELEM_X: float = 150.0
-const ESQUIVANDO_ICON_ELEM_X: float = 60.0
+const ESQUIVANDO_ICON_ELEM_X: float = 330.0
 const ESQUIVANDO_ICON_WIDTH: float = 76.0
 @onready var upgrade_column_vbox: VBoxContainer = $UpgradeColumn/VBox
 @onready var boss_hp_bar: Control = $BossHpBar
@@ -330,6 +335,9 @@ func _connect_player_signals() -> void:
 		player.hp_changed.connect(_on_player_hp_changed)
 	if "hp" in player and "max_hp" in player:
 		_on_player_hp_changed(player.hp, player.max_hp)
+	# Sanguinário: glow vermelho pulsante no slot do item quando o buff (HP < 40%) liga.
+	if player.has_signal("sanguinario_active_changed") and not player.sanguinario_active_changed.is_connected(_on_sanguinario_active_changed):
+		player.sanguinario_active_changed.connect(_on_sanguinario_active_changed)
 	# Dash bar — só aparece quando o player tem o upgrade.
 	if player.has_signal("dash_unlocked") and not player.dash_unlocked.is_connected(_on_dash_unlocked):
 		player.dash_unlocked.connect(_on_dash_unlocked)
@@ -2060,6 +2068,8 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 		"gold_spent": int(p.get("stats_gold_spent")) if p != null and "stats_gold_spent" in p else 0,
 		"waves_cleared": int(p.get("stats_waves_cleared")) if p != null and "stats_waves_cleared" in p else 0,
 		"elemental_roulette_buys": int(p.get("stats_roulette_buys")) if p != null and "stats_roulette_buys" in p else 0,
+		"joker_used": int(p.get("stats_joker_used")) if p != null and "stats_joker_used" in p else 0,
+		"capacete_veloz_unlock": (p != null and "stats_armor_before_w4" in p and bool(p.get("stats_armor_before_w4")) and "stats_bosses_killed" in p and ("mage_monkey" in p.get("stats_bosses_killed"))),
 		"low_hp_kills": int(p.get("stats_low_hp_kills")) if p != null and "stats_low_hp_kills" in p else 0,
 	}
 
@@ -2483,4 +2493,31 @@ func _make_hud_item_slot(id: String, pos: Vector2, sz: float) -> Control:
 			icon.offset_bottom = -4.0
 			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			slot.add_child(icon)
+	if id == "sanguinario":
+		# Filtro vermelho por cima do slot — pulsa/brilha quando o buff de HP-baixo
+		# está ativo (dirigido por _on_sanguinario_active_changed). alpha 0 = off.
+		var glow := ColorRect.new()
+		glow.color = Color(1.0, 0.15, 0.12, 0.0)
+		glow.anchor_right = 1.0
+		glow.anchor_bottom = 1.0
+		glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(glow)
+		_sanguinario_slot_glow = glow
 	return slot
+
+
+# Sanguinário ligou/desligou (HP cruzou 40%). Ativo: pulso vermelho infinito no
+# slot do item. Inativo: para o tween e apaga o filtro.
+func _on_sanguinario_active_changed(active: bool) -> void:
+	if _sanguinario_slot_glow == null or not is_instance_valid(_sanguinario_slot_glow):
+		return
+	if _sanguinario_glow_tween != null and _sanguinario_glow_tween.is_valid():
+		_sanguinario_glow_tween.kill()
+		_sanguinario_glow_tween = null
+	if not active:
+		_sanguinario_slot_glow.color.a = 0.0
+		return
+	_sanguinario_slot_glow.color.a = 0.5
+	_sanguinario_glow_tween = create_tween().set_loops()
+	_sanguinario_glow_tween.tween_property(_sanguinario_slot_glow, "color:a", 0.18, 0.45).set_trans(Tween.TRANS_SINE)
+	_sanguinario_glow_tween.tween_property(_sanguinario_slot_glow, "color:a", 0.55, 0.45).set_trans(Tween.TRANS_SINE)
