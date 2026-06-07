@@ -3577,7 +3577,13 @@ func _open_fire_trail_choice() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 	var subtitle := Label.new()
-	subtitle.text = tr("SHOP_FIRE_TRAIL_SUBTITLE")
+	# Mostra o DoT real do rastro (já escalado pelo Dano atual). Os dois rastros têm
+	# o mesmo DoT — a escolha é só ONDE o fogo cai.
+	var _fp := get_tree().get_first_node_in_group("player")
+	var _trail_dps: int = 3
+	if _fp != null and _fp.has_method("_fire_trail_dps"):
+		_trail_dps = int(round(float(_fp._fire_trail_dps())))
+	subtitle.text = tr("SHOP_FIRE_TRAIL_SUBTITLE") % _trail_dps
 	if byte_font != null:
 		subtitle.add_theme_font_override("font", byte_font)
 	subtitle.add_theme_font_size_override("font_size", 24)

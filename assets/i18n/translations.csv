@@ -281,7 +281,7 @@ SHOP_ROULETTE_REVEAL_TITLE,ROLETA ELEMENTAL,ELEMENTAL ROULETTE,RULETA ELEMENTAL,
 SHOP_ROULETTE_REVEAL_RESULT,Novo elemental: %s — Nv 4!,New elemental: %s — Lv 4!,Nuevo elemental: %s — Nv 4!,Nouvel élémentaire : %s — Niv 4 !
 SHOP_ROULETTE_REVEAL_OK,Boa!,Nice!,¡Bien!,Super !
 SHOP_FIRE_TRAIL_TITLE,RASTRO DE FOGO,FIRE TRAIL,RASTRO DE FUEGO,TRAÎNÉE DE FEU
-SHOP_FIRE_TRAIL_SUBTITLE,Escolha qual rastro vem primeiro,Choose which trail comes first,Elige qué rastro viene primero,Choisissez quelle traînée vient en premier
+SHOP_FIRE_TRAIL_SUBTITLE,Ambos causam %d de dano/s — escolha onde o fogo cai,Both deal %d damage/s — choose where the fire drops,Ambos causan %d de daño/s — elige dónde cae el fuego,Les deux infligent %d dégâts/s — choisissez où le feu tombe
 SHOP_FIRE_TRAIL_OPT_PLAYER,Rastro no Player,Player Trail,Rastro en el Jugador,Traînée du Joueur
 SHOP_FIRE_TRAIL_OPT_ARROW,Rastro na Flecha,Arrow Trail,Rastro en la Flecha,Traînée de la Flèche
 SHOP_FIRE_TRAIL_DESC_PLAYER,Cai no chão por onde você anda,Drops on the ground where you walk,Cae al suelo por donde caminas,Tombe au sol là où vous marchez
@@ -334,7 +334,6 @@ enemies. 80% dmg.","Dispara a enemigos
 cercanos. 80% daño.","Tire sur les ennemis
 proches. 80% dégâts."
 SHOP_FIRE_ARROW_NAME,FLECHA DE FOGO,FIRE ARROW,FLECHA DE FUEGO,FLÈCHE DE FEU
-SHOP_FIRE_ARROW_DESC,SUA FLECHA GANHA PODER DE FOGO BLABLABLABLA,YOUR ARROW GAINS FIRE POWER BLABLABLABLA,TU FLECHA GANA PODER DE FUEGO BLABLABLABLA,VOTRE FLÈCHE GAGNE LE POUVOIR DU FEU BLABLABLABLA
 SHOP_HP_TITLE,+ HP MÁXIMO,+ MAX HP,+ HP MÁXIMO,+ PV MAX
 SHOP_HP_PLUS_18,+18 HP,+18 HP,+18 HP,+18 PV
 SHOP_HP_PLUS_20,+20 HP,+20 HP,+20 HP,+20 PV
@@ -480,7 +479,7 @@ SHOP_TING_DESC_2,A torreta passa a causar 10% do dano em área e dura 9s,The tur
 SHOP_TING_DESC_3,"Constrói torretas a cada 13s e elas atiram mais rápido (a cada 1,7s)",Builds turrets every 13s and they shoot faster (every 1.7s),"Construye torretas cada 13s y disparan más rápido (cada 1,7s)","Construit des tourelles toutes les 13s et elles tirent plus vite (toutes les 1,7s)"
 SHOP_TING_DESC_4,Ganha +1 Mecânico Ting (2 no total),Gain +1 Ting the Mechanic (2 total),Obtienes +1 Ting el Mecánico (2 en total),Obtenez +1 Ting le Mécanicien (2 au total)
 SHOP_FIRE_ARROW_DESC_1,"Suas flechas queimam inimigos, causando 6 de dano/s por 5s","Your arrows burn enemies, dealing 6 damage/s for 5s","Tus flechas queman a los enemigos, causando 6 de daño/s durante 5s","Vos flèches brûlent les ennemis, infligeant 6 dégâts/s pendant 5s"
-SHOP_FIRE_ARROW_DESC_2,Queimadura sobe para 7 de dano/s. Escolha qual rastro de fogo vem primeiro: no player (3 de dano/s) ou na flecha (4 de dano/s),Burn rises to 7 damage/s. Choose which fire trail comes first: on the player (3 damage/s) or on the arrow (4 damage/s),La quemadura sube a 7 de daño/s. Elige qué estela de fuego viene primero: en el jugador (3 de daño/s) o en la flecha (4 de daño/s),La brûlure passe à 7 dégâts/s. Choisissez quelle traînée de feu vient en premier : sur le joueur (3 dégâts/s) ou sur la flèche (4 dégâts/s)
+SHOP_FIRE_ARROW_DESC_2,"Queimadura sobe para 7 de dano/s. Ganha um rastro de fogo (3 de dano/s) — escolha se ele cai no player ou na flecha.","Burn rises to 7 damage/s. Gain a fire trail (3 damage/s) — choose if it drops on the player or the arrow.","La quemadura sube a 7 de daño/s. Ganas una estela de fuego (3 de daño/s) — elige si cae en el jugador o en la flecha.","La brûlure passe à 7 dégâts/s. Vous gagnez une traînée de feu (3 dégâts/s) — choisissez si elle tombe sur le joueur ou sur la flèche."
 SHOP_FIRE_ARROW_DESC_3,Queimadura sobe para 9 de dano/s e ganha a skill Q: uma chama em área que causa 12 de dano/s,Burn rises to 9 damage/s and unlocks Q skill: a flame area dealing 12 damage/s,La quemadura sube a 9 de daño/s y desbloquea la habilidad Q: un área de llamas que causa 12 de daño/s,La brûlure passe à 9 dégâts/s et débloque la compétence Q : une zone de flammes infligeant 12 dégâts/s
 SHOP_FIRE_ARROW_DESC_4,"Queimadura sobe para 12 de dano/s, +30% em todo dano de fogo e você fica com os dois rastros de fogo (no player e na flecha)","Burn rises to 12 damage/s, +30% to all fire damage and you get both fire trails (player and arrow)","La quemadura sube a 12 de daño/s, +30% a todo el daño de fuego y obtienes las dos estelas de fuego (jugador y flecha)","La brûlure passe à 12 dégâts/s, +30% à tous les dégâts de feu et vous obtenez les deux traînées de feu (joueur et flèche)"
 SHOP_CURSE_ARROW_DESC_1,"Slow de 35% e 3 de dano/s. Ao morrer, a maldição propaga para o alvo mais próximo","35% slow and 3 damage/s. On death, the curse spreads to the nearest target","35% de ralentización y 3 de daño/s. Al morir, la maldición se propaga al objetivo más cercano","35% de ralentissement et 3 dégâts/s. À la mort, la malédiction se propage à la cible la plus proche"

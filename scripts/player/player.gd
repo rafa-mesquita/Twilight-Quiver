@@ -1572,24 +1572,15 @@ func _fire_burn_duration() -> float:
 
 
 func _fire_trail_dps() -> float:
-	# Lv2+ : DPS do rastro de fogo da flecha × multiplier global.
-	var base: float = 0.0
-	match fire_arrow_level:
-		2: base = 4.0
-		3: base = 5.0
-		4: base = 7.0
-	return _apply_dmg_pct_to_dps(base * _fire_burn_multiplier())
-
-
-func _fire_player_trail_dps() -> float:
-	# Lv2+ : DPS base do rastro de fogo do PLAYER × multiplier global. Escala por
-	# nível (igual o rastro da flecha) — o + damage_upgrades é somado no spawn.
+	# Lv2+ : DPS dos rastros de fogo (flecha E player — fonte única). Base por nível
+	# × multiplier global, escalando com Dano via _apply_dmg_pct_to_dps (igual à
+	# queimadura). Rastro é NEUTRO ao Cajado (is_skill=false default).
 	var base: float = 0.0
 	match fire_arrow_level:
 		2: base = 3.0
 		3: base = 4.0
 		4: base = 5.0
-	return base * _fire_burn_multiplier()
+	return _apply_dmg_pct_to_dps(base * _fire_burn_multiplier())
 
 
 func _fire_player_trail_active() -> bool:
@@ -2442,8 +2433,8 @@ func _spawn_player_fire_trail_segment() -> void:
 		return
 	var seg: Node = PLAYER_FIRE_TRAIL_SCENE.instantiate()
 	if "damage_per_second" in seg:
-		# Base por nível (× burn_mult) + 1 de DPS por status de Dano comprado.
-		seg.damage_per_second = (_fire_player_trail_dps() + float(damage_upgrades)) * _cajado_power_factor()
+		# Mesmo DoT do rastro da flecha (fonte única; escala com Dano lá dentro).
+		seg.damage_per_second = _fire_trail_dps()
 	_get_world().add_child(seg)
 	if seg is Node2D:
 		(seg as Node2D).global_position = global_position
