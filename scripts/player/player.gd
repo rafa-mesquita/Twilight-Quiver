@@ -531,6 +531,13 @@ var _sanguinario_blink_tween: Tween = null
 # Capacete Veloz (item): cada nível de Armadura COMPRADA dá +3% de dodge. Setado
 # por InventoryItems.apply_to_player. Lido em _capacete_dodge_chance.
 var _capacete_veloz_equipped: bool = false
+# Essência Vital (item): cada status de HP comprado dá +5 HP máx extra e −10% de
+# cooldown global (teto −50%). Setado por InventoryItems.apply_to_player. CDR lido
+# em cooldown_scale()/cooldown_drain_mult(); +5 HP somado em apply_upgrade("hp").
+var _essencia_vital_equipped: bool = false
+var _essencia_cdr_per_level: float = 0.10
+var _essencia_cdr_cap: float = 0.50
+var _essencia_hp_per_level: float = 5.0
 var attack_speed_multiplier: float = 1.0  # 1.0 base, +0.27 por stack
 var move_speed_multiplier: float = 1.0  # 1.0 base, +0.10 por stack
 # Conta ataques pra decidir quando proca a flecha perfurante (a cada 3 ataques).
