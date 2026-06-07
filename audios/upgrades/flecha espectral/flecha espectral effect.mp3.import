@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cefj8qkldgcdp"
+path="res://.godot/imported/flecha espectral effect.mp3-b29845ea54826f2d5bc4c2204fe31924.mp3str"
+
+[deps]
+
+source_file="res://audios/upgrades/flecha espectral/flecha espectral effect.mp3"
+dest_files=["res://.godot/imported/flecha espectral effect.mp3-b29845ea54826f2d5bc4c2204fe31924.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

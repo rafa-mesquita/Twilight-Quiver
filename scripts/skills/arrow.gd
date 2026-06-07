@@ -228,7 +228,9 @@ const SPECTRAL_RETARGET_RADIUS: float = 180.0   # = TIGER_CLAWS_RADIUS
 const SPECTRAL_HOMING_SPEED: float = 170.0   # mais lento que a flecha normal (220)
 const SPECTRAL_MAX_ALIVE: int = 120             # teto global de espectrais vivas
 const SPECTRAL_MIN_DAMAGE: float = 1.0          # piso de dano pra encadear
-const SPECTRAL_SFX: AudioStream = preload("res://audios/upgrades/flecha espectral/flecha espectral effect.mp3")
+# Carregado sob demanda (load + guarda), NÃO preload — um asset faltando nunca pode
+# derrubar o carregamento do script inteiro da flecha (degrada pra "sem som").
+const SPECTRAL_SFX_PATH: String = "res://audios/upgrades/flecha espectral/flecha espectral effect.mp3"
 const SPECTRAL_SFX_THROTTLE_MS: int = 80
 static var _spectral_alive: int = 0
 static var _spectral_sfx_until_ms: int = 0
@@ -736,8 +738,12 @@ func _play_spectral_sfx(pos: Vector2) -> void:
 	if now - _spectral_sfx_until_ms < SPECTRAL_SFX_THROTTLE_MS:
 		return
 	_spectral_sfx_until_ms = now
+	# load (não preload) + guarda: asset faltando = sem som, nunca quebra a flecha.
+	var sfx := load(SPECTRAL_SFX_PATH) as AudioStream
+	if sfx == null:
+		return
 	# Volume mais baixo + fade-out no fim (max_duration 1.0 > fade_out 0.4).
-	_play_oneshot(SPECTRAL_SFX, pos, -20.0, 1.0, 0.0, 1.0, 0.0, 0.4)
+	_play_oneshot(sfx, pos, -20.0, 1.0, 0.0, 1.0, 0.0, 0.4)
 
 
 # Chegada da espectral no alvo: aplica dano (sem crit, sem curva de perfuração) + o
