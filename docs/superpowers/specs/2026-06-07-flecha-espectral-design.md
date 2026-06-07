@@ -44,25 +44,31 @@ Dois limites invisíveis, raramente atingidos em jogo normal:
 `is_spectral` (homing). Assim herda todo o pacote de efeitos de contato (já implementado
 no `_on_hit`) sem duplicar nada e sem desincronizar da flecha real.
 
-### Refactors habilitadores (em `player.gd` e `arrow.gd`)
+### Métodos novos (aditivos — SEM refatorar `_spawn_arrow`/`_on_hit`)
 
-1. **`player._stamp_current_effects(arrow, is_primary)`** — extrai o bloco de carimbo de
-   efeitos do `_spawn_arrow` (linhas ~1214-1367: chain/fire/curse/ice/stone/tide/graviton
-   + source/volley_id). `_spawn_arrow` passa a chamá-lo; o spawn da espectral também.
-   O dano da espectral é setado pelo chamador (absoluto, já calculado), então o stamp
-   **não** recalcula `arrow.damage`.
-2. **`arrow._apply_to_enemy(target, dmg) -> bool`** — extrai do `_on_hit` o trecho que
-   aplica curse-antes/crit/`take_damage`/knockback/burn/freeze/tide/stone/graviton/chain
-   num inimigo (linhas ~681-767). Retorna `true` se o alvo **morreu** nesse hit. O caminho
-   de colisão normal e a chegada da espectral chamam o mesmo método.
-   - Nuance: na espectral, `dmg` é o dano espectral (sem recálculo de perfuração/crit).
-     O método aceita o `dmg` pronto. Crit: a espectral **não** rola crit (passa o dano
-     direto); a flecha normal continua rolando crit no seu próprio fluxo.
+Os efeitos de contato já são métodos **isolados** na `arrow.gd` (`_apply_burn_to`,
+`_apply_curse_to`, `_apply_freeze_to`, `_spawn_ice_slow_area_at`, `_apply_tide_on_hit`,
+`_spawn_stone_aoe`, `_spawn_graviton_pulse`, `_proc_chain_lightning`). A espectral só os
+chama — não precisa extrair nada do `_on_hit`/`_spawn_arrow` (menos risco de regressão).
+
+1. **`player._stamp_spectral_effects(arrow)`** — método NOVO (não extraído) que liga só os
+   **flags + params de efeito** da flecha atual, lendo os mesmos helpers que o `_spawn_arrow`
+   usa (`_fire_burn_dps()`, `_curse_dps()`, etc.). Liga: chain, fire, curse, ice (+area se
+   L2+), stone (só os params de AoE/stun — **não** mexe em speed/lifetime/damage da pedra),
+   tide, graviton (se `graviton_level>0`). **Não** toca em `arrow.damage`, `speed`,
+   `lifetime`, nem em pierce/ricochet. O dano da espectral é setado absoluto pelo chamador.
+2. **`arrow._spectral_strike()`** — método NOVO que aplica no `spectral_target`: curse
+   (antes do dano), `take_damage(damage)` + notify (fonte "spectral", **sem crit**),
+   knockback, e os efeitos via os helpers existentes (burn/freeze/ice-area/tide/stone-AoE+
+   stun/graviton/chain) conforme os flags. Espelha as chamadas do `_on_hit` mas sem a curva
+   de perfuração e sem crit. Detecta kill com `was_alive && hp<=0` pós-dano.
 
 ### Detecção de kill → spawn do burst (caminho único)
 
-No fim de `_apply_to_enemy` (ou logo após, no caller), se o alvo **morreu** E o player tem
-`spectral_arrow_level > 0`, dispara `_spawn_spectral_burst(origin, base_dmg, count, gen)`:
+Dois pontos de detecção, ambos chamam `player._spawn_spectral_burst(origin, base_dmg,
+count, gen)` quando o alvo **morreu** E o player tem `spectral_arrow_level > 0`:
+(a) no `_on_hit` da flecha normal, logo após `take_damage` (onde já existe `_was_alive_arrow`);
+(b) no `_spectral_strike` da própria espectral. Parâmetros:
 
 - **Flecha normal mata:** `base_dmg = dano aplicado × pct_do_nível` (50/75/75/85%),
   `count = count_do_nível`, `gen = 1`.
@@ -96,9 +102,9 @@ const SPECTRAL_MIN_DAMAGE: float = 1.0
   Com alvo: vira a direção pro alvo (corrige a cada frame = não erra), anda
   `SPECTRAL_HOMING_SPEED`; ao chegar (`distance_to(alvo) <= SPECTRAL_ARRIVE_DIST`) chama
   `_spectral_strike()`. Atravessa objetos/inimigos (sem colisão de bloqueio).
-- **`_spectral_strike()`:** `var killed = _apply_to_enemy(spectral_target, damage)`; se
-  `killed` e player tem espectral → `_spawn_spectral_burst(pos_do_alvo, damage*0.60,
-  spectral_count, spectral_gen+1)`; depois `_die()`.
+- **`_spectral_strike()`:** aplica dano+efeitos no `spectral_target` (ver método acima);
+  se matou e player tem espectral → `player._spawn_spectral_burst(pos_do_alvo,
+  damage*0.60, spectral_count, spectral_gen+1)`; depois `_die()`.
 - **`_die` (spectral):** `_spectral_alive -= 1` antes do `queue_free`.
 
 ### Seleção de alvo
@@ -113,14 +119,14 @@ morto, e sorteia um (`randi()` indexando). Retorna `null` se vazio.
 - `apply_upgrade("spectral_arrow")`: `spectral_arrow_level = mini(spectral_arrow_level+1, 4)`.
 - Helpers: `_spectral_count()` → `[1,1,2,3][level-1]`; `_spectral_pct()` →
   `[0.50,0.75,0.75,0.85][level-1]`.
-- `_spawn_spectral_burst(origin, base_dmg, count, gen)`: aplica travas; pra cada uma,
-  instancia `arrow.gd`, `arrow.is_spectral=true`, `arrow.damage=base_dmg`,
-  `arrow.spectral_count=count`, `arrow.spectral_gen=gen`, alvo via
-  `_pick_random_enemy_in(origin, 180, morto)`, `_stamp_current_effects(arrow, true)`,
-  posiciona em `origin`, add ao mundo, toca o **SFX** (1× por burst, throttled).
-  - Quem chama: como `arrow.gd` é quem detecta o kill, o burst é disparado de dentro da
-    `arrow.gd` chamando `player._spawn_spectral_burst(...)` (player via grupo, igual aos
-    outros callbacks). Mantém um único ponto de spawn.
+- O `_spawn_spectral_burst(origin, base_dmg, count, gen)` vive **na `arrow.gd`** (coeso com
+  o contador estático e os flags `is_spectral`; `arrow.gd` não tem `class_name`, então
+  evita-se referência cruzada de static). Aplica travas; pra cada uma instancia `arrow.gd`,
+  seta `is_spectral`/`damage=base_dmg`/`spectral_count`/`spectral_gen=gen`/`source`(=quem
+  disparou a original), alvo via `_pick_random_enemy_in(origin, 180, morto)`, chama
+  `player._stamp_spectral_effects(novo_arrow)` (player via grupo), posiciona em `origin`,
+  add ao mundo, e toca o **SFX** (1× por burst, throttle estático). O player só fornece
+  `_stamp_spectral_effects`, `_spectral_count()` e `_spectral_pct()`.
 
 ## SFX
 
