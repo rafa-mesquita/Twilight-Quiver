@@ -64,7 +64,7 @@ func _physics_process(delta: float) -> void:
 	muzzle.position.y = MUZZLE_BASE_OFFSET_Y + bob
 	# Cooldown de ataque baseado em delta (mais robusto que SceneTreeTimer).
 	if _attack_cd_remaining > 0.0:
-		_attack_cd_remaining = maxf(_attack_cd_remaining - delta, 0.0)
+		_attack_cd_remaining = maxf(_attack_cd_remaining - delta * _cd_drain_mult(), 0.0)
 	# Durante atk anim, fica parado.
 	if _is_attacking:
 		velocity = Vector2.ZERO
@@ -108,6 +108,13 @@ func _physics_process(delta: float) -> void:
 	velocity = move_vec * speed + sep
 	move_and_slide()
 	_update_animation(move_vec)
+
+
+# Drenagem de cooldown acelerada pela Essência Vital do player (1.0 se sem item).
+func _cd_drain_mult() -> float:
+	if _player != null and is_instance_valid(_player) and _player.has_method("cooldown_drain_mult"):
+		return _player.cooldown_drain_mult()
+	return 1.0
 
 
 func _formation_offset() -> Vector2:

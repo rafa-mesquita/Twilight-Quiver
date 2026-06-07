@@ -2094,6 +2094,7 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 		"elemental_roulette_buys": int(p.get("stats_roulette_buys")) if p != null and "stats_roulette_buys" in p else 0,
 		"joker_used": int(p.get("stats_joker_used")) if p != null and "stats_joker_used" in p else 0,
 		"capacete_veloz_unlock": (p != null and "stats_armor_before_w4" in p and bool(p.get("stats_armor_before_w4")) and "stats_bosses_killed" in p and ("mage_monkey" in p.get("stats_bosses_killed"))),
+		"essencia_vital_unlock": (p != null and "stats_essencia_vital_unlock" in p and bool(p.get("stats_essencia_vital_unlock"))),
 		"low_hp_kills": int(p.get("stats_low_hp_kills")) if p != null and "stats_low_hp_kills" in p else 0,
 		# Tempo efetivo (só combate) até vencer o dual boss da wave 21. -1 = não
 		# chegou. Vai pro payload do leaderboard e pro recorde pessoal local.

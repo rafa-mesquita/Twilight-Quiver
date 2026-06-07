@@ -119,7 +119,7 @@ func _update_wander(delta: float) -> void:
 	# Re-seleciona waypoint se ele saiu muito longe do player (ex: player se moveu).
 	if global_position.distance_to(_player.global_position) > wander_radius * 1.8:
 		_pick_new_wander_target()
-	_attack_cd_remaining -= delta
+	_attack_cd_remaining -= delta * _cd_drain_mult()
 	if _attack_cd_remaining <= 0.0:
 		_start_attack()
 
@@ -217,6 +217,13 @@ func _find_enemy_centroid() -> Vector2:
 			best_count = count
 			best_centroid = sum / float(count)
 	return best_centroid
+
+
+# Drenagem de cooldown acelerada pela Essência Vital do player (1.0 se sem item).
+func _cd_drain_mult() -> float:
+	if _player != null and is_instance_valid(_player) and _player.has_method("cooldown_drain_mult"):
+		return _player.cooldown_drain_mult()
+	return 1.0
 
 
 # Chamado pelo player.reset_all_cooldowns no início de cada wave. Atrasa o

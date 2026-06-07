@@ -56,7 +56,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if _attack_cd_remaining > 0.0:
-		_attack_cd_remaining = maxf(_attack_cd_remaining - delta, 0.0)
+		_attack_cd_remaining = maxf(_attack_cd_remaining - delta * _cd_drain_mult(), 0.0)
 	if _is_attacking:
 		return
 	if _attack_cd_remaining > 0.0:
@@ -141,6 +141,13 @@ func _pick_target() -> Node2D:
 			nearest = e
 			best = d
 	return nearest
+
+
+# Drenagem de cooldown acelerada pela Essência Vital do player (1.0 se sem item).
+func _cd_drain_mult() -> float:
+	if _player != null and is_instance_valid(_player) and _player.has_method("cooldown_drain_mult"):
+		return _player.cooldown_drain_mult()
+	return 1.0
 
 
 func _current_cooldown() -> float:

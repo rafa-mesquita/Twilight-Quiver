@@ -281,6 +281,9 @@ const STAT_FLAWLESS_W3: StringName = &"flawless_through_w3"
 # Flag (0/1): em alguma run, COMPROU Armadura antes da wave 4 E matou o 1º boss
 # (mage_monkey) na mesma run. Unlock do item Capacete Veloz.
 const STAT_CAPACETE_VELOZ: StringName = &"capacete_veloz_unlock"
+# Flag (0/1): em alguma run, matou o boss da wave 7 (mage_monkey) com >= 2 status de
+# HP na mesma run. Unlock do item Essência Vital.
+const STAT_ESSENCIA_VITAL: StringName = &"essencia_vital_unlock"
 # Flag (0/1): jogador já comprou Armadura até o Lv5 em alguma run. Unlock da skin Warrior.
 const STAT_ARMOR_LV5: StringName = &"armor_lv5_reached"
 # Flag (0/1): matou um mago longe (>= 350px) com flecha perfurante. Unlock da skin Patriota.
@@ -839,6 +842,10 @@ static func record_run(run_stats: Dictionary) -> Array:
 	# (unlock do item Capacete Veloz).
 	if bool(run_stats.get("capacete_veloz_unlock", false)) and get_stat(STAT_CAPACETE_VELOZ) < 1:
 		set_stat(STAT_CAPACETE_VELOZ, 1)
+	# Flag persistente: matou o boss da wave 7 com >= 2 status de HP nesta run
+	# (unlock do item Essência Vital).
+	if bool(run_stats.get("essencia_vital_unlock", false)) and get_stat(STAT_ESSENCIA_VITAL) < 1:
+		set_stat(STAT_ESSENCIA_VITAL, 1)
 	# Flag persistente: comprou Armadura até o Lv5 nesta run (unlock Warrior).
 	if bool(run_stats.get("armor_lv5_reached", false)) and get_stat(STAT_ARMOR_LV5) < 1:
 		set_stat(STAT_ARMOR_LV5, 1)

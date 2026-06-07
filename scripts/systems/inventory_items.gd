@@ -136,6 +136,15 @@ const ITEMS: Dictionary = {
 			{"stat": &"capacete_veloz_unlock", "value": 1, "label": "ITEM_REQ_CAPACETE"},
 		]},
 	},
+	"essencia_vital": {
+		"name": "ITEM_ESSENCIA_VITAL_NAME",
+		"desc": "ITEM_ESSENCIA_VITAL_DESC",
+		"icon": "res://assets/Hud/itens/essencia_vital.png",
+		"effect": {"type": "hp_status_bonus", "cdr_per_level": 0.10, "cdr_cap": 0.50, "hp_per_level": 5},
+		"unlock": {"type": "quest", "reqs": [
+			{"stat": &"essencia_vital_unlock", "value": 1, "label": "ITEM_REQ_ESSENCIA_VITAL"},
+		]},
+	},
 }
 
 
@@ -436,3 +445,10 @@ static func apply_to_player(player: Node) -> void:
 				# Capacete Veloz: liga o dodge por nível de Armadura comprada.
 				if "_capacete_veloz_equipped" in player:
 					player._capacete_veloz_equipped = true
+			elif t == "hp_status_bonus":
+				# Essência Vital: liga o item e guarda os params (CDR por status de HP + HP extra).
+				if "_essencia_vital_equipped" in player:
+					player._essencia_vital_equipped = true
+					player._essencia_cdr_per_level = float(eff.get("cdr_per_level", 0.10))
+					player._essencia_cdr_cap = float(eff.get("cdr_cap", 0.50))
+					player._essencia_hp_per_level = float(eff.get("hp_per_level", 5.0))
