@@ -650,6 +650,9 @@ var stats_flawless_through_w3: bool = false
 # Setada pelo wave_shop. Combinada com matar o 1º boss (mage_monkey) = unlock do
 # item Capacete Veloz.
 var stats_armor_before_w4: bool = false
+# Flag de run: matou o Mage Monkey (boss da wave 7/14) tendo >= 2 status de HP
+# comprados nesse instante. Unlock do item Essência Vital. Setada em notify_boss_killed.
+var stats_essencia_vital_unlock: bool = false
 # Flag por-run: matou um mago a >= 480px com a flecha (lançamento longo).
 # Setada pelo arrow.gd via notify_long_mage_kill. Unlock da skin Patriota.
 var stats_long_mage_kill: bool = false
@@ -4821,6 +4824,9 @@ func notify_boss_killed(boss_id: String) -> void:
 	if boss_id.is_empty():
 		return
 	stats_bosses_killed.append(boss_id)
+	# Essência Vital: boss da wave 7 (Mage Monkey) morto com >= 2 status de HP na run.
+	if boss_id == "mage_monkey" and hp_upgrades >= 2:
+		stats_essencia_vital_unlock = true
 	# Telemetria: evento individual pra time-to-kill analysis (com time_ms auto).
 	if has_node("/root/Telemetry"):
 		var wm := get_tree().get_first_node_in_group("wave_manager")
