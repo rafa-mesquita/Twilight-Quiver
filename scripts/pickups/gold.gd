@@ -56,6 +56,9 @@ const SLOW_PULSE_VISUAL_COLOR: Color = Color(1.0, 0.92, 0.35, 0.55)
 
 func _ready() -> void:
 	add_to_group("gold")
+	# freeze_immune: durante o Time Freeze (Q do Gelo L4) a moeda continua ativa —
+	# magnet + body_entered seguem funcionando, então dá pra pegar coins no congelado.
+	add_to_group("freeze_immune")
 	body_entered.connect(_on_body_entered)
 	# Phase inicial random pra moedas dropadas no mesmo instante não pulsarem em sync.
 	_bob_phase = randf() * TAU
