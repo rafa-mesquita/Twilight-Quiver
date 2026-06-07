@@ -157,6 +157,7 @@ DMG_PANEL_MULTI_ARROW,Multi-flecha,Multi-shot,Multi-flecha,Multi-flèche
 DMG_PANEL_DOUBLE_ARROWS,Flechas Duplas,Double Arrows,Flechas dobles,Flèches doubles
 DMG_PANEL_PERFURACAO,Perfuração,Pierce,Perforación,Perforation
 DMG_PANEL_RICOCHET,Ricochete,Ricochet,Rebote,Ricochet
+DMG_PANEL_SPECTRAL,Flecha Espectral,Spectral Arrow,Flecha Espectral,Flèche Spectrale
 DMG_PANEL_FIRE_DOT,Queimadura,Burn,Quemadura,Brûlure
 DMG_PANEL_FIRE_SKILL,Skill de Fogo,Fire Skill,Habilidad de Fuego,Compétence Feu
 DMG_PANEL_CURSE_DOT,Maldição (DoT),Curse (DoT),Maldición (DoT),Malédiction (DoT)
@@ -347,6 +348,11 @@ SHOP_ARMOR_22,(-22% dano e slow),(-22% dmg & slow),(-22% daño y slow),(-22% dé
 SHOP_ARMOR_25,(-25% dano e slow),(-25% dmg & slow),(-25% daño y slow),(-25% dégâts & slow)
 SHOP_ARMOR_3,(-3% dano e slow),(-3% dmg & slow),(-3% daño y slow),(-3% dégâts & slow)
 SHOP_UPG_PERFURACAO,Perfuração,Piercing,Perforación,Perforation
+SHOP_UPG_SPECTRAL,Flecha Espectral,Spectral Arrow,Flecha Espectral,Flèche Spectrale
+SHOP_SPECTRAL_DESC_1,"Ao matar um inimigo, nasce uma flecha espectral que persegue (sem errar) outro inimigo próximo, causando 50% do dano e os mesmos efeitos. Se ela matar, repete a 60% do dano.","On a kill, a spectral arrow seeks (never missing) a nearby enemy, dealing 50% damage and the same effects. If it kills, it repeats at 60% damage.","Al matar, una flecha espectral persigue (sin fallar) a un enemigo cercano, causando 50% del daño y los mismos efectos. Si mata, repite al 60% del daño.","À la mort d'un ennemi, une flèche spectrale poursuit (sans rater) un ennemi proche, infligeant 50% des dégâts et les mêmes effets. Si elle tue, elle répète à 60% des dégâts."
+SHOP_SPECTRAL_DESC_2,A flecha espectral causa 75% do dano.,The spectral arrow deals 75% damage.,La flecha espectral causa 75% del daño.,La flèche spectrale inflige 75% des dégâts.
+SHOP_SPECTRAL_DESC_3,"Saem duas flechas espectrais, em dois inimigos aleatórios.","Two spectral arrows spawn, at two random enemies.","Salen dos flechas espectrales, hacia dos enemigos aleatorios.","Deux flèches spectrales apparaissent, vers deux ennemis aléatoires."
+SHOP_SPECTRAL_DESC_4,"85% do dano e três flechas espectrais, em três inimigos aleatórios.","85% damage and three spectral arrows, at three random enemies.","85% del daño y tres flechas espectrales, hacia tres enemigos aleatorios.","85% des dégâts et trois flèches spectrales, vers trois ennemis aléatoires."
 SHOP_UPG_MULTI_ARROW,Múltiplas Flechas,Multiple Arrows,Flechas Múltiples,Flèches Multiples
 SHOP_UPG_DOUBLE_ARROWS,Flechas Duplas,Double Arrows,Flechas Dobles,Flèches Doubles
 SHOP_UPG_CHAIN_LIGHTNING,Cadeia de Raios,Chain Lightning,Cadena de Rayos,Chaîne d'Éclairs

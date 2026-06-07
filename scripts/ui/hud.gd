@@ -170,7 +170,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 	# Status primeiro (sempre visíveis assim que comprados)
 	"hp", "armor", "damage", "attack_speed", "move_speed",
 	# Upgrades de gameplay
-	"perfuracao", "ricochet_arrow", "multi_arrow", "double_arrows", "chain_lightning",
+	"perfuracao", "ricochet_arrow", "spectral_arrow", "multi_arrow", "double_arrows", "chain_lightning",
 	"fire_arrow", "curse_arrow", "ice_arrow", "stone_arrow", "tide_arrow", "graviton", "boomerang", "critical_chance", "life_steal", "dash", "esquivando", "fenda", "adrenalina",
 	"gold_magnet",
 	"tiger_claws",
@@ -201,6 +201,8 @@ const _UPG_PATHS: Dictionary = {
 	"graviton": "res://assets/Hud/shop/upgrade/graviton/graviton card-Sheet.png",
 	"perfuracao": "res://assets/Hud/shop/upgrade/perfuracao.png",
 	"ricochet_arrow": "res://assets/Hud/shop/upgrade/ricochete.png",
+	# Placeholder: reusa a arte do ricochete (mesma categoria tipo-de-flecha).
+	"spectral_arrow": "res://assets/Hud/shop/upgrade/ricochete.png",
 	"gold_magnet": "res://assets/Hud/shop/upgrade/coin master.png",
 	"life_steal": "res://assets/Hud/shop/upgrade/life steal.png",
 	"dash": "res://assets/Hud/shop/upgrade/deslizando.png",
@@ -2111,7 +2113,7 @@ const _BUILD_UPGRADE_IDS: Array[String] = [
 	# Elemental
 	"fire_arrow", "curse_arrow", "ice_arrow", "stone_arrow", "tide_arrow",
 	# Upgrades padrão
-	"perfuracao", "multi_arrow", "double_arrows", "chain_lightning", "life_steal",
+	"perfuracao", "spectral_arrow", "multi_arrow", "double_arrows", "chain_lightning", "life_steal",
 	"gold_magnet", "dash", "esquivando", "fenda", "adrenalina", "ricochet_arrow", "graviton",
 	"boomerang", "critical_chance", "tiger_claws",
 	# Status

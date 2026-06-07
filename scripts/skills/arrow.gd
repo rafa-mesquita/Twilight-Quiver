@@ -215,11 +215,34 @@ const PIERCE_LATE_DMG_MULT: float = 0.85
 const LONG_MAGE_KILL_DIST: float = 350.0
 const MAGE_GROUPS: Array[String] = ["mage", "summoner_mage", "fire_mage", "ice_mage", "electric_mage"]
 var _spawn_pos: Vector2 = Vector2.ZERO
+# --- Flecha Espectral (modo homing) ---
+# Setado por _spawn_spectral_burst. Em modo spectral a flecha NÃO colide (body_entered
+# não conectado); voa até spectral_target corrigindo a direção, atravessa tudo, re-mira
+# se o alvo morre, e ao chegar aplica dano+efeitos via _spectral_strike.
+var is_spectral: bool = false
+var spectral_target: Node = null
+var spectral_count: int = 1   # quantas spawnar se ESTA matar (contagem do nível)
+var spectral_gen: int = 0     # geração (cap de profundidade via piso de dano)
+const SPECTRAL_ARRIVE_DIST: float = 10.0
+const SPECTRAL_RETARGET_RADIUS: float = 180.0   # = TIGER_CLAWS_RADIUS
+const SPECTRAL_HOMING_SPEED: float = 170.0   # mais lento que a flecha normal (220)
+const SPECTRAL_MAX_ALIVE: int = 120             # teto global de espectrais vivas
+const SPECTRAL_MIN_DAMAGE: float = 1.0          # piso de dano pra encadear
+const SPECTRAL_SFX: AudioStream = preload("res://audios/upgrades/flecha espectral/flecha espectral effect.mp3")
+const SPECTRAL_SFX_THROTTLE_MS: int = 80
+static var _spectral_alive: int = 0
+static var _spectral_sfx_until_ms: int = 0
 
 
 func _ready() -> void:
 	rotation = direction.angle()
-	body_entered.connect(_on_hit)
+	if is_spectral:
+		# Fantasma: opacidade reduzida + NÃO conecta colisão (atravessa tudo; chegada
+		# é por distância ao alvo). Conta no teto global.
+		modulate.a = 0.5
+		_spectral_alive += 1
+	else:
+		body_entered.connect(_on_hit)
 	_arm_lifetime()
 	# Defer pra detachar/tocar o som DEPOIS do spawner setar a posição da flecha.
 	if shoot_sound != null:
@@ -610,6 +633,9 @@ func set_direction(dir: Vector2) -> void:
 func _physics_process(delta: float) -> void:
 	if is_stuck:
 		return
+	if is_spectral:
+		_update_spectral(delta)
+		return
 	position += direction * speed * delta
 	if trail != null:
 		trail.add_point(global_position)
@@ -620,6 +646,141 @@ func _physics_process(delta: float) -> void:
 			_fire_trail_delay_remaining -= delta
 		else:
 			_try_spawn_fire_trail()
+
+
+func _update_spectral(delta: float) -> void:
+	# Re-mira se o alvo sumiu/morreu.
+	if spectral_target == null or not is_instance_valid(spectral_target) \
+			or (spectral_target as Node).is_queued_for_deletion() \
+			or (("hp" in spectral_target) and float(spectral_target.hp) <= 0.0):
+		spectral_target = _pick_random_enemy_in(global_position, SPECTRAL_RETARGET_RADIUS, null)
+		if spectral_target == null:
+			_die()
+			return
+	var tp: Vector2 = (spectral_target as Node2D).global_position
+	direction = (tp - global_position).normalized()
+	rotation = direction.angle()
+	if trail != null:
+		trail.add_point(global_position)
+		while trail.get_point_count() > trail_max_points:
+			trail.remove_point(0)
+	if global_position.distance_to(tp) <= SPECTRAL_ARRIVE_DIST:
+		_spectral_strike()
+		return
+	position += direction * SPECTRAL_HOMING_SPEED * delta
+
+
+# Sorteia um inimigo vivo dentro de `radius` de `center`, ignorando aliados/estruturas
+# e o `exclude`. Retorna null se não houver candidato.
+func _pick_random_enemy_in(center: Vector2, radius: float, exclude: Node) -> Node:
+	var rsq: float = radius * radius
+	var candidates: Array[Node] = []
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if e == exclude or not is_instance_valid(e) or not (e is Node2D):
+			continue
+		if (e as Node).is_queued_for_deletion():
+			continue
+		if ("hp" in e) and float(e.hp) <= 0.0:
+			continue
+		if (e as Node).is_in_group("tank_ally") or (e as Node).is_in_group("structure") or (e as Node).is_in_group("ally"):
+			continue
+		if center.distance_squared_to((e as Node2D).global_position) <= rsq:
+			candidates.append(e)
+	if candidates.is_empty():
+		return null
+	return candidates[randi() % candidates.size()]
+
+
+# Spawna `count` flechas espectrais a partir de `origin`, cada uma com `base_dmg`. Aplica
+# as travas: piso de dano (não spawna abaixo de SPECTRAL_MIN_DAMAGE) e teto global de
+# espectrais vivas. `gen` = geração (pro decaimento). `exclude` = o inimigo recém-morto
+# (não vira alvo). Toca o SFX 1× por burst (throttle global).
+func _spawn_spectral_burst(origin: Vector2, base_dmg: float, count: int, gen: int, exclude: Node) -> void:
+	if base_dmg < SPECTRAL_MIN_DAMAGE:
+		return
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not player.has_method("_stamp_spectral_effects"):
+		return
+	if player.arrow_scene == null:
+		return
+	var spawned: int = 0
+	for _i in count:
+		if _spectral_alive >= SPECTRAL_MAX_ALIVE:
+			break
+		var tgt := _pick_random_enemy_in(origin, SPECTRAL_RETARGET_RADIUS, exclude)
+		if tgt == null:
+			break
+		var sp = player.arrow_scene.instantiate()
+		sp.is_spectral = true
+		sp.damage = base_dmg
+		sp.spectral_count = count
+		sp.spectral_gen = gen
+		sp.spectral_target = tgt
+		sp.source = source            # propaga o atirador original (player)
+		sp.play_shoot_sound = false   # SFX é o da espectral, tocado abaixo
+		sp.telemetry_source_id = "spectral"
+		sp.lifetime = 4.0             # tempo de voo de sobra (homing + re-mira)
+		sp.global_position = origin
+		player._stamp_spectral_effects(sp)
+		_get_world().add_child(sp)
+		if sp.has_method("set_direction"):
+			var d: Vector2 = ((tgt as Node2D).global_position - origin)
+			sp.set_direction(d if d.length() > 0.01 else Vector2.RIGHT)
+		spawned += 1
+	if spawned > 0:
+		_play_spectral_sfx(origin)
+
+
+func _play_spectral_sfx(pos: Vector2) -> void:
+	var now: int = Time.get_ticks_msec()
+	if now - _spectral_sfx_until_ms < SPECTRAL_SFX_THROTTLE_MS:
+		return
+	_spectral_sfx_until_ms = now
+	# Volume mais baixo + fade-out no fim (max_duration 1.0 > fade_out 0.4).
+	_play_oneshot(SPECTRAL_SFX, pos, -20.0, 1.0, 0.0, 1.0, 0.0, 0.4)
+
+
+# Chegada da espectral no alvo: aplica dano (sem crit, sem curva de perfuração) + o
+# pacote de efeitos via os helpers já existentes. Se matar, encadeia o próximo burst a
+# 60% do dano. Sempre termina com _die.
+func _spectral_strike() -> void:
+	var target: Node = spectral_target
+	if target == null or not is_instance_valid(target):
+		_die()
+		return
+	var death_pos: Vector2 = (target as Node2D).global_position
+	# Curse antes do dano (conversão precisa enxergar o debuff se o hit matar).
+	if is_curse:
+		_apply_curse_to(target)
+	if target.is_in_group("stone_cube"):
+		target._arrow_hit_flag = true
+	var was_alive: bool = (not ("hp" in target)) or float(target.hp) > 0.0
+	target.take_damage(damage)
+	_notify_player_dmg_kill(damage, "spectral", was_alive, target)
+	if target.has_method("apply_knockback"):
+		target.apply_knockback(direction, knockback_strength)
+	_proc_chain_lightning(target)
+	if is_fire and is_instance_valid(target):
+		_apply_burn_to(target)
+	if is_ice and is_instance_valid(target):
+		_apply_freeze_to(target)
+		if ice_area_enabled:
+			_spawn_ice_slow_area_at(global_position)
+	if is_tide:
+		_apply_tide_on_hit(death_pos, target if is_instance_valid(target) else null)
+	if is_stone:
+		var do_stun: bool = _consume_stone_stun_token()
+		if do_stun and is_instance_valid(target):
+			_apply_stone_stun(target, stone_stun_duration)
+		_spawn_stone_aoe(target if is_instance_valid(target) else null, STONE_SPLASH_PCT, do_stun)
+	if is_graviton:
+		_spawn_graviton_pulse()
+	# Matou? → encadeia (contagem do nível, 60% do dano). Travas no _spawn_spectral_burst.
+	var killed: bool = was_alive and (not is_instance_valid(target) \
+		or (("hp" in target) and float(target.hp) <= 0.0))
+	if killed:
+		_spawn_spectral_burst(death_pos, damage * 0.60, spectral_count, spectral_gen + 1, target)
+	_die()
 
 
 func _on_hit(body: Node) -> void:
@@ -709,6 +870,19 @@ func _on_hit(body: Node) -> void:
 		var _was_alive_arrow: bool = (not ("hp" in target)) or float(target.hp) > 0.0
 		target.take_damage(dmg_to_apply)
 		_notify_player_dmg_kill(dmg_to_apply, _resolve_dmg_source_id(), _was_alive_arrow, target, true)
+		# Flecha Espectral: se ESTA flecha (não-espectral) matou e o player tem o
+		# upgrade, nasce o burst inicial do cadáver. Espectrais NÃO entram aqui
+		# (não conectam body_entered), evitando recursão dupla.
+		if not is_spectral and _was_alive_arrow and (not is_instance_valid(target) \
+				or (("hp" in target) and float(target.hp) <= 0.0)):
+			var _p_sp := get_tree().get_first_node_in_group("player")
+			if _p_sp != null and _p_sp.has_method("_has_spectral") and _p_sp._has_spectral():
+				var _dpos: Vector2 = global_position
+				if is_instance_valid(target):
+					_dpos = (target as Node2D).global_position
+				# Base = dano NOMINAL da flecha (sem crit/curva de perfuração), pra a
+				# espectral ser SEMPRE ≤ a flecha e decair de verdade (não inflar com crit).
+				_spawn_spectral_burst(_dpos, damage * _p_sp._spectral_pct(), _p_sp._spectral_count(), 1, target)
 		_arbusto_heal_player()
 		# Esquivando: bater num inimigo real (target em grupo "enemy") gera stack
 		# no player. Helper trata as regras por nível (lv1-3 só 1 stack por volley,
@@ -979,6 +1153,10 @@ func _arm_lifetime() -> void:
 
 
 func _on_lifetime_expired() -> void:
+	# Espectral que expira sem chegar no alvo: só some (não estoura AoE de pedra/maré).
+	if is_spectral:
+		_die()
+		return
 	# Se já cravou, ignora — o stick timer cuida da remoção.
 	if not is_stuck:
 		# Pedra: "cai" no fim do range → toca o som de impacto + estoura o AoE
@@ -994,6 +1172,9 @@ func _on_lifetime_expired() -> void:
 
 
 func _die() -> void:
+	if is_spectral:
+		_spectral_alive = maxi(_spectral_alive - 1, 0)
+		is_spectral = false  # idempotente: não decrementa 2×
 	if is_inside_tree():
 		queue_free()
 

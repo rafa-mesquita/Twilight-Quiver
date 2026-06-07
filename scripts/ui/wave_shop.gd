@@ -60,6 +60,7 @@ const STATUS_POOL: Array = [
 # Pool dos cards de upgrade (gameplay-changing items, com requirements).
 const UPGRADE_POOL: Array = [
 	{"id": "perfuracao", "name": "SHOP_UPG_PERFURACAO", "max_level": 4},
+	{"id": "spectral_arrow", "name": "SHOP_UPG_SPECTRAL", "max_level": 4},
 	{"id": "multi_arrow", "name": "SHOP_UPG_MULTI_ARROW", "max_level": 4},
 	{"id": "double_arrows", "name": "SHOP_UPG_DOUBLE_ARROWS", "max_level": 4},
 	{"id": "chain_lightning", "name": "SHOP_UPG_CHAIN_LIGHTNING", "max_level": 4},
@@ -91,8 +92,8 @@ const UPGRADE_PRICE_OVERRIDES: Dictionary = {}
 const EXCLUSIVE_PAIRS: Array = [
 	# Elementais: só 1 por run (fogo / maldição / cadeia de raios / sangue frio / pedra).
 	["fire_arrow", "curse_arrow", "chain_lightning", "ice_arrow", "stone_arrow", "tide_arrow"],
-	# Tipo de flecha (modifier on-hit): perfuração ou ricochete.
-	["perfuracao", "ricochet_arrow"],
+	# Tipo de flecha (modifier on-hit): perfuração, ricochete OU espectral.
+	["perfuracao", "ricochet_arrow", "spectral_arrow"],
 	# Salva de flechas: multi (leque 30°) ou duplas (chance + apertado).
 	["multi_arrow", "double_arrows"],
 	# Categoria movimentação: dash (espaço), esquivando (espaço + stacks + dodge),
@@ -118,6 +119,12 @@ const PERFURACAO_DESCS: Array[String] = [
 	"SHOP_PERFURACAO_DESC_2",
 	"SHOP_PERFURACAO_DESC_3",
 	"SHOP_PERFURACAO_DESC_4",
+]
+const SPECTRAL_DESCS: Array[String] = [
+	"SHOP_SPECTRAL_DESC_1",
+	"SHOP_SPECTRAL_DESC_2",
+	"SHOP_SPECTRAL_DESC_3",
+	"SHOP_SPECTRAL_DESC_4",
 ]
 const ATTACK_SPEED_DESCS: Array[String] = [
 	"SHOP_ATTACK_SPEED_DESC",
@@ -1290,6 +1297,7 @@ func _get_upgrade_descs_array(id: String) -> Array:
 		"armor": return ARMOR_DESCS
 		"damage": return DAMAGE_DESCS
 		"perfuracao": return PERFURACAO_DESCS
+		"spectral_arrow": return SPECTRAL_DESCS
 		"attack_speed": return ATTACK_SPEED_DESCS
 		"multi_arrow": return MULTI_ARROW_DESCS
 		"double_arrows": return DOUBLE_ARROWS_DESCS
@@ -1687,6 +1695,8 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	# id é "ricochet_arrow" mas o arquivo é "ricochete.png" (PT). Override pra
 	# o loader achar a arte certa.
 	"ricochet_arrow": "res://assets/Hud/shop/upgrade/ricochete.png",
+	# Placeholder: reusa a arte do ricochete até a Espectral ter arte própria.
+	"spectral_arrow": "res://assets/Hud/shop/upgrade/ricochete.png",
 	# id é "gold_magnet" mas o arquivo é "coin master.png" (com espaço).
 	"gold_magnet": "res://assets/Hud/shop/upgrade/coin master.png",
 	# id "life_steal" mas arquivo é "life steal.png" (com espaço).
