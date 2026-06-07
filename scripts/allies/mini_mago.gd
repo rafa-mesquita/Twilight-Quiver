@@ -63,6 +63,14 @@ func _ready() -> void:
 		sprite.play("walk")
 
 
+# Drenagem de cooldown acelerada pela Essência Vital do player (1.0 se sem item).
+func _cd_drain_mult() -> float:
+	var p := get_tree().get_first_node_in_group("player")
+	if p != null and p.has_method("cooldown_drain_mult"):
+		return p.cooldown_drain_mult()
+	return 1.0
+
+
 func _physics_process(delta: float) -> void:
 	# Entre waves (shop, cinematic): para. Mesmo padrão dos outros pets.
 	if not _is_wave_active():
@@ -70,7 +78,7 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 	if _summon_cd > 0.0:
-		_summon_cd = maxf(_summon_cd - delta, 0.0)
+		_summon_cd = maxf(_summon_cd - delta * _cd_drain_mult(), 0.0)
 	if _is_casting:
 		velocity = Vector2.ZERO
 		move_and_slide()

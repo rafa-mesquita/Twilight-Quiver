@@ -41,6 +41,14 @@ func _ready() -> void:
 	sprite.play("walk")
 
 
+# Drenagem de cooldown acelerada pela Essência Vital do player (1.0 se sem item).
+func _cd_drain_mult() -> float:
+	var p := get_tree().get_first_node_in_group("player")
+	if p != null and p.has_method("cooldown_drain_mult"):
+		return p.cooldown_drain_mult()
+	return 1.0
+
+
 func _physics_process(delta: float) -> void:
 	# Entre waves (shop, intro de raid, cinematic do boss): capivara para.
 	# Sem isso, ela continuava o ciclo e dropava cogumelos durante o tempo da
@@ -52,7 +60,7 @@ func _physics_process(delta: float) -> void:
 		return
 	# Cooldown do drop.
 	if _drop_cd > 0.0:
-		_drop_cd = maxf(_drop_cd - delta, 0.0)
+		_drop_cd = maxf(_drop_cd - delta * _cd_drain_mult(), 0.0)
 	# Durante a animação de drop fica parada.
 	if _is_dropping:
 		velocity = Vector2.ZERO
