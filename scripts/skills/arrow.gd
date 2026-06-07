@@ -225,7 +225,7 @@ var spectral_count: int = 1   # quantas spawnar se ESTA matar (contagem do níve
 var spectral_gen: int = 0     # geração (cap de profundidade via piso de dano)
 const SPECTRAL_ARRIVE_DIST: float = 10.0
 const SPECTRAL_RETARGET_RADIUS: float = 180.0   # = TIGER_CLAWS_RADIUS
-const SPECTRAL_HOMING_SPEED: float = 320.0
+const SPECTRAL_HOMING_SPEED: float = 170.0   # mais lento que a flecha normal (220)
 const SPECTRAL_MAX_ALIVE: int = 120             # teto global de espectrais vivas
 const SPECTRAL_MIN_DAMAGE: float = 1.0          # piso de dano pra encadear
 const SPECTRAL_SFX: AudioStream = preload("res://audios/upgrades/flecha espectral/flecha espectral effect.mp3")
@@ -736,7 +736,8 @@ func _play_spectral_sfx(pos: Vector2) -> void:
 	if now - _spectral_sfx_until_ms < SPECTRAL_SFX_THROTTLE_MS:
 		return
 	_spectral_sfx_until_ms = now
-	_play_oneshot(SPECTRAL_SFX, pos, -10.0, 1.0)
+	# Volume mais baixo + fade-out no fim (max_duration 1.0 > fade_out 0.4).
+	_play_oneshot(SPECTRAL_SFX, pos, -20.0, 1.0, 0.0, 1.0, 0.0, 0.4)
 
 
 # Chegada da espectral no alvo: aplica dano (sem crit, sem curva de perfuração) + o
@@ -879,7 +880,9 @@ func _on_hit(body: Node) -> void:
 				var _dpos: Vector2 = global_position
 				if is_instance_valid(target):
 					_dpos = (target as Node2D).global_position
-				_spawn_spectral_burst(_dpos, dmg_to_apply * _p_sp._spectral_pct(), _p_sp._spectral_count(), 1, target)
+				# Base = dano NOMINAL da flecha (sem crit/curva de perfuração), pra a
+				# espectral ser SEMPRE ≤ a flecha e decair de verdade (não inflar com crit).
+				_spawn_spectral_burst(_dpos, damage * _p_sp._spectral_pct(), _p_sp._spectral_count(), 1, target)
 		_arbusto_heal_player()
 		# Esquivando: bater num inimigo real (target em grupo "enemy") gera stack
 		# no player. Helper trata as regras por nível (lv1-3 só 1 stack por volley,
