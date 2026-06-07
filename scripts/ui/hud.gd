@@ -201,6 +201,8 @@ const _UPG_PATHS: Dictionary = {
 	"graviton": "res://assets/Hud/shop/upgrade/graviton/graviton card-Sheet.png",
 	"perfuracao": "res://assets/Hud/shop/upgrade/perfuracao.png",
 	"ricochet_arrow": "res://assets/Hud/shop/upgrade/ricochete.png",
+	# Placeholder: reusa a arte do ricochete (mesma categoria tipo-de-flecha).
+	"spectral_arrow": "res://assets/Hud/shop/upgrade/ricochete.png",
 	"gold_magnet": "res://assets/Hud/shop/upgrade/coin master.png",
 	"life_steal": "res://assets/Hud/shop/upgrade/life steal.png",
 	"dash": "res://assets/Hud/shop/upgrade/deslizando.png",
