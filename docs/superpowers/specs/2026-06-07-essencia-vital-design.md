@@ -55,26 +55,40 @@ No `apply_upgrade("hp")` do `player.gd`: depois de calcular o `hp_gain` normal d
 se `_essencia_vital_equipped`, soma `_essencia_hp_per_level` (5) ao `hp_gain` antes de
 aplicar em `max_hp`/`hp`. Assim o HP extra entra naturalmente e o `hp_bar` já reflete.
 
-### CDR global — fator central
+### CDR global — drenar o cooldown mais rápido
 
-Novo método no `player.gd`:
+Em vez de escalar o **reset** de cada cooldown (o que deixaria a barra da HUD começar
+"pela metade" e exigiria caso especial pra skills com ciclo composto), o CDR faz o
+cooldown **drenar mais rápido**: o valor total permanece o mesmo (barra da HUD começa
+cheia), mas decai mais depressa. Efeito observável idêntico (recarga encurta), HUD
+correta, e zero caso especial.
+
+Dois métodos novos no `player.gd`:
 
 ```gdscript
-# Fator multiplicador de cooldown (1.0 = sem redução). Essência Vital reduz 10% por
+# Fator de cooldown (1.0 = sem redução, 0.5 = -50%). Essência Vital reduz 10% por
 # status de HP comprado, com teto de CDR de 50% (fator mínimo 0.5).
 func cooldown_scale() -> float:
     if not _essencia_vital_equipped:
         return 1.0
     var cdr: float = minf(hp_upgrades * _essencia_cdr_per_level, _essencia_cdr_cap)
     return 1.0 - cdr
+
+# Multiplicador da DRENAGEM de cooldown (>= 1.0; 2.0 no cap de -50%). Os _update_*
+# que decrementam cd_remaining usam `delta * cooldown_drain_mult()`.
+func cooldown_drain_mult() -> float:
+    return 1.0 / cooldown_scale()
 ```
 
-`hp_upgrades` já existe e conta os status de HP da run. Lido **ao vivo** → comprar mais
-HP no meio da run reduz mais o cooldown a partir dali.
+`hp_upgrades` já existe e conta os status de HP da run. Lido **ao vivo**. Como cooldowns
+são zerados entre waves (`reset_all_cooldowns`) e HP só é comprado na loja entre waves, o
+fator é efetivamente constante durante qualquer recarga — sem comportamento estranho.
 
 ### Sites que aplicam o fator
 
-Todo ponto que **reseta** um cooldown passa a multiplicar a base por `cooldown_scale()`.
+Todo ponto que **decrementa** um cooldown (`cd_remaining = maxf(cd_remaining - delta, 0.0)`
+ou `cd_remaining -= delta`) passa a usar `delta * cooldown_drain_mult()`. O reset e o
+"total" emitido pra HUD ficam **intocados**.
 
 **Skills/auto-cast do player** (em `player.gd`):
 
@@ -94,16 +108,21 @@ Todo ponto que **reseta** um cooldown passa a multiplicar a base por `cooldown_s
 | Boomerangue | `BOOMERANG_CD_BY_LEVEL[...]` |
 | Garras de Tigre | `TIGER_CLAWS_CD_BY_LEVEL[...]` |
 
-**Auto-cast de aliados:** cada aliado que reseta um intervalo de ataque
-(`_attack_cd_remaining = attack_cycle_interval` na Frostwisp, e equivalentes em
-`ting_turret`, `leno`, `capivara_joe`, `mini_mago`, `claudio_druida`) multiplica a base
-pelo `player.cooldown_scale()` ao rearmar o timer. Os aliados já guardam ref pro player.
+A "Base" acima é só referência do que cada cooldown representa; o que muda é o
+**decremento** de cada `_update_*` (multiplicar `delta` por `cooldown_drain_mult()`).
 
-> **Nota — duração vs cooldown:** o CDR encurta só o *tempo de recarga*, nunca a duração
-> ativa da skill. A skill de Maldição usa um ciclo composto
-> `WARMUP + DURAÇÃO_DO_BEAM + COOLDOWN_AFTER`. Escalar o ciclo inteiro encurtaria o beam.
-> Aplicar como: `WARMUP + DURAÇÃO + COOLDOWN_AFTER × cooldown_scale()`. As demais skills
-> da tabela usam `_cd_remaining` como cooldown puro → multiplicação direta.
+**Auto-cast de aliados:** cada aliado que decrementa um timer de ataque drena mais rápido
+lendo o player. Sites: `frostwisp` (`_attack_cd_remaining -= delta`), `ting_turret`,
+`leno` (`maxf(_attack_cd_remaining - delta, 0.0)`), `mini_mago` (`_summon_cd`),
+`capivara_joe` (`_drop_cd`). Cada um multiplica `delta` por
+`(1.0 / player.cooldown_scale())` (guardando-se contra player nulo). `claudio_druida` não
+tem auto-cast com cooldown (mecânica passiva) → não muda.
+
+> **Nota — duração vs cooldown:** como só o *decremento* muda (não o reset nem a duração
+> ativa da skill), nenhuma skill encurta sua fase ativa. A Maldição instancia o beam como
+> nó separado com `lifetime` próprio (5s); o `_curse_skill_cd_remaining` só **gateia** o
+> recast — drenar mais rápido apenas libera o próximo cast antes, sem afetar o beam. Sem
+> caso especial.
 
 ## Unlock — quest composto
 
