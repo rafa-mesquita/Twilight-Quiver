@@ -1469,6 +1469,7 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	{"id": "hp", "name": "SHOP_HP_TITLE"},
 	{"id": "damage", "name": "SHOP_UPG_DAMAGE"},
 	{"id": "perfuracao", "name": "SHOP_UPG_PERFURACAO"},
+	{"id": "spectral_arrow", "name": "SHOP_UPG_SPECTRAL"},
 	{"id": "attack_speed", "name": "SHOP_UPG_ATTACK_SPEED"},
 	{"id": "multi_arrow", "name": "SHOP_UPG_MULTI_ARROW"},
 	{"id": "double_arrows", "name": "SHOP_UPG_DOUBLE_ARROWS"},
