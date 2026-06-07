@@ -29,6 +29,7 @@ const SOURCE_LABELS: Dictionary = {
 	"perfuracao": "DMG_PANEL_PERFURACAO",
 	"ricochet": "DMG_PANEL_RICOCHET",
 	"spectral": "DMG_PANEL_SPECTRAL",
+	"tide_splash": "DMG_PANEL_TIDE_SPLASH",
 	"fire_arrow": "DMG_PANEL_FIRE_DOT",
 	"fire_skill": "DMG_PANEL_FIRE_SKILL",
 	"curse_arrow": "DMG_PANEL_CURSE_DOT",

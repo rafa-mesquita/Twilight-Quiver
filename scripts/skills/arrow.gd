@@ -389,7 +389,8 @@ func _apply_tide_on_hit(center: Vector2, exclude: Node = null) -> void:
 			if tide_splash_damage > 0.0 and e != exclude and e.has_method("take_damage"):
 				var was_alive_t: bool = (not ("hp" in e)) or float(e.hp) > 0.0
 				e.take_damage(tide_splash_damage)
-				_notify_player_dmg_kill(tide_splash_damage, _resolve_dmg_source_id(), was_alive_t, e)
+				# Fonte própria "tide_splash" → linha separada no painel (antes somava em "Flecha").
+				_notify_player_dmg_kill(tide_splash_damage, "tide_splash", was_alive_t, e)
 	_spawn_tide_vfx(center)
 	# Som do impacto bem baixo (a bolha estoura — não é um baque forte). Throttle
 	# global: multi-arrow estoura várias bolhas juntas → toca só 1 splash por janela.
