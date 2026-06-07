@@ -101,6 +101,7 @@ var _stun_remaining: float = 0.0
 const STUN_VISUAL_SCRIPT: GDScript = preload("res://scripts/effects/stun_visual.gd")
 var damage_upgrades: int = 0
 var perfuracao_level: int = 0  # capa em 4 (níveis 1-4)
+var spectral_arrow_level: int = 0  # Flecha Espectral (tipo-de-flecha), capa em 4
 var attack_speed_level: int = 0
 var multi_arrow_level: int = 0  # capa em 4 (níveis 1-4)
 var double_arrows_level: int = 0  # capa em 4 (níveis 1-4) — mutuamente exclusivo com multi_arrow
@@ -1386,6 +1387,80 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 	_get_world().add_child(arrow)
 	if arrow.has_method("set_direction"):
 		arrow.set_direction(dir)
+
+
+# --- Flecha Espectral ---
+func _has_spectral() -> bool:
+	return spectral_arrow_level > 0
+
+
+# Quantas espectrais saem por burst, por nível (L1=1, L2=1, L3=2, L4=3).
+func _spectral_count() -> int:
+	match spectral_arrow_level:
+		3: return 2
+		4: return 3
+		_: return 1
+
+
+# % do dano da flecha que matou (L1=50%, L2=75%, L3=75%, L4=85%).
+func _spectral_pct() -> float:
+	match spectral_arrow_level:
+		1: return 0.50
+		2, 3: return 0.75
+		4: return 0.85
+		_: return 0.0
+
+
+# Carimba na flecha espectral SÓ os flags+params de efeito da flecha atual (mesmos
+# helpers do _spawn_arrow). NÃO mexe em damage/speed/lifetime/pierce/ricochet — o dano
+# da espectral é setado absoluto por quem spawna. fire_trail (efeito de caminho, não de
+# contato) é omitido de propósito.
+func _stamp_spectral_effects(arrow: Node) -> void:
+	if chain_lightning_level > 0:
+		arrow.chain_count = _chain_target_count()
+		arrow.chain_dmg_pct = _chain_damage_pct()
+		arrow.chain_bonus_chance = _chain_bonus_chance()
+		arrow.is_chain = true
+	if fire_arrow_level > 0:
+		arrow.is_fire = true
+		arrow.burn_dps = _fire_burn_dps()
+		arrow.burn_duration = _fire_burn_duration()
+		arrow.burn_final_bonus = 5.0
+		arrow.burn_max_stacks = clampi(fire_arrow_level, 1, 4)
+	if curse_arrow_level > 0:
+		arrow.is_curse = true
+		arrow.curse_dps = _curse_dps()
+		arrow.curse_duration = _curse_duration()
+		arrow.curse_slow_factor = _curse_slow_factor()
+	if ice_arrow_level > 0:
+		arrow.is_ice = true
+		arrow.freeze_duration = _ice_freeze_duration()
+		arrow.freeze_dps = _ice_freeze_dps()
+		if ice_arrow_level >= 2:
+			arrow.ice_area_enabled = true
+			arrow.ice_area_slow_factor = _ice_area_slow_factor()
+			arrow.ice_area_lifetime = _ice_area_lifetime()
+	if stone_arrow_level > 0:
+		arrow.is_stone = true
+		arrow.stone_aoe_radius = _stone_radius()
+		# AoE = dano da espectral (anula o −30% do Cajado igual no _spawn_arrow).
+		arrow.stone_aoe_damage = arrow.damage / _cajado_arrow_factor()
+		arrow.stone_aoe_knockback = _stone_knockback()
+		arrow.stone_stun_duration = _stone_stun_duration()
+		arrow.stone_size_scale = _stone_size_scale()
+	if tide_arrow_level > 0:
+		arrow.is_tide = true
+		arrow.tide_radius = TIDE_AOE_RADIUS
+		arrow.tide_debuff_duration = TIDE_DEBUFF_DURATION
+		arrow.tide_debuff_max_stacks = TIDE_DEBUFF_MAX_STACKS
+		arrow.tide_per_stack = _tide_per_stack()
+		arrow.tide_splash_damage = _apply_dmg_pct_to_dps(TIDE_SPLASH_DAMAGE)
+	if graviton_level > 0:
+		arrow.is_graviton = true
+		arrow.graviton_radius = _graviton_radius()
+		arrow.graviton_lifetime = _graviton_lifetime()
+		arrow.graviton_slow_factor = _graviton_slow_factor()
+		arrow.graviton_explosion_damage = _graviton_explosion_damage()
 
 
 func _is_piercing_shot() -> bool:
@@ -3486,6 +3561,8 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"perfuracao":
 			perfuracao_level = mini(perfuracao_level + 1, 4)
 			perfuracao_counter_changed.emit(_perf_shot_counter, perfuracao_level)
+		"spectral_arrow":
+			spectral_arrow_level = mini(spectral_arrow_level + 1, 4)
 		"attack_speed":
 			attack_speed_level += 1
 			# +23% por stack (aditivo). Aplica imediatamente — próximo ataque
