@@ -47,6 +47,7 @@ const _CATEGORIES: Array = [
 			["dash", "SHOP_UPG_DASH"],
 			["esquivando", "SHOP_UPG_ESQUIVANDO"],
 			["fenda", "SHOP_UPG_FENDA"],
+			["adrenalina", "SHOP_UPG_ADRENALINA"],
 			["ricochet_arrow", "SHOP_UPG_RICOCHET"],
 			["graviton", "SHOP_UPG_GRAVITON"],
 			["boomerang", "SHOP_UPG_BOOMERANG"],
@@ -77,27 +78,27 @@ const _CATEGORIES: Array = [
 	},
 ]
 
+const _PANEL_W: float = 380.0
+const _PANEL_MARGIN: float = 24.0
+
 var _font: Font = null
 var _content: VBoxContainer = null
+var _panel: PanelContainer = null
 
 
 func _ready() -> void:
 	_font = load(_FONT_PATH)
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	mouse_filter = Control.MOUSE_FILTER_STOP
+	# IGNORE no root: cliques fora do painel atravessam pro leaderboard atrás —
+	# o painel é lateral e NÃO escurece/cobre a tela. Fecha pelo X (ou ESC).
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	# Fundo escurecido — clicar fora fecha.
-	var bg := ColorRect.new()
-	bg.color = Color(0, 0, 0, 0.65)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.mouse_filter = Control.MOUSE_FILTER_STOP
-	bg.gui_input.connect(_on_bg_input)
-	add_child(bg)
-
-	# Painel central.
+	# Painel lateral à DIREITA, altura cheia (com margens), sem cobrir o leaderboard.
+	# Posicionado pelo tamanho do VIEWPORT (via _layout_panel), NÃO por âncoras do
+	# parent — o parent ainda tem tamanho 0 no _ready, o que jogava o painel pra fora
+	# da tela (x negativo) e fazia o "ver build" parecer não abrir.
 	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.custom_minimum_size = Vector2(380, 0)
+	panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.10, 0.09, 0.15, 0.98)
@@ -107,21 +108,66 @@ func _ready() -> void:
 	sb.set_content_margin_all(16)
 	panel.add_theme_stylebox_override("panel", sb)
 	add_child(panel)
+	_panel = panel
+	# Reposiciona quando a janela muda de tamanho.
+	get_viewport().size_changed.connect(_layout_panel)
 
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	panel.add_child(vbox)
+
+	# Barra superior com botão X (fechar) à direita.
+	var topbar := HBoxContainer.new()
+	topbar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	topbar.add_child(spacer)
+	var close_btn := Button.new()
+	close_btn.text = "✕"
+	close_btn.flat = true
+	close_btn.focus_mode = Control.FOCUS_NONE
+	close_btn.custom_minimum_size = Vector2(40, 40)
+	if _font != null:
+		close_btn.add_theme_font_override("font", _font)
+	close_btn.add_theme_font_size_override("font_size", 28)
+	close_btn.add_theme_color_override("font_color", _GOLD)
+	close_btn.add_theme_color_override("font_hover_color", Color(1, 1, 1, 1))
+	close_btn.pressed.connect(_close)
+	topbar.add_child(close_btn)
+	vbox.add_child(topbar)
+
+	# Scroll preenche a altura restante do painel → conteúdo nunca corta na tela.
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(348, 460)
+	scroll.custom_minimum_size = Vector2(348, 0)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	panel.add_child(scroll)
+	vbox.add_child(scroll)
 
 	_content = VBoxContainer.new()
 	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_content.add_theme_constant_override("separation", 6)
 	scroll.add_child(_content)
 
+	_layout_panel()
+
+
+## Posiciona o painel encostado na direita, altura cheia, com base no viewport.
+func _layout_panel() -> void:
+	if _panel == null:
+		return
+	var vp: Vector2 = get_viewport().get_visible_rect().size
+	var h: float = maxf(0.0, vp.y - 2.0 * _PANEL_MARGIN)
+	_panel.custom_minimum_size = Vector2(_PANEL_W, h)
+	_panel.size = Vector2(_PANEL_W, h)
+	_panel.position = Vector2(vp.x - _PANEL_W - _PANEL_MARGIN, _PANEL_MARGIN)
+
 
 # ───────────────────────── API ─────────────────────────
 
 func open(row: Dictionary) -> void:
+	# Garante o posicionamento correto agora que o layout já assentou (open é
+	# chamado via call_deferred, depois do _ready e do primeiro layout).
+	_layout_panel()
 	for c in _content.get_children():
 		c.queue_free()
 
@@ -251,9 +297,8 @@ func _format_time(msec: int) -> String:
 	return "%d:%02d" % [total_sec / 60, total_sec % 60]
 
 
-func _on_bg_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed:
-		queue_free()
+func _close() -> void:
+	queue_free()
 
 
 func _unhandled_input(event: InputEvent) -> void:

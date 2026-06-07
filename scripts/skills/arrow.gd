@@ -715,6 +715,10 @@ func _on_hit(body: Node) -> void:
 		# lv4 cada hit). Aliados/estruturas já retornaram acima — só inimigo cai aqui.
 		if source != null and is_instance_valid(source) and source.has_method("notify_esquivando_hit"):
 			source.notify_esquivando_hit(self)
+		# Adrenalina (skill L3+): ao acertar inimigo durante a skill, cura o player.
+		# 1 cura por DISPARO (dedup por volley_id no player).
+		if source != null and is_instance_valid(source) and source.has_method("adrenalina_try_heal"):
+			source.adrenalina_try_heal(volley_id)
 		if target.has_method("apply_knockback"):
 			# Crit: 2× knockback nas flechas (não nas skills — só flechas têm esse bonus).
 			var knock: float = knockback_strength

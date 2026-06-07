@@ -88,7 +88,7 @@ var _face_badge: Label
 var _req_label: Label
 var _last_locked_quest_key: String = ""
 var _last_unlocked_quest_key: String = ""
-var _inv_mode: String = "skins"
+var _inv_mode: String = "equip"
 var _mode_bar: HBoxContainer = null
 var _mode_skins_btn: Button = null
 var _mode_equip_btn: Button = null
@@ -133,7 +133,8 @@ func _ready() -> void:
 	_build_petal_bank_display()
 	_build_mode_bar()
 	_build_equip_panel()
-	_set_inv_mode("skins")
+	# Inventário abre no modo Equipamentos por padrão.
+	_set_inv_mode("equip")
 	# Abre na tab de Kits se existir, senão no primeiro slot com peças.
 	var first_slot: StringName = _KIT_SLOT if not _list_available_kits().is_empty() else _first_slot_with_parts()
 	if first_slot != &"":
@@ -837,8 +838,9 @@ func _build_mode_bar() -> void:
 	edit.move_child(_mode_bar, 0)
 	_mode_skins_btn = _make_mode_button("INVENTORY_MODE_SKINS", "skins")
 	_mode_equip_btn = _make_mode_button("INVENTORY_MODE_EQUIP", "equip")
-	_mode_bar.add_child(_mode_skins_btn)
+	# Equipamentos primeiro (à esquerda), depois Skins.
 	_mode_bar.add_child(_mode_equip_btn)
+	_mode_bar.add_child(_mode_skins_btn)
 
 
 func _make_mode_button(key: String, mode: String) -> Button:

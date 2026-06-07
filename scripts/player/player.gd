@@ -399,6 +399,31 @@ var _esquivando_ability_buff_remaining: float = 0.0
 const ESQUIVANDO_TRAIL_SPACING: float = 9.0
 const ESQUIVANDO_TRAIL_FADE: float = 0.35
 const ESQUIVANDO_TRAIL_OFFSET_Y: float = -6.0
+
+# === Adrenalina (mutuamente exclusivo com dash/esquivando/fenda — slot de mov.) ===
+# L1: +5% move speed + 0,5% por cada 1 de HP atual abaixo de 100 (cresce ao perder vida).
+# L2: o por-HP sobe pra 0,7% (L3/L4 herdam o mesmo passivo).
+# L3: skill no Espaço: 5s de +15% atk speed e cura 10 HP por DISPARO ao acertar; cd 14s.
+#     Visual: overlay vermelho (igual Sanguinário) + rastro branco (igual Esquivando).
+# L4: a skill também dá +25% move speed e o atk speed sobe pra +30%; cd 12s.
+const ADRENALINA_LEVEL_MAX: int = 4
+const ADRENALINA_SKILL_MIN_LEVEL: int = 3
+const ADRENALINA_FLAT_MS: float = 0.05
+const ADRENALINA_MS_PER_HP_BY_LEVEL: Array[float] = [0.005, 0.007, 0.007, 0.007]
+const ADRENALINA_HP_REF: float = 100.0
+const ADRENALINA_SKILL_DURATION: float = 5.0
+const ADRENALINA_CD_BY_LEVEL: Array[float] = [0.0, 0.0, 17.0, 15.0]
+const ADRENALINA_ATK_BY_LEVEL: Array[float] = [0.0, 0.0, 0.15, 0.30]
+const ADRENALINA_SKILL_MS: float = 0.25  # +25% move speed, só no L4 durante a skill
+const ADRENALINA_HEAL_PER_SHOT: float = 10.0
+var adrenalina_level: int = 0
+var _adrenalina_cd_remaining: float = 0.0
+var _adrenalina_skill_remaining: float = 0.0
+# Dedup da cura por DISPARO: guarda o volley_id da última flecha que curou.
+var _adrenalina_heal_last_shot: int = -1
+var _adrenalina_trail_last_pos: Vector2 = Vector2.ZERO
+var _adrenalina_overlay: AnimatedSprite2D = null
+var _adrenalina_blink_tween: Tween = null
 var _esquivando_trail_last_pos: Vector2 = Vector2.ZERO
 # Flecha de Ricochete (novo upgrade, 4 níveis). Mecânica em arrow.gd.
 # Counter incrementa por ATAQUE (não por flecha) — toda volley do Multi Arrow
@@ -692,6 +717,7 @@ func _physics_process(delta: float) -> void:
 	_update_dash(delta)
 	_update_esquivando(delta)
 	_update_fenda(delta)
+	_update_adrenalina(delta)
 	_update_fire_skill(delta)
 	_update_chain_lightning_skill(delta)
 	_update_chain_auto_bolt(delta)
@@ -720,6 +746,8 @@ func _physics_process(delta: float) -> void:
 			_try_start_esquivando_ability()
 		elif fenda_level >= 1:
 			_try_fenda()
+		elif adrenalina_level >= ADRENALINA_SKILL_MIN_LEVEL:
+			_try_start_adrenalina_ability()
 	if is_dead:
 		velocity = Vector2.ZERO
 		return
@@ -738,7 +766,7 @@ func _physics_process(delta: float) -> void:
 		if input_vec.length() > 1.0:
 			input_vec = input_vec.normalized()
 
-	velocity = input_vec * speed * _slow_factor * (move_speed_multiplier + _capivara_speed_buff_amount + _esquivando_move_buff())
+	velocity = input_vec * speed * _slow_factor * (move_speed_multiplier + _capivara_speed_buff_amount + _esquivando_move_buff() + _adrenalina_move_buff())
 	velocity = _apply_corner_slide(velocity, delta)
 	move_and_slide()
 
@@ -961,7 +989,7 @@ func _start_attack() -> void:
 	# proporcionalmente mais cedo). speed_scale só vale enquanto a anim está rolando.
 	# Capivara L3+: cogumelo de buff dá +50% atk speed temporário (some no fim).
 	# Arbusto: enquanto escondido, +12% atk speed.
-	var atk_mult: float = attack_speed_multiplier + _capivara_atk_speed_buff_amount + _esquivando_atk_buff() + arbusto_hide_atk_speed_bonus + _mare_atk_buff()
+	var atk_mult: float = attack_speed_multiplier + _capivara_atk_speed_buff_amount + _esquivando_atk_buff() + arbusto_hide_atk_speed_bonus + _mare_atk_buff() + _adrenalina_atk_buff()
 	attack_timer.wait_time = attack_cooldown / atk_mult
 	sprite.speed_scale = atk_mult
 	attack_timer.start()
@@ -3150,6 +3178,119 @@ func _spawn_esquivando_trail_segment() -> void:
 	tw.tween_callback(blob.queue_free)
 
 
+# === Adrenalina ===
+
+# Buff passivo de move speed: +5% fixo + X% por cada 1 de HP atual abaixo de 100
+# (cresce ao perder vida). L4: +25% extra enquanto a skill do espaço está ativa.
+func _adrenalina_move_buff() -> float:
+	if adrenalina_level <= 0:
+		return 0.0
+	var rate: float = ADRENALINA_MS_PER_HP_BY_LEVEL[mini(adrenalina_level - 1, ADRENALINA_LEVEL_MAX - 1)]
+	var missing: float = maxf(ADRENALINA_HP_REF - hp, 0.0)
+	var buff: float = ADRENALINA_FLAT_MS + rate * missing
+	if adrenalina_level >= ADRENALINA_LEVEL_MAX and _adrenalina_skill_remaining > 0.0:
+		buff += ADRENALINA_SKILL_MS
+	return buff
+
+
+# Buff de atk speed durante a skill do espaço (L3 +15%, L4 +30%).
+func _adrenalina_atk_buff() -> float:
+	if adrenalina_level < ADRENALINA_SKILL_MIN_LEVEL or _adrenalina_skill_remaining <= 0.0:
+		return 0.0
+	return ADRENALINA_ATK_BY_LEVEL[mini(adrenalina_level - 1, ADRENALINA_LEVEL_MAX - 1)]
+
+
+func _adrenalina_cooldown() -> float:
+	return ADRENALINA_CD_BY_LEVEL[clampi(adrenalina_level - 1, 0, ADRENALINA_LEVEL_MAX - 1)]
+
+
+func _try_start_adrenalina_ability() -> void:
+	if adrenalina_level < ADRENALINA_SKILL_MIN_LEVEL or is_dead:
+		return
+	if _adrenalina_cd_remaining > 0.0:
+		return
+	_count_active_skill_use()
+	_adrenalina_skill_remaining = ADRENALINA_SKILL_DURATION
+	_adrenalina_cd_remaining = _adrenalina_cooldown()
+	_adrenalina_heal_last_shot = -1
+	_adrenalina_trail_last_pos = global_position
+	_spawn_esquivando_trail_segment()  # feedback imediato (mesmo rastro branco)
+	_set_adrenalina_red(true)
+	dash_cooldown_changed.emit(_adrenalina_cd_remaining, _adrenalina_cooldown())
+
+
+func _update_adrenalina(delta: float) -> void:
+	if adrenalina_level < ADRENALINA_SKILL_MIN_LEVEL:
+		return
+	if _adrenalina_skill_remaining > 0.0:
+		_adrenalina_skill_remaining = maxf(_adrenalina_skill_remaining - delta, 0.0)
+		# Rastro branco enquanto a skill corre e o player se move.
+		var moved: float = global_position.distance_to(_adrenalina_trail_last_pos)
+		if moved >= ESQUIVANDO_TRAIL_SPACING:
+			_spawn_esquivando_trail_segment()
+			_adrenalina_trail_last_pos = global_position
+		_sync_adrenalina_overlay()
+		if _adrenalina_skill_remaining <= 0.0:
+			_set_adrenalina_red(false)
+	if _adrenalina_cd_remaining > 0.0:
+		_adrenalina_cd_remaining = maxf(_adrenalina_cd_remaining - delta, 0.0)
+		dash_cooldown_changed.emit(_adrenalina_cd_remaining, _adrenalina_cooldown())
+
+
+# Cura 10 de HP por DISPARO (volley) ao acertar inimigo, durante a skill. Dedup por
+# volley_id pra multishot/perfuração não multiplicarem (1 cura por disparo).
+func adrenalina_try_heal(volley_id: int) -> void:
+	if adrenalina_level < ADRENALINA_SKILL_MIN_LEVEL or _adrenalina_skill_remaining <= 0.0:
+		return
+	if volley_id >= 0 and volley_id == _adrenalina_heal_last_shot:
+		return
+	_adrenalina_heal_last_shot = volley_id
+	heal(ADRENALINA_HEAL_PER_SHOT)
+
+
+# Overlay vermelho aditivo durante a skill (mesmo visual do Sanguinário, próprio
+# pra não brigar com o estado do item Sanguinário).
+func _set_adrenalina_red(active: bool) -> void:
+	if not active:
+		if _adrenalina_blink_tween != null and _adrenalina_blink_tween.is_valid():
+			_adrenalina_blink_tween.kill()
+		_adrenalina_blink_tween = null
+		if _adrenalina_overlay != null and is_instance_valid(_adrenalina_overlay):
+			_adrenalina_overlay.queue_free()
+		_adrenalina_overlay = null
+		return
+	if sprite == null or (_adrenalina_overlay != null and is_instance_valid(_adrenalina_overlay)):
+		return
+	var ov := AnimatedSprite2D.new()
+	ov.centered = sprite.centered
+	ov.offset = sprite.offset
+	ov.position = sprite.position
+	ov.scale = sprite.scale * 1.12
+	ov.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	ov.z_index = sprite.z_index + 1
+	ov.modulate = Color(1.0, 0.0, 0.0, 0.0)
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	ov.material = mat
+	add_child(ov)
+	_adrenalina_overlay = ov
+	_sync_adrenalina_overlay()
+	_adrenalina_blink_tween = create_tween().set_loops()
+	_adrenalina_blink_tween.tween_property(ov, "modulate:a", 0.5, 0.5).set_trans(Tween.TRANS_SINE)
+	_adrenalina_blink_tween.tween_property(ov, "modulate:a", 0.0, 0.5).set_trans(Tween.TRANS_SINE)
+
+
+func _sync_adrenalina_overlay() -> void:
+	if _adrenalina_overlay == null or not is_instance_valid(_adrenalina_overlay) or sprite == null:
+		return
+	if _adrenalina_overlay.sprite_frames != sprite.sprite_frames:
+		_adrenalina_overlay.sprite_frames = sprite.sprite_frames
+	if _adrenalina_overlay.animation != sprite.animation:
+		_adrenalina_overlay.animation = sprite.animation
+	_adrenalina_overlay.frame = sprite.frame
+	_adrenalina_overlay.flip_h = sprite.flip_h
+
+
 func _spawn_dash_trail_segment() -> void:
 	if DASH_TRAIL_SCENE == null:
 		return
@@ -3446,8 +3587,8 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# Lv2: rastro de fogo, cd 4.5s
 			# Lv3: auto-attack após dash, cd 4s
 			# Lv4: 2 flechas após dash, cd 3.5s
-			# Mutex defensivo com esquivando/fenda — shop/welcome pool já filtram.
-			if esquivando_level > 0 or fenda_level > 0:
+			# Mutex defensivo com esquivando/fenda/adrenalina — shop/welcome pool já filtram.
+			if esquivando_level > 0 or fenda_level > 0 or adrenalina_level > 0:
 				return
 			if dash_level >= DASH_LEVEL_MAX:
 				return
@@ -3487,9 +3628,9 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# de dano + visual amarelo (damage number + flash do enemy).
 			critical_chance_level = mini(critical_chance_level + 1, 4)
 		"esquivando":
-			# Lv1-4. Mutuamente exclusivo com dash/fenda (mesma categoria
+			# Lv1-4. Mutuamente exclusivo com dash/fenda/adrenalina (mesma categoria
 			# movimentação) — shop/welcome pool filtram; defensivo aqui (dev panel).
-			if dash_level > 0 or fenda_level > 0:
+			if dash_level > 0 or fenda_level > 0 or adrenalina_level > 0:
 				return
 			if esquivando_level >= ESQUIVANDO_LEVEL_MAX:
 				return
@@ -3510,8 +3651,8 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# antigo persiste até o próximo stack/expire.
 			esquivando_stacks_changed.emit(_esquivando_stacks, _esquivando_max_stacks())
 		"fenda":
-			# Lv1-4. Mutuamente exclusivo com dash/esquivando (mobilidade).
-			if dash_level > 0 or esquivando_level > 0:
+			# Lv1-4. Mutuamente exclusivo com dash/esquivando/adrenalina (mobilidade).
+			if dash_level > 0 or esquivando_level > 0 or adrenalina_level > 0:
 				return
 			if fenda_level >= FENDA_LEVEL_MAX:
 				return
@@ -3520,6 +3661,20 @@ func apply_upgrade(upgrade_id: String) -> void:
 				_fenda_cd_remaining = 0.0
 				dash_unlocked.emit()  # reusa a barra de mobilidade
 			dash_cooldown_changed.emit(_fenda_cd_remaining, _fenda_cooldown())
+		"adrenalina":
+			# Lv1-4. Mutuamente exclusivo com dash/esquivando/fenda (mobilidade).
+			# L1/L2 são passivos (move speed). A skill do espaço só destrava no L3.
+			if dash_level > 0 or esquivando_level > 0 or fenda_level > 0:
+				return
+			if adrenalina_level >= ADRENALINA_LEVEL_MAX:
+				return
+			adrenalina_level = mini(adrenalina_level + 1, ADRENALINA_LEVEL_MAX)
+			# L3 destrava a skill — reseta cd e mostra a barra de mobilidade (escondida no L1/L2).
+			if adrenalina_level == ADRENALINA_SKILL_MIN_LEVEL:
+				_adrenalina_cd_remaining = 0.0
+				dash_unlocked.emit()  # reusa a barra de mobilidade
+			if adrenalina_level >= ADRENALINA_SKILL_MIN_LEVEL:
+				dash_cooldown_changed.emit(_adrenalina_cd_remaining, _adrenalina_cooldown())
 	# Notifica HUD/listeners. Emitido SEMPRE no fim, independente do match.
 	upgrade_applied.emit(upgrade_id, get_upgrade_count(upgrade_id))
 
@@ -3551,6 +3706,7 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"dash": return dash_level
 		"esquivando": return esquivando_level
 		"fenda": return fenda_level
+		"adrenalina": return adrenalina_level
 		"ricochet_arrow": return ricochet_arrow_level
 		"graviton": return graviton_level
 		"boomerang": return boomerang_level

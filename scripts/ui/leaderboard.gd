@@ -410,6 +410,10 @@ func _row_has_build(row: Dictionary) -> bool:
 
 
 func _open_build_modal(row: Dictionary) -> void:
+	# Não empilha: fecha qualquer painel lateral aberto antes de abrir o novo.
+	for c in get_children():
+		if c is RunBuildModal:
+			c.queue_free()
 	var m: RunBuildModal = _BUILD_MODAL.new()
 	add_child(m)
 	m.call_deferred("open", row)

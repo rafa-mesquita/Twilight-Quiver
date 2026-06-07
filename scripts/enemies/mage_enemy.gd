@@ -338,6 +338,10 @@ func take_damage(amount: float) -> void:
 	if died:
 		if not is_curse_ally:
 			if CurseAllyHelper.try_convert_on_death(self):
+				# Profano: inimigo "derrotado" virou aliado, mas ainda sorteia gold
+				# com a chance NORMAL de abate (não garantido).
+				GoldDrop.try_drop(_get_world(), gold_scene, global_position,
+					gold_drop_chance, gold_drop_min, gold_drop_max)
 				return
 			HeartDrop.try_drop(_get_world(), heart_scene, global_position, self)
 			var p2 := get_tree().get_first_node_in_group("player")

@@ -43,6 +43,7 @@ func _ready() -> void:
 	_load_and_apply_display_settings()
 	_load_and_apply_audio_settings()
 	_load_and_apply_video_settings()
+	_load_and_apply_hud_settings()
 
 
 func _process(_delta: float) -> void:
@@ -149,6 +150,31 @@ func apply_video_settings(vsync: bool, fps_cap: int, show_fps: bool) -> void:
 	_ensure_fps_overlay()
 	if _fps_overlay != null:
 		_fps_overlay.visible = show_fps
+
+
+# ---------- HUD settings (esconder informações de tempo) ----------
+
+const DEFAULT_HIDE_RUN_TIMER: bool = false
+const DEFAULT_HIDE_TIME_INFO: bool = false
+
+# Esconde o cronômetro live no HUD durante a run. Lido todo frame pelo HUD.
+var hide_run_timer: bool = false
+# Esconde os tempos de round/run mostrados entre rounds (tela "Wave Limpa") e na
+# tela de morte. Lido na hora de montar esses textos.
+var hide_time_info: bool = false
+
+
+func _load_and_apply_hud_settings() -> void:
+	var cfg := ConfigFile.new()
+	cfg.load(_SETTINGS_PATH)
+	var hide_timer: bool = bool(cfg.get_value("hud", "hide_run_timer", DEFAULT_HIDE_RUN_TIMER))
+	var hide_info: bool = bool(cfg.get_value("hud", "hide_time_info", DEFAULT_HIDE_TIME_INFO))
+	apply_hud_settings(hide_timer, hide_info)
+
+
+func apply_hud_settings(hide_timer: bool, hide_info: bool) -> void:
+	hide_run_timer = hide_timer
+	hide_time_info = hide_info
 
 
 func _ensure_fps_overlay() -> void:

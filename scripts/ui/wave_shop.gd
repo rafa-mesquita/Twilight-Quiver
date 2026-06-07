@@ -68,6 +68,7 @@ const UPGRADE_POOL: Array = [
 	{"id": "dash", "name": "SHOP_UPG_DASH", "max_level": 4},
 	{"id": "esquivando", "name": "SHOP_UPG_ESQUIVANDO", "max_level": 4},
 	{"id": "fenda", "name": "SHOP_UPG_FENDA", "max_level": 4},
+	{"id": "adrenalina", "name": "SHOP_UPG_ADRENALINA", "max_level": 4},
 	{"id": "ricochet_arrow", "name": "SHOP_UPG_RICOCHET", "max_level": 4},
 	{"id": "graviton", "name": "SHOP_UPG_GRAVITON", "max_level": 4},
 	{"id": "fire_arrow", "name": "SHOP_UPG_FIRE_ARROW", "max_level": 4},
@@ -94,9 +95,10 @@ const EXCLUSIVE_PAIRS: Array = [
 	["perfuracao", "ricochet_arrow"],
 	# Salva de flechas: multi (leque 30°) ou duplas (chance + apertado).
 	["multi_arrow", "double_arrows"],
-	# Categoria movimentação: dash (espaço), esquivando (espaço + stacks + dodge)
-	# ou fenda (teleporte + corte). Todos ocupam o slot do espaço → escolhe um.
-	["dash", "esquivando", "fenda"],
+	# Categoria movimentação: dash (espaço), esquivando (espaço + stacks + dodge),
+	# fenda (teleporte + corte) ou adrenalina (passivo + skill). Todos ocupam o
+	# slot do espaço / a mesma carta → escolhe um.
+	["dash", "esquivando", "fenda", "adrenalina"],
 ]
 
 # Descrições por upgrade. Cada entry é uma translation key — resolvida via
@@ -170,6 +172,12 @@ const FENDA_DESCS: Array[String] = [
 	"SHOP_FENDA_DESC_2",
 	"SHOP_FENDA_DESC_3",
 	"SHOP_FENDA_DESC_4",
+]
+const ADRENALINA_DESCS: Array[String] = [
+	"SHOP_ADRENALINA_DESC_1",
+	"SHOP_ADRENALINA_DESC_2",
+	"SHOP_ADRENALINA_DESC_3",
+	"SHOP_ADRENALINA_DESC_4",
 ]
 const LIFE_STEAL_DESCS: Array[String] = [
 	"SHOP_LIFE_STEAL_DESC_1",
@@ -474,6 +482,10 @@ func _relocalize() -> void:
 
 func _set_cleared_info(cleared_wave: int) -> void:
 	if cleared_info_label == null:
+		return
+	# Config: esconder tempos de round/run mostra só a confirmação da wave.
+	if GameState.hide_time_info:
+		cleared_info_label.text = tr("SHOP_CLEARED_NO_TIME") % cleared_wave
 		return
 	var wave_str: String = "0:00"
 	var total_str: String = "0:00"
@@ -1287,6 +1299,7 @@ func _get_upgrade_descs_array(id: String) -> Array:
 		"dash": return DASH_DESCS
 		"esquivando": return ESQUIVANDO_DESCS
 		"fenda": return FENDA_DESCS
+		"adrenalina": return ADRENALINA_DESCS
 		"life_steal": return LIFE_STEAL_DESCS
 		"fire_arrow": return FIRE_ARROW_DESCS
 		"curse_arrow": return CURSE_ARROW_DESCS
@@ -1448,6 +1461,7 @@ const UPGRADE_CATEGORIES: Dictionary = {
 	"dash": "SHOP_UPG_CAT_MOBILITY",
 	"esquivando": "SHOP_UPG_CAT_MOBILITY",
 	"fenda": "SHOP_UPG_CAT_MOBILITY",
+	"adrenalina": "SHOP_UPG_CAT_MOBILITY",
 }
 
 
@@ -1643,6 +1657,7 @@ const UPGRADE_TITLE_COLORS: Dictionary = {
 	"dash": Color(0x3d / 255.0, 0x28 / 255.0, 0x18 / 255.0),  # #3d2818 (marrom escuro contrasta com cream)
 	"esquivando": Color(0x3d / 255.0, 0x28 / 255.0, 0x18 / 255.0),  # mesmo do dash — compartilham arte
 	"fenda": Color(0x3d / 255.0, 0x28 / 255.0, 0x18 / 255.0),  # mesmo do dash — compartilha arte
+	"adrenalina": Color(0x3d / 255.0, 0x28 / 255.0, 0x18 / 255.0),  # mesmo do dash — compartilha arte
 	"boomerang": Color(0xfb / 255.0, 0xe3 / 255.0, 0xc6 / 255.0),  # creme claro (fundo marrom da carta)
 	"critical_chance": Color(0xcb / 255.0, 0x49 / 255.0, 0x0d / 255.0),  # #cb490d (laranja-vermelho)
 }
@@ -1693,6 +1708,7 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	# mutuamente exclusivos — o player só compra um dos dois por run).
 	"esquivando": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"fenda": "res://assets/Hud/shop/upgrade/deslizando.png",
+	"adrenalina": "res://assets/Hud/shop/upgrade/deslizando.png",
 	# double_arrows compartilha a arte do multi_arrow (mesma família — marrom).
 	# Quando tiver arte própria, trocar pra "res://assets/Hud/shop/upgrade/double_arrows.png".
 	"double_arrows": "res://assets/Hud/shop/upgrade/multi_arrow.png",
@@ -3637,10 +3653,11 @@ func _show_roulette_tooltip(card: Control) -> void:
 func _position_card_tooltip(card: Control) -> void:
 	# Posicionamento mesmo padrão do tooltip normal.
 	var tip_size: Vector2 = await _await_tooltip_size()
+	var screen: Vector2 = get_viewport().get_visible_rect().size
 	var card_rect: Rect2 = card.get_global_rect()
 	var card_center_x: float = card_rect.position.x + card_rect.size.x / 2.0
 	var pos: Vector2
-	if card_center_x < 960.0:
+	if card_center_x < screen.x / 2.0:
 		pos = Vector2(card_rect.position.x + card_rect.size.x + 16.0, card_rect.position.y)
 	else:
 		pos = Vector2(card_rect.position.x - tip_size.x - 16.0, card_rect.position.y)
@@ -3709,6 +3726,7 @@ func _augment_title_for(id: String) -> String:
 		"dash": return "SHOP_UPG_DASH"
 		"esquivando": return "SHOP_UPG_ESQUIVANDO"
 		"fenda": return "SHOP_UPG_FENDA"
+		"adrenalina": return "SHOP_UPG_ADRENALINA"
 		"gold_magnet": return "SHOP_UPG_GOLD_MAGNET"
 		"claudio_druida": return "SHOP_ALLY_CLAUDIO_DRUIDA"
 		"leno": return "SHOP_ALLY_LENO"
@@ -3804,9 +3822,11 @@ func _await_tooltip_size() -> Vector2:
 	return Vector2(maxf(sz.x, mn.x), maxf(sz.y, mn.y))
 
 
-# Clampa o tooltip pra caber 100% na tela (1920x1080, margem 16). Se for maior
+# Clampa o tooltip pra caber 100% na tela (usa o tamanho REAL do viewport — antes
+# era 1920x1080 fixo, que cortava o tooltip quando a janela era menor). Se for maior
 # que a tela, ancora no topo/esquerda. maxf garante max >= min (sem degenerar).
 func _apply_tooltip_pos(pos: Vector2, tip_size: Vector2) -> void:
-	pos.x = clampf(pos.x, 16.0, maxf(16.0, 1920.0 - tip_size.x - 16.0))
-	pos.y = clampf(pos.y, 16.0, maxf(16.0, 1080.0 - tip_size.y - 16.0))
+	var screen: Vector2 = get_viewport().get_visible_rect().size
+	pos.x = clampf(pos.x, 16.0, maxf(16.0, screen.x - tip_size.x - 16.0))
+	pos.y = clampf(pos.y, 16.0, maxf(16.0, screen.y - tip_size.y - 16.0))
 	_augment_tooltip.position = pos

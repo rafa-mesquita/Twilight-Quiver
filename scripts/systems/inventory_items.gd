@@ -53,7 +53,7 @@ const ITEMS: Dictionary = {
 		"icon": "res://assets/Hud/itens/elemental_master.png",
 		"effect": {"type": "welcome_elemental_choice"},
 		"unlock": {"type": "quest", "reqs": [
-			{"stat": &"elemental_roulette_buys_total", "value": 10, "label": "ITEM_REQ_ELEMENTAL"},
+			{"stat": &"elemental_roulette_buys_total", "value": 5, "label": "ITEM_REQ_ELEMENTAL"},
 		]},
 	},
 	"adopt_one_more": {
@@ -62,15 +62,14 @@ const ITEMS: Dictionary = {
 		"icon": "res://assets/Hud/itens/adopt_one_more.png",
 		"effect": {"type": "pet_slot", "amount": 1},
 		"unlock": {"type": "quest", "reqs": [
-			{"stat": &"ally_heal_total", "value": 1500, "label": "ITEM_REQ_ADOPT_HEAL"},
-			{"stat": &"ally_kills_total", "value": 1000, "label": "ITEM_REQ_ADOPT_KILLS"},
+			{"stat": &"ally_kills_total", "value": 300, "label": "ITEM_REQ_ADOPT_KILLS"},
 		]},
 	},
 	"arcane_dividend": {
 		"name": "ITEM_ARCANE_DIVIDEND_NAME",
 		"desc": "ITEM_ARCANE_DIVIDEND_DESC",
 		"icon": "res://assets/Hud/itens/arcane_dividend.png",
-		"effect": {"type": "gold_per_round", "amount": 1},
+		"effect": {"type": "gold_per_round_chance"},
 		"unlock": {"type": "quest", "reqs": [
 			{"stat": &"gold_spent_total", "value": 2500, "label": "ITEM_REQ_ARCANE_GOLD"},
 		]},
@@ -293,14 +292,16 @@ static func equipped_pet_slot_bonus() -> int:
 	return bonus
 
 
-# Gold extra no fim do round (soma dos itens equipados com gold_per_round).
-static func equipped_gold_per_round() -> int:
-	var g: int = 0
-	for id in get_equipped():
-		for eff in _item_effects(id):
-			if String(eff.get("type", "")) == "gold_per_round":
-				g += int(eff.get("amount", 0))
-	return g
+# Dividendo Arcano: sorteio EM CAMADAS do gold de fim de round (retorna 0/1/2; nunca soma).
+# 2% -> +2, senão 50% -> +1, senão 0. Só conta com o item equipado E liberado.
+static func arcane_dividend_roll() -> int:
+	if not ("arcane_dividend" in get_equipped()):
+		return 0
+	if randf() < 0.02:
+		return 2
+	if randf() < 0.50:
+		return 1
+	return 0
 
 
 # Maior chance de "primeiro roll grátis" entre os itens equipados (Estou com Sorte).

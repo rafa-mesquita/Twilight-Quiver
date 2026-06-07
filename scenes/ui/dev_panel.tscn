@@ -271,6 +271,12 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 28
 text = "+1 Fenda"
 
+[node name="UpgAdrenalinaBtn" type="Button" parent="Content/Scroll/VBox/UpgPadraoSection/UpgPadraoContent/MovSection/MovContent"]
+custom_minimum_size = Vector2(0, 34)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 28
+text = "+1 Adrenalina"
+
 [node name="UpgElementaisSection" type="VBoxContainer" parent="Content/Scroll/VBox"]
 theme_override_constants/separation = 4
 

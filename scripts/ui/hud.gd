@@ -171,7 +171,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 	"hp", "armor", "damage", "attack_speed", "move_speed",
 	# Upgrades de gameplay
 	"perfuracao", "ricochet_arrow", "multi_arrow", "double_arrows", "chain_lightning",
-	"fire_arrow", "curse_arrow", "ice_arrow", "stone_arrow", "tide_arrow", "graviton", "boomerang", "critical_chance", "life_steal", "dash", "esquivando", "fenda",
+	"fire_arrow", "curse_arrow", "ice_arrow", "stone_arrow", "tide_arrow", "graviton", "boomerang", "critical_chance", "life_steal", "dash", "esquivando", "fenda", "adrenalina",
 	"gold_magnet",
 	"tiger_claws",
 	# Aliados
@@ -181,7 +181,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 const _UPG_CAPS: Dictionary = {
 	"perfuracao": 4, "ricochet_arrow": 4, "multi_arrow": 4, "double_arrows": 4, "chain_lightning": 4,
 	"fire_arrow": 4, "curse_arrow": 4, "ice_arrow": 4, "stone_arrow": 4, "tide_arrow": 4, "graviton": 4, "boomerang": 4, "critical_chance": 4, "life_steal": 4,
-	"dash": 4, "esquivando": 4, "fenda": 4, "gold_magnet": 4, "tiger_claws": 4,
+	"dash": 4, "esquivando": 4, "fenda": 4, "adrenalina": 4, "gold_magnet": 4, "tiger_claws": 4,
 	"claudio_druida": 4, "leno": 4, "capivara_joe": 4, "ting": 4, "mini_mago": 4, "arbusto": 4,
 }
 const _UPG_STATUS_COMBINED_PATH: String = "res://assets/Hud/shop/status/HP - atck speed - Move speed - Atck Dmg.png"
@@ -206,6 +206,7 @@ const _UPG_PATHS: Dictionary = {
 	"dash": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"esquivando": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"fenda": "res://assets/Hud/shop/upgrade/deslizando.png",
+	"adrenalina": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"leno": "res://assets/Hud/shop/aliado/Leno/Leno Card.png",
 	"claudio_druida": "res://assets/Hud/shop/aliado/claudio_druida/claudio_druida card.png",
 	"ting": "res://assets/Hud/shop/aliado/ting/ting card.png",
@@ -1104,6 +1105,10 @@ func _flash_skill_ui(node: Control) -> void:
 func _update_run_timer_label() -> void:
 	if run_timer_label == null:
 		return
+	# Config: jogador pode esconder o cronômetro live.
+	if GameState.hide_run_timer:
+		run_timer_label.visible = false
+		return
 	# Acompanha a visibilidade da moldura da HUD (some em cinematics/cantos).
 	run_timer_label.visible = hud_frame == null or hud_frame.visible
 	if not run_timer_label.visible:
@@ -1825,13 +1830,16 @@ func _build_death_stats_block() -> String:
 	var p := get_tree().get_first_node_in_group("player")
 	if p == null:
 		return ""
-	var time_str: String = "0:00"
-	if p.has_method("get_run_time_msec"):
-		time_str = _format_run_time(int(p.get_run_time_msec()))
 	var kills: int = int(p.get("stats_enemies_killed")) if "stats_enemies_killed" in p else 0
 	var allies: int = int(p.get("stats_allies_made")) if "stats_allies_made" in p else 0
 	var dmg_dealt: int = int(round(float(p.get("stats_damage_dealt")))) if "stats_damage_dealt" in p else 0
 	var dmg_taken: int = int(round(float(p.get("stats_damage_taken")))) if "stats_damage_taken" in p else 0
+	# Config: esconder o tempo da run remove a 1ª linha (template sem tempo).
+	if GameState.hide_time_info:
+		return tr("HUD_DEATH_STATS_NO_TIME") % [kills, allies, dmg_dealt, dmg_taken]
+	var time_str: String = "0:00"
+	if p.has_method("get_run_time_msec"):
+		time_str = _format_run_time(int(p.get_run_time_msec()))
 	return tr("HUD_DEATH_STATS") % [time_str, kills, allies, dmg_dealt, dmg_taken]
 
 
@@ -1914,7 +1922,7 @@ const _DEV_RESPAWN_UPGRADE_IDS: Array[String] = [
 	"double_arrows", "chain_lightning", "move_speed", "life_steal",
 	"fire_arrow", "curse_arrow", "ice_arrow", "claudio_druida", "leno",
 	"capivara_joe", "ting", "arbusto", "mini_mago", "gold_magnet",
-	"dash", "esquivando", "ricochet_arrow", "graviton", "boomerang",
+	"dash", "esquivando", "fenda", "adrenalina", "ricochet_arrow", "graviton", "boomerang",
 	"tiger_claws", "critical_chance",
 ]
 
@@ -2103,7 +2111,7 @@ const _BUILD_UPGRADE_IDS: Array[String] = [
 	"fire_arrow", "curse_arrow", "ice_arrow", "stone_arrow", "tide_arrow",
 	# Upgrades padrão
 	"perfuracao", "multi_arrow", "double_arrows", "chain_lightning", "life_steal",
-	"gold_magnet", "dash", "esquivando", "fenda", "ricochet_arrow", "graviton",
+	"gold_magnet", "dash", "esquivando", "fenda", "adrenalina", "ricochet_arrow", "graviton",
 	"boomerang", "critical_chance", "tiger_claws",
 	# Status
 	"hp", "damage", "attack_speed", "move_speed", "armor",

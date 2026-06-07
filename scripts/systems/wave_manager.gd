@@ -1009,8 +1009,8 @@ func _finish_wave() -> void:
 			var rolled: int = randi_range(prange.x, prange.y)
 			var p_origin: Vector2 = (_p_fw as Node2D).global_position if _p_fw is Node2D else Vector2.INF
 			_p_fw.add_petals(rolled, p_origin)
-		# Dividendo Arcano (item): +N gold no fim de cada round.
-		var _gpr: int = InventoryItems.equipped_gold_per_round()
+		# Dividendo Arcano (item): sorteio em camadas de gold no fim de cada round.
+		var _gpr: int = InventoryItems.arcane_dividend_roll()
 		if _gpr > 0 and _p_fw.has_method("add_gold"):
 			_p_fw.add_gold(_gpr)
 		# Conta wave limpa (unlock do item Estou com Sorte).

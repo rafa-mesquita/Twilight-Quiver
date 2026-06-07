@@ -297,6 +297,12 @@ func take_damage(amount: float) -> void:
 		if not is_curse_ally:
 			# Maldição: chance de virar aliado em vez de morrer (lv2-4 da curse).
 			if CurseAllyHelper.try_convert_on_death(self):
+				# Profano: o inimigo "derrotado" virou aliado, mas ainda sorteia gold
+				# com a chance NORMAL de abate (não garantido). Exceto invocados do
+				# Mini Mago (anti-farm), igual à morte normal abaixo.
+				if not is_in_group("mini_mago_summon"):
+					GoldDrop.try_drop(_get_world(), gold_scene, global_position,
+						gold_drop_chance, gold_drop_min, gold_drop_max)
 				return
 			# Morte normal: heart + count na stat de kills + gold.
 			HeartDrop.try_drop(_get_world(), heart_scene, global_position, self)

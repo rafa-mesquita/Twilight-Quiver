@@ -485,6 +485,10 @@ func take_damage(amount: float) -> void:
 		_remove_trail()
 		if not is_curse_ally:
 			if CurseAllyHelper.try_convert_on_death(self):
+				# Profano: inimigo "derrotado" virou aliado, mas ainda sorteia gold
+				# com a chance NORMAL de abate (não garantido).
+				GoldDrop.try_drop(_get_world(), gold_scene, global_position,
+					gold_drop_chance, gold_drop_min, gold_drop_max)
 				return
 			# Pré-roll pelo multiplier local antes do try_drop (que faz seu
 			# próprio roll de chance baseado em life_steal level).

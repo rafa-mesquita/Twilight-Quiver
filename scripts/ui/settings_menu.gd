@@ -59,6 +59,10 @@ const _FPS_CAP_VALUES: Array[int] = [60, 120, 144, 0]
 # --- Locale ---
 @onready var locale_dropdown: Button = $Center/Panel/Margin/Scroll/VBox/LocaleRow/LocaleDropdown
 
+# --- HUD (esconder informações de tempo) ---
+@onready var hide_timer_check: CheckBox = $Center/Panel/Margin/Scroll/VBox/HideTimerRow/HideTimerCheck
+@onready var hide_time_info_check: CheckBox = $Center/Panel/Margin/Scroll/VBox/HideTimeInfoRow/HideTimeInfoCheck
+
 # --- Buttons ---
 @onready var apply_button: Button = $Center/Panel/Margin/Scroll/VBox/ApplyButton
 @onready var back_button: Button = $Center/Panel/Margin/Scroll/VBox/BackButton
@@ -148,6 +152,10 @@ func _load_current_settings() -> void:
 			break
 	locale_dropdown.select(locale_idx)
 
+	# HUD
+	hide_timer_check.button_pressed = bool(cfg.get_value("hud", "hide_run_timer", GameState.DEFAULT_HIDE_RUN_TIMER))
+	hide_time_info_check.button_pressed = bool(cfg.get_value("hud", "hide_time_info", GameState.DEFAULT_HIDE_TIME_INFO))
+
 
 func _on_display_mode_changed(_index: int) -> void:
 	_update_resolution_enabled()
@@ -195,6 +203,10 @@ func _on_apply_pressed() -> void:
 	var loc_idx: int = max(0, locale_dropdown.get_selected())
 	var locale_code: String = str(LocaleManager.SUPPORTED_LOCALES[loc_idx]["code"])
 
+	# --- HUD ---
+	var hide_timer: bool = hide_timer_check.button_pressed
+	var hide_time_info: bool = hide_time_info_check.button_pressed
+
 	# Persiste tudo.
 	var cfg := ConfigFile.new()
 	cfg.load(_SETTINGS_PATH)
@@ -207,6 +219,8 @@ func _on_apply_pressed() -> void:
 	cfg.set_value("video", "vsync", vsync)
 	cfg.set_value("video", "fps_cap", fps_cap)
 	cfg.set_value("video", "show_fps", show_fps)
+	cfg.set_value("hud", "hide_run_timer", hide_timer)
+	cfg.set_value("hud", "hide_time_info", hide_time_info)
 	cfg.save(_SETTINGS_PATH)
 	# Locale: LocaleManager cuida da seção [locale].
 	LocaleManager.save_locale(locale_code)
@@ -216,6 +230,7 @@ func _on_apply_pressed() -> void:
 	GameState.apply_display_settings(mode, res)
 	GameState.apply_audio_settings(master, music, sfx)
 	GameState.apply_video_settings(vsync, fps_cap, show_fps)
+	GameState.apply_hud_settings(hide_timer, hide_time_info)
 
 
 func _on_back_pressed() -> void:
