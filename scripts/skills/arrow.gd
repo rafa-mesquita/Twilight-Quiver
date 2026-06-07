@@ -1150,6 +1150,10 @@ func _arm_lifetime() -> void:
 
 
 func _on_lifetime_expired() -> void:
+	# Espectral que expira sem chegar no alvo: só some (não estoura AoE de pedra/maré).
+	if is_spectral:
+		_die()
+		return
 	# Se já cravou, ignora — o stick timer cuida da remoção.
 	if not is_stuck:
 		# Pedra: "cai" no fim do range → toca o som de impacto + estoura o AoE
