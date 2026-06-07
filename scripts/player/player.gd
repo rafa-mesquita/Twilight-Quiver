@@ -1669,7 +1669,7 @@ func _update_tide_shield(delta: float) -> void:
 		if _tide_shield_active_remaining <= 0.0:
 			_remove_tide_shield_visual()
 	if _tide_shield_cd_remaining > 0.0:
-		_tide_shield_cd_remaining = maxf(_tide_shield_cd_remaining - delta, 0.0)
+		_tide_shield_cd_remaining = maxf(_tide_shield_cd_remaining - delta * cooldown_drain_mult(), 0.0)
 		tide_shield_skill_cooldown_changed.emit(_tide_shield_cd_remaining, TIDE_SHIELD_COOLDOWN)
 
 
@@ -2180,7 +2180,7 @@ func _update_fenda(delta: float) -> void:
 		if _fenda_combo_remaining <= 0.0:
 			_start_fenda_cooldown()
 	if _fenda_cd_remaining > 0.0:
-		_fenda_cd_remaining = maxf(_fenda_cd_remaining - delta, 0.0)
+		_fenda_cd_remaining = maxf(_fenda_cd_remaining - delta * cooldown_drain_mult(), 0.0)
 		dash_cooldown_changed.emit(_fenda_cd_remaining, _fenda_cooldown())
 
 
@@ -2374,7 +2374,7 @@ func _spawn_player_fire_trail_segment() -> void:
 func _update_fire_skill(delta: float) -> void:
 	# Só tick do cooldown — cast é instantâneo, sem targeting state.
 	if _fire_skill_cd_remaining > 0.0:
-		_fire_skill_cd_remaining = maxf(_fire_skill_cd_remaining - delta, 0.0)
+		_fire_skill_cd_remaining = maxf(_fire_skill_cd_remaining - delta * cooldown_drain_mult(), 0.0)
 		fire_skill_cooldown_changed.emit(_fire_skill_cd_remaining, FIRE_SKILL_COOLDOWN)
 
 
@@ -2407,7 +2407,7 @@ func _handle_chain_lightning_skill_press() -> void:
 func _update_chain_lightning_skill(delta: float) -> void:
 	# Só tick do cooldown — cast é instantâneo agora, sem targeting state.
 	if _chain_lightning_skill_cd_remaining > 0.0:
-		_chain_lightning_skill_cd_remaining = maxf(_chain_lightning_skill_cd_remaining - delta, 0.0)
+		_chain_lightning_skill_cd_remaining = maxf(_chain_lightning_skill_cd_remaining - delta * cooldown_drain_mult(), 0.0)
 		chain_lightning_skill_cooldown_changed.emit(_chain_lightning_skill_cd_remaining, CHAIN_LIGHTNING_SKILL_COOLDOWN)
 
 
@@ -2420,7 +2420,7 @@ func _update_chain_auto_bolt(delta: float) -> void:
 	if chain_lightning_level < 2 or is_dead:
 		return
 	if _chain_auto_bolt_cd_remaining > 0.0:
-		_chain_auto_bolt_cd_remaining = maxf(_chain_auto_bolt_cd_remaining - delta, 0.0)
+		_chain_auto_bolt_cd_remaining = maxf(_chain_auto_bolt_cd_remaining - delta * cooldown_drain_mult(), 0.0)
 		return
 	if _try_cast_chain_auto_bolt():
 		_chain_auto_bolt_cd_remaining = CHAIN_AUTO_BOLT_INTERVAL
@@ -2483,7 +2483,7 @@ func _update_boomerang(delta: float) -> void:
 	if boomerang_level <= 0 or is_dead:
 		return
 	if _boomerang_cd_remaining > 0.0:
-		_boomerang_cd_remaining = maxf(_boomerang_cd_remaining - delta, 0.0)
+		_boomerang_cd_remaining = maxf(_boomerang_cd_remaining - delta * cooldown_drain_mult(), 0.0)
 		return
 	# Tenta castar. Se não tem inimigo, mantém cd zerado e tenta de novo no
 	# próximo frame até aparecer alvo.
@@ -2531,7 +2531,7 @@ func _update_tiger_claws(delta: float) -> void:
 	if tiger_claws_level <= 0 or is_dead:
 		return
 	if _tiger_claws_cd_remaining > 0.0:
-		_tiger_claws_cd_remaining = maxf(_tiger_claws_cd_remaining - delta, 0.0)
+		_tiger_claws_cd_remaining = maxf(_tiger_claws_cd_remaining - delta * cooldown_drain_mult(), 0.0)
 		return
 	# Tenta castar. Sem inimigo no raio → cd não dispara, retenta no próximo frame.
 	if _try_cast_tiger_claws():
@@ -2727,7 +2727,7 @@ func _cast_curse_beam() -> void:
 
 func _update_curse_skill(delta: float) -> void:
 	if _curse_skill_cd_remaining > 0.0:
-		_curse_skill_cd_remaining = maxf(_curse_skill_cd_remaining - delta, 0.0)
+		_curse_skill_cd_remaining = maxf(_curse_skill_cd_remaining - delta * cooldown_drain_mult(), 0.0)
 		curse_skill_cooldown_changed.emit(_curse_skill_cd_remaining, CURSE_SKILL_TOTAL_CYCLE)
 
 
@@ -2778,7 +2778,7 @@ func _ensure_quake_stun_visual(target: Node) -> void:
 
 func _update_stone_skill(delta: float) -> void:
 	if _stone_skill_cd_remaining > 0.0:
-		_stone_skill_cd_remaining = maxf(_stone_skill_cd_remaining - delta, 0.0)
+		_stone_skill_cd_remaining = maxf(_stone_skill_cd_remaining - delta * cooldown_drain_mult(), 0.0)
 		stone_skill_cooldown_changed.emit(_stone_skill_cd_remaining, STONE_SKILL_COOLDOWN)
 
 
@@ -2825,7 +2825,7 @@ func _update_time_freeze(delta: float) -> void:
 			_remove_time_freeze_world_pause()
 			_hide_freeze_overlay()
 	if _time_freeze_cd_remaining > 0.0:
-		_time_freeze_cd_remaining = maxf(_time_freeze_cd_remaining - delta, 0.0)
+		_time_freeze_cd_remaining = maxf(_time_freeze_cd_remaining - delta * cooldown_drain_mult(), 0.0)
 		time_freeze_skill_cooldown_changed.emit(_time_freeze_cd_remaining, TIME_FREEZE_COOLDOWN)
 
 
@@ -3021,7 +3021,7 @@ func _update_dash(delta: float) -> void:
 			_is_dashing = false
 			_dash_velocity = Vector2.ZERO
 	if _dash_cd_remaining > 0.0:
-		_dash_cd_remaining = maxf(_dash_cd_remaining - delta, 0.0)
+		_dash_cd_remaining = maxf(_dash_cd_remaining - delta * cooldown_drain_mult(), 0.0)
 		dash_cooldown_changed.emit(_dash_cd_remaining, dash_cooldown)
 	if _iframes_remaining > 0.0:
 		_iframes_remaining = maxf(_iframes_remaining - delta, 0.0)
@@ -3155,7 +3155,7 @@ func _update_esquivando(delta: float) -> void:
 		if was_active and _esquivando_ability_buff_remaining <= 0.0:
 			esquivando_ability_active_changed.emit(false)
 	if _esquivando_ability_cd > 0.0:
-		_esquivando_ability_cd = maxf(_esquivando_ability_cd - delta, 0.0)
+		_esquivando_ability_cd = maxf(_esquivando_ability_cd - delta * cooldown_drain_mult(), 0.0)
 		esquivando_cooldown_changed.emit(_esquivando_ability_cd, _esquivando_ability_cd_total())
 
 
@@ -3240,7 +3240,7 @@ func _update_adrenalina(delta: float) -> void:
 		if _adrenalina_skill_remaining <= 0.0:
 			_set_adrenalina_red(false)
 	if _adrenalina_cd_remaining > 0.0:
-		_adrenalina_cd_remaining = maxf(_adrenalina_cd_remaining - delta, 0.0)
+		_adrenalina_cd_remaining = maxf(_adrenalina_cd_remaining - delta * cooldown_drain_mult(), 0.0)
 		dash_cooldown_changed.emit(_adrenalina_cd_remaining, _adrenalina_cooldown())
 
 
@@ -3460,6 +3460,9 @@ func apply_upgrade(upgrade_id: String) -> void:
 				2: hp_gain = 20.0
 				3: hp_gain = 22.0
 				_: hp_gain = 25.0
+			# Essência Vital: +5 HP máx extra por status de HP comprado.
+			if _essencia_vital_equipped:
+				hp_gain += _essencia_hp_per_level
 			max_hp += hp_gain
 			hp = min(hp + hp_gain, max_hp)
 			hp_changed.emit(hp, max_hp)
@@ -4430,6 +4433,22 @@ func reset_ricochet_counter() -> void:
 func reset_graviton_counter() -> void:
 	# Graviton nao tem HUD counter (so contador interno); so zera o valor.
 	_graviton_shot_counter = 0
+
+
+# Fator de cooldown (1.0 = sem redução, 0.5 = -50%). Essência Vital reduz 10% por
+# status de HP comprado (hp_upgrades), com teto de CDR de 50%. Lido ao vivo.
+func cooldown_scale() -> float:
+	if not _essencia_vital_equipped:
+		return 1.0
+	var cdr: float = minf(float(hp_upgrades) * _essencia_cdr_per_level, _essencia_cdr_cap)
+	return 1.0 - cdr
+
+
+# Multiplicador da DRENAGEM de cooldown (>= 1.0; 2.0 no cap de -50%). Os _update_*
+# que decrementam cd_remaining usam `delta * cooldown_drain_mult()` — o reset e o
+# "total" emitido pra HUD ficam intactos (barra começa cheia, drena mais rápido).
+func cooldown_drain_mult() -> float:
+	return 1.0 / cooldown_scale()
 
 
 func reset_all_cooldowns() -> void:
