@@ -382,6 +382,12 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 23
 text = "+1 Leno"
 
+[node name="UpgTiliskoBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
+custom_minimum_size = Vector2(0, 36)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 23
+text = "+1 Tilisko"
+
 [node name="UpgCapivaraBtn" type="Button" parent="Content/Scroll/VBox/EstruturasSection/EstruturasContent"]
 custom_minimum_size = Vector2(0, 36)
 theme_override_fonts/font = ExtResource("2_font")

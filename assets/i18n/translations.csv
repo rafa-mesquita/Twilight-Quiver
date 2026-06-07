@@ -172,6 +172,7 @@ DMG_PANEL_TOWER,Torre de Flechas,Arrow Tower,Torre de Flechas,Tour à Flèches
 DMG_PANEL_TING,Mecânico Ting,Ting,Ting,Ting
 DMG_PANEL_CLAUDIO_DRUIDA,Claudio o Druida,Claudio the Druid,Claudio el Druida,Claudio le Druide
 DMG_PANEL_LENO,Leno,Leno,Leno,Leno
+DMG_PANEL_TILISKO,Tilisko,Tilisko,Tilisko,Tilisko
 DMG_PANEL_CAPIVARA,Capivara Joe,Capybara Joe,Capivara Joe,Capybara Joe
 DMG_PANEL_MINI_MAGO,Mini Mago,Mini Mage,Mini Mago,Mini Mage
 DMG_PANEL_CURSE_ALLY,Aliados Flecha Profana,Curse Arrow Allies,Aliados Flecha Profana,Alliés Flèche Maudite
@@ -394,6 +395,11 @@ SHOP_TIGER_CLAWS_DESC_3,"3 alvos, 40 de dano por arranhada e agora a cada 4,8s",
 SHOP_TIGER_CLAWS_DESC_4,"4 alvos aleatórios, 48 de dano por arranhada e a cada 4s","4 random targets, 48 damage per scratch and every 4s","4 objetivos aleatorios, 48 de daño por arañazo y cada 4s","4 cibles aléatoires, 48 dégâts par lacération et toutes les 4s"
 SHOP_ALLY_CLAUDIO_DRUIDA,Claudio o Druida,Claudio the Druid,Claudio el Druida,Claudio le Druide
 SHOP_ALLY_LENO,Amigo Leno,Friend Leno,Amigo Leno,Ami Leno
+SHOP_ALLY_TILISKO,Tilisko Arqueiro,Tilisko Archer,Tilisko Arquero,Tilisko Archer
+SHOP_ALLY_TILISKO_DESC_1,"Um pinguim arqueiro que fica perto de você e atira junto a cada disparo seu, mirando na sua direção. A flecha causa 20% do seu dano e aplica os mesmos efeitos.","A penguin archer that stays near you and shoots with every shot you take, aiming your way. The arrow deals 20% of your damage and applies the same effects.","Un pingüino arquero que se queda cerca de ti y dispara con cada tiro tuyo, apuntando en tu dirección. La flecha causa 20% de tu daño y aplica los mismos efectos.","Un pingouin archer qui reste près de vous et tire à chacun de vos tirs, visant dans votre direction. La flèche inflige 20% de vos dégâts et applique les mêmes effets."
+SHOP_ALLY_TILISKO_DESC_2,A flecha do Tilisko causa 30% do seu dano.,Tilisko's arrow deals 30% of your damage.,La flecha de Tilisko causa 30% de tu daño.,La flèche de Tilisko inflige 30% de vos dégâts.
+SHOP_ALLY_TILISKO_DESC_3,"A flecha causa 60% do seu dano, e o Tilisko tem 30% de chance de mirar num inimigo aleatório da tela.","The arrow deals 60% of your damage, and Tilisko has a 30% chance to aim at a random enemy on screen.","La flecha causa 60% de tu daño, y Tilisko tiene 30% de probabilidad de apuntar a un enemigo aleatorio en pantalla.","La flèche inflige 60% de vos dégâts, et Tilisko a 30% de chance de viser un ennemi aléatoire à l'écran."
+SHOP_ALLY_TILISKO_DESC_4,"As flechas do Tilisko passam a seguir TODAS as suas categorias: perfuram, ricocheteiam, saem múltiplas/duplas e espectrais.","Tilisko's arrows now follow ALL your categories: they pierce, ricochet, fire multiple/double and spectral.","Las flechas de Tilisko ahora siguen TODAS tus categorías: perforan, rebotan, salen múltiples/dobles y espectrales.","Les flèches de Tilisko suivent désormais TOUTES vos catégories : perforation, ricochet, multiples/doubles et spectrales."
 SHOP_ALLY_CAPIVARA,Capivara Joe,Capybara Joe,Capibara Joe,Capybara Joe
 SHOP_ALLY_TING,Mecânico Ting,Ting the Mechanic,Ting el Mecánico,Ting le Mécanicien
 SHOP_ALLY_MINI_MAGO,Mini Mago,Mini Mage,Mini Mago,Mini Mage

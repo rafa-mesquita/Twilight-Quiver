@@ -175,14 +175,14 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 	"gold_magnet",
 	"tiger_claws",
 	# Aliados
-	"claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto",
+	"claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto", "tilisko",
 ]
 # Caps onde "MAX" substitui "Lx" no badge (status escala infinito → sem cap).
 const _UPG_CAPS: Dictionary = {
 	"perfuracao": 4, "ricochet_arrow": 4, "multi_arrow": 4, "double_arrows": 4, "chain_lightning": 4,
 	"fire_arrow": 4, "curse_arrow": 4, "ice_arrow": 4, "stone_arrow": 4, "tide_arrow": 4, "graviton": 4, "boomerang": 4, "critical_chance": 4, "life_steal": 4,
 	"dash": 4, "esquivando": 4, "fenda": 4, "adrenalina": 4, "gold_magnet": 4, "tiger_claws": 4,
-	"claudio_druida": 4, "leno": 4, "capivara_joe": 4, "ting": 4, "mini_mago": 4, "arbusto": 4,
+	"claudio_druida": 4, "leno": 4, "capivara_joe": 4, "ting": 4, "mini_mago": 4, "arbusto": 4, "tilisko": 4,
 }
 const _UPG_STATUS_COMBINED_PATH: String = "res://assets/Hud/shop/status/HP - atck speed - Move speed - Atck Dmg.png"
 const _UPG_STATUS_COMBINED_ROWS: Dictionary = {"hp": 0, "attack_speed": 1, "move_speed": 2, "damage": 3}
@@ -210,6 +210,7 @@ const _UPG_PATHS: Dictionary = {
 	"fenda": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"adrenalina": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"leno": "res://assets/Hud/shop/aliado/Leno/Leno Card.png",
+	"tilisko": "res://assets/Hud/shop/aliado/tilisko/tilosko card.png",
 	"claudio_druida": "res://assets/Hud/shop/aliado/claudio_druida/claudio_druida card.png",
 	"ting": "res://assets/Hud/shop/aliado/ting/ting card.png",
 	"capivara_joe": "res://assets/Hud/shop/aliado/capivara joe/capivara joe card.png",
@@ -226,7 +227,7 @@ const _UPG_FRAME_NORMAL: Vector2i = Vector2i(38, 47)  # upgrade/aliado
 const _UPG_FRAME_STATUS: Vector2i = Vector2i(65, 17)  # status/armor (faixa horizontal)
 # IDs por categoria (pra resolver fallback e tamanho de célula).
 const _UPG_STATUS_IDS: Array[String] = ["hp", "armor", "damage", "attack_speed", "move_speed"]
-const _UPG_ALIADO_IDS: Array[String] = ["claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto"]
+const _UPG_ALIADO_IDS: Array[String] = ["claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto", "tilisko"]
 # Largura/altura de cada chip na coluna. Status são wide (65×17), upgrade/aliado
 # são quase quadrados (38×47); chip único acomoda os dois com letterbox.
 const _UPG_CHIP_SIZE: Vector2 = Vector2(72, 44)
@@ -1922,7 +1923,7 @@ func _dev_send_score(btn: Button) -> void:
 const _DEV_RESPAWN_UPGRADE_IDS: Array[String] = [
 	"hp", "armor", "damage", "perfuracao", "attack_speed", "multi_arrow",
 	"double_arrows", "chain_lightning", "move_speed", "life_steal",
-	"fire_arrow", "curse_arrow", "ice_arrow", "claudio_druida", "leno",
+	"fire_arrow", "curse_arrow", "ice_arrow", "claudio_druida", "leno", "tilisko",
 	"capivara_joe", "ting", "arbusto", "mini_mago", "gold_magnet",
 	"dash", "esquivando", "fenda", "adrenalina", "ricochet_arrow", "graviton", "boomerang",
 	"tiger_claws", "critical_chance",
@@ -2119,7 +2120,7 @@ const _BUILD_UPGRADE_IDS: Array[String] = [
 	# Status
 	"hp", "damage", "attack_speed", "move_speed", "armor",
 	# Aliados
-	"claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto",
+	"claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto", "tilisko",
 ]
 
 

@@ -1498,6 +1498,7 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	{"id": "ting", "name": "SHOP_ALLY_TING"},
 	{"id": "mini_mago", "name": "SHOP_ALLY_MINI_MAGO"},
 	{"id": "arbusto", "name": "SHOP_ALLY_ARBUSTO"},
+	{"id": "tilisko", "name": "SHOP_ALLY_TILISKO"},
 ]
 
 
