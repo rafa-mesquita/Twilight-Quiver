@@ -3775,6 +3775,7 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"armor": return armor_level
 		"damage": return damage_upgrades
 		"perfuracao": return perfuracao_level
+		"spectral_arrow": return spectral_arrow_level
 		"attack_speed": return attack_speed_level
 		"multi_arrow": return multi_arrow_level
 		"double_arrows": return double_arrows_level

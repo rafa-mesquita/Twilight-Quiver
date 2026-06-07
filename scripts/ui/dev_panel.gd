@@ -19,6 +19,7 @@ const UPGRADE_BTNS: Array = [
 	{"id": "armor", "node": "UpgArmorBtn", "max": INF_LEVEL, "base_text": "+1 Armadura"},
 	{"id": "damage", "node": "UpgDamageBtn", "max": INF_LEVEL, "base_text": "+1 Dano"},
 	{"id": "perfuracao", "node": "UpgPerfBtn", "max": 4, "base_text": "+1 Perfuracao"},
+	{"id": "spectral_arrow", "node": "UpgSpectralBtn", "max": 4, "base_text": "+1 Flecha Espectral"},
 	{"id": "attack_speed", "node": "UpgAtkSpeedBtn", "max": INF_LEVEL, "base_text": "+1 Atk Speed"},
 	{"id": "multi_arrow", "node": "UpgMultiArrowBtn", "max": 4, "base_text": "+1 Multi Arrow"},
 	{"id": "double_arrows", "node": "UpgDoubleArrowsBtn", "max": 4, "base_text": "+1 Flechas Duplas"},
@@ -327,7 +328,7 @@ func _spawn_claudio_druida_at_player() -> void:
 # fazer snapshot completo no respawn (inclui claudio_druida que não está em
 # UPGRADE_BTNS porque tem botão de spawn próprio).
 const _ALL_UPGRADE_IDS: Array[String] = [
-	"hp", "armor", "damage", "perfuracao", "attack_speed", "multi_arrow",
+	"hp", "armor", "damage", "perfuracao", "spectral_arrow", "attack_speed", "multi_arrow",
 	"double_arrows", "chain_lightning", "move_speed", "life_steal",
 	"fire_arrow", "curse_arrow", "ice_arrow", "stone_arrow", "tide_arrow", "claudio_druida", "leno",
 	"capivara_joe", "ting", "arbusto", "mini_mago", "gold_magnet",
