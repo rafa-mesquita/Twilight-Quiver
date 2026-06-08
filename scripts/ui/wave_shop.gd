@@ -761,21 +761,25 @@ func _roll_aliado_slots() -> void:
 	# Owned pets (lvl > 0) sempre aparecem pro player poder upgradar; o resto
 	# é preenchido com unowned random até bater 3 slots.
 	var owned_ids: Array[String] = []
-	var unowned_ids: Array[String] = []
 	for ally_id in _ALL_ALLY_IDS:
 		var lvl: int = 0
 		if p != null and p.has_method("get_upgrade_count"):
 			lvl = int(p.get_upgrade_count(ally_id))
 		if lvl > 0:
 			owned_ids.append(ally_id)
-		else:
-			unowned_ids.append(ally_id)
-	var picked: Array[String] = owned_ids.duplicate()
-	if picked.size() > 3:
-		picked = picked.slice(0, 3)
-	unowned_ids.shuffle()
-	while picked.size() < 3 and not unowned_ids.is_empty():
-		picked.append(unowned_ids.pop_back())
+	# Garante NO MÁXIMO 1 slot com um pet que você já tem (pra poder upgradar). Os
+	# outros 2 slots são 100% aleatórios do restante (qualquer pet) — assim pets
+	# novos sempre têm chance, em vez de a loja só repetir os que você já possui.
+	var picked: Array[String] = []
+	if not owned_ids.is_empty():
+		owned_ids.shuffle()
+		picked.append(owned_ids[0])
+	var rest: Array[String] = _ALL_ALLY_IDS.duplicate()
+	for chosen in picked:
+		rest.erase(chosen)
+	rest.shuffle()
+	while picked.size() < 3 and not rest.is_empty():
+		picked.append(rest.pop_back())
 	var distinct_owned: int = _distinct_pets_owned(p)
 	for ally_id in picked:
 		var slot: Dictionary = _build_ally_slot(ally_id, p, distinct_owned)

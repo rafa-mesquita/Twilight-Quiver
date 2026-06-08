@@ -1666,8 +1666,11 @@ const FREE_REWARD_CARD_PATHS: Dictionary = {
 	"capivara_joe": "res://assets/Hud/shop/aliado/capivara joe/capivara joe card.png",
 	"mini_mago": "res://assets/Hud/shop/aliado/mini mago/mini mago card.png",
 	"arbusto": "res://assets/Hud/shop/aliado/abursto carrara/arbusto.png",
+	"tilisko": "res://assets/Hud/shop/aliado/tilisko/tilosko card.png",
 	"graviton": "res://assets/Hud/shop/upgrade/graviton/graviton card-Sheet.png",
 	"ricochet_arrow": "res://assets/Hud/shop/upgrade/ricochete.png",
+	# Espectral: reusa a arte do ricochete até ter arte própria (igual à loja).
+	"spectral_arrow": "res://assets/Hud/shop/upgrade/ricochete.png",
 	"gold_magnet": "res://assets/Hud/shop/upgrade/coin master.png",
 	"life_steal": "res://assets/Hud/shop/upgrade/life steal.png",
 	"fire_arrow": "res://assets/Hud/shop/upgrade/fire_arrow2.png",
@@ -1680,6 +1683,7 @@ const FREE_REWARD_CARD_PATHS: Dictionary = {
 	"dash": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"esquivando": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"fenda": "res://assets/Hud/shop/upgrade/deslizando.png",
+	"adrenalina": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"double_arrows": "res://assets/Hud/shop/upgrade/multi_arrow.png",
 }
 const FREE_REWARD_STATUS_SHEET: String = "res://assets/Hud/shop/status/HP - atck speed - Move speed - Atck Dmg.png"

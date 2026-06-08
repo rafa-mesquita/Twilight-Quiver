@@ -1563,6 +1563,10 @@ func _nearest_enemy_to_player() -> Node:
 			continue
 		if ("hp" in e) and float(e.hp) <= 0.0:
 			continue
+		# Boss com shield (Gorilla Mage enquanto tem súditos) é untargetable: o tiro
+		# não fura o escudo, então o tilisko não desperdiça mirando nele.
+		if (e as Node).is_in_group("boss_shielded"):
+			continue
 		var d: float = ppos.distance_squared_to((e as Node2D).global_position)
 		if d < best_d:
 			best_d = d
@@ -1580,6 +1584,9 @@ func _random_enemy_on_screen() -> Node:
 		if (e as Node).is_queued_for_deletion():
 			continue
 		if ("hp" in e) and float(e.hp) <= 0.0:
+			continue
+		# Pula boss com shield (mesma regra do nearest): tiro não atravessa o escudo.
+		if (e as Node).is_in_group("boss_shielded"):
 			continue
 		var screen_pos: Vector2 = cam_xform * (e as Node2D).global_position
 		if vp_rect.has_point(screen_pos):
@@ -3178,8 +3185,17 @@ func _hide_freeze_overlay() -> void:
 
 
 func _try_start_dash() -> void:
-	if _is_dashing or _dash_cd_remaining > 0.0 or is_attacking:
+	if _is_dashing or _dash_cd_remaining > 0.0:
 		return
+	# Cancela um ataque em andamento ANTES do dash (mesmo cuidado da Fenda): sem
+	# isso, o sprite.play("dash") abaixo interrompe a anim "attack", que nunca
+	# dispara animation_finished, deixando is_attacking travado → _update_animation
+	# sai cedo e o player CONGELA no sprite "dash". O attack_timer restaura
+	# can_attack normalmente; o tiro em andamento é cancelado (escolheu dashar).
+	if is_attacking:
+		is_attacking = false
+		is_drawing = false
+		sprite.speed_scale = 1.0
 	_count_active_skill_use()
 	# Direção: input atual; se não tiver, dash pra onde o sprite está virado.
 	var dir := Vector2(
