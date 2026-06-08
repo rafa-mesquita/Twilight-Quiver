@@ -167,6 +167,7 @@ var _lenos: Array[Node2D] = []
 # Tilisko Arqueiro (pet pinguim). Sem HP. Dispara junto com o player (no _release_arrow),
 # flecha a 20/30/60/60% do dano. Sempre 1 instância; o nível muda a flecha, não a contagem.
 const TILISKO_SCENE: PackedScene = preload("res://scenes/allies/tilisko.tscn")
+const TILISKO_SHOT_DELAY: float = 0.7  # atraso entre o tiro do player e o do Tilisko
 var tilisko_level: int = 0
 var _tiliskos: Array[Node2D] = []
 # Capivara Joe (aliado pet, 4 níveis). Sem HP, vagueia e dropa cogumelos.
@@ -1076,9 +1077,15 @@ func _release_arrow() -> void:
 			)
 		else:
 			_spawn_arrow(shot["dir"], shot["dmg_mult"], is_pierce, i == 0, i == 0, is_ricochet, is_graviton)
-	# Tilisko: dispara junto com o player (mesma mira; L4 reusa a volley/flags).
+	# Tilisko: dispara com um pequeno atraso após o seu tiro (0.7s). Captura a mira e as
+	# flags AGORA (locked_aim_dir muda no próximo tiro); locals já são capturados por valor.
 	if tilisko_level > 0:
-		_fire_tilisko_shots(locked_aim_dir, is_pierce, is_ricochet, is_graviton, volley)
+		var t_aim: Vector2 = locked_aim_dir
+		get_tree().create_timer(TILISKO_SHOT_DELAY).timeout.connect(func() -> void:
+			if is_dead or not is_inside_tree():
+				return
+			_fire_tilisko_shots(t_aim, is_pierce, is_ricochet, is_graviton, volley)
+		)
 
 
 # Cada entrada da volley = {dir: Vector2, dmg_mult: float} (relativo ao dmg base).
