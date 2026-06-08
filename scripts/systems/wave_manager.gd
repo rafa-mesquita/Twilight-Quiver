@@ -1269,6 +1269,12 @@ func _magnet_remaining_gold() -> void:
 			continue
 		if coin.has_method("magnet_to_player"):
 			coin.magnet_to_player(get_player_pos)
+	# Pétalas sobrando no mapa: voam pro player no fim do round (não se perdem).
+	for petal in get_tree().get_nodes_in_group("petal"):
+		if not is_instance_valid(petal):
+			continue
+		if petal.has_method("magnet_to_player"):
+			petal.magnet_to_player(get_player_pos)
 	# Corações sobrando: sweep SEQUENCIAL — só puxa o próximo quando o anterior
 	# é coletado (tree_exited). Cada coração se move devagar até o player, então
 	# o jogador pode interceptar andando ao encontro pra acelerar. Sem isso, com
@@ -1498,6 +1504,7 @@ const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	{"id": "ting", "name": "SHOP_ALLY_TING"},
 	{"id": "mini_mago", "name": "SHOP_ALLY_MINI_MAGO"},
 	{"id": "arbusto", "name": "SHOP_ALLY_ARBUSTO"},
+	{"id": "tilisko", "name": "SHOP_ALLY_TILISKO"},
 ]
 
 

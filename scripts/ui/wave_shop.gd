@@ -27,7 +27,7 @@ const MINI_MAGO_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 const ARBUSTO_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 # Pool de aliados pra rolagem na shop. 3 cards exibidos por wave; sorteia 3
 # dos N possíveis (priorizando pets já owned pro player poder upgradar).
-const _ALL_ALLY_IDS: Array[String] = ["claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto"]
+const _ALL_ALLY_IDS: Array[String] = ["claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto", "tilisko"]
 const STRUCTURE_SURCHARGE_PER_OWNED: int = 3
 # Aliado: primeira loja (wave 3) o pet é DADO de graça aleatório (não vai pra
 # loja). Depois aparece pra venda nas waves 5, 7, 9, 11...
@@ -215,6 +215,12 @@ const LENO_DESCS: Array[String] = [
 	"SHOP_LENO_DESC_2",
 	"SHOP_LENO_DESC_3",
 	"SHOP_LENO_DESC_4",
+]
+const TILISKO_DESCS: Array[String] = [
+	"SHOP_ALLY_TILISKO_DESC_1",
+	"SHOP_ALLY_TILISKO_DESC_2",
+	"SHOP_ALLY_TILISKO_DESC_3",
+	"SHOP_ALLY_TILISKO_DESC_4",
 ]
 const CAPIVARA_JOE_DESCS: Array[String] = [
 	"SHOP_CAPIVARA_DESC_1",
@@ -1321,6 +1327,7 @@ func _get_upgrade_descs_array(id: String) -> Array:
 		"graviton": return GRAVITON_DESCS
 		"claudio_druida": return CLAUDIO_DRUIDA_DESCS
 		"leno": return LENO_DESCS
+		"tilisko": return TILISKO_DESCS
 		"capivara_joe": return CAPIVARA_JOE_DESCS
 		"ting": return TING_DESCS
 		"mini_mago": return MINI_MAGO_DESCS
@@ -1553,7 +1560,8 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 			elif category == "upgrade" and UPGRADE_TITLE_COLORS.has(slot_id_str):
 				price_label.add_theme_color_override("font_color", UPGRADE_TITLE_COLORS[slot_id_str])
 			elif category == "aliado" and slot_id_str != "" and slot_id_str != "soon" and slot_id_str != "none" and slot_id_str != "locked" and slot_id_str != "free_pet":
-				price_label.add_theme_color_override("font_color", ALIADO_TEXT_COLOR)
+				# Aliado com cor de título dedicada (ex: Tilisko → branco) usa ela; senão o padrão.
+				price_label.add_theme_color_override("font_color", UPGRADE_TITLE_COLORS.get(slot_id_str, ALIADO_TEXT_COLOR))
 			else:
 				price_label.remove_theme_color_override("font_color")
 		else:
@@ -1644,6 +1652,7 @@ const STATUS_FILE_OVERRIDES: Dictionary = {
 # Cor do título/desc por upgrade — combina com a arte de cada card. Upgrades
 # que não estão aqui (e não têm sheet próprio) caem em placeholder gray.
 const UPGRADE_TITLE_COLORS: Dictionary = {
+	"tilisko": Color.WHITE,  # arte do card escura → texto branco
 	"chain_lightning": Color(0xfb / 255.0, 0xdd / 255.0, 0x82 / 255.0),  # #fbdd82
 	"multi_arrow": Color(0x3d / 255.0, 0x15 / 255.0, 0x00 / 255.0),  # #3d1500 (marrom escuro)
 	"double_arrows": Color(0x3d / 255.0, 0x15 / 255.0, 0x00 / 255.0),  # #3d1500 (marrom escuro — mesma família do multi_arrow)
@@ -1697,6 +1706,7 @@ const CARD_PATH_OVERRIDES: Dictionary = {
 	"ricochet_arrow": "res://assets/Hud/shop/upgrade/ricochete.png",
 	# Placeholder: reusa a arte do ricochete até a Espectral ter arte própria.
 	"spectral_arrow": "res://assets/Hud/shop/upgrade/ricochete.png",
+	"tilisko": "res://assets/Hud/shop/aliado/tilisko/tilosko card.png",
 	# id é "gold_magnet" mas o arquivo é "coin master.png" (com espaço).
 	"gold_magnet": "res://assets/Hud/shop/upgrade/coin master.png",
 	# id "life_steal" mas arquivo é "life steal.png" (com espaço).

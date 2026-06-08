@@ -80,6 +80,29 @@ func _process(delta: float) -> void:
 		_petal_sprite.modulate = NORMAL_MOD
 
 
+# Chamado pelo wave_manager no fim do round: a pétala voa até o player e é coletada
+# (mesmo espírito do magnet do gold). Garante que pétalas no chão não se percam.
+func magnet_to_player(target_callable: Callable) -> void:
+	if _picked:
+		return
+	_picked = true   # trava lifetime/blink e o pickup por colisão (evita double)
+	var start: Vector2 = global_position
+	var tw := create_tween()
+	tw.tween_method(func(t: float) -> void:
+		var tgt: Vector2 = (target_callable.call() if target_callable.is_valid() else start)
+		global_position = start.lerp(tgt, t)
+	, 0.0, 1.0, 0.5)
+	tw.tween_callback(_magnet_collect)
+
+
+func _magnet_collect() -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null and player.has_method("add_petals"):
+		player.add_petals(value, global_position)
+		MenuAudio.play_drop()
+	queue_free()
+
+
 func _on_body_entered(body: Node) -> void:
 	if _picked or not body.is_in_group("player") or not body.has_method("add_petals"):
 		return

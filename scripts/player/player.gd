@@ -164,6 +164,12 @@ var _claudio_druidas: Array[Dictionary] = []
 const LENO_SCENE: PackedScene = preload("res://scenes/allies/leno.tscn")
 var leno_level: int = 0
 var _lenos: Array[Node2D] = []
+# Tilisko Arqueiro (pet pinguim). Sem HP. Dispara junto com o player (no _release_arrow),
+# flecha a 20/30/60/60% do dano. Sempre 1 instância; o nível muda a flecha, não a contagem.
+const TILISKO_SCENE: PackedScene = preload("res://scenes/allies/tilisko.tscn")
+const TILISKO_SHOT_DELAY: float = 0.45  # atraso entre o tiro do player e o do Tilisko
+var tilisko_level: int = 0
+var _tiliskos: Array[Node2D] = []
 # Capivara Joe (aliado pet, 4 níveis). Sem HP, vagueia e dropa cogumelos.
 # L1: 1 capivara, drop a cada 14s (só buff). L2: 7s alterna buff/dano.
 # L3: buff dá ambos efeitos + atk speed. L4: 2 capivaras.
@@ -1071,6 +1077,15 @@ func _release_arrow() -> void:
 			)
 		else:
 			_spawn_arrow(shot["dir"], shot["dmg_mult"], is_pierce, i == 0, i == 0, is_ricochet, is_graviton)
+	# Tilisko: dispara com um pequeno atraso após o seu tiro (0.7s). Captura a mira e as
+	# flags AGORA (locked_aim_dir muda no próximo tiro); locals já são capturados por valor.
+	if tilisko_level > 0:
+		var t_aim: Vector2 = locked_aim_dir
+		get_tree().create_timer(TILISKO_SHOT_DELAY).timeout.connect(func() -> void:
+			if is_dead or not is_inside_tree():
+				return
+			_fire_tilisko_shots(t_aim, is_pierce, is_ricochet, is_graviton, volley)
+		)
 
 
 # Cada entrada da volley = {dir: Vector2, dmg_mult: float} (relativo ao dmg base).
@@ -1172,10 +1187,10 @@ func _build_double_arrows_volley(primary: Vector2) -> Array:
 	return shots
 
 
-func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bool, is_primary: bool = true, is_ricochet: bool = false, is_graviton: bool = false) -> void:
+func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bool, is_primary: bool = true, is_ricochet: bool = false, is_graviton: bool = false, origin: Vector2 = Vector2.INF, source_id: String = "", suppress_spectral: bool = false) -> void:
 	var arrow := arrow_scene.instantiate()
 	# Configura ANTES de add_child pra _ready() já enxergar os flags.
-	arrow.global_position = muzzle.global_position
+	arrow.global_position = origin if origin != Vector2.INF else muzzle.global_position
 	if "play_shoot_sound" in arrow:
 		arrow.play_shoot_sound = play_sound
 	if "damage" in arrow:
@@ -1384,6 +1399,12 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 			arrow.telemetry_source_id_extra = "multi_arrow"
 		elif double_arrows_level > 0:
 			arrow.telemetry_source_id_extra = "double_arrows"
+	# Override de fonte (ex: flechas do Tilisko → "tilisko" no painel de dano).
+	if source_id != "" and "telemetry_source_id" in arrow:
+		arrow.telemetry_source_id = source_id
+	# Tilisko L1-L3: suprime o burst espectral (não tem propriedade de espectral).
+	if suppress_spectral and "suppress_spectral" in arrow:
+		arrow.suppress_spectral = true
 	_get_world().add_child(arrow)
 	if arrow.has_method("set_direction"):
 		arrow.set_direction(dir)
@@ -1461,6 +1482,86 @@ func _stamp_spectral_effects(arrow: Node) -> void:
 		arrow.graviton_lifetime = _graviton_lifetime()
 		arrow.graviton_slow_factor = _graviton_slow_factor()
 		arrow.graviton_explosion_damage = _graviton_explosion_damage()
+
+
+# --- Tilisko Arqueiro (dispara junto com o player) ---
+func _fire_tilisko_shots(aim_dir: Vector2, is_pierce: bool, is_ricochet: bool, is_graviton: bool, volley: Array) -> void:
+	var mult: float = [0.2, 0.3, 0.6, 0.6][clampi(tilisko_level - 1, 0, 3)]
+	for t in get_tree().get_nodes_in_group("tilisko"):
+		if not is_instance_valid(t):
+			continue
+		var base_pos: Vector2 = (t as Node2D).global_position
+		# Alvo: inimigo mais próximo do player (L3: 30% de chance de um aleatório da tela).
+		var target: Node = null
+		if tilisko_level == 3 and randf() < 0.30:
+			target = _random_enemy_on_screen()
+		else:
+			target = _nearest_enemy_to_player()
+		# Direção pro alvo; sem inimigo → cai na mira do player (não trava o tiro).
+		var dir: Vector2 = aim_dir
+		if target != null and is_instance_valid(target):
+			dir = ((target as Node2D).global_position - base_pos).normalized()
+		# O pinguim vira pro lado do tiro e SOLTA a flecha no frame de release da anim
+		# (não no começo) — o spawn vai num callback disparado pela própria anim. Lê o
+		# muzzle no momento do disparo (ele ficou parado durante o tiro).
+		var lvl: int = tilisko_level
+		var grav: bool = graviton_level > 0
+		var shoot_cb: Callable = func() -> void:
+			if not is_instance_valid(t):
+				return
+			var origin: Vector2 = t.get_muzzle_pos() if t.has_method("get_muzzle_pos") else (t as Node2D).global_position
+			if lvl < 4:
+				# L1-L3: 1 flecha via _spawn_arrow → herda speed/lifetime do elemental atual
+				# (pedra/maré lentos etc.), graviton incluso, sem pierce/ricochet/multi, espectral suprimido.
+				_spawn_arrow(dir, mult, false, true, true, false, grav, origin, "tilisko", true)
+			else:
+				# L4: volley completa do player girada pra mirar no alvo (preserva o leque).
+				var rot: float = dir.angle() - aim_dir.angle()
+				for i in volley.size():
+					var shot: Dictionary = volley[i]
+					var d: Vector2 = (shot["dir"] as Vector2).rotated(rot)
+					_spawn_arrow(d, float(shot["dmg_mult"]) * mult, is_pierce, i == 0, i == 0, is_ricochet, is_graviton, origin, "tilisko")
+		if t.has_method("shoot"):
+			t.shoot(dir, shoot_cb)
+		else:
+			shoot_cb.call()
+
+
+func _nearest_enemy_to_player() -> Node:
+	var best: Node = null
+	var best_d: float = INF
+	var ppos: Vector2 = global_position
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not is_instance_valid(e) or not (e is Node2D):
+			continue
+		if (e as Node).is_queued_for_deletion():
+			continue
+		if ("hp" in e) and float(e.hp) <= 0.0:
+			continue
+		var d: float = ppos.distance_squared_to((e as Node2D).global_position)
+		if d < best_d:
+			best_d = d
+			best = e
+	return best
+
+
+func _random_enemy_on_screen() -> Node:
+	var vp_rect := get_viewport().get_visible_rect()
+	var cam_xform := get_viewport().get_canvas_transform()
+	var candidates: Array[Node] = []
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not is_instance_valid(e) or not (e is Node2D):
+			continue
+		if (e as Node).is_queued_for_deletion():
+			continue
+		if ("hp" in e) and float(e.hp) <= 0.0:
+			continue
+		var screen_pos: Vector2 = cam_xform * (e as Node2D).global_position
+		if vp_rect.has_point(screen_pos):
+			candidates.append(e)
+	if candidates.is_empty():
+		return null
+	return candidates[randi() % candidates.size()]
 
 
 func _is_piercing_shot() -> bool:
@@ -3639,6 +3740,9 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"leno":
 			leno_level = mini(leno_level + 1, 4)
 			_refresh_lenos()
+		"tilisko":
+			tilisko_level = mini(tilisko_level + 1, 4)
+			_refresh_tiliskos()
 		"capivara_joe":
 			capivara_joe_level = mini(capivara_joe_level + 1, 4)
 			_refresh_capivaras()
@@ -3780,6 +3884,7 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"tide_arrow": return tide_arrow_level
 		"claudio_druida": return claudio_druida_level
 		"leno": return leno_level
+		"tilisko": return tilisko_level
 		"capivara_joe": return capivara_joe_level
 		"ting": return ting_level
 		"arbusto": return arbusto_level
@@ -3844,6 +3949,22 @@ func _refresh_lenos() -> void:
 			l.attack_cooldown = atk_cd
 		if "phase_offset" in l:
 			l.phase_offset = TAU * float(i) / float(maxi(target_count, 1))
+
+
+func _refresh_tiliskos() -> void:
+	# Sempre 1 Tilisko (o nível muda o dano/categorias da flecha, não a contagem).
+	var alive: Array[Node2D] = []
+	for t in _tiliskos:
+		if is_instance_valid(t):
+			alive.append(t)
+	_tiliskos = alive
+	if tilisko_level <= 0:
+		return
+	if _tiliskos.is_empty():
+		var t: Node2D = TILISKO_SCENE.instantiate()
+		_tiliskos.append(t)
+		_get_world().add_child(t)
+		t.global_position = global_position
 
 
 func _leno_target_count() -> int:
@@ -4376,6 +4497,13 @@ func _cleanup_lenos() -> void:
 	_lenos.clear()
 
 
+func _cleanup_tiliskos() -> void:
+	for t in _tiliskos:
+		if is_instance_valid(t):
+			t.queue_free()
+	_tiliskos.clear()
+
+
 # Reset completo de um pet (vendido na shop). Zera o level + remove todas as
 # instâncias spawnadas. Refund de gold é responsabilidade do shop.
 func reset_pet(id: String) -> void:
@@ -4386,6 +4514,9 @@ func reset_pet(id: String) -> void:
 		"leno":
 			leno_level = 0
 			_cleanup_lenos()
+		"tilisko":
+			tilisko_level = 0
+			_cleanup_tiliskos()
 		"capivara_joe":
 			capivara_joe_level = 0
 			_cleanup_capivaras()
@@ -4669,6 +4800,7 @@ func _die() -> void:
 		hp_bar.visible = false
 	# Lenos morrem com o player (spec do excalidraw).
 	_cleanup_lenos()
+	_cleanup_tiliskos()
 	_tide_shield_active_remaining = 0.0
 	_remove_tide_shield_visual()
 	_cleanup_claudio_druidas()

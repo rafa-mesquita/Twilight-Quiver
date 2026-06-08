@@ -220,6 +220,9 @@ var _spawn_pos: Vector2 = Vector2.ZERO
 # não conectado); voa até spectral_target corrigindo a direção, atravessa tudo, re-mira
 # se o alvo morre, e ao chegar aplica dano+efeitos via _spectral_strike.
 var is_spectral: bool = false
+# Flecha do Tilisko L1-L3: não dispara o burst espectral on-kill (não tem propriedade
+# de flecha espectral nesses níveis). L4 deixa false (segue todas as categorias).
+var suppress_spectral: bool = false
 var spectral_target: Node = null
 var spectral_count: int = 1   # quantas spawnar se ESTA matar (contagem do nível)
 var spectral_gen: int = 0     # geração (cap de profundidade via piso de dano)
@@ -880,7 +883,7 @@ func _on_hit(body: Node) -> void:
 		# Flecha Espectral: se ESTA flecha (não-espectral) matou e o player tem o
 		# upgrade, nasce o burst inicial do cadáver. Espectrais NÃO entram aqui
 		# (não conectam body_entered), evitando recursão dupla.
-		if not is_spectral and _was_alive_arrow and (not is_instance_valid(target) \
+		if not is_spectral and not suppress_spectral and _was_alive_arrow and (not is_instance_valid(target) \
 				or (("hp" in target) and float(target.hp) <= 0.0)):
 			var _p_sp := get_tree().get_first_node_in_group("player")
 			if _p_sp != null and _p_sp.has_method("_has_spectral") and _p_sp._has_spectral():
