@@ -1754,19 +1754,17 @@ func _on_replay_death_pressed() -> void:
 	var p := get_tree().get_first_node_in_group("player")
 	if p == null:
 		return
-	var snaps: Array = []
-	if "stats_replay_snapshots" in p:
-		snaps = p.get("stats_replay_snapshots")
-	if snaps.is_empty():
+	var frames: Array = []
+	if "stats_replay_frames" in p:
+		frames = p.get("stats_replay_frames")
+	if frames.is_empty():
 		return
 	var src_id: String = ""
 	if "stats_killed_by" in p:
 		src_id = String(p.get("stats_killed_by"))
 	var replay: CanvasLayer = _DEATH_REPLAY_SCENE.instantiate()
-	replay.snapshots = snaps
+	replay.frames = frames
 	replay.killed_by_str = _format_killed_by(src_id)
-	if "death_screenshot" in p:
-		replay.background_texture = p.get("death_screenshot")
 	# Adiciona em current_scene pra ficar acima do HUD (CanvasLayer com layer
 	# alto). Auto-libera ao terminar via signal.
 	get_tree().current_scene.add_child(replay)
