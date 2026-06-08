@@ -76,6 +76,10 @@ func _ready() -> void:
 		var c := get_node_or_null("Cursor")
 		if c != null:
 			c.queue_free()
+		# O menu_cursor (filho) já rodou o _ready e setou mouse_mode = VISIBLE (cursor
+		# do SO). Como o HUD usa a mira (MOUSE_MODE_HIDDEN), restaura aqui — senão
+		# ficavam DOIS cursores (mira do gameplay + mãozinha do SO).
+		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 		var v := get_node_or_null("VersionLabel")
 		if v != null:
 			v.queue_free()
