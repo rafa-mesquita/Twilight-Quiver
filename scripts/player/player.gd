@@ -102,6 +102,10 @@ const STUN_VISUAL_SCRIPT: GDScript = preload("res://scripts/effects/stun_visual.
 var damage_upgrades: int = 0
 var perfuracao_level: int = 0  # capa em 4 (níveis 1-4)
 var spectral_arrow_level: int = 0  # Flecha Espectral (tipo-de-flecha), capa em 4
+# Nerf 2026-06-08: o burst espectral inicial nasce a cada N kills de flecha do
+# player (antes era a cada kill). Contador acumula entre flechas/instâncias.
+const SPECTRAL_KILLS_PER_BURST: int = 2
+var _spectral_kill_counter: int = 0
 var attack_speed_level: int = 0
 var multi_arrow_level: int = 0  # capa em 4 (níveis 1-4)
 var double_arrows_level: int = 0  # capa em 4 (níveis 1-4) — mutuamente exclusivo com multi_arrow
@@ -538,8 +542,9 @@ var _sanguinario_bonus: float = 0.0    # SANGUINARIO_BONUS quando o item está e
 var _sanguinario_active: bool = false  # cache do estado (HP < limiar) p/ detectar flip
 var _sanguinario_overlay: AnimatedSprite2D = null  # tint vermelho que espelha o player
 var _sanguinario_blink_tween: Tween = null
-# Capacete Veloz (item): cada nível de Armadura COMPRADA dá +3% de dodge. Setado
-# por InventoryItems.apply_to_player. Lido em _capacete_dodge_chance.
+# Capacete Veloz (item): cada nível de Armadura (de QUALQUER fonte — comprada,
+# boas-vindas, amuleto) dá +3% de dodge. Usa armor_level total. Setado por
+# InventoryItems.apply_to_player. Lido em _capacete_dodge_chance.
 var _capacete_veloz_equipped: bool = false
 # Essência Vital (item): cada status de HP comprado dá +5 HP máx extra e −10% de
 # cooldown global (teto −50%). Setado por InventoryItems.apply_to_player. CDR lido
@@ -1438,6 +1443,19 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 # --- Flecha Espectral ---
 func _has_spectral() -> bool:
 	return spectral_arrow_level > 0
+
+
+# Nerf 2026-06-08: conta um kill de flecha do player e só devolve true (libera o
+# burst espectral inicial) a cada SPECTRAL_KILLS_PER_BURST kills. Sem upgrade →
+# false sem contar. O encadeamento da espectral on-kill NÃO passa por aqui.
+func _spectral_try_consume_kill() -> bool:
+	if spectral_arrow_level <= 0:
+		return false
+	_spectral_kill_counter += 1
+	if _spectral_kill_counter >= SPECTRAL_KILLS_PER_BURST:
+		_spectral_kill_counter = 0
+		return true
+	return false
 
 
 # Quantas espectrais saem por burst, por nível (L1=1, L2=1, L3=2, L4=3).
@@ -4833,7 +4851,7 @@ func take_damage(amount: float, source_id: String = "") -> void:
 	if _iframes_remaining > 0.0:
 		return
 	# Dodge: % de chance de esquivar o ataque inteiro. Soma Esquivando (2% lv1-2,
-	# 5% lv3-4) + Capacete Veloz (item: 3% por nível de Armadura comprada). Reusa o
+	# 5% lv3-4) + Capacete Veloz (item: 3% por nível de Armadura total). Reusa o
 	# indicativo "miss" da skill. DoT/poison/burn também passam por aqui — esquivar
 	# um tick de DoT é ok como design (cada tick é um "ataque" independente).
 	var dodge_chance: float = _esquivando_dodge_chance() + _capacete_dodge_chance()

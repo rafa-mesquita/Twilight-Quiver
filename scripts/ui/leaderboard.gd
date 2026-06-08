@@ -49,6 +49,10 @@ var _archive_btn: Button = null
 var _archive_view: bool = false
 var _archive_rows: Array = []
 var _archive_loaded: bool = false
+# Filtro "minhas runs": client-side, casa o nick local com o nickname de cada
+# entry. Re-renderiza do cache (não refaz fetch).
+var _my_runs_btn: Button = null
+var _filter_player_only: bool = false
 
 
 func _ready() -> void:
@@ -57,6 +61,7 @@ func _ready() -> void:
 	# Estado inicial do dropdown — "Todas" enquanto a lista de versões carrega.
 	version_filter.add_item(tr(_ALL_VERSIONS_LABEL))
 	version_filter.select(0)
+	_build_my_runs_toggle()
 
 	_build_tab_bar()
 	_render_header()
@@ -168,6 +173,54 @@ func _current_version_filter() -> String:
 	return _filter_versions[idx] if idx >= 0 and idx < _filter_versions.size() else ""
 
 
+# Toggle "Minhas runs" ao lado do filtro de versão. Filtra o cache pelo nick local.
+func _build_my_runs_toggle() -> void:
+	_my_runs_btn = CheckButton.new()
+	_my_runs_btn.text = tr("LEADERBOARD_MY_RUNS")
+	_my_runs_btn.focus_mode = Control.FOCUS_NONE
+	var font: Font = load("res://font/Silver.ttf")
+	if font != null:
+		_my_runs_btn.add_theme_font_override("font", font)
+	_my_runs_btn.add_theme_font_size_override("font_size", 30)
+	_my_runs_btn.toggled.connect(_on_my_runs_toggled)
+	filter_row.add_child(_my_runs_btn)
+
+
+func _on_my_runs_toggled(pressed: bool) -> void:
+	_filter_player_only = pressed
+	_rerender_from_cache()
+
+
+# Re-renderiza a vista atual (waves / time21 / arquivo) a partir do cache, sem
+# refetch. Usado quando o toggle "minhas runs" muda.
+func _rerender_from_cache() -> void:
+	if _archive_view:
+		if _archive_loaded:
+			_render_waves(_archive_rows)
+	elif _mode == MODE_WAVES:
+		_render_waves(_rows_cache)
+	else:
+		_render_time21(_time21_rows)
+
+
+# Nick do jogador local (settings.cfg [player] nickname). Vazio se não definido.
+func _load_local_nickname() -> String:
+	var cfg := ConfigFile.new()
+	if cfg.load("user://settings.cfg") != OK:
+		return ""
+	return str(cfg.get_value("player", "nickname", ""))
+
+
+# Aplica o filtro "minhas runs" se ligado. Nick vazio -> sem filtro (no-op).
+func _apply_player_filter(rows: Array) -> Array:
+	if not _filter_player_only:
+		return rows
+	var nick: String = _load_local_nickname()
+	if nick.is_empty():
+		return rows
+	return rows.filter(func(r): return typeof(r) == TYPE_DICTIONARY and str(r.get("nickname", "")) == nick)
+
+
 # ───────────────────────── MODE_WAVES ─────────────────────────
 
 func _render_header() -> void:
@@ -187,6 +240,7 @@ func _render_header() -> void:
 
 func _render_waves(rows: Array) -> void:
 	_render_header()
+	rows = _apply_player_filter(rows)
 	if rows.is_empty():
 		status_label.text = tr("LEADERBOARD_NO_SCORES")
 		return
@@ -235,6 +289,7 @@ func _render_time21_header() -> void:
 
 func _render_time21(rows: Array) -> void:
 	_render_time21_header()
+	rows = _apply_player_filter(rows)
 	# Só runs que venceram a 21 (time_to_w21_ms > 0). O backend já filtra/ordena,
 	# mas garantimos aqui — se um backend antigo ignorar o board, as linhas sem o
 	# campo caem fora em vez de aparecer como 0:00.

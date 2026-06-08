@@ -519,6 +519,51 @@ static func mark_skin_purchased(name: String) -> void:
 		cfg.save(_SETTINGS_PATH)
 
 
+# ---------- Compras distintas (unlock do Amuleto da Descoberta) ----------
+# Os 5 "status" sao os da loja da direita (STATUS_POOL do wave_shop). Os 28
+# "upgrades" sao o resto de dev_panel._ALL_UPGRADE_IDS (inclui crit, gold_magnet,
+# perfuracao, multi/double arrow, elementais, aliados/pets, mobilidade, flechas
+# especiais). Estruturas, joker e roleta NAO estao em nenhuma lista -> ignorados.
+const _STATUS_IDS: Array[String] = ["hp", "damage", "attack_speed", "move_speed", "armor"]
+const _UPGRADE_IDS: Array[String] = [
+	"perfuracao", "spectral_arrow", "multi_arrow", "double_arrows", "chain_lightning",
+	"life_steal", "fire_arrow", "curse_arrow", "ice_arrow", "stone_arrow", "tide_arrow",
+	"claudio_druida", "leno", "tilisko", "capivara_joe", "ting", "arbusto", "mini_mago",
+	"gold_magnet", "dash", "esquivando", "fenda", "adrenalina", "ricochet_arrow",
+	"graviton", "boomerang", "tiger_claws", "critical_chance",
+]
+const _KEY_DISTINCT_STATUS: String = "distinct_status_bought"
+const _KEY_DISTINCT_UPGRADE: String = "distinct_upgrade_bought"
+const _KEY_DISTINCT_STATUS_COUNT: String = "distinct_status_bought_count"
+const _KEY_DISTINCT_UPGRADE_COUNT: String = "distinct_upgrade_bought_count"
+
+
+# Registra a compra de um upgrade/status na loja pos-wave (acumulado entre runs).
+# Classifica o id (status vs upgrade); ids fora das duas listas (estruturas, joker,
+# roleta) sao ignorados. Adiciona ao set CSV se for novo e bumpa o contador. Os
+# contadores alimentam a quest do Amuleto da Descoberta (5 status + 15 upgrades).
+# Seguro chamar de varios pontos de commit: o dedup evita contar o mesmo id 2x.
+static func record_purchase(id: String) -> void:
+	if id.is_empty():
+		return
+	var is_status: bool = id in _STATUS_IDS
+	if not is_status and not (id in _UPGRADE_IDS):
+		return  # estrutura/joker/roleta/etc — nao conta pro unlock
+	var set_key: String = _KEY_DISTINCT_STATUS if is_status else _KEY_DISTINCT_UPGRADE
+	var count_key: String = _KEY_DISTINCT_STATUS_COUNT if is_status else _KEY_DISTINCT_UPGRADE_COUNT
+	var cfg := ConfigFile.new()
+	cfg.load(_SETTINGS_PATH)
+	var ids: Array = []
+	for s in str(cfg.get_value(_PROGRESS_SECTION, set_key, "")).split(",", false):
+		ids.append(s)
+	if id in ids:
+		return  # ja contado — nao bumpa de novo
+	ids.append(id)
+	cfg.set_value(_PROGRESS_SECTION, set_key, ",".join(PackedStringArray(ids)))
+	cfg.set_value(_PROGRESS_SECTION, count_key, ids.size())
+	cfg.save(_SETTINGS_PATH)
+
+
 # ---------- Quest evaluation ----------
 
 static func _is_quest_satisfied(quest: Dictionary) -> bool:

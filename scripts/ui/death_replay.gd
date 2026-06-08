@@ -32,6 +32,9 @@ var _total_duration: float = 0.0
 var _actions_row: HBoxContainer = null
 var _saved_label: Label = null
 var _replay_saved: bool = false  # evita salvar o mesmo replay várias vezes
+# Geração do GIF roda numa Thread (LZW + quantização travariam o main thread).
+var _save_thread: Thread = null
+var _saving: bool = false
 
 
 func _ready() -> void:
@@ -160,44 +163,66 @@ func _on_back_pressed() -> void:
 
 
 func _on_save_pressed() -> void:
-	if _replay_saved:
+	if _replay_saved or _saving or frames.is_empty():
 		return
-	var path: String = _save_replay_to_disk()
+	_saving = true
+	if _saved_label != null:
+		_saved_label.add_theme_color_override("font_color", Color(0.95, 0.9, 0.6, 1))
+		_saved_label.text = tr("HUD_REPLAY_SAVING")
+		_saved_label.visible = true
+	# Encode pesado fora do main thread pra não congelar a tela de morte.
+	_save_thread = Thread.new()
+	_save_thread.start(_save_replay_worker)
+
+
+# Roda na Thread: gera o GIF e devolve o caminho pro main thread.
+func _save_replay_worker() -> void:
+	var path: String = _encode_replay_gif()
+	call_deferred("_on_save_done", path)
+
+
+func _on_save_done(path: String) -> void:
+	if _save_thread != null:
+		_save_thread.wait_to_finish()
+		_save_thread = null
+	_saving = false
 	if _saved_label != null:
 		if path.is_empty():
-			_saved_label.text = tr("HUD_REPLAY_SAVE_FAIL")
 			_saved_label.add_theme_color_override("font_color", Color(1, 0.6, 0.6, 1))
+			_saved_label.text = tr("HUD_REPLAY_SAVE_FAIL")
 		else:
 			_replay_saved = true
+			_saved_label.add_theme_color_override("font_color", Color(0.7, 1, 0.7, 1))
 			_saved_label.text = tr("HUD_REPLAY_SAVED") % path
 		_saved_label.visible = true
 
 
-# Salva os frames do replay como PNGs numa subpasta de replays/, ao lado do
-# executável (a pasta que o launcher cria). Cai em user:// se não der escrita.
-# Retorna o caminho da pasta salva, ou "" em falha.
-func _save_replay_to_disk() -> String:
+# Junta a Thread se a tela for fechada no meio do encode (evita leak/crash).
+func _exit_tree() -> void:
+	if _save_thread != null:
+		_save_thread.wait_to_finish()
+		_save_thread = null
+
+
+# Gera um GIF animado dos frames da morte em replays/replay_<ts>.gif, ao lado do
+# executável (pasta que o launcher cria). Cai em user:// se não der escrita.
+# Retorna o caminho do arquivo salvo, ou "" em falha.
+func _encode_replay_gif() -> String:
 	if frames.is_empty():
 		return ""
 	var ts: Dictionary = Time.get_datetime_dict_from_system()
-	var folder_name: String = "replay_%04d%02d%02d_%02d%02d%02d" % [
+	var file_name: String = "replay_%04d%02d%02d_%02d%02d%02d.gif" % [
 		ts.year, ts.month, ts.day, ts.hour, ts.minute, ts.second]
+	# Delay do GIF = mesma cadência do playback (com slow-mo) pra dar o mesmo drama.
+	var delay_cs: int = int(round(100.0 / (PLAYBACK_FPS * SLOW_MO_FACTOR)))
 	var bases: Array[String] = [
 		OS.get_executable_path().get_base_dir().path_join("replays"),
 		"user://replays",
 	]
 	for base in bases:
-		var dir_path: String = base.path_join(folder_name)
-		if DirAccess.make_dir_recursive_absolute(dir_path) != OK:
+		if DirAccess.make_dir_recursive_absolute(base) != OK:
 			continue
-		var saved_any: bool = false
-		var i: int = 0
-		for img in frames:
-			if img is Image and not (img as Image).is_empty():
-				var fpath: String = dir_path.path_join("frame_%03d.png" % i)
-				if (img as Image).save_png(fpath) == OK:
-					saved_any = true
-			i += 1
-		if saved_any:
-			return ProjectSettings.globalize_path(dir_path) if dir_path.begins_with("user://") else dir_path
+		var fpath: String = base.path_join(file_name)
+		if GifEncoder.encode_images_to_file(frames, delay_cs, fpath):
+			return ProjectSettings.globalize_path(fpath) if fpath.begins_with("user://") else fpath
 	return ""

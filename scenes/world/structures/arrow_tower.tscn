@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://2ytlccypvm8e" path="res://scripts/world/arrow_tower.gd" id="1_tower"]
 [ext_resource type="Texture2D" uid="uid://djk20gkrhl7wr" path="res://assets/estruturas/torre de flechas.png" id="2_tower_tex"]
+[ext_resource type="Texture2D" path="res://assets/estruturas/torre de flechas quebrada.png" id="9_broken_tex"]
 [ext_resource type="PackedScene" path="res://scenes/skills/arrow.tscn" id="3_arrow"]
 [ext_resource type="Script" uid="uid://c3p0eddeak72a" path="res://scripts/world/tree_fade.gd" id="4_fade"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hp_bar.tscn" id="5_hpbar"]
@@ -36,6 +37,14 @@ animations = [{
 "loop": true,
 "name": &"idle",
 "speed": 4.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("9_broken_tex")
+}],
+"loop": false,
+"name": &"broken",
+"speed": 1.0
 }]
 
 [sub_resource type="RectangleShape2D" id="RectShape_tower_base"]

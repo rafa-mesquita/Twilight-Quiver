@@ -883,10 +883,15 @@ func _on_hit(body: Node) -> void:
 		# Flecha Espectral: se ESTA flecha (não-espectral) matou e o player tem o
 		# upgrade, nasce o burst inicial do cadáver. Espectrais NÃO entram aqui
 		# (não conectam body_entered), evitando recursão dupla.
-		if not is_spectral and not suppress_spectral and _was_alive_arrow and (not is_instance_valid(target) \
+		# Só procca pra flechas DO PLAYER (source no grupo "player"). Flechas da
+		# torre de flechas (source = torre) e de outras fontes aliadas NÃO disparam
+		# o burst — espectral é propriedade do arco do player, não da munição em si.
+		var _src_is_player: bool = source != null and is_instance_valid(source) and source.is_in_group("player")
+		if _src_is_player and not is_spectral and not suppress_spectral and _was_alive_arrow and (not is_instance_valid(target) \
 				or (("hp" in target) and float(target.hp) <= 0.0)):
 			var _p_sp := get_tree().get_first_node_in_group("player")
-			if _p_sp != null and _p_sp.has_method("_has_spectral") and _p_sp._has_spectral():
+			# _spectral_try_consume_kill: true só a cada 2 kills (nerf 2026-06-08).
+			if _p_sp != null and _p_sp.has_method("_spectral_try_consume_kill") and _p_sp._spectral_try_consume_kill():
 				var _dpos: Vector2 = global_position
 				if is_instance_valid(target):
 					_dpos = (target as Node2D).global_position

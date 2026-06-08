@@ -28,6 +28,9 @@ const BODY_CENTER_OFFSET: Vector2 = Vector2(0, -38)
 
 var hp: float
 var _flash_tween: Tween
+# Estado "quebrada": ao morrer, a torre NÃO some — vira escombro (sprite quebrado)
+# mantendo a colisão, até o wave_manager chamar revive() após o delay de respawn.
+var is_dead: bool = false
 
 
 func _ready() -> void:
@@ -124,15 +127,19 @@ func take_damage(amount: float) -> void:
 
 
 func _destroy() -> void:
+	if is_dead:
+		return
+	is_dead = true
 	tower_destroyed.emit(self)
-	# Desativa colisão e tiros durante a animação de destruição.
-	var body := get_node_or_null("Body")
-	if body != null:
-		body.set_deferred("process_mode", Node.PROCESS_MODE_DISABLED)
+	# NÃO some: vira escombro. Mantém a colisão (Body) — continua bloqueando o
+	# espaço como a torre normal. Só para de atirar e de ser alvo dos inimigos.
 	timer_left.stop()
 	timer_right.stop()
 	if hp_bar != null:
 		hp_bar.visible = false
+	# Sai dos grupos de alvo pra inimigos pararem de atacar o escombro.
+	remove_from_group("structure")
+	remove_from_group("ally")
 	# Múltiplas explosões espalhadas pra um efeito mais dramático.
 	if kill_effect_scene != null:
 		for i in 6:
@@ -142,21 +149,33 @@ func _destroy() -> void:
 			fx.global_position = global_position + off
 			if fx is Node2D:
 				(fx as Node2D).scale = Vector2.ONE * randf_range(0.7, 1.3)
-	# Sprite e sombra desaparecem com fade + escala crescente.
+	# Troca o sprite pra arte quebrada (mesmo offset/scale → alinha com a base).
+	if _flash_tween != null and _flash_tween.is_valid():
+		_flash_tween.kill()
 	if sprite != null:
-		var t := create_tween().set_parallel(true)
-		t.tween_property(sprite, "modulate", Color(1.0, 0.5, 0.3, 0.0), 0.55)\
-			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		t.tween_property(sprite, "scale", sprite.scale * 1.35, 0.55)
-	var shadow := get_node_or_null("Shadow")
-	if shadow is CanvasItem:
-		var ts := create_tween()
-		ts.tween_property(shadow, "modulate:a", 0.0, 0.45)
-	# Free após o efeito.
-	get_tree().create_timer(0.6).timeout.connect(func() -> void:
-		if is_instance_valid(self):
-			queue_free()
-	)
+		sprite.modulate = Color.WHITE
+		sprite.scale = Vector2(1.15, 1.15)
+		sprite.play(&"broken")
+
+
+# Reconstrói a torre no lugar (chamado pelo wave_manager após o delay de respawn,
+# ou no início do round). Volta a atirar e a ser alvo, HP cheio.
+func revive() -> void:
+	is_dead = false
+	hp = max_hp
+	if sprite != null:
+		sprite.modulate = Color.WHITE
+		sprite.scale = Vector2(1.15, 1.15)
+		sprite.play(&"idle")
+	if hp_bar != null:
+		hp_bar.set_ratio(1.0)
+		hp_bar.visible = true
+	if not is_in_group("structure"):
+		add_to_group("structure")
+	if not is_in_group("ally"):
+		add_to_group("ally")
+	timer_left.start(randf_range(0.0, 0.5))
+	timer_right.start(randf_range(0.5, 1.0))
 
 
 func _flash_damage() -> void:

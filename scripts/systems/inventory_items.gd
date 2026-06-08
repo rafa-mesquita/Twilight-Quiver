@@ -145,6 +145,30 @@ const ITEMS: Dictionary = {
 			{"stat": &"essencia_vital_unlock", "value": 1, "label": "ITEM_REQ_ESSENCIA_VITAL"},
 		]},
 	},
+	# Amuleto da Descoberta: a cada 5 rounds (5,10,15...) presenteia 1 upgrade/status
+	# que o player ainda nao tem (nivel 1, gratis). Sem upgrade novo disponivel ->
+	# da `gold_fallback` de gold. Efeito tipo "amulet_discovery" e GATILHO de
+	# wave_manager (lido via is_equipped), nao tem apply_to_player.
+	"amuleto_descoberta": {
+		"name": "ITEM_AMULETO_DESCOBERTA_NAME",
+		"desc": "ITEM_AMULETO_DESCOBERTA_DESC",
+		"icon": "res://assets/Hud/itens/amuleto_descoberta.png",
+		"effect": {"type": "amulet_discovery", "interval": 5, "gold_fallback": 4},
+		"unlock": {"type": "quest", "reqs": [
+			{"stat": &"distinct_status_bought_count", "value": 5, "label": "ITEM_REQ_AMULETO_STATUS"},
+			{"stat": &"distinct_upgrade_bought_count", "value": 15, "label": "ITEM_REQ_AMULETO_UPGRADES"},
+		]},
+	},
+	# Chamado da Matilha: pets a venda em TODA loja a partir da wave 5 (em vez de a
+	# cada 2 waves). Efeito tipo "pets_every_shop" lido por wave_shop via is_equipped.
+	# Unlock por compra na loja de petalas (200) — ver loja_petalas.CATALOG.
+	"chamado_da_matilha": {
+		"name": "ITEM_CHAMADO_MATILHA_NAME",
+		"desc": "ITEM_CHAMADO_MATILHA_DESC",
+		"icon": "res://assets/Hud/itens/chamado_da_matilha.png",
+		"effect": {"type": "pets_every_shop"},
+		"unlock": {"type": "shop"},
+	},
 }
 
 
@@ -267,6 +291,29 @@ static func has_welcome_elemental_choice() -> bool:
 	for id in get_equipped():
 		for eff in _item_effects(id):
 			if String(eff.get("type", "")) == "welcome_elemental_choice":
+				return true
+	return false
+
+
+# Amuleto da Descoberta: config do efeito se equipado (e liberado), senao {}.
+# Retorna {"interval": int, "gold_fallback": int}. wave_manager usa pra decidir
+# o gatilho a cada `interval` rounds e o gold do caso "tem tudo".
+static func amulet_discovery_config() -> Dictionary:
+	for id in get_equipped():
+		for eff in _item_effects(id):
+			if String(eff.get("type", "")) == "amulet_discovery":
+				return {
+					"interval": int(eff.get("interval", 5)),
+					"gold_fallback": int(eff.get("gold_fallback", 4)),
+				}
+	return {}
+
+
+# Chamado da Matilha: true se algum item equipado libera pets em toda loja.
+static func pets_every_shop() -> bool:
+	for id in get_equipped():
+		for eff in _item_effects(id):
+			if String(eff.get("type", "")) == "pets_every_shop":
 				return true
 	return false
 

@@ -1248,6 +1248,15 @@ func _cleanup_curse_allies() -> void:
 		await _grant_free_owned_upgrade()
 		if stopped:
 			return
+	# Amuleto da Descoberta (item): a cada N rounds (5, 10, 15...) presenteia um
+	# upgrade/status novo (ou gold se já tem tudo) antes da loja abrir.
+	var _amulet_cfg: Dictionary = InventoryItems.amulet_discovery_config()
+	if not _amulet_cfg.is_empty():
+		var _amulet_interval: int = int(_amulet_cfg.get("interval", 5))
+		if _amulet_interval > 0 and wave_number % _amulet_interval == 0:
+			await _grant_amulet_discovery()
+			if stopped:
+				return
 	# Loja pós-wave: 1 estrutura + 1 upgrade max.
 	await _open_shop()
 	if stopped:
@@ -1369,19 +1378,28 @@ func _check_structure_respawns(delta: float) -> void:
 		return
 	for entry in owned_structures:
 		var inst_ref: Variant = entry.get("instance", null)
-		var alive: bool = inst_ref != null and is_instance_valid(inst_ref) and (inst_ref as Node).is_inside_tree()
-		if alive:
-			# Vivo — atualiza posição e zera o timer (caso tenha morrido e
+		var valid: bool = inst_ref != null and is_instance_valid(inst_ref) and (inst_ref as Node).is_inside_tree()
+		# Escombro: instância viva no tree mas marcada is_dead (torre quebrada que
+		# mantém colisão). Conta como morta pro timer, mas revive no lugar (não spawna).
+		var broken: bool = valid and ("is_dead" in inst_ref) and bool(inst_ref.is_dead)
+		if valid and not broken:
+			# Vivo e funcional — atualiza posição e zera o timer (caso tenha morrido e
 			# voltado por outra via, ex: respawn de fim de wave).
 			if inst_ref is Node2D:
 				entry["position"] = (inst_ref as Node2D).global_position
 			entry["dead_for"] = 0.0
 			continue
-		# Morto — incrementa timer e respawna ao chegar no delay.
+		# Morto (freed) OU escombro — incrementa timer e revive/respawna ao delay.
 		var dead_for: float = float(entry.get("dead_for", 0.0)) + delta
 		entry["dead_for"] = dead_for
 		if dead_for < STRUCTURE_RESPAWN_DELAY:
 			continue
+		entry["dead_for"] = 0.0
+		if broken and (inst_ref as Node).has_method("revive"):
+			# Escombro ainda no tree → reconstrói no lugar (sprite/colisão/tiros).
+			inst_ref.revive()
+			continue
+		# Genuinamente freed (ex: claudio_druida) → spawna nova instância.
 		var pos: Vector2 = entry["position"]
 		var scene: PackedScene = load(entry["scene_path"])
 		if scene == null:
@@ -1391,7 +1409,6 @@ func _check_structure_respawns(delta: float) -> void:
 		world.add_child(inst)
 		inst.global_position = pos
 		entry["instance"] = inst
-		entry["dead_for"] = 0.0
 
 
 func _clear_alive_structures_for_boss_wave() -> void:
@@ -1426,6 +1443,11 @@ func _respawn_owned_structures() -> void:
 			# Vivo — atualiza posição pra próxima respawn ser na última posição dele.
 			if inst_ref is Node2D:
 				entry["position"] = (inst_ref as Node2D).global_position
+			entry["dead_for"] = 0.0
+			# Escombro (torre quebrada) → reconstrói pro novo round (sprite/tiros/HP).
+			if ("is_dead" in inst_ref) and bool(inst_ref.is_dead) and (inst_ref as Node).has_method("revive"):
+				inst_ref.revive()
+				continue
 			# Reseta HP no começo do round (claudio_druida tank precisa entrar full
 			# pro próximo round, não com o HP que sobrou do anterior).
 			if "max_hp" in inst_ref and "hp" in inst_ref:
@@ -1600,6 +1622,32 @@ func _play_buy_sfx() -> void:
 	p.finished.connect(p.queue_free)
 
 
+# Grupos mutuamente exclusivos de upgrade. Compartilhado entre o free upgrade de
+# boas-vindas e o Amuleto da Descoberta — evita oferecer algo que conflita com o
+# que o player já tem. (Antes o filtro estava inline e desatualizado: faltava
+# spectral_arrow no grupo de tipo-de-flecha e adrenalina no de mobilidade.)
+const _UPGRADE_MUTEX_GROUPS: Array = [
+	["perfuracao", "ricochet_arrow", "spectral_arrow"],  # tipo-de-flecha
+	["multi_arrow", "double_arrows"],                    # volley
+	["dash", "esquivando", "fenda", "adrenalina"],       # mobilidade (slot espaço)
+]
+
+
+# True se o player NÃO pode receber `id` num grant gratuito: já possui o upgrade,
+# ou já possui um membro exclusivo do mesmo grupo mutex.
+func _player_blocks_upgrade(player: Node, id: String) -> bool:
+	if not player.has_method("get_upgrade_count"):
+		return false
+	if int(player.get_upgrade_count(id)) > 0:
+		return true
+	for group in _UPGRADE_MUTEX_GROUPS:
+		if id in group:
+			for other in group:
+				if other != id and int(player.get_upgrade_count(other)) > 0:
+					return true
+	return false
+
+
 func _grant_free_random_upgrade() -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	if player == null or not player.has_method("apply_upgrade"):
@@ -1609,43 +1657,14 @@ func _grant_free_random_upgrade() -> void:
 	if InventoryItems.has_welcome_elemental_choice():
 		await _grant_elemental_choice(player)
 		return
-	# Filtra pares exclusivos:
-	#  - perfuracao ↔ ricochet_arrow (perfura e ricocheia não combinam)
-	#  - multi_arrow ↔ double_arrows (volley triplo vs disparo duplo, exclusivos)
-	#  - dash ↔ esquivando (mesma categoria movimentação, mesmo slot de espaço)
-	# Defensivo — em runtime normal, free upgrade rola depois da wave 1 e o player
-	# ainda não tem upgrade; via dev mode pode chegar aqui com algum upgrade.
-	var has_perf: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("perfuracao") > 0
-	var has_ric: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("ricochet_arrow") > 0
-	var has_multi: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("multi_arrow") > 0
-	var has_double: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("double_arrows") > 0
-	var has_dash: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("dash") > 0
-	var has_esq: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("esquivando") > 0
-	var has_fenda: bool = player.has_method("get_upgrade_count") and player.get_upgrade_count("fenda") > 0
+	# Filtra o que o player já tem + grupos mutex (helper compartilhado). Itens de
+	# status (Adaga/Arco Dourado) já dão o status no L1 no início — o blocker de
+	# "já possui" cobre isso. Defensivo: roda após a wave 1 (player sem upgrade),
+	# mas via dev mode pode chegar com upgrades.
 	var pool: Array[Dictionary] = []
 	for entry in FREE_UPGRADE_POOL:
-		var id: String = entry["id"]
-		# Itens de status (Adaga = +1 Dano, Arco Dourado = +1 Vel. Ataque) já dão
-		# o status no L1 no início da run. O upgrade de boas-vindas NÃO pode ser
-		# esse status (seria L2) — geral: pula qualquer upgrade que o player já tem.
-		if player.has_method("get_upgrade_count") and int(player.get_upgrade_count(id)) > 0:
-			continue
-		if id == "perfuracao" and has_ric:
-			continue
-		if id == "ricochet_arrow" and has_perf:
-			continue
-		if id == "multi_arrow" and has_double:
-			continue
-		if id == "double_arrows" and has_multi:
-			continue
-		# Mobilidade: dash / esquivando / fenda são mutuamente exclusivos.
-		if id == "dash" and (has_esq or has_fenda):
-			continue
-		if id == "esquivando" and (has_dash or has_fenda):
-			continue
-		if id == "fenda" and (has_dash or has_esq):
-			continue
-		pool.append(entry)
+		if not _player_blocks_upgrade(player, entry["id"]):
+			pool.append(entry)
 	if pool.is_empty():
 		return
 	var pick: Dictionary = pool[randi() % pool.size()]
@@ -1654,6 +1673,113 @@ func _grant_free_random_upgrade() -> void:
 	if player.has_method("get_upgrade_count"):
 		lvl = int(player.get_upgrade_count(pick["id"]))
 	await _show_card_reward_popup(pick["id"], lvl, "HUD_FREE_UPGRADE_TITLE", pick["name"])
+
+
+# Amuleto da Descoberta (item): a cada N rounds presenteia 1 upgrade/status novo
+# (nível 1, grátis) respeitando mutex e cap de pets. Sem nada novo -> gold.
+func _grant_amulet_discovery() -> void:
+	var cfg: Dictionary = InventoryItems.amulet_discovery_config()
+	if cfg.is_empty():
+		return
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not player.has_method("apply_upgrade"):
+		return
+	var pet_cap_reached: bool = _amulet_pet_cap_reached(player)
+	var pool: Array[Dictionary] = []
+	for entry in FREE_UPGRADE_POOL:
+		var id: String = entry["id"]
+		if _player_blocks_upgrade(player, id):
+			continue
+		# Pets só entram se ainda houver vaga de pet distinto (senão seria inútil).
+		if _AMULET_PET_IDS.has(id) and pet_cap_reached:
+			continue
+		pool.append(entry)
+	if pool.is_empty():
+		# "Tem tudo": concede gold no lugar do upgrade. Nunca desperdiça o gatilho.
+		var gold_amt: int = int(cfg.get("gold_fallback", 4))
+		if player.has_method("add_gold"):
+			player.add_gold(gold_amt)
+		await _show_amulet_gold_popup(gold_amt)
+		return
+	var pick: Dictionary = pool[randi() % pool.size()]
+	player.apply_upgrade(pick["id"])
+	var lvl: int = 1
+	if player.has_method("get_upgrade_count"):
+		lvl = int(player.get_upgrade_count(pick["id"]))
+	await _show_card_reward_popup(pick["id"], lvl, "HUD_AMULET_DISCOVERY_TITLE", pick["name"])
+
+
+# Pets (aliados) pro cap do Amuleto. Mesma lista de wave_shop._PETS_ROW_IDS.
+const _AMULET_PET_IDS: Array[String] = [
+	"claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto", "tilisko",
+]
+const _AMULET_MAX_DISTINCT_PETS: int = 2  # = wave_shop.MAX_DISTINCT_PETS
+
+
+# True se o player já está no cap de pets distintos (com bônus de item). Espelha
+# wave_shop._distinct_pets_owned >= _effective_pet_cap.
+func _amulet_pet_cap_reached(player: Node) -> bool:
+	if not player.has_method("get_upgrade_count"):
+		return false
+	var owned: int = 0
+	for pid in _AMULET_PET_IDS:
+		if int(player.get_upgrade_count(pid)) > 0:
+			owned += 1
+	var cap: int = _AMULET_MAX_DISTINCT_PETS + InventoryItems.equipped_pet_slot_bonus()
+	return owned >= cap
+
+
+# Carta simples "+N Ouro" pro caso "tem tudo" do Amuleto. Mesma vibe da carta de
+# reward, sem textura (não há card de gold). Click no botão fecha.
+func _show_amulet_gold_popup(amount: int) -> void:
+	var layer := CanvasLayer.new()
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	layer.layer = 50
+	var bg := ColorRect.new()
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.color = Color(0, 0, 0, 0.78)
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	layer.add_child(bg)
+	var fnt: Font = load("res://font/Silver.ttf")
+
+	var title := Label.new()
+	title.set_anchors_preset(Control.PRESET_CENTER)
+	title.position = Vector2(-800, -200)
+	title.size = Vector2(1600, 100)
+	title.text = tr("HUD_AMULET_DISCOVERY_TITLE")
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3, 1.0))
+	if fnt != null:
+		title.add_theme_font_override("font", fnt)
+	title.add_theme_font_size_override("font_size", 69)
+	bg.add_child(title)
+
+	var amount_label := Label.new()
+	amount_label.set_anchors_preset(Control.PRESET_CENTER)
+	amount_label.position = Vector2(-800, -40)
+	amount_label.size = Vector2(1600, 100)
+	amount_label.text = "+ %d %s" % [amount, tr("HUD_AMULET_GOLD_SUFFIX")]
+	amount_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	amount_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3, 1.0))
+	if fnt != null:
+		amount_label.add_theme_font_override("font", fnt)
+	amount_label.add_theme_font_size_override("font_size", 96)
+	bg.add_child(amount_label)
+
+	var btn := Button.new()
+	btn.set_anchors_preset(Control.PRESET_CENTER)
+	btn.position = Vector2(-200, 120)
+	btn.size = Vector2(400, 64)
+	btn.text = tr("COMMON_CONTINUE")
+	if fnt != null:
+		btn.add_theme_font_override("font", fnt)
+	btn.add_theme_font_size_override("font_size", 52)
+	bg.add_child(btn)
+
+	get_tree().current_scene.add_child(layer)
+	await btn.pressed
+	if is_instance_valid(layer):
+		layer.queue_free()
 
 
 # IDs cujos cards moram em pastas diferentes (subfolder ou nome PT). Mantido em

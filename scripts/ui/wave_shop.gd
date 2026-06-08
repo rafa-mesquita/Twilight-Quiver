@@ -2273,6 +2273,7 @@ func _commit_status_only() -> void:
 					player.stats_armor_before_w4 = true
 				if player.has_method("apply_upgrade"):
 					player.apply_upgrade(slot["id"])
+				SkinLoadout.record_purchase(String(slot.get("id", "")))  # unlock Amuleto
 		_selected_status_idx = -1
 
 
@@ -2293,6 +2294,7 @@ func _commit_aliado_no_placement() -> void:
 	if player.spend_gold(int(slot.get("price", 0))):
 		if player.has_method("apply_upgrade"):
 			player.apply_upgrade(slot["id"])
+		SkinLoadout.record_purchase(String(slot.get("id", "")))  # unlock Amuleto (pet = upgrade)
 	_selected_aliado_idx = -1
 
 
@@ -2332,6 +2334,7 @@ func _commit_upgrades_and_close() -> void:
 				continue
 			if player.has_method("apply_upgrade"):
 				player.apply_upgrade(slot["id"])
+			SkinLoadout.record_purchase(String(slot.get("id", "")))  # unlock Amuleto
 	# Escolha de rastro do Fogo: pendente quando a compra levou o Fogo a exatamente
 	# L2. Mostrada como ÚLTIMO modal (depois de Joker/Roleta, se houver), via
 	# _maybe_finish_or_fire_choice nos fechamentos.
@@ -2393,6 +2396,7 @@ func _confirm_placement_at(chosen: Node2D) -> void:
 	_placement_ghosts.clear()
 	if slot.get("id", "") == "claudio_druida" and player.has_method("apply_upgrade"):
 		player.apply_upgrade("claudio_druida")
+		SkinLoadout.record_purchase("claudio_druida")  # unlock Amuleto (pet = upgrade)
 		var wm0 := get_tree().get_first_node_in_group("wave_manager")
 		if wm0 != null and wm0.has_method("_apply_claudio_druida_scaling_if_applicable"):
 			wm0._apply_claudio_druida_scaling_if_applicable(chosen, slot["scene"])
@@ -2527,6 +2531,10 @@ func _aliado_lock_remaining(w: int) -> int:
 	# Wave 5 abre pra venda; depois a cada ALIADO_SHOP_INTERVAL waves (5, 7, 9...).
 	# Wave 3 é tratada à parte (pet grátis em _ready), aqui retornamos 2 turnos
 	# (pra apontar pra wave 5) caso o caller chame com w==3.
+	# Chamado da Matilha (item): pets em TODA loja a partir da wave 5 (ignora o
+	# intervalo). Mantém o gate inicial da wave 5 e o pet grátis da wave 3.
+	if w >= ALIADO_SHOP_FIRST_WAVE and InventoryItems.pets_every_shop():
+		return 0
 	if w >= ALIADO_SHOP_FIRST_WAVE:
 		var off: int = (w - ALIADO_SHOP_FIRST_WAVE) % ALIADO_SHOP_INTERVAL
 		if off == 0:
