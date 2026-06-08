@@ -272,6 +272,9 @@ var _curse_skill_cd_remaining: float = 0.0
 const STONE_SKILL_COOLDOWN: float = 28.0
 const STONE_QUAKE_RADIUS: float = 150.0
 const STONE_QUAKE_DAMAGE: float = 80.0
+# Terremoto (Q) bate +70% em inimigos comuns de wave; boss e stone cube ("a pedra")
+# tomam o dano base (não recebem o bônus).
+const STONE_QUAKE_WAVE_DMG_MULT: float = 1.7
 const STONE_QUAKE_STUN: float = 2.5
 const STONE_QUAKE_KNOCKBACK: float = 120.0
 const STONE_QUAKE_SHAKE_DURATION: float = 0.6
@@ -841,6 +844,12 @@ func apply_poison(total_damage: float, duration: float, source_id: String = "ins
 	# player dodgar/dashar e escapar antes de começar a tickar). Duration
 	# continua decrementando durante o delay (perde tempo de tick efetivo).
 	if is_dead or duration <= 0.0:
+		return
+	# Mesma invulnerabilidade do take_damage: durante i-frames (dash/Fenda), escudo
+	# de água, godmode ou escondido no Verde, o veneno NEM gruda — senão um inseto
+	# tocado no meio do blink da Fenda aplicava o status e tickava o dano ao pousar.
+	if GameState.dev_godmode or _tide_shield_active_remaining > 0.0 \
+			or is_in_group("bush_hidden") or _iframes_remaining > 0.0:
 		return
 	var new_dps: float = total_damage / duration
 	if new_dps > _poison_dps or _poison_remaining <= 0.0:
@@ -2926,6 +2935,7 @@ func _cast_earthquake() -> void:
 	quake.radius = STONE_QUAKE_RADIUS
 	quake.damage = STONE_QUAKE_DAMAGE * arrow_damage_multiplier * _cajado_power_factor()
 	quake.damage_pct = 1.0
+	quake.wave_damage_mult = STONE_QUAKE_WAVE_DMG_MULT
 	quake.knockback_strength = STONE_QUAKE_KNOCKBACK
 	quake.stun_duration = STONE_QUAKE_STUN
 	quake.source = self

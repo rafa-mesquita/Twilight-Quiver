@@ -14,6 +14,9 @@ extends Node2D
 @export var damage_pct: float = 0.8
 @export var knockback_strength: float = 70.0
 @export var stun_duration: float = 0.4
+# Bônus de dano aplicado SÓ em inimigos comuns de wave (não em boss nem stone cube
+# "a pedra"). 1.0 = sem bônus (AoE normal da flecha). O terremoto (Q do lv4) seta 1.7.
+@export var wave_damage_mult: float = 1.0
 @export var source: Node = null  # quem disparou (player) — pra crit + notify
 # Alvo que já tomou o hit direto da flecha: leva stun/knockback do AoE mas NÃO
 # o dano splash (evita dupla contagem com o dano direto). null = pega todo mundo.
@@ -60,6 +63,10 @@ func _apply_aoe() -> void:
 		# Stun + knockback radial pra TODO inimigo no raio (inclui o exclude).
 		var stun: float = stun_duration
 		var dealt_dmg: float = damage * damage_pct
+		# Bônus do terremoto (Q lv4): só vale pra inimigo comum de wave — boss e
+		# stone cube ("a pedra") levam o dano base.
+		if wave_damage_mult != 1.0 and not _is_buff_exempt(e):
+			dealt_dmg *= wave_damage_mult
 		# Crit por inimigo (mesmo padrão do graviton). Crit amplia dano E stun.
 		if source != null and source.has_method("roll_crit"):
 			var crit: Dictionary = source.roll_crit()
@@ -89,6 +96,12 @@ func _apply_aoe() -> void:
 		if was_alive and source != null and source.has_method("notify_kill_by_source"):
 			if ("hp" in e) and float(e.hp) <= 0.0:
 				source.notify_kill_by_source("stone_arrow")
+
+
+func _is_buff_exempt(e: Node) -> bool:
+	# Boss (qualquer um) e stone cube não recebem o bônus de wave do terremoto.
+	return e.is_in_group("boss") or e.is_in_group("duskrose") \
+		or e.is_in_group("rose_monster") or e.is_in_group("stone_cube")
 
 
 func _ensure_stun_visual(target: Node) -> void:

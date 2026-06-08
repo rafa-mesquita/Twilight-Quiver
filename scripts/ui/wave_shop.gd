@@ -3143,6 +3143,9 @@ func _show_card_tooltip(card: Control) -> void:
 # ---------- Joker modal ----------
 
 var _joker_modal: Panel = null
+# Backdrop full-screen que captura cliques fora do modal (sem fechar) — impede o
+# player de sair sem escolher um upgrade ao clicar acidentalmente no shop atrás.
+var _joker_backdrop: Control = null
 # Modal de revelação da Roleta Elemental (mostra o L4 sorteado e fecha o shop).
 var _roulette_modal: Panel = null
 # Escolha de rastro do Fogo (player vs flecha) ao chegar no L2. Pendente entre o
@@ -3165,6 +3168,13 @@ func _open_joker_modal() -> void:
 		root_panel.modulate = Color(1, 1, 1, 0.35)
 	_joker_selected_id = ""
 	_joker_chips.clear()
+	# Backdrop que engole qualquer clique fora do modal — assim o player não fecha
+	# o shop sem usar o coringa clicando por engano atrás. Só sai via Confirmar.
+	_joker_backdrop = Control.new()
+	_joker_backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_joker_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	_joker_backdrop.z_index = 49
+	add_child(_joker_backdrop)
 	_joker_modal = Panel.new()
 	_joker_modal.anchor_left = 0.5
 	_joker_modal.anchor_top = 0.5
@@ -3441,6 +3451,9 @@ func _close_joker_modal_and_emit() -> void:
 	if _joker_modal != null and is_instance_valid(_joker_modal):
 		_joker_modal.queue_free()
 		_joker_modal = null
+	if _joker_backdrop != null and is_instance_valid(_joker_backdrop):
+		_joker_backdrop.queue_free()
+		_joker_backdrop = null
 	_joker_chips.clear()
 	_joker_confirm_btn = null
 	_joker_selected_id = ""
