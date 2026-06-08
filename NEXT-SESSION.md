@@ -16,6 +16,14 @@
 3. **Cartas de recompensa grátis faltando** — [wave_manager.gd:1669,1672,1686](scripts/systems/wave_manager.gd#L1669): adicionados `tilisko`, `spectral_arrow` (reusa arte do ricochete) e `adrenalina` ao `FREE_REWARD_CARD_PATHS`.
 4. **Tilisko não mira boss com escudo** — [player.gd:1568,1589](scripts/player/player.gd#L1568): `_nearest_enemy_to_player` e `_random_enemy_on_screen` pulam o grupo `boss_shielded` (Gorilla Mage com súditos).
 
+## 🎨 EM ANDAMENTO — Redesign cozy do Main Menu (trocando de PC)
+
+Decidimos refazer o menu principal como **cena cozy animada** (player + Ting descansando). **Layout fechado: menu na ESQUERDA, arte grande na DIREITA**, personagens virados pra esquerda (olhar guia pro menu). **Arte sendo desenhada pelo Rafa** (frames de animação). Implementação no `.tscn` pendente — aguarda arte ou placeholder.
+
+- Spec completo (layout + pesquisa + dimensões de pixel art): [docs/superpowers/specs/2026-06-08-menu-cozy-redesign-design.md](docs/superpowers/specs/2026-06-08-menu-cozy-redesign-design.md).
+- **Resumo das dimensões:** desenhar a cena inteira num canvas **480×270** e escalar **×4** → 1920×1080 (Nearest/Filter Off). Player nativo = 32×32; Ting sheet = 64×128. Menu na faixa esquerda ~40%, dupla na direita ~60%, ~180×150px de cluster.
+- Próximo passo quando voltar: pegar a arte/frames e montar o layout assimétrico em [scenes/ui/main_menu.tscn](scenes/ui/main_menu.tscn) (VBox ancorada à esquerda + `AnimatedSprite2D` à direita).
+
 ## Por onde começar
 
 1. **Playtest da 0.13.2** — confirmar in-game: (a) dá pra dashar no meio de um ataque sem travar o sprite, (b) a loja agora oferece pets que você ainda não tem, (c) recompensa grátis de tilisko/espectral/adrenalina mostra a carta com arte.
@@ -31,6 +39,7 @@
 
 ## Pendências conhecidas
 
+- [ ] 🎨 **Redesign cozy do Main Menu** (arte do Rafa em produção → implementar layout menu-esquerda/arte-direita). Ver spec `2026-06-08-menu-cozy-redesign-design.md`.
 - [ ] Playtest in-game da 0.13.2 (dash-no-hit + loja de pets + cartas grátis)
 - [ ] P2 — Loja de pétalas in-game ("ESPECIAL")
 - [ ] Reverter `DEV_UNLOCK_ALL_ITEMS = false` se estiver ligado
