@@ -1502,7 +1502,8 @@ func _fire_tilisko_shots(aim_dir: Vector2, is_pierce: bool, is_ricochet: bool, i
 			# L4: volley completa do player (categorias + elementais) a 60%, do muzzle do Tilisko.
 			for i in volley.size():
 				var shot: Dictionary = volley[i]
-				_spawn_arrow(shot["dir"], float(shot["dmg_mult"]) * mult, is_pierce, false, i == 0, is_ricochet, is_graviton, origin, "tilisko")
+				# play_sound só na primária (i==0) — mesmo som do player, sem empilhar.
+				_spawn_arrow(shot["dir"], float(shot["dmg_mult"]) * mult, is_pierce, i == 0, i == 0, is_ricochet, is_graviton, origin, "tilisko")
 
 
 func _spawn_tilisko_arrow(origin: Vector2, dir: Vector2, mult: float) -> void:
@@ -1517,7 +1518,7 @@ func _spawn_tilisko_arrow(origin: Vector2, dir: Vector2, mult: float) -> void:
 	a.source = self
 	a.telemetry_source_id = "tilisko"
 	a.suppress_spectral = true   # L1-L3 não tem propriedade de espectral
-	a.play_shoot_sound = false   # não dobra o áudio do tiro
+	a.play_shoot_sound = true    # mesmo som de tiro do player (0.7s depois, não dobra)
 	_get_world().add_child(a)
 	if a.has_method("set_direction"):
 		a.set_direction(dir)
