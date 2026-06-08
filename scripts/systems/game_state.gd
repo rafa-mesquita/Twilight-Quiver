@@ -62,6 +62,9 @@ func reset() -> void:
 const DISPLAY_MODE_WINDOWED: int = 0
 const DISPLAY_MODE_BORDERLESS: int = 1
 const DISPLAY_MODE_FULLSCREEN: int = 2
+# Ultrawide: false = pillarbox 16:9 (aspect KEEP, padrão justo). true = preenche a tela
+# (aspect EXPAND, mostra mais do mundo na horizontal — pra monitores ultrawide).
+const DEFAULT_ULTRAWIDE: bool = false
 
 
 func _load_and_apply_display_settings() -> void:
@@ -72,6 +75,7 @@ func _load_and_apply_display_settings() -> void:
 	var res_x: int = int(cfg.get_value("display", "resolution_x", 1920))
 	var res_y: int = int(cfg.get_value("display", "resolution_y", 1080))
 	apply_display_settings(mode, Vector2i(res_x, res_y))
+	apply_ultrawide(bool(cfg.get_value("display", "ultrawide_expand", DEFAULT_ULTRAWIDE)))
 
 
 func apply_display_settings(mode: int, resolution: Vector2i) -> void:
@@ -87,6 +91,14 @@ func apply_display_settings(mode: int, resolution: Vector2i) -> void:
 			var screen_size: Vector2i = DisplayServer.screen_get_size()
 			var window_pos: Vector2i = (screen_size - resolution) / 2
 			DisplayServer.window_set_position(window_pos)
+
+
+# Ultrawide: EXPAND preenche a tela mostrando mais do mundo na horizontal; KEEP mantém
+# 16:9 com barras laterais (pillarbox). Aplicado no root Window (stretch mode = viewport).
+func apply_ultrawide(expand: bool) -> void:
+	var root := get_tree().root
+	if root != null:
+		root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND if expand else Window.CONTENT_SCALE_ASPECT_KEEP
 
 
 # ---------- Audio settings ----------
