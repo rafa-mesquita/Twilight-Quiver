@@ -46,6 +46,7 @@ SETTINGS_AUDIO_MASTER,Mestre,Master,Principal,Principal
 SETTINGS_AUDIO_MUSIC,Música,Music,Música,Musique
 SETTINGS_AUDIO_SFX,Efeitos,SFX,Efectos,Effets
 SETTINGS_VSYNC,VSync,VSync,VSync,VSync
+SETTINGS_ULTRAWIDE,Preencher tela (ultrawide),Fill screen (ultrawide),Llenar pantalla (ultrawide),Remplir l'écran (ultralarge)
 SETTINGS_FPS_CAP,FPS máximo,Max FPS,FPS máximo,FPS max
 SETTINGS_SHOW_FPS,Mostrar FPS,Show FPS,Mostrar FPS,Afficher FPS
 SETTINGS_HEADER_HUD,INTERFACE,INTERFACE,INTERFAZ,INTERFACE

@@ -53,6 +53,7 @@ const _FPS_CAP_VALUES: Array[int] = [60, 120, 144, 0]
 
 # --- Video ---
 @onready var vsync_check: CheckBox = $Center/Panel/Margin/Scroll/VBox/VsyncRow/VsyncCheck
+@onready var ultrawide_check: CheckBox = $Center/Panel/Margin/Scroll/VBox/UltrawideRow/UltrawideCheck
 @onready var fps_cap_dropdown: Button = $Center/Panel/Margin/Scroll/VBox/FpsCapRow/FpsCapDropdown
 @onready var show_fps_check: CheckBox = $Center/Panel/Margin/Scroll/VBox/ShowFpsRow/ShowFpsCheck
 
@@ -75,6 +76,10 @@ func _ready() -> void:
 		var c := get_node_or_null("Cursor")
 		if c != null:
 			c.queue_free()
+		# O menu_cursor (filho) já rodou o _ready e setou mouse_mode = VISIBLE (cursor
+		# do SO). Como o HUD usa a mira (MOUSE_MODE_HIDDEN), restaura aqui — senão
+		# ficavam DOIS cursores (mira do gameplay + mãozinha do SO).
+		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 		var v := get_node_or_null("VersionLabel")
 		if v != null:
 			v.queue_free()
@@ -138,6 +143,7 @@ func _load_current_settings() -> void:
 	var show_fps: bool = bool(cfg.get_value("video", "show_fps", GameState.DEFAULT_SHOW_FPS))
 	vsync_check.button_pressed = vsync
 	show_fps_check.button_pressed = show_fps
+	ultrawide_check.button_pressed = bool(cfg.get_value("display", "ultrawide_expand", GameState.DEFAULT_ULTRAWIDE))
 	var fps_idx: int = _FPS_CAP_VALUES.find(fps_cap)
 	if fps_idx < 0:
 		fps_idx = _FPS_CAP_VALUES.find(0)  # fallback "Sem limite"
@@ -213,6 +219,7 @@ func _on_apply_pressed() -> void:
 	cfg.set_value("display", "window_mode", mode)
 	cfg.set_value("display", "resolution_x", res.x)
 	cfg.set_value("display", "resolution_y", res.y)
+	cfg.set_value("display", "ultrawide_expand", ultrawide_check.button_pressed)
 	cfg.set_value("audio", "master_volume", master)
 	cfg.set_value("audio", "music_volume", music)
 	cfg.set_value("audio", "sfx_volume", sfx)
@@ -228,6 +235,7 @@ func _on_apply_pressed() -> void:
 
 	# Aplica imediatamente.
 	GameState.apply_display_settings(mode, res)
+	GameState.apply_ultrawide(ultrawide_check.button_pressed)
 	GameState.apply_audio_settings(master, music, sfx)
 	GameState.apply_video_settings(vsync, fps_cap, show_fps)
 	GameState.apply_hud_settings(hide_timer, hide_time_info)

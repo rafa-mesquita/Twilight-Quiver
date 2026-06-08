@@ -25,6 +25,7 @@ const TING_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 const MINI_MAGO_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 # Arbusto Carrara: preço placeholder padrão de pet — L2-L4 ainda em design.
 const ARBUSTO_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
+const TILISKO_PRICE_TABLE: Array[int] = [8, 14, 19, 41]
 # Pool de aliados pra rolagem na shop. 3 cards exibidos por wave; sorteia 3
 # dos N possíveis (priorizando pets já owned pro player poder upgradar).
 const _ALL_ALLY_IDS: Array[String] = ["claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto", "tilisko"]
@@ -315,7 +316,7 @@ const _ELEMENTAL_IDS: Array[String] = ["fire_arrow", "curse_arrow", "chain_light
 # IDs que contam como "status" pro modal de seleção do joker (escala infinita).
 const _JOKER_STATUS_IDS: Array[String] = ["hp", "damage", "attack_speed", "move_speed", "armor"]
 # IDs de pets/aliados pro modal (top 4 cap).
-const _JOKER_PET_IDS: Array[String] = ["claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto"]
+const _JOKER_PET_IDS: Array[String] = ["claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto", "tilisko"]
 
 @onready var gold_label: Label = $Root/GoldLabel
 @onready var cleared_info_label: Label = $Root/ClearedInfoLabel
@@ -378,7 +379,7 @@ const _AUGMENT_SLOT_SIZE: Vector2 = Vector2(60, 60)
 @onready var items_box: HBoxContainer = $Root/StatsCard/ItemsBox
 
 # Aliados (pets) que aparecem no card do player. Ordem fixa.
-const _PETS_ROW_IDS: Array[String] = ["claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto"]
+const _PETS_ROW_IDS: Array[String] = ["claudio_druida", "leno", "capivara_joe", "ting", "mini_mago", "arbusto", "tilisko"]
 # Estruturas conhecidas. Mapeia o scene_path em owned_structures pra um id
 # usado no chip. Por enquanto só arrow_tower.
 const _STRUCTURES_ROW: Array[Dictionary] = [
@@ -818,6 +819,7 @@ func _build_ally_slot(ally_id: String, p: Node, distinct_owned: int) -> Dictiona
 		"ting": name_key = "SHOP_ALLY_TING"
 		"mini_mago": name_key = "SHOP_ALLY_MINI_MAGO"
 		"arbusto": name_key = "SHOP_ALLY_ARBUSTO"
+		"tilisko": name_key = "SHOP_ALLY_TILISKO"
 	return {
 		"id": ally_id,
 		"name": name_key,
@@ -862,6 +864,7 @@ func _pet_price_table_for(id: String) -> Array:
 		"ting": return TING_PRICE_TABLE
 		"mini_mago": return MINI_MAGO_PRICE_TABLE
 		"arbusto": return ARBUSTO_PRICE_TABLE
+		"tilisko": return TILISKO_PRICE_TABLE
 	return []
 
 
@@ -3760,6 +3763,8 @@ func _augment_title_for(id: String) -> String:
 		"ting": return "SHOP_ALLY_TING"
 		"mini_mago": return "SHOP_ALLY_MINI_MAGO"
 		"arbusto": return "SHOP_ALLY_ARBUSTO"
+		"tilisko": return "SHOP_ALLY_TILISKO"
+		"spectral_arrow": return "SHOP_UPG_SPECTRAL"
 	return id
 
 
