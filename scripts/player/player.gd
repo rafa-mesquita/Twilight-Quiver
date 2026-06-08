@@ -1491,12 +1491,16 @@ func _fire_tilisko_shots(aim_dir: Vector2, is_pierce: bool, is_ricochet: bool, i
 		if not is_instance_valid(t):
 			continue
 		var base_pos: Vector2 = (t as Node2D).global_position
-		var dir: Vector2 = aim_dir
-		# L3 (não-L4): 30% de chance de mirar num inimigo aleatório da tela.
+		# Alvo: inimigo mais próximo do player (L3: 30% de chance de um aleatório da tela).
+		var target: Node = null
 		if tilisko_level == 3 and randf() < 0.30:
-			var e := _random_enemy_on_screen()
-			if e != null:
-				dir = ((e as Node2D).global_position - base_pos).normalized()
+			target = _random_enemy_on_screen()
+		else:
+			target = _nearest_enemy_to_player()
+		# Direção pro alvo; sem inimigo → cai na mira do player (não trava o tiro).
+		var dir: Vector2 = aim_dir
+		if target != null and is_instance_valid(target):
+			dir = ((target as Node2D).global_position - base_pos).normalized()
 		# Vira o pinguim pro lado do tiro ANTES de ler o muzzle (senão a flecha sai de costas).
 		if t.has_method("on_player_shot"):
 			t.on_player_shot(dir)
@@ -1507,11 +1511,31 @@ func _fire_tilisko_shots(aim_dir: Vector2, is_pierce: bool, is_ricochet: bool, i
 			# com espectral suprimido. play_sound=true = mesmo som do player.
 			_spawn_arrow(dir, mult, false, true, true, false, graviton_level > 0, origin, "tilisko", true)
 		else:
-			# L4: volley completa do player (categorias + elementais) a 60%, do muzzle do Tilisko.
+			# L4: volley completa do player girada pra mirar no alvo (preserva o leque).
+			var rot: float = dir.angle() - aim_dir.angle()
 			for i in volley.size():
 				var shot: Dictionary = volley[i]
+				var d: Vector2 = (shot["dir"] as Vector2).rotated(rot)
 				# play_sound só na primária (i==0) — mesmo som do player, sem empilhar.
-				_spawn_arrow(shot["dir"], float(shot["dmg_mult"]) * mult, is_pierce, i == 0, i == 0, is_ricochet, is_graviton, origin, "tilisko")
+				_spawn_arrow(d, float(shot["dmg_mult"]) * mult, is_pierce, i == 0, i == 0, is_ricochet, is_graviton, origin, "tilisko")
+
+
+func _nearest_enemy_to_player() -> Node:
+	var best: Node = null
+	var best_d: float = INF
+	var ppos: Vector2 = global_position
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not is_instance_valid(e) or not (e is Node2D):
+			continue
+		if (e as Node).is_queued_for_deletion():
+			continue
+		if ("hp" in e) and float(e.hp) <= 0.0:
+			continue
+		var d: float = ppos.distance_squared_to((e as Node2D).global_position)
+		if d < best_d:
+			best_d = d
+			best = e
+	return best
 
 
 func _random_enemy_on_screen() -> Node:
