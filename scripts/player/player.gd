@@ -749,7 +749,9 @@ func _physics_process(delta: float) -> void:
 	_update_chain_auto_bolt(delta)
 	_update_boomerang(delta)
 	_update_tiger_claws(delta)
-	_tick_replay_recorder(delta)
+	# Path B: replay agora grava FRAMES (em _capture_replay_frame via frame_post_draw);
+	# o recorder de ghosts foi desligado pra o teste de desempenho medir só o readback.
+	# _tick_replay_recorder(delta)
 	_update_curse_skill(delta)
 	_update_time_freeze(delta)
 	_update_tide_shield(delta)
@@ -4823,8 +4825,9 @@ func take_damage(amount: float, source_id: String = "") -> void:
 
 
 func _die() -> void:
-	# Snapshot final do ring buffer (todos os ghosts pra o replay).
-	_record_replay_snapshot()
+	# Path B: replay por frames — snapshot de ghosts desativado (a captura de frames
+	# já parou via is_dead). A screenshot da morte (killcam estático) segue abaixo.
+	# _record_replay_snapshot()
 	is_dead = true
 	is_attacking = false
 	is_drawing = false
