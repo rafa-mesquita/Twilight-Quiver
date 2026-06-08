@@ -21,6 +21,15 @@ const BOB_SPEED: float = 3.0
 var _player: Node2D = null
 var _is_shooting: bool = false
 var _bob_t: float = 0.0
+# Wander: vagueia numa área perto do player (não gruda); idle entre os pontos. Se o
+# player se afasta, re-pega alvo perto dele + acelera (catch-up) pra nunca ficar longe.
+const WANDER_RADIUS: float = 56.0
+const WANDER_PAUSE_MIN: float = 0.5
+const WANDER_PAUSE_MAX: float = 1.4
+const WANDER_ARRIVE_DIST: float = 6.0
+var _wander_target: Vector2 = Vector2.ZERO
+var _has_target: bool = false
+var _wander_pause: float = 0.0
 
 
 func _ready() -> void:
@@ -40,25 +49,54 @@ func _physics_process(delta: float) -> void:
 	var bob: float = sin(_bob_t * BOB_SPEED) * BOB_HEIGHT
 	sprite.offset.y = SPRITE_BASE_OFFSET_Y + bob
 	muzzle.position.y = MUZZLE_BASE_OFFSET_Y + bob
-	# Posição de formação ao redor do player (órbita por phase_offset).
-	var t: float = _bob_t * 0.6 + phase_offset
-	var orbit_r: float = (follow_min_distance + follow_max_distance) * 0.5
-	var desired: Vector2 = _player.global_position + Vector2(cos(t), sin(t) * 0.6) * orbit_r
-	var to_desired: Vector2 = desired - global_position
-	var sep: Vector2 = _separation()
-	velocity = to_desired * 2.2 + sep
+	# Durante o tiro: para no lugar (a anim "atirar" roda; o flip já foi pro lado do tiro).
+	if _is_shooting:
+		velocity = velocity.lerp(Vector2.ZERO, 0.3)
+		move_and_slide()
+		return
+	var dist_player: float = global_position.distance_to(_player.global_position)
+	# Pausa entre pontos do wander → fica parado (idle).
+	if _wander_pause > 0.0:
+		_wander_pause -= delta
+		velocity = velocity.lerp(Vector2.ZERO, 0.3)
+		move_and_slide()
+		_apply_move_anim()
+		return
+	# Re-pega um alvo perto do player se não tem ou se o player se afastou da área.
+	if not _has_target or _player.global_position.distance_to(_wander_target) > WANDER_RADIUS:
+		_pick_wander_target()
+	var to_t: Vector2 = _wander_target - global_position
+	if to_t.length() < WANDER_ARRIVE_DIST:
+		# Chegou → idle por um tempinho, depois escolhe outro ponto.
+		_has_target = false
+		_wander_pause = randf_range(WANDER_PAUSE_MIN, WANDER_PAUSE_MAX)
+		velocity = velocity.lerp(Vector2.ZERO, 0.4)
+		move_and_slide()
+		_apply_move_anim()
+		return
+	# Catch-up: quanto mais longe do player, mais rápido — nunca fica longe demais.
+	var sp: float = speed * (1.0 + clampf((dist_player - WANDER_RADIUS) / WANDER_RADIUS, 0.0, 2.0))
+	velocity = to_t.normalized() * sp + _separation()
 	move_and_slide()
-	# Flip pro lado do movimento.
+	_apply_move_anim()
+
+
+func _apply_move_anim() -> void:
 	if absf(velocity.x) > 4.0:
 		sprite.flip_h = velocity.x < 0.0
 		muzzle.position.x = -absf(muzzle.position.x) if sprite.flip_h else absf(muzzle.position.x)
-	# Anim: shooting > walk > idle.
-	if not _is_shooting:
-		if velocity.length() > 12.0:
-			if sprite.animation != &"walk":
-				sprite.play("walk")
-		elif sprite.animation != &"idle":
-			sprite.play("idle")
+	if velocity.length() > 10.0:
+		if sprite.animation != &"walk":
+			sprite.play("walk")
+	elif sprite.animation != &"idle":
+		sprite.play("idle")
+
+
+func _pick_wander_target() -> void:
+	var ang: float = randf() * TAU
+	var dist: float = randf_range(WANDER_RADIUS * 0.25, WANDER_RADIUS * 0.95)
+	_wander_target = _player.global_position + Vector2(cos(ang), sin(ang) * 0.7) * dist
+	_has_target = true
 
 
 func _separation() -> Vector2:
@@ -73,10 +111,13 @@ func _separation() -> Vector2:
 	return force
 
 
-# Chamado pelo player no _release_arrow: toca a anim de tiro (o spawn da flecha é
-# feito pelo player a partir de get_muzzle_pos()).
-func on_player_shot() -> void:
+# Chamado pelo player no _release_arrow com a direção do tiro: vira pro lado do tiro
+# (senão a flecha sai de costas) e toca a anim. O spawn da flecha é feito pelo player.
+func on_player_shot(dir: Vector2) -> void:
 	_is_shooting = true
+	if absf(dir.x) > 0.01:
+		sprite.flip_h = dir.x < 0.0
+		muzzle.position.x = -absf(muzzle.position.x) if sprite.flip_h else absf(muzzle.position.x)
 	sprite.play("atirar")
 
 

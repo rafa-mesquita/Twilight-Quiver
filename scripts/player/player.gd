@@ -167,7 +167,7 @@ var _lenos: Array[Node2D] = []
 # Tilisko Arqueiro (pet pinguim). Sem HP. Dispara junto com o player (no _release_arrow),
 # flecha a 20/30/60/60% do dano. Sempre 1 instância; o nível muda a flecha, não a contagem.
 const TILISKO_SCENE: PackedScene = preload("res://scenes/allies/tilisko.tscn")
-const TILISKO_SHOT_DELAY: float = 0.7  # atraso entre o tiro do player e o do Tilisko
+const TILISKO_SHOT_DELAY: float = 0.3  # atraso entre o tiro do player e o do Tilisko
 var tilisko_level: int = 0
 var _tiliskos: Array[Node2D] = []
 # Capivara Joe (aliado pet, 4 níveis). Sem HP, vagueia e dropa cogumelos.
@@ -1187,7 +1187,7 @@ func _build_double_arrows_volley(primary: Vector2) -> Array:
 	return shots
 
 
-func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bool, is_primary: bool = true, is_ricochet: bool = false, is_graviton: bool = false, origin: Vector2 = Vector2.INF, source_id: String = "") -> void:
+func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bool, is_primary: bool = true, is_ricochet: bool = false, is_graviton: bool = false, origin: Vector2 = Vector2.INF, source_id: String = "", suppress_spectral: bool = false) -> void:
 	var arrow := arrow_scene.instantiate()
 	# Configura ANTES de add_child pra _ready() já enxergar os flags.
 	arrow.global_position = origin if origin != Vector2.INF else muzzle.global_position
@@ -1399,9 +1399,12 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 			arrow.telemetry_source_id_extra = "multi_arrow"
 		elif double_arrows_level > 0:
 			arrow.telemetry_source_id_extra = "double_arrows"
-	# Override de fonte (ex: flechas do Tilisko-L4 → "tilisko" no painel de dano).
+	# Override de fonte (ex: flechas do Tilisko → "tilisko" no painel de dano).
 	if source_id != "" and "telemetry_source_id" in arrow:
 		arrow.telemetry_source_id = source_id
+	# Tilisko L1-L3: suprime o burst espectral (não tem propriedade de espectral).
+	if suppress_spectral and "suppress_spectral" in arrow:
+		arrow.suppress_spectral = true
 	_get_world().add_child(arrow)
 	if arrow.has_method("set_direction"):
 		arrow.set_direction(dir)
@@ -1487,41 +1490,28 @@ func _fire_tilisko_shots(aim_dir: Vector2, is_pierce: bool, is_ricochet: bool, i
 	for t in get_tree().get_nodes_in_group("tilisko"):
 		if not is_instance_valid(t):
 			continue
-		if t.has_method("on_player_shot"):
-			t.on_player_shot()
-		var origin: Vector2 = t.get_muzzle_pos() if t.has_method("get_muzzle_pos") else (t as Node2D).global_position
+		var base_pos: Vector2 = (t as Node2D).global_position
 		var dir: Vector2 = aim_dir
-		# L3+: 30% de chance de mirar num inimigo aleatório da tela (só na flecha única L1-L3).
-		if tilisko_level >= 3 and tilisko_level < 4 and randf() < 0.30:
+		# L3 (não-L4): 30% de chance de mirar num inimigo aleatório da tela.
+		if tilisko_level == 3 and randf() < 0.30:
 			var e := _random_enemy_on_screen()
 			if e != null:
-				dir = ((e as Node2D).global_position - origin).normalized()
+				dir = ((e as Node2D).global_position - base_pos).normalized()
+		# Vira o pinguim pro lado do tiro ANTES de ler o muzzle (senão a flecha sai de costas).
+		if t.has_method("on_player_shot"):
+			t.on_player_shot(dir)
+		var origin: Vector2 = t.get_muzzle_pos() if t.has_method("get_muzzle_pos") else base_pos
 		if tilisko_level < 4:
-			_spawn_tilisko_arrow(origin, dir, mult)
+			# L1-L3: 1 flecha via _spawn_arrow → herda speed/lifetime do elemental atual
+			# (pedra/maré lentos etc.), com graviton incluso, sem pierce/ricochet/multi e
+			# com espectral suprimido. play_sound=true = mesmo som do player.
+			_spawn_arrow(dir, mult, false, true, true, false, graviton_level > 0, origin, "tilisko", true)
 		else:
 			# L4: volley completa do player (categorias + elementais) a 60%, do muzzle do Tilisko.
 			for i in volley.size():
 				var shot: Dictionary = volley[i]
 				# play_sound só na primária (i==0) — mesmo som do player, sem empilhar.
 				_spawn_arrow(shot["dir"], float(shot["dmg_mult"]) * mult, is_pierce, i == 0, i == 0, is_ricochet, is_graviton, origin, "tilisko")
-
-
-func _spawn_tilisko_arrow(origin: Vector2, dir: Vector2, mult: float) -> void:
-	# L1-L3: 1 flecha simples com o pacote elemental do tiro atual (sem pierce/ricochet/
-	# multi/spectral). Rola crit próprio no _on_hit (flecha normal).
-	if arrow_scene == null:
-		return
-	var a = arrow_scene.instantiate()
-	a.global_position = origin
-	a.damage = a.damage * arrow_damage_multiplier * mult * _mare_damage_factor() * _cajado_arrow_factor()
-	_stamp_spectral_effects(a)   # chain/fire/curse/ice/stone/tide/graviton (sem pierce/ricochet)
-	a.source = self
-	a.telemetry_source_id = "tilisko"
-	a.suppress_spectral = true   # L1-L3 não tem propriedade de espectral
-	a.play_shoot_sound = true    # mesmo som de tiro do player (0.7s depois, não dobra)
-	_get_world().add_child(a)
-	if a.has_method("set_direction"):
-		a.set_direction(dir)
 
 
 func _random_enemy_on_screen() -> Node:

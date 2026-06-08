@@ -1,27 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://bgqn7fxfdiuvt"]
 
-[ext_resource type="Script" path="res://scripts/allies/tilisko.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://assets/aliados/Tilisko Arqueiro/Tilisko.png" id="2_sheet"]
-
-[sub_resource type="AtlasTexture" id="idle_0"]
-atlas = ExtResource("2_sheet")
-region = Rect2(0, 0, 32, 32)
-
-[sub_resource type="AtlasTexture" id="idle_1"]
-atlas = ExtResource("2_sheet")
-region = Rect2(32, 0, 32, 32)
-
-[sub_resource type="AtlasTexture" id="idle_2"]
-atlas = ExtResource("2_sheet")
-region = Rect2(64, 0, 32, 32)
-
-[sub_resource type="AtlasTexture" id="walk_0"]
-atlas = ExtResource("2_sheet")
-region = Rect2(96, 0, 32, 32)
-
-[sub_resource type="AtlasTexture" id="walk_1"]
-atlas = ExtResource("2_sheet")
-region = Rect2(128, 0, 32, 32)
+[ext_resource type="Script" uid="uid://smct537djyx2" path="res://scripts/allies/tilisko.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://blvokgdgkhhhh" path="res://assets/aliados/Tilisko Arqueiro/Tilisko.png" id="2_sheet"]
 
 [sub_resource type="AtlasTexture" id="atk_0"]
 atlas = ExtResource("2_sheet")
@@ -43,51 +23,103 @@ region = Rect2(256, 0, 32, 32)
 atlas = ExtResource("2_sheet")
 region = Rect2(288, 0, 32, 32)
 
+[sub_resource type="AtlasTexture" id="idle_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="idle_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="idle_2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="walk_0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="walk_1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(128, 0, 32, 32)
+
 [sub_resource type="SpriteFrames" id="frames"]
 animations = [{
-"frames": [{"duration": 1.0, "texture": SubResource("atk_0")}, {"duration": 1.0, "texture": SubResource("atk_1")}, {"duration": 1.0, "texture": SubResource("atk_2")}, {"duration": 1.0, "texture": SubResource("atk_3")}, {"duration": 1.0, "texture": SubResource("atk_4")}],
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("atk_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("atk_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("atk_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("atk_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("atk_4")
+}],
 "loop": false,
 "name": &"atirar",
-"speed": 14.0
+"speed": 8.0
 }, {
-"frames": [{"duration": 1.0, "texture": SubResource("idle_0")}, {"duration": 1.0, "texture": SubResource("idle_1")}, {"duration": 1.0, "texture": SubResource("idle_2")}],
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("idle_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("idle_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("idle_2")
+}],
 "loop": true,
 "name": &"idle",
-"speed": 6.0
+"speed": 4.0
 }, {
-"frames": [{"duration": 1.0, "texture": SubResource("walk_0")}, {"duration": 1.0, "texture": SubResource("walk_1")}],
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("walk_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("walk_1")
+}],
 "loop": true,
 "name": &"walk",
-"speed": 8.0
+"speed": 5.0
 }]
 
 [sub_resource type="CapsuleShape2D" id="shape"]
 radius = 5.0
 height = 12.0
 
-[node name="Tilisko" type="CharacterBody2D"]
+[node name="Tilisko" type="CharacterBody2D" unique_id=546846507]
 collision_layer = 0
 collision_mask = 2
 script = ExtResource("1_script")
 
-[node name="Shadow" type="Node2D" parent="."]
-position = Vector2(0, 1)
+[node name="Shadow" type="Node2D" parent="." unique_id=1779854625]
+position = Vector2(0, 13)
 
-[node name="Outer" type="Polygon2D" parent="Shadow"]
+[node name="Outer" type="Polygon2D" parent="Shadow" unique_id=61779767]
+position = Vector2(-0.5000001, -12.999999)
+scale = Vector2(1.75, 1.0000001)
 color = Color(0, 0, 0, 0.18)
 polygon = PackedVector2Array(6, 0, 5, 1, 4, 2, 2, 2, 0, 2, -2, 2, -4, 2, -5, 1, -6, 0, -5, -1, -4, -2, -2, -2, 0, -2, 2, -2, 4, -2, 5, -1)
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1093172673]
 texture_filter = 1
-scale = Vector2(1, 1)
+position = Vector2(0, 6)
 sprite_frames = SubResource("frames")
 animation = &"idle"
 autoplay = "idle"
 offset = Vector2(0, -16)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=242759499]
 position = Vector2(0, -6)
 shape = SubResource("shape")
 
-[node name="Muzzle" type="Marker2D" parent="."]
-position = Vector2(0, -4)
+[node name="Muzzle" type="Marker2D" parent="." unique_id=1681698836]
+position = Vector2(6, -10)
