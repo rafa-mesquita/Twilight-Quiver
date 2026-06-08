@@ -918,6 +918,17 @@ func _on_esquivando_ability_active_changed(active: bool) -> void:
 		_on_esquivando_stacks_changed(stacks, cap)
 
 
+# Os cooldowns drenam mais rápido com CDR (Essência Vital), mas o `remaining` cru
+# começa no valor base (ex: 28). Multiplica pelo cooldown_scale() do player pra o
+# NÚMERO exibido bater com os segundos reais até ficar pronto (28 → ~22 com 20% CDR).
+# A barra (ratio remaining/total) não muda. Sem CDR, scale=1.0 → no-op.
+func _cd_real_secs(remaining: float) -> float:
+	var p := get_tree().get_first_node_in_group("player")
+	if p != null and p.has_method("cooldown_scale"):
+		return remaining * float(p.cooldown_scale())
+	return remaining
+
+
 func _on_dash_cooldown_changed(remaining: float, total: float) -> void:
 	# Fill cresce do vazio (cooldown rolando) pro cheio (pronto).
 	# 0 remaining = pronto = barra cheia.
@@ -926,7 +937,7 @@ func _on_dash_cooldown_changed(remaining: float, total: float) -> void:
 	if remaining <= 0.001:
 		dash_cd_label.text = "HUD_DASH_READY"
 	else:
-		dash_cd_label.text = "%.1fs" % remaining
+		dash_cd_label.text = "%.1fs" % _cd_real_secs(remaining)
 
 
 func _on_fire_skill_unlocked() -> void:
@@ -943,7 +954,7 @@ func _on_fire_skill_cooldown_changed(remaining: float, _total: float) -> void:
 		fire_skill_cd_label.text = ""
 		fire_skill_icon.modulate = Color.WHITE
 	else:
-		fire_skill_cd_label.text = "%d" % int(ceilf(remaining))
+		fire_skill_cd_label.text = "%d" % int(ceilf(_cd_real_secs(remaining)))
 		fire_skill_icon.modulate = Color(0.6, 0.55, 0.55, 1.0)
 
 
@@ -958,7 +969,7 @@ func _on_chain_lightning_skill_cooldown_changed(remaining: float, _total: float)
 		chain_lightning_skill_cd_label.text = ""
 		chain_lightning_skill_icon.modulate = Color.WHITE
 	else:
-		chain_lightning_skill_cd_label.text = "%d" % int(ceilf(remaining))
+		chain_lightning_skill_cd_label.text = "%d" % int(ceilf(_cd_real_secs(remaining)))
 		chain_lightning_skill_icon.modulate = Color(0.55, 0.6, 0.7, 1.0)
 
 
@@ -1019,7 +1030,7 @@ func _on_curse_skill_cooldown_changed(remaining: float, _total: float) -> void:
 		curse_skill_cd_label.text = ""
 		curse_skill_icon.modulate = Color.WHITE
 	else:
-		curse_skill_cd_label.text = "%d" % int(ceilf(remaining))
+		curse_skill_cd_label.text = "%d" % int(ceilf(_cd_real_secs(remaining)))
 		curse_skill_icon.modulate = Color(0.55, 0.50, 0.65, 1.0)
 
 
@@ -1035,7 +1046,7 @@ func _on_time_freeze_skill_cooldown_changed(remaining: float, _total: float) -> 
 		ice_skill_cd_label.text = ""
 		ice_skill_icon.modulate = Color.WHITE
 	else:
-		ice_skill_cd_label.text = "%d" % int(ceilf(remaining))
+		ice_skill_cd_label.text = "%d" % int(ceilf(_cd_real_secs(remaining)))
 		ice_skill_icon.modulate = Color(0.55, 0.65, 0.78, 1.0)
 
 
@@ -1068,7 +1079,7 @@ func _on_stone_skill_cooldown_changed(remaining: float, _total: float) -> void:
 		stone_skill_cd_label.text = ""
 		stone_skill_icon.modulate = Color.WHITE
 	else:
-		stone_skill_cd_label.text = "%d" % int(ceilf(remaining))
+		stone_skill_cd_label.text = "%d" % int(ceilf(_cd_real_secs(remaining)))
 		stone_skill_icon.modulate = Color(0.6, 0.55, 0.45, 1.0)
 
 
@@ -1083,7 +1094,7 @@ func _on_tide_shield_skill_cooldown_changed(remaining: float, _total: float) -> 
 		tide_shield_cd_label.text = ""
 		tide_shield_icon.modulate = Color.WHITE
 	else:
-		tide_shield_cd_label.text = "%d" % int(ceilf(remaining))
+		tide_shield_cd_label.text = "%d" % int(ceilf(_cd_real_secs(remaining)))
 		tide_shield_icon.modulate = Color(0.5, 0.62, 0.78, 1.0)
 
 
