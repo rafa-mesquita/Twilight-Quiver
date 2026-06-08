@@ -10,17 +10,12 @@ extends CharacterBody2D
 @export var phase_offset: float = 0.0
 @export var separation_radius: float = 18.0
 @export var separation_strength: float = 30.0
-const SPRITE_BASE_OFFSET_Y: float = -16.0
-const MUZZLE_BASE_OFFSET_Y: float = -8.0
-const BOB_HEIGHT: float = 2.0
-const BOB_SPEED: float = 3.0
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var muzzle: Marker2D = $Muzzle
 
 var _player: Node2D = null
 var _is_shooting: bool = false
-var _bob_t: float = 0.0
 # Wander: vagueia numa área perto do player (não gruda); idle entre os pontos. Se o
 # player se afasta, re-pega alvo perto dele + acelera (catch-up) pra nunca ficar longe.
 const WANDER_RADIUS: float = 56.0
@@ -45,10 +40,6 @@ func _physics_process(delta: float) -> void:
 		_player = get_tree().get_first_node_in_group("player")
 		if _player == null:
 			return
-	_bob_t += delta
-	var bob: float = sin(_bob_t * BOB_SPEED) * BOB_HEIGHT
-	sprite.offset.y = SPRITE_BASE_OFFSET_Y + bob
-	muzzle.position.y = MUZZLE_BASE_OFFSET_Y + bob
 	# Durante o tiro: para no lugar (a anim "atirar" roda; o flip já foi pro lado do tiro).
 	if _is_shooting:
 		velocity = velocity.lerp(Vector2.ZERO, 0.3)

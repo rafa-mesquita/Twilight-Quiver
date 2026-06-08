@@ -167,7 +167,7 @@ var _lenos: Array[Node2D] = []
 # Tilisko Arqueiro (pet pinguim). Sem HP. Dispara junto com o player (no _release_arrow),
 # flecha a 20/30/60/60% do dano. Sempre 1 instância; o nível muda a flecha, não a contagem.
 const TILISKO_SCENE: PackedScene = preload("res://scenes/allies/tilisko.tscn")
-const TILISKO_SHOT_DELAY: float = 0.3  # atraso entre o tiro do player e o do Tilisko
+const TILISKO_SHOT_DELAY: float = 0.7  # atraso entre o tiro do player e o do Tilisko
 var tilisko_level: int = 0
 var _tiliskos: Array[Node2D] = []
 # Capivara Joe (aliado pet, 4 níveis). Sem HP, vagueia e dropa cogumelos.
