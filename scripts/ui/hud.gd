@@ -179,7 +179,7 @@ const UPGRADE_DISPLAY_ORDER: Array[String] = [
 ]
 # Caps onde "MAX" substitui "Lx" no badge (status escala infinito → sem cap).
 const _UPG_CAPS: Dictionary = {
-	"perfuracao": 4, "ricochet_arrow": 4, "multi_arrow": 4, "double_arrows": 4, "chain_lightning": 4,
+	"perfuracao": 4, "spectral_arrow": 4, "ricochet_arrow": 4, "multi_arrow": 4, "double_arrows": 4, "chain_lightning": 4,
 	"fire_arrow": 4, "curse_arrow": 4, "ice_arrow": 4, "stone_arrow": 4, "tide_arrow": 4, "graviton": 4, "boomerang": 4, "critical_chance": 4, "life_steal": 4,
 	"dash": 4, "esquivando": 4, "fenda": 4, "adrenalina": 4, "gold_magnet": 4, "tiger_claws": 4,
 	"claudio_druida": 4, "leno": 4, "capivara_joe": 4, "ting": 4, "mini_mago": 4, "arbusto": 4, "tilisko": 4,
