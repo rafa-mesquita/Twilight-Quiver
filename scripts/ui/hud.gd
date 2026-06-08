@@ -1518,7 +1518,9 @@ func _show_restart_button() -> void:
 	# clicado várias vezes pra reassistir.
 	var replay_btn: Button = _build_or_get_replay_button()
 	replay_btn.modulate.a = 0.0
-	replay_btn.visible = true
+	# Só mostra se o replay está habilitado E há frames gravados (se o jogador
+	# desligou o replay nas configs, não há o que reassistir).
+	replay_btn.visible = GameState.replay_enabled and _has_replay_frames()
 
 	restart_button.modulate.a = 0.0
 	restart_button.visible = true
@@ -1592,7 +1594,8 @@ func _show_restart_button() -> void:
 	reveal.tween_property(menu_button, "modulate:a", 1.0, 0.4)
 	if breakdown_label.visible:
 		reveal.tween_property(breakdown_label, "modulate:a", 1.0, 0.4)
-	reveal.tween_property(replay_btn, "modulate:a", 1.0, 0.4)
+	if replay_btn.visible:
+		reveal.tween_property(replay_btn, "modulate:a", 1.0, 0.4)
 	if _petal_deposit_label != null:
 		reveal.tween_property(_petal_deposit_label, "modulate:a", 1.0, 0.4)
 
@@ -1746,6 +1749,13 @@ func _build_or_get_replay_button() -> Button:
 
 
 const _DEATH_REPLAY_SCENE: PackedScene = preload("res://scenes/ui/death_replay.tscn")
+
+
+func _has_replay_frames() -> bool:
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null or not ("stats_replay_frames" in p):
+		return false
+	return not (p.get("stats_replay_frames") as Array).is_empty()
 
 
 func _on_replay_death_pressed() -> void:

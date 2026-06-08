@@ -44,6 +44,7 @@ func _ready() -> void:
 	_load_and_apply_audio_settings()
 	_load_and_apply_video_settings()
 	_load_and_apply_hud_settings()
+	_load_and_apply_replay_settings()
 
 
 func _process(_delta: float) -> void:
@@ -187,6 +188,35 @@ func _load_and_apply_hud_settings() -> void:
 func apply_hud_settings(hide_timer: bool, hide_info: bool) -> void:
 	hide_run_timer = hide_timer
 	hide_time_info = hide_info
+
+
+# ---------- Replay settings (gravação de vídeo da morte) ----------
+
+# Replay = buffer de frames do viewport gravado em baixa-res pra reprisar a morte.
+# Pode pesar em PCs fracos, então é configurável: dá pra desligar e escolher quantos
+# segundos antes da morte guardar (menos segundos = menos memória/custo de captura).
+const DEFAULT_REPLAY_ENABLED: bool = true
+const DEFAULT_REPLAY_SECONDS: float = 3.0
+# Opções válidas do dropdown (segundos antes da morte). Maior = mais memória.
+const REPLAY_SECONDS_OPTIONS: Array[float] = [4.0, 3.0, 2.0, 1.0, 0.5]
+
+# Lidos pelo recorder do player todo frame; alterados em runtime pelo settings menu.
+var replay_enabled: bool = true
+var replay_seconds: float = 3.0
+
+
+func _load_and_apply_replay_settings() -> void:
+	var cfg := ConfigFile.new()
+	cfg.load(_SETTINGS_PATH)
+	var enabled: bool = bool(cfg.get_value("replay", "enabled", DEFAULT_REPLAY_ENABLED))
+	var seconds: float = float(cfg.get_value("replay", "seconds", DEFAULT_REPLAY_SECONDS))
+	apply_replay_settings(enabled, seconds)
+
+
+func apply_replay_settings(enabled: bool, seconds: float) -> void:
+	replay_enabled = enabled
+	# Garante que o valor salvo é uma das opções suportadas; senão cai no default.
+	replay_seconds = seconds if REPLAY_SECONDS_OPTIONS.has(seconds) else DEFAULT_REPLAY_SECONDS
 
 
 func _ensure_fps_overlay() -> void:
