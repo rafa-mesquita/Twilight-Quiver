@@ -16,6 +16,10 @@ extends CharacterBody2D
 
 var _player: Node2D = null
 var _is_shooting: bool = false
+# A flecha SOLTA neste frame da anim "atirar" (igual o player, que solta no release_frame)
+# — assim ela sai no frame certo do desenho, não no começo. Tunável (anim tem 5 frames 0-4).
+const RELEASE_FRAME: int = 3
+var _pending_shot: Callable = Callable()
 # Wander: vagueia numa área perto do player (não gruda); idle entre os pontos. Se o
 # player se afasta, re-pega alvo perto dele + acelera (catch-up) pra nunca ficar longe.
 const WANDER_RADIUS: float = 56.0
@@ -32,6 +36,7 @@ func _ready() -> void:
 	add_to_group("tilisko")
 	_player = get_tree().get_first_node_in_group("player")
 	sprite.animation_finished.connect(_on_anim_finished)
+	sprite.frame_changed.connect(_on_frame_changed)
 	sprite.play("idle")
 
 
@@ -102,14 +107,23 @@ func _separation() -> Vector2:
 	return force
 
 
-# Chamado pelo player no _release_arrow com a direção do tiro: vira pro lado do tiro
-# (senão a flecha sai de costas) e toca a anim. O spawn da flecha é feito pelo player.
-func on_player_shot(dir: Vector2) -> void:
+# Chamado pelo player: vira pro lado do tiro, toca a anim "atirar" e guarda o callback
+# que SOLTA a flecha — disparado no RELEASE_FRAME da anim (igual ao player), pra a flecha
+# sair no frame certo do desenho (não no começo).
+func shoot(dir: Vector2, on_release: Callable) -> void:
 	_is_shooting = true
+	_pending_shot = on_release
 	if absf(dir.x) > 0.01:
 		sprite.flip_h = dir.x < 0.0
 		muzzle.position.x = -absf(muzzle.position.x) if sprite.flip_h else absf(muzzle.position.x)
 	sprite.play("atirar")
+
+
+func _on_frame_changed() -> void:
+	if _is_shooting and sprite.animation == &"atirar" and sprite.frame >= RELEASE_FRAME and _pending_shot.is_valid():
+		var cb: Callable = _pending_shot
+		_pending_shot = Callable()  # consome (só 1× por tiro)
+		cb.call()
 
 
 func get_muzzle_pos() -> Vector2:
@@ -118,5 +132,10 @@ func get_muzzle_pos() -> Vector2:
 
 func _on_anim_finished() -> void:
 	if sprite.animation == &"atirar":
+		# Garantia: se não soltou no release_frame (ex: anim muito curta), solta agora.
+		if _pending_shot.is_valid():
+			var cb: Callable = _pending_shot
+			_pending_shot = Callable()
+			cb.call()
 		_is_shooting = false
 		sprite.play("idle")

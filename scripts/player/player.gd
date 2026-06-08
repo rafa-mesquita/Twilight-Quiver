@@ -1501,23 +1501,30 @@ func _fire_tilisko_shots(aim_dir: Vector2, is_pierce: bool, is_ricochet: bool, i
 		var dir: Vector2 = aim_dir
 		if target != null and is_instance_valid(target):
 			dir = ((target as Node2D).global_position - base_pos).normalized()
-		# Vira o pinguim pro lado do tiro ANTES de ler o muzzle (senão a flecha sai de costas).
-		if t.has_method("on_player_shot"):
-			t.on_player_shot(dir)
-		var origin: Vector2 = t.get_muzzle_pos() if t.has_method("get_muzzle_pos") else base_pos
-		if tilisko_level < 4:
-			# L1-L3: 1 flecha via _spawn_arrow → herda speed/lifetime do elemental atual
-			# (pedra/maré lentos etc.), com graviton incluso, sem pierce/ricochet/multi e
-			# com espectral suprimido. play_sound=true = mesmo som do player.
-			_spawn_arrow(dir, mult, false, true, true, false, graviton_level > 0, origin, "tilisko", true)
+		# O pinguim vira pro lado do tiro e SOLTA a flecha no frame de release da anim
+		# (não no começo) — o spawn vai num callback disparado pela própria anim. Lê o
+		# muzzle no momento do disparo (ele ficou parado durante o tiro).
+		var lvl: int = tilisko_level
+		var grav: bool = graviton_level > 0
+		var shoot_cb: Callable = func() -> void:
+			if not is_instance_valid(t):
+				return
+			var origin: Vector2 = t.get_muzzle_pos() if t.has_method("get_muzzle_pos") else (t as Node2D).global_position
+			if lvl < 4:
+				# L1-L3: 1 flecha via _spawn_arrow → herda speed/lifetime do elemental atual
+				# (pedra/maré lentos etc.), graviton incluso, sem pierce/ricochet/multi, espectral suprimido.
+				_spawn_arrow(dir, mult, false, true, true, false, grav, origin, "tilisko", true)
+			else:
+				# L4: volley completa do player girada pra mirar no alvo (preserva o leque).
+				var rot: float = dir.angle() - aim_dir.angle()
+				for i in volley.size():
+					var shot: Dictionary = volley[i]
+					var d: Vector2 = (shot["dir"] as Vector2).rotated(rot)
+					_spawn_arrow(d, float(shot["dmg_mult"]) * mult, is_pierce, i == 0, i == 0, is_ricochet, is_graviton, origin, "tilisko")
+		if t.has_method("shoot"):
+			t.shoot(dir, shoot_cb)
 		else:
-			# L4: volley completa do player girada pra mirar no alvo (preserva o leque).
-			var rot: float = dir.angle() - aim_dir.angle()
-			for i in volley.size():
-				var shot: Dictionary = volley[i]
-				var d: Vector2 = (shot["dir"] as Vector2).rotated(rot)
-				# play_sound só na primária (i==0) — mesmo som do player, sem empilhar.
-				_spawn_arrow(d, float(shot["dmg_mult"]) * mult, is_pierce, i == 0, i == 0, is_ricochet, is_graviton, origin, "tilisko")
+			shoot_cb.call()
 
 
 func _nearest_enemy_to_player() -> Node:
