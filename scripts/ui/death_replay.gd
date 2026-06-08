@@ -1,201 +1,203 @@
 extends CanvasLayer
 
-# Death Replay: reproduz os últimos ~3.5s antes da morte. Usa os snapshots
-# capturados pelo player.gd e cria sprites "ghost" (pool por id) que vão
-# se reposicionando frame a frame em câmera-locked no player.
+# Death Replay (Path B — vídeo): reproduz os últimos ~3.5s antes da morte usando os
+# FRAMES do viewport gravados pelo player (player.stats_replay_frames). Fidelidade
+# total — é o frame real renderizado, então rotação/trail/partícula/alinhamento vêm
+# de graça (sem reconstruir "ghosts").
 #
 # Spawnado pelo HUD quando o botão "Ver replay da morte" é clicado.
 
 signal finished
 
-const WORLD_ZOOM: float = 3.5  # Mesmo zoom da Camera2D do main.tscn.
-const PLAYBACK_FPS: float = 20.0  # Mesma taxa de captura.
+const PLAYBACK_FPS: float = 20.0   # Mesma taxa de captura.
 const SLOW_MO_FACTOR: float = 0.6  # Replay em 60% da velocidade real.
 const FADE_DURATION: float = 0.4
-const _PLAYER_PREVIEW_SCENE: PackedScene = preload("res://scenes/ui/player_preview.tscn")
+
+const _MENU_FONT_PATH: String = "res://font/Silver.ttf"
 
 @onready var root_ctrl: Control = $Root
 @onready var bg: ColorRect = $Root/Bg
-@onready var world_root: Node2D = $Root/WorldRoot
 @onready var title_label: Label = $Root/TitleLabel
 @onready var killed_by_label: Label = $Root/KilledByLabel
 
-var snapshots: Array = []
+# Setado pelo HUD antes de add_child: Array[Image] dos últimos ~3.5s.
+var frames: Array = []
 var killed_by_str: String = ""
-var background_texture: Texture2D = null
 
+var _textures: Array = []   # Array[ImageTexture] convertidas dos Images.
+var _frame_view: TextureRect = null
 var _elapsed: float = 0.0
 var _total_duration: float = 0.0
-var _ghosts: Dictionary = {}  # id -> Node2D
-# Posição-âncora no mundo: a posição do player no MOMENTO DA MORTE (último
-# snapshot). Todos os ghosts são plotados como rel_pos = entity.pos - anchor,
-# o que combina com a screenshot de fundo (que mostra a câmera no momento da morte).
-var _anchor_pos: Vector2 = Vector2.ZERO
+# Barra de ações que aparece quando o replay termina (Ver novamente / Gravar / Voltar).
+var _actions_row: HBoxContainer = null
+var _saved_label: Label = null
+var _replay_saved: bool = false  # evita salvar o mesmo replay várias vezes
 
 
 func _ready() -> void:
-	# Sem snapshots → encerra imediato (defensive).
-	if snapshots.is_empty():
+	if frames.is_empty():
 		emit_signal("finished")
 		queue_free()
 		return
-	# Total = N snapshots / fps × slow_mo (sec ajustado pela velocidade do playback).
-	_total_duration = float(snapshots.size()) / PLAYBACK_FPS / SLOW_MO_FACTOR
-	# Âncora = player_pos no último snapshot (momento da morte). Combina com a
-	# screenshot do fundo (câmera estava no player nesse momento).
-	var last_snap: Dictionary = snapshots[snapshots.size() - 1]
-	_anchor_pos = last_snap.get("player_pos", Vector2.ZERO)
-	# Posiciona world_root no centro do viewport com o zoom aplicado.
-	world_root.position = get_viewport().get_visible_rect().size / 2.0
-	world_root.scale = Vector2(WORLD_ZOOM, WORLD_ZOOM)
-	# Background: screenshot capturada no momento da morte (cobre o viewport).
-	# Se não tem screenshot, fica só com o fundo escuro do ColorRect.
-	if background_texture != null:
-		bg.color = Color(1, 1, 1, 1)  # neutralizando — TextureRect vai por cima
-		var img_rect := TextureRect.new()
-		img_rect.texture = background_texture
-		img_rect.anchor_right = 1.0
-		img_rect.anchor_bottom = 1.0
-		img_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		img_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		img_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		img_rect.modulate = Color(0.6, 0.6, 0.6, 1.0)
-		# Insere ATRÁS dos labels mas na frente do Bg.
-		root_ctrl.add_child(img_rect)
-		root_ctrl.move_child(img_rect, 1)
-	# Label de cabeçalho.
+	# Converte os Images gravados em texturas (uma vez só, na abertura).
+	for img in frames:
+		if img is Image and not (img as Image).is_empty():
+			_textures.append(ImageTexture.create_from_image(img))
+	if _textures.is_empty():
+		emit_signal("finished")
+		queue_free()
+		return
+	_total_duration = float(_textures.size()) / PLAYBACK_FPS / SLOW_MO_FACTOR
+	# TextureRect cobrindo a tela (atrás dos labels, na frente do Bg).
+	_frame_view = TextureRect.new()
+	_frame_view.anchor_right = 1.0
+	_frame_view.anchor_bottom = 1.0
+	_frame_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_frame_view.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_frame_view.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_frame_view.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST  # pixel-art nítido
+	root_ctrl.add_child(_frame_view)
+	root_ctrl.move_child(_frame_view, 1)
+	# Labels.
 	title_label.text = tr("HUD_REPLAY_TITLE")
 	killed_by_label.text = killed_by_str
-	# Fade in (CanvasLayer não tem modulate — usa o Control Root como wrapper).
+	# Fade in.
 	root_ctrl.modulate.a = 0.0
-	var tw := create_tween()
-	tw.tween_property(root_ctrl, "modulate:a", 1.0, FADE_DURATION)
-	# Renderiza primeiro snapshot.
-	_render_snapshot_at(0.0)
+	create_tween().tween_property(root_ctrl, "modulate:a", 1.0, FADE_DURATION)
+	_show_frame(0)
 
 
 func _process(delta: float) -> void:
-	if snapshots.is_empty():
+	if _textures.is_empty():
 		return
 	_elapsed += delta
 	if _elapsed >= _total_duration:
-		# Fim — espera um beat mostrando o último frame, depois fade out.
-		_render_snapshot_at(_total_duration)
+		_show_frame(_textures.size() - 1)
 		_finish_replay()
 		set_process(false)
 		return
-	_render_snapshot_at(_elapsed)
+	var progress: float = clampf(_elapsed / maxf(_total_duration, 0.001), 0.0, 1.0)
+	var idx: int = mini(int(progress * float(_textures.size() - 1) + 0.5), _textures.size() - 1)
+	_show_frame(idx)
 
 
-func _render_snapshot_at(t: float) -> void:
-	# Mapeia tempo decorrido pro índice do snapshot (linear, sem interpolação).
-	var progress: float = clampf(t / maxf(_total_duration, 0.001), 0.0, 1.0)
-	var idx: int = mini(int(progress * float(snapshots.size() - 1) + 0.5), snapshots.size() - 1)
-	var snap: Dictionary = snapshots[idx]
-	var entities: Array = snap.get("entities", [])
-	# Marca todos os ghosts como "não vistos" — os que aparecerem ficam, o resto some.
-	var seen_ids: Dictionary = {}
-	for entry in entities:
-		var id: int = int(entry.get("id", 0))
-		seen_ids[id] = true
-		_apply_entity(entry)
-	# Esconde ghosts que não estão no snapshot atual.
-	for id in _ghosts.keys():
-		if not seen_ids.has(id):
-			var g: Node = _ghosts[id]
-			if is_instance_valid(g):
-				(g as Node2D).visible = false
-
-
-func _apply_entity(entry: Dictionary) -> void:
-	var id: int = int(entry.get("id", 0))
-	var ghost: Node2D = _get_or_create_ghost(id, entry)
-	if ghost == null:
+func _show_frame(idx: int) -> void:
+	if _frame_view == null or idx < 0 or idx >= _textures.size():
 		return
-	ghost.visible = true
-	var pos: Vector2 = entry.get("pos", Vector2.ZERO)
-	# Relativo ao MOMENTO DA MORTE — combina com o background (screenshot
-	# tirada nesse instante, com a câmera no player).
-	ghost.position = pos - _anchor_pos
-	var is_player: bool = bool(entry.get("is_player", false))
-	var anim: String = String(entry.get("anim", ""))
-	var frame_idx: int = int(entry.get("frame", 0))
-	var flip_h: bool = bool(entry.get("flip_h", false))
-	if is_player:
-		_apply_player_ghost(ghost, anim, frame_idx, flip_h, entry.get("modulate", Color.WHITE))
-	else:
-		var sprite_node: AnimatedSprite2D = ghost.get_node_or_null("Sprite") as AnimatedSprite2D
-		if sprite_node == null:
-			return
-		if not anim.is_empty() and sprite_node.sprite_frames != null \
-				and sprite_node.sprite_frames.has_animation(anim):
-			if sprite_node.animation != StringName(anim):
-				sprite_node.animation = StringName(anim)
-		sprite_node.frame = frame_idx
-		sprite_node.flip_h = flip_h
-		sprite_node.modulate = entry.get("modulate", Color.WHITE)
-
-
-func _apply_player_ghost(ghost: Node2D, anim: String, frame_idx: int, flip_h: bool, mod: Color) -> void:
-	# Player ghost = player_preview com SkinLoadout. Body é a anim master, Skin/*
-	# segue automaticamente via skin_manager.gd.
-	var body: AnimatedSprite2D = ghost.get_node_or_null("Body") as AnimatedSprite2D
-	if body == null:
-		return
-	if not anim.is_empty() and body.sprite_frames != null \
-			and body.sprite_frames.has_animation(anim):
-		if body.animation != StringName(anim):
-			body.animation = StringName(anim)
-	body.frame = frame_idx
-	body.flip_h = flip_h
-	# Flipa todos os layers de skin pra acompanhar o Body.
-	var skin: Node = ghost.get_node_or_null("Skin")
-	if skin != null:
-		for child in skin.get_children():
-			if child is AnimatedSprite2D:
-				(child as AnimatedSprite2D).flip_h = flip_h
-				if not anim.is_empty() and (child as AnimatedSprite2D).sprite_frames != null \
-						and (child as AnimatedSprite2D).sprite_frames.has_animation(anim):
-					(child as AnimatedSprite2D).animation = StringName(anim)
-				(child as AnimatedSprite2D).frame = frame_idx
-	ghost.modulate = mod
-
-
-func _get_or_create_ghost(id: int, entry: Dictionary) -> Node2D:
-	if _ghosts.has(id):
-		return _ghosts[id]
-	# Player ghost: usa o player_preview scene + SkinLoadout pra capturar a roupa.
-	if bool(entry.get("is_player", false)):
-		var preview: Node2D = _PLAYER_PREVIEW_SCENE.instantiate()
-		preview.z_index = int(entry.get("z_index", 0))
-		world_root.add_child(preview)
-		# SkinLoadout.apply_to é static — chama direto pela classe.
-		SkinLoadout.apply_to(preview)
-		_ghosts[id] = preview
-		return preview
-	# Ghost normal: AnimatedSprite2D com o sprite_frames original.
-	var sprite_frames: SpriteFrames = entry.get("sprite_frames")
-	if sprite_frames == null:
-		return null
-	var ghost := Node2D.new()
-	ghost.name = "Ghost_%d" % id
-	ghost.z_index = int(entry.get("z_index", 0))
-	world_root.add_child(ghost)
-	var sprite := AnimatedSprite2D.new()
-	sprite.name = "Sprite"
-	sprite.sprite_frames = sprite_frames
-	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	# Reproduz o offset do sprite original (ex: offset=(0,-16) coloca o sprite
-	# acima dos pés). Sem isso, todos os ghosts ficam centralizados nos pés.
-	sprite.position = entry.get("sprite_offset", Vector2.ZERO)
-	ghost.add_child(sprite)
-	_ghosts[id] = ghost
-	return ghost
+	_frame_view.texture = _textures[idx]
 
 
 func _finish_replay() -> void:
+	# Em vez de fechar direto, oferece ações: rever, gravar em disco ou voltar.
+	# Mostra o cursor do SO pra os botões serem clicáveis (gameplay usa mira escondida).
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	_ensure_actions_row()
+	_actions_row.visible = true
+
+
+func _ensure_actions_row() -> void:
+	if _actions_row != null:
+		return
+	_actions_row = HBoxContainer.new()
+	_actions_row.add_theme_constant_override("separation", 24)
+	_actions_row.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_actions_row.position = Vector2(0, -60)
+	_actions_row.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_actions_row.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	root_ctrl.add_child(_actions_row)
+	_actions_row.add_child(_make_button("HUD_REPLAY_AGAIN", _on_again_pressed))
+	_actions_row.add_child(_make_button("HUD_REPLAY_SAVE", _on_save_pressed))
+	_actions_row.add_child(_make_button("COMMON_BACK", _on_back_pressed))
+	# Label de feedback ("Replay salvo em ...") acima dos botões.
+	_saved_label = Label.new()
+	_saved_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_saved_label.position = Vector2(0, -130)
+	_saved_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_saved_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_saved_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_saved_label.add_theme_color_override("font_color", Color(0.7, 1, 0.7, 1))
+	_saved_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	_saved_label.add_theme_constant_override("outline_size", 4)
+	var fnt := load(_MENU_FONT_PATH)
+	if fnt != null:
+		_saved_label.add_theme_font_override("font", fnt)
+	_saved_label.add_theme_font_size_override("font_size", 26)
+	_saved_label.visible = false
+	root_ctrl.add_child(_saved_label)
+
+
+func _make_button(text_key: String, handler: Callable) -> Button:
+	var b := Button.new()
+	b.text = tr(text_key)
+	b.custom_minimum_size = Vector2(220, 56)
+	b.focus_mode = Control.FOCUS_NONE
+	var fnt := load(_MENU_FONT_PATH)
+	if fnt != null:
+		b.add_theme_font_override("font", fnt)
+	b.add_theme_font_size_override("font_size", 30)
+	b.add_theme_color_override("font_color", Color(0.95, 0.85, 1, 1))
+	b.add_theme_color_override("font_hover_color", Color(1, 1, 1, 1))
+	b.pressed.connect(handler)
+	return b
+
+
+func _on_again_pressed() -> void:
+	if _actions_row != null:
+		_actions_row.visible = false
+	if _saved_label != null:
+		_saved_label.visible = false
+	_elapsed = 0.0
+	_show_frame(0)
+	set_process(true)
+
+
+func _on_back_pressed() -> void:
 	var tw := create_tween()
 	tw.tween_property(root_ctrl, "modulate:a", 0.0, FADE_DURATION)
 	await tw.finished
 	emit_signal("finished")
 	queue_free()
+
+
+func _on_save_pressed() -> void:
+	if _replay_saved:
+		return
+	var path: String = _save_replay_to_disk()
+	if _saved_label != null:
+		if path.is_empty():
+			_saved_label.text = tr("HUD_REPLAY_SAVE_FAIL")
+			_saved_label.add_theme_color_override("font_color", Color(1, 0.6, 0.6, 1))
+		else:
+			_replay_saved = true
+			_saved_label.text = tr("HUD_REPLAY_SAVED") % path
+		_saved_label.visible = true
+
+
+# Salva os frames do replay como PNGs numa subpasta de replays/, ao lado do
+# executável (a pasta que o launcher cria). Cai em user:// se não der escrita.
+# Retorna o caminho da pasta salva, ou "" em falha.
+func _save_replay_to_disk() -> String:
+	if frames.is_empty():
+		return ""
+	var ts: Dictionary = Time.get_datetime_dict_from_system()
+	var folder_name: String = "replay_%04d%02d%02d_%02d%02d%02d" % [
+		ts.year, ts.month, ts.day, ts.hour, ts.minute, ts.second]
+	var bases: Array[String] = [
+		OS.get_executable_path().get_base_dir().path_join("replays"),
+		"user://replays",
+	]
+	for base in bases:
+		var dir_path: String = base.path_join(folder_name)
+		if DirAccess.make_dir_recursive_absolute(dir_path) != OK:
+			continue
+		var saved_any: bool = false
+		var i: int = 0
+		for img in frames:
+			if img is Image and not (img as Image).is_empty():
+				var fpath: String = dir_path.path_join("frame_%03d.png" % i)
+				if (img as Image).save_png(fpath) == OK:
+					saved_any = true
+			i += 1
+		if saved_any:
+			return ProjectSettings.globalize_path(dir_path) if dir_path.begins_with("user://") else dir_path
+	return ""

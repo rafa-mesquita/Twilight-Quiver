@@ -52,6 +52,9 @@ SETTINGS_SHOW_FPS,Mostrar FPS,Show FPS,Mostrar FPS,Afficher FPS
 SETTINGS_HEADER_HUD,INTERFACE,INTERFACE,INTERFAZ,INTERFACE
 SETTINGS_HIDE_TIMER,Esconder cronômetro,Hide timer,Ocultar cronómetro,Masquer le chronomètre
 SETTINGS_HIDE_TIME_INFO,Esconder tempos de round/run,Hide round/run times,Ocultar tiempos de ronda/run,Masquer les temps de manche/partie
+SETTINGS_HEADER_REPLAY,REPLAY,REPLAY,REPETICIÓN,REPLAY
+SETTINGS_REPLAY_ENABLED,Replay da morte,Death replay,Repetición de muerte,Replay de mort
+SETTINGS_REPLAY_SECONDS,Segundos antes da morte,Seconds before death,Segundos antes de morir,Secondes avant la mort
 SETTINGS_LOCALE,Idioma,Language,Idioma,Langue
 SETTINGS_DISPLAY_MODE_WINDOWED,Janela,Windowed,Ventana,Fenêtré
 SETTINGS_DISPLAY_MODE_BORDERLESS,Tela cheia em janela,Borderless,Pantalla completa sin bordes,Plein écran fenêtré
@@ -182,6 +185,10 @@ HUD_DEATH_SURVIVAL,Sobreviveu %d waves,Survived %d raids,Sobreviviste %d raids,S
 HUD_PETAL_DEPOSIT,+%d pétalas depositadas (banco: %d),+%d petals deposited (bank: %d),+%d pétalos depositados (banco: %d),+%d pétales déposés (banque : %d)
 HUD_REPLAY_DEATH_BUTTON,Ver replay da morte,Watch death replay,Ver repetición,Revoir la mort
 HUD_REPLAY_TITLE,REPLAY,REPLAY,REPLAY,REJOUER
+HUD_REPLAY_AGAIN,Ver novamente,Watch again,Ver de nuevo,Revoir
+HUD_REPLAY_SAVE,Gravar replay,Save replay,Guardar repetición,Enregistrer
+HUD_REPLAY_SAVED,"Replay salvo em: %s","Replay saved to: %s","Repetición guardada en: %s","Replay enregistré dans : %s"
+HUD_REPLAY_SAVE_FAIL,Falha ao salvar o replay,Failed to save replay,Error al guardar,Échec de l'enregistrement
 HUD_DEATH_BY_UNKNOWN,Morto por causa desconhecida,Killed by unknown cause,Muerto por causa desconocida,Tué par cause inconnue
 HUD_DEATH_BY_MELEE,Morto pelo bote do macaco furioso,Killed by the angry monkey's strike,Muerto por el embate del mono furioso,Tué par l'attaque du singe enragé
 HUD_DEATH_BY_MONKEY,Morto pelo golpe do macaco,Killed by the monkey's blow,Muerto por el golpe del mono,Tué par le coup du singe

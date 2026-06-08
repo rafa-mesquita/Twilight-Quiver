@@ -39,6 +39,10 @@ const _DISPLAY_MODE_ITEMS: Array[String] = [
 const _FPS_CAP_ITEMS: Array[String] = ["60", "120", "144", "SETTINGS_FPS_UNLIMITED"]
 const _FPS_CAP_VALUES: Array[int] = [60, 120, 144, 0]
 
+# Replay: rótulos do dropdown de segundos. Ordem MUST bater com
+# GameState.REPLAY_SECONDS_OPTIONS ([4.0, 3.0, 2.0, 1.0, 0.5]).
+const _REPLAY_SECONDS_ITEMS: Array[String] = ["4s", "3s", "2s", "1s", "0.5s"]
+
 # --- Display ---
 @onready var display_mode_dropdown: Button = $Center/Panel/Margin/Scroll/VBox/DisplayModeRow/DisplayModeDropdown
 @onready var resolution_dropdown: Button = $Center/Panel/Margin/Scroll/VBox/ResolutionRow/ResolutionDropdown
@@ -63,6 +67,10 @@ const _FPS_CAP_VALUES: Array[int] = [60, 120, 144, 0]
 # --- HUD (esconder informações de tempo) ---
 @onready var hide_timer_check: CheckBox = $Center/Panel/Margin/Scroll/VBox/HideTimerRow/HideTimerCheck
 @onready var hide_time_info_check: CheckBox = $Center/Panel/Margin/Scroll/VBox/HideTimeInfoRow/HideTimeInfoCheck
+
+# --- Replay (gravação de vídeo da morte) ---
+@onready var replay_enabled_check: CheckBox = $Center/Panel/Margin/Scroll/VBox/ReplayEnabledRow/ReplayEnabledCheck
+@onready var replay_seconds_dropdown: Button = $Center/Panel/Margin/Scroll/VBox/ReplaySecondsRow/ReplaySecondsDropdown
 
 # --- Buttons ---
 @onready var apply_button: Button = $Center/Panel/Margin/Scroll/VBox/ApplyButton
@@ -108,6 +116,9 @@ func _populate_dropdowns() -> void:
 	locale_dropdown.clear_items()
 	for entry in LocaleManager.SUPPORTED_LOCALES:
 		locale_dropdown.add_item(str(entry["label"]))
+	replay_seconds_dropdown.clear_items()
+	for label in _REPLAY_SECONDS_ITEMS:
+		replay_seconds_dropdown.add_item(label)
 
 
 func _load_current_settings() -> void:
@@ -162,6 +173,14 @@ func _load_current_settings() -> void:
 	hide_timer_check.button_pressed = bool(cfg.get_value("hud", "hide_run_timer", GameState.DEFAULT_HIDE_RUN_TIMER))
 	hide_time_info_check.button_pressed = bool(cfg.get_value("hud", "hide_time_info", GameState.DEFAULT_HIDE_TIME_INFO))
 
+	# Replay
+	replay_enabled_check.button_pressed = bool(cfg.get_value("replay", "enabled", GameState.DEFAULT_REPLAY_ENABLED))
+	var replay_secs: float = float(cfg.get_value("replay", "seconds", GameState.DEFAULT_REPLAY_SECONDS))
+	var replay_idx: int = GameState.REPLAY_SECONDS_OPTIONS.find(replay_secs)
+	if replay_idx < 0:
+		replay_idx = GameState.REPLAY_SECONDS_OPTIONS.find(GameState.DEFAULT_REPLAY_SECONDS)
+	replay_seconds_dropdown.select(replay_idx)
+
 
 func _on_display_mode_changed(_index: int) -> void:
 	_update_resolution_enabled()
@@ -213,6 +232,11 @@ func _on_apply_pressed() -> void:
 	var hide_timer: bool = hide_timer_check.button_pressed
 	var hide_time_info: bool = hide_time_info_check.button_pressed
 
+	# --- Replay ---
+	var replay_enabled: bool = replay_enabled_check.button_pressed
+	var replay_secs_idx: int = clamp(replay_seconds_dropdown.get_selected(), 0, GameState.REPLAY_SECONDS_OPTIONS.size() - 1)
+	var replay_secs: float = GameState.REPLAY_SECONDS_OPTIONS[replay_secs_idx]
+
 	# Persiste tudo.
 	var cfg := ConfigFile.new()
 	cfg.load(_SETTINGS_PATH)
@@ -228,6 +252,8 @@ func _on_apply_pressed() -> void:
 	cfg.set_value("video", "show_fps", show_fps)
 	cfg.set_value("hud", "hide_run_timer", hide_timer)
 	cfg.set_value("hud", "hide_time_info", hide_time_info)
+	cfg.set_value("replay", "enabled", replay_enabled)
+	cfg.set_value("replay", "seconds", replay_secs)
 	cfg.save(_SETTINGS_PATH)
 	# Locale: LocaleManager cuida da seção [locale].
 	LocaleManager.save_locale(locale_code)
@@ -239,6 +265,7 @@ func _on_apply_pressed() -> void:
 	GameState.apply_audio_settings(master, music, sfx)
 	GameState.apply_video_settings(vsync, fps_cap, show_fps)
 	GameState.apply_hud_settings(hide_timer, hide_time_info)
+	GameState.apply_replay_settings(replay_enabled, replay_secs)
 
 
 func _on_back_pressed() -> void:

@@ -573,6 +573,18 @@ const REPLAY_MAX_SNAPSHOTS: int = 70  # ~3.5s × 20fps
 const REPLAY_RECORD_RADIUS: float = 260.0  # entidades dentro desse raio do player entram no snapshot
 var stats_replay_snapshots: Array = []
 var _replay_record_accum: float = 0.0
+# --- Replay POR FRAMES (Path B): grava o frame renderizado a 20fps em resolução baixa.
+# Fidelidade total (rotação/trail/partícula/alinhamento de graça). Custo: 1 readback
+# GPU→CPU por captura. Guarda Image (CPU), sem upload GPU durante a run. Tunável.
+const REPLAY_FRAME_INTERVAL_MS: int = 50      # 20fps
+const REPLAY_FRAME_DOWNSCALE: float = 0.25    # 1920x1080 -> 480x270 (baixo, basta pra causa de morte)
+# Continua gravando um tempinho DEPOIS da morte pra o replay mostrar o HP chegando a 0
+# e o início da tela de morte (senão o corte é brusco e nem dá pra ver o golpe fatal).
+const REPLAY_POST_DEATH_MS: int = 700
+var stats_replay_frames: Array = []           # Array[Image] (ring buffer dos últimos ~3.5s)
+var _replay_frame_last_ms: int = 0
+var _replay_capture_dead_until_ms: int = 0    # enquanto > now, segue capturando mesmo morto
+var _replay_suspend_capture: bool = false     # pausa captura durante o screenshot limpo da morte
 var locked_aim_dir: Vector2 = Vector2.RIGHT
 var locked_facing_left: bool = false
 var start_position: Vector2 = Vector2.ZERO
@@ -696,6 +708,8 @@ func _ready() -> void:
 	sprite.animation_finished.connect(_on_animation_finished)
 	sprite.frame_changed.connect(_on_frame_changed)
 	sprite.play("idle")
+	# Replay por frames: captura o viewport renderizado (throttle interno a 20fps).
+	RenderingServer.frame_post_draw.connect(_capture_replay_frame)
 	# Aplica skin salva (peças layered em cima do body). Sem efeito até o
 	# usuário ter peças configuradas em assets/player/skin_parts/ e selecionadas
 	# pela UI de skin.
@@ -743,7 +757,9 @@ func _physics_process(delta: float) -> void:
 	_update_chain_auto_bolt(delta)
 	_update_boomerang(delta)
 	_update_tiger_claws(delta)
-	_tick_replay_recorder(delta)
+	# Path B: replay agora grava FRAMES (em _capture_replay_frame via frame_post_draw);
+	# o recorder de ghosts foi desligado pra o teste de desempenho medir só o readback.
+	# _tick_replay_recorder(delta)
 	_update_curse_skill(delta)
 	_update_time_freeze(delta)
 	_update_tide_shield(delta)
@@ -2768,6 +2784,42 @@ func _capture_clean_death_screenshot() -> void:
 		if is_instance_valid(n):
 			n.visible = true
 	visible = was_visible
+
+
+func _capture_replay_frame() -> void:
+	# Replay por frames (Path B): chamado a cada frame renderizado (frame_post_draw),
+	# captura o viewport a ~20fps em baixa resolução. Configurável via GameState (o
+	# jogador pode desligar pra economizar em PCs fracos, ou escolher quantos segundos).
+	if not GameState.replay_enabled or _replay_suspend_capture:
+		return
+	var now: int = Time.get_ticks_msec()
+	# Após a morte segue gravando só até a janela pós-morte fechar (pra ver o HP→0).
+	if is_dead and now > _replay_capture_dead_until_ms:
+		return
+	var tree := get_tree()
+	if tree == null or tree.paused:
+		return
+	if now - _replay_frame_last_ms < REPLAY_FRAME_INTERVAL_MS:
+		return
+	_replay_frame_last_ms = now
+	var vp := get_viewport()
+	if vp == null:
+		return
+	var vtex := vp.get_texture()
+	if vtex == null:
+		return
+	var img: Image = vtex.get_image()
+	if img == null:
+		return
+	if REPLAY_FRAME_DOWNSCALE < 1.0:
+		img.resize(maxi(int(img.get_width() * REPLAY_FRAME_DOWNSCALE), 1), \
+			maxi(int(img.get_height() * REPLAY_FRAME_DOWNSCALE), 1), Image.INTERPOLATE_NEAREST)
+	stats_replay_frames.append(img)
+	# Buffer dinâmico: replay_seconds × 20fps. +pós-morte pra caber os frames finais.
+	var max_frames: int = int(GameState.replay_seconds * (1000.0 / REPLAY_FRAME_INTERVAL_MS)) \
+		+ int(REPLAY_POST_DEATH_MS / REPLAY_FRAME_INTERVAL_MS)
+	while stats_replay_frames.size() > max_frames:
+		stats_replay_frames.pop_front()
 
 
 func _tick_replay_recorder(delta: float) -> void:
@@ -4795,15 +4847,20 @@ func take_damage(amount: float, source_id: String = "") -> void:
 
 
 func _die() -> void:
-	# Snapshot final do ring buffer (todos os ghosts pra o replay).
-	_record_replay_snapshot()
+	# Path B: replay por frames — segue gravando até REPLAY_POST_DEATH_MS depois da morte
+	# pra o replay mostrar o HP chegando a 0 / golpe fatal (senão o corte fica brusco).
+	_replay_capture_dead_until_ms = Time.get_ticks_msec() + REPLAY_POST_DEATH_MS
 	is_dead = true
 	is_attacking = false
 	is_drawing = false
+	# Suspende a captura de frames durante o screenshot limpo (que esconde os bonecos
+	# por 1 frame) pra não entrar um frame "vazio" no meio do replay.
+	_replay_suspend_capture = true
 	# Captura screenshot do CENÁRIO sem os bonecos — esconde player/enemy/ally/
 	# projétil por 1 frame, captura, restaura. Sem isso, o fundo do replay
 	# fica com tudo congelado e atrapalha entender o que aconteceu.
 	await _capture_clean_death_screenshot()
+	_replay_suspend_capture = false
 	if sprite != null:
 		sprite.stop()
 	if hp_bar != null:

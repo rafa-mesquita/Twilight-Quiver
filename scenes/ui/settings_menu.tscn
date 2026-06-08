@@ -423,6 +423,56 @@ theme_override_styles/hover = SubResource("SBF_btn_hover")
 theme_override_styles/pressed = SubResource("SBF_btn_pressed")
 theme_override_styles/focus = SubResource("SBF_btn_focus")
 
+[node name="ReplayHeader" type="Label" parent="Center/Panel/Margin/Scroll/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 35
+text = "SETTINGS_HEADER_REPLAY"
+
+[node name="ReplayEnabledRow" type="HBoxContainer" parent="Center/Panel/Margin/Scroll/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Label" type="Label" parent="Center/Panel/Margin/Scroll/VBox/ReplayEnabledRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 30
+text = "SETTINGS_REPLAY_ENABLED"
+vertical_alignment = 1
+
+[node name="ReplayEnabledCheck" type="CheckBox" parent="Center/Panel/Margin/Scroll/VBox/ReplayEnabledRow"]
+custom_minimum_size = Vector2(72, 56)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 29
+theme_override_styles/normal = SubResource("SBF_btn_normal")
+theme_override_styles/hover = SubResource("SBF_btn_hover")
+theme_override_styles/pressed = SubResource("SBF_btn_pressed")
+theme_override_styles/focus = SubResource("SBF_btn_focus")
+
+[node name="ReplaySecondsRow" type="HBoxContainer" parent="Center/Panel/Margin/Scroll/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Label" type="Label" parent="Center/Panel/Margin/Scroll/VBox/ReplaySecondsRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 30
+text = "SETTINGS_REPLAY_SECONDS"
+vertical_alignment = 1
+
+[node name="ReplaySecondsDropdown" parent="Center/Panel/Margin/Scroll/VBox/ReplaySecondsRow" instance=ExtResource("5_select")]
+custom_minimum_size = Vector2(340, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+
 [node name="Spacer" type="Control" parent="Center/Panel/Margin/Scroll/VBox"]
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
