@@ -2332,9 +2332,17 @@ func _commit_upgrades_and_close() -> void:
 				continue
 			if not player.spend_gold(int(slot.get("price", 0))):
 				continue
+			var _buy_id: String = String(slot["id"])
+			var _lvl_before: int = int(player.get_upgrade_count(_buy_id)) if player.has_method("get_upgrade_count") else 0
 			if player.has_method("apply_upgrade"):
 				player.apply_upgrade(slot["id"])
-			SkinLoadout.record_purchase(String(slot.get("id", "")))  # unlock Amuleto
+			SkinLoadout.record_purchase(_buy_id)  # unlock Amuleto
+			# Botas Ariscas: skill de mobilidade comprada pulou direto pro L2 (0->2).
+			# Enfileira a revelação do L2 pra mostrar após a loja (antes do round).
+			if _lvl_before == 0 and player.has_method("get_upgrade_count") and int(player.get_upgrade_count(_buy_id)) == 2:
+				var wm := get_tree().get_first_node_in_group("wave_manager")
+				if wm != null and wm.has_method("queue_botas_l2_reveal"):
+					wm.queue_botas_l2_reveal(_buy_id)
 	# Escolha de rastro do Fogo: pendente quando a compra levou o Fogo a exatamente
 	# L2. Mostrada como ÚLTIMO modal (depois de Joker/Roleta, se houver), via
 	# _maybe_finish_or_fire_choice nos fechamentos.
@@ -3855,7 +3863,14 @@ func _on_item_hovered(id: String, chip: Control) -> void:
 	var item: Dictionary = InventoryItems.ITEMS.get(id, {})
 	var title: String = tr(String(item.get("name", "")))
 	var desc: String = tr(String(item.get("desc", "")))
-	_augment_tooltip_label.text = "[b]%s[/b]\n\n%s" % [title, desc]
+	# Dividendo Arcano: mostra quanto de ouro ele já concedeu NESTA run (acumulador
+	# no player). Linha extra dourada abaixo da descrição.
+	var extra: String = ""
+	if id == "arcane_dividend":
+		var p := _get_player()
+		var granted: int = int(p.stats_arcane_dividend_gold) if p != null and "stats_arcane_dividend_gold" in p else 0
+		extra = "\n\n[color=#ffd36b]%s[/color]" % (tr("SHOP_ARCANE_GRANTED") % granted)
+	_augment_tooltip_label.text = "[b]%s[/b]\n\n%s%s" % [title, desc, extra]
 	_augment_tooltip.visible = true
 	var chip_global: Vector2 = chip.get_global_rect().position
 	var tip_size: Vector2 = await _await_tooltip_size()

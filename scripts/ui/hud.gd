@@ -2093,6 +2093,7 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 		"monkeys_cursed": monkeys_cursed,
 		"stun_seconds": int(round(float(p.get("stats_stun_seconds")))) if p != null and "stats_stun_seconds" in p else 0,
 		"active_skills_used": int(p.get("stats_active_skills_used")) if p != null and "stats_active_skills_used" in p else 0,
+		"mobility_skill_uses": int(p.get("stats_mobility_skill_uses")) if p != null and "stats_mobility_skill_uses" in p else 0,
 		"tide_vulnerable_kills": int(p.get("stats_tide_vulnerable_kills")) if p != null and "stats_tide_vulnerable_kills" in p else 0,
 		"dmg_dealt": dmg_dealt,
 		"dmg_taken": dmg_taken,

@@ -275,6 +275,9 @@ const STAT_ELEMENTAL_L4: StringName = &"elemental_l4_reached"
 # Quantas skills ativáveis (Q elemental ou espaço: dash/esquivando) o player
 # usou no total entre runs. Unlock da skin Urban.
 const STAT_ACTIVE_SKILLS: StringName = &"active_skills_used_total"
+# Ativações de skill de MOBILIDADE (dash/esquivando/fenda/adrenalina) no total —
+# unlock do item Botas Ariscas (75 usos).
+const STAT_MOBILITY_USES: StringName = &"mobility_skill_uses_total"
 # Flag (0/1): jogador já passou das waves 1, 2 e 3 sem tomar dano em alguma run.
 # Unlock da skin Hawk.
 const STAT_FLAWLESS_W3: StringName = &"flawless_through_w3"
@@ -832,6 +835,7 @@ static func record_run(run_stats: Dictionary) -> Array:
 	var run_monkeys_cursed: int = int(run_stats.get("monkeys_cursed", 0))
 	var run_stun_seconds: int = int(run_stats.get("stun_seconds", 0))
 	var run_active_skills: int = int(run_stats.get("active_skills_used", 0))
+	var run_mobility_uses: int = int(run_stats.get("mobility_skill_uses", 0))
 	var run_tide_kills: int = int(run_stats.get("tide_vulnerable_kills", 0))
 
 	if run_wave > get_stat(STAT_MAX_WAVE):
@@ -846,6 +850,8 @@ static func record_run(run_stats: Dictionary) -> Array:
 		set_stat(STAT_STUN_SECONDS, get_stat(STAT_STUN_SECONDS) + run_stun_seconds)
 	if run_active_skills > 0:
 		set_stat(STAT_ACTIVE_SKILLS, get_stat(STAT_ACTIVE_SKILLS) + run_active_skills)
+	if run_mobility_uses > 0:
+		set_stat(STAT_MOBILITY_USES, get_stat(STAT_MOBILITY_USES) + run_mobility_uses)
 	if run_tide_kills > 0:
 		set_stat(STAT_TIDE_KILLS, get_stat(STAT_TIDE_KILLS) + run_tide_kills)
 	# Itens desbloqueaveis: cura por aliado, kills de aliado, gold gasto.

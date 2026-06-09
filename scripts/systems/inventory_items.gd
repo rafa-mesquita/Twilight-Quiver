@@ -169,6 +169,31 @@ const ITEMS: Dictionary = {
 		"effect": {"type": "pets_every_shop"},
 		"unlock": {"type": "shop"},
 	},
+	# Botas Ariscas: skills de mobilidade (dash/esquivando/fenda/adrenalina) já vêm
+	# no L2 na 1ª aquisição e têm −20% de cooldown. Efeito tipo "mobility_cdr" liga
+	# a flag _botas_ariscas_equipped no player (que faz as duas coisas).
+	"botas_ariscas": {
+		"name": "ITEM_BOTAS_ARISCAS_NAME",
+		"desc": "ITEM_BOTAS_ARISCAS_DESC",
+		"icon": "res://assets/Hud/itens/botas_ariscas.png",
+		"effect": {"type": "mobility_cdr"},
+		"unlock": {"type": "quest", "reqs": [
+			{"stat": &"mobility_skill_uses_total", "value": 75, "label": "ITEM_REQ_BOTAS_ARISCAS"},
+		]},
+	},
+	# Primavera Eterna: +1 pétala no fim de cada round (30% de chance de 2) e a
+	# chance de drop de pétala por mob sobe pra 2%. Lido por wave_manager
+	# (petal_per_round_roll) e PetalDrop (petal_drop_chance_override). Loja: 20 pétalas.
+	"primavera_eterna": {
+		"name": "ITEM_PRIMAVERA_NAME",
+		"desc": "ITEM_PRIMAVERA_DESC",
+		"icon": "res://assets/Hud/itens/primavera_eterna.png",
+		"effects": [
+			{"type": "petal_per_round", "base": 1, "double_chance": 0.30},
+			{"type": "petal_drop_chance", "value": 0.02},
+		],
+		"unlock": {"type": "shop"},
+	},
 }
 
 
@@ -360,6 +385,32 @@ static func arcane_dividend_roll() -> int:
 	return 0
 
 
+# Primavera Eterna: pétalas extras no fim do round. Soma os efeitos petal_per_round
+# dos itens equipados (cada um: `base` + chance `double_chance` de dobrar). 0 sem
+# nenhum (e sem gastar randf à toa).
+static func petal_per_round_roll() -> int:
+	var total: int = 0
+	for id in get_equipped():
+		for eff in _item_effects(id):
+			if String(eff.get("type", "")) == "petal_per_round":
+				var amt: int = int(eff.get("base", 1))
+				if randf() < float(eff.get("double_chance", 0.0)):
+					amt *= 2
+				total += amt
+	return total
+
+
+# Primavera Eterna: maior override da chance de drop de pétala por mob entre os
+# itens equipados. Retorna -1.0 se nenhum item altera (PetalDrop usa a base).
+static func petal_drop_chance_override() -> float:
+	var best: float = -1.0
+	for id in get_equipped():
+		for eff in _item_effects(id):
+			if String(eff.get("type", "")) == "petal_drop_chance":
+				best = maxf(best, float(eff.get("value", 0.0)))
+	return best
+
+
 # Maior chance de "primeiro roll grátis" entre os itens equipados (Estou com Sorte).
 static func equipped_free_first_roll_chance() -> float:
 	var c: float = 0.0
@@ -499,3 +550,7 @@ static func apply_to_player(player: Node) -> void:
 					player._essencia_cdr_per_level = float(eff.get("cdr_per_level", 0.10))
 					player._essencia_cdr_cap = float(eff.get("cdr_cap", 0.50))
 					player._essencia_hp_per_level = float(eff.get("hp_per_level", 5.0))
+			elif t == "mobility_cdr":
+				# Botas Ariscas: liga a flag (−20% CD de mobilidade + skill já vem L2).
+				if "_botas_ariscas_equipped" in player:
+					player._botas_ariscas_equipped = true

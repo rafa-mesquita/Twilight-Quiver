@@ -20,6 +20,7 @@ const CATALOG: Array[Dictionary] = [
 	{"cat": "itens", "kind": "item", "id": "cajado_crepusculo", "price": 400},
 	{"cat": "itens", "kind": "item", "id": "sanguinario", "price": 660},
 	{"cat": "itens", "kind": "item", "id": "chamado_da_matilha", "price": 200},
+	{"cat": "itens", "kind": "item", "id": "primavera_eterna", "price": 50},
 ]
 const CATEGORIES: Array[Dictionary] = [
 	{"key": "skins", "label": "LOJA_CAT_SKINS"},

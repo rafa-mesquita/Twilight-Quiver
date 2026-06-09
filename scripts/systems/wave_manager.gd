@@ -1007,12 +1007,15 @@ func _finish_wave() -> void:
 			else:
 				prange = Vector2i(3, 4)
 			var rolled: int = randi_range(prange.x, prange.y)
+			rolled += InventoryItems.petal_per_round_roll()  # Primavera Eterna (item)
 			var p_origin: Vector2 = (_p_fw as Node2D).global_position if _p_fw is Node2D else Vector2.INF
 			_p_fw.add_petals(rolled, p_origin)
 		# Dividendo Arcano (item): sorteio em camadas de gold no fim de cada round.
 		var _gpr: int = InventoryItems.arcane_dividend_roll()
 		if _gpr > 0 and _p_fw.has_method("add_gold"):
 			_p_fw.add_gold(_gpr)
+			if "stats_arcane_dividend_gold" in _p_fw:
+				_p_fw.stats_arcane_dividend_gold += _gpr
 		# Conta wave limpa (unlock do item Estou com Sorte).
 		if "stats_waves_cleared" in _p_fw:
 			_p_fw.stats_waves_cleared += 1
@@ -1259,6 +1262,10 @@ func _cleanup_curse_allies() -> void:
 				return
 	# Loja pós-wave: 1 estrutura + 1 upgrade max.
 	await _open_shop()
+	if stopped:
+		return
+	# Botas Ariscas: revela a(s) skill(s) de mobilidade que pularam pro L2 na loja.
+	await _show_botas_l2_reveals()
 	if stopped:
 		return
 	# Pequeno delay e próxima wave (que vai disparar o intro).
@@ -1811,6 +1818,10 @@ const FREE_REWARD_CARD_PATHS: Dictionary = {
 	"fenda": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"adrenalina": "res://assets/Hud/shop/upgrade/deslizando.png",
 	"double_arrows": "res://assets/Hud/shop/upgrade/multi_arrow.png",
+	# Armadura: arte própria fora do sheet de 4 stats (arquivo em PT). Sem isso o
+	# card de boas-vindas/free-reward da Armadura saía sem imagem. Slice de status
+	# (65x17 por nível) é aplicado pelo fallback em _reward_load_card_texture.
+	"armor": "res://assets/Hud/shop/status/Armadura.png",
 }
 const FREE_REWARD_STATUS_SHEET: String = "res://assets/Hud/shop/status/HP - atck speed - Move speed - Atck Dmg.png"
 const FREE_REWARD_STATUS_ROWS: Dictionary = {"hp": 0, "attack_speed": 1, "move_speed": 2, "damage": 3}
@@ -1873,6 +1884,33 @@ func _grant_free_random_pet() -> void:
 			name_key = entry["name"]
 			break
 	await _show_card_reward_popup(pick, lvl, "HUD_FREE_PET_TITLE", name_key)
+
+
+# Botas Ariscas (item): quando uma skill de mobilidade comprada na loja pula direto
+# pro L2 (bump do item), a loja enfileira o id aqui; após a loja fechar mostramos a
+# carta de revelação do L2 (igual boas-vindas), antes do próximo round.
+var _botas_l2_reveals: Array[String] = []
+
+
+func queue_botas_l2_reveal(id: String) -> void:
+	if not (id in _botas_l2_reveals):
+		_botas_l2_reveals.append(id)
+
+
+func _show_botas_l2_reveals() -> void:
+	if _botas_l2_reveals.is_empty():
+		return
+	var reveals: Array = _botas_l2_reveals.duplicate()
+	_botas_l2_reveals.clear()
+	for id in reveals:
+		var name_key: String = String(id)
+		for entry in FREE_UPGRADE_POOL:
+			if entry["id"] == id:
+				name_key = entry["name"]
+				break
+		await _show_card_reward_popup(String(id), 2, "HUD_BOTAS_L2_TITLE", name_key)
+		if stopped:
+			return
 
 
 func _show_card_reward_popup(slot_id: String, target_level: int, title_key: String, name_key: String) -> void:

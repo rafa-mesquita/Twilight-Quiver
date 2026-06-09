@@ -22,7 +22,12 @@ static func try_drop(world: Node, drop_position: Vector2) -> void:
 		var wm := tree.get_first_node_in_group("wave_manager")
 		if wm != null and wm.has_method("is_boss_wave_now") and wm.is_boss_wave_now():
 			return
-	if randf() > DROP_CHANCE:
+	# Primavera Eterna (item): sobe a chance de drop por mob (override pra 2%).
+	var chance: float = DROP_CHANCE
+	var ov: float = InventoryItems.petal_drop_chance_override()
+	if ov >= 0.0:
+		chance = ov
+	if randf() > chance:
 		return
 	var petal: Node2D = PETAL_SCENE.instantiate()
 	world.add_child(petal)

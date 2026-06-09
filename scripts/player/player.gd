@@ -553,6 +553,10 @@ var _essencia_vital_equipped: bool = false
 var _essencia_cdr_per_level: float = 0.10
 var _essencia_cdr_cap: float = 0.50
 var _essencia_hp_per_level: float = 5.0
+# Botas Ariscas (item): -20% de cooldown nas skills de mobilidade (dash/esquivando/
+# fenda/adrenalina) e elas já vêm no L2 na 1ª aquisição. Setado por
+# InventoryItems.apply_to_player. Lido em _mobility_cd_mult() e apply_upgrade.
+var _botas_ariscas_equipped: bool = false
 var attack_speed_multiplier: float = 1.0  # 1.0 base, +0.27 por stack
 var move_speed_multiplier: float = 1.0  # 1.0 base, +0.10 por stack
 # Conta ataques pra decidir quando proca a flecha perfurante (a cada 3 ataques).
@@ -636,6 +640,9 @@ var stats_stun_seconds: float = 0.0
 # Quantas skills ativáveis (Q elemental OU espaço: dash/esquivando) o player
 # usou nesta run — acumulado entre runs pro unlock da skin Urban.
 var stats_active_skills_used: int = 0
+# Ativações de skill de MOBILIDADE (dash/esquivando/fenda/adrenalina) nesta run —
+# flush pro stat mobility_skill_uses_total (unlock das Botas Ariscas, 75 usos).
+var stats_mobility_skill_uses: int = 0
 var stats_damage_dealt: float = 0.0
 var stats_damage_taken: float = 0.0
 # Breakdown de dano recebido por tipo de fonte (source_id passado em take_damage).
@@ -658,6 +665,9 @@ var stats_kills_by_source: Dictionary = {}
 var stats_ally_heal: float = 0.0
 # Gold gasto nesta run (spend_gold) -> stat gold_spent.
 var stats_gold_spent: int = 0
+# Ouro concedido pelo Dividendo Arcano (item) NESTA run — mostrado no hover do
+# item na loja. Acumula em wave_manager ao conceder; reseta a cada run (novo player).
+var stats_arcane_dividend_gold: int = 0
 # Waves limpas nesta run -> stat waves_cleared (unlock Estou com Sorte).
 var stats_waves_cleared: int = 0
 # Compras da Roleta Elemental nesta run -> stat elemental_roulette_buys.
@@ -2218,10 +2228,19 @@ func _count_active_skill_use() -> void:
 	stats_active_skills_used += 1
 
 
+# Botas Ariscas: ids das skills de mobilidade (bump pra L2 na 1ª aquisição).
+const _MOBILITY_UPGRADE_IDS: Array[String] = ["dash", "esquivando", "fenda", "adrenalina"]
+
+
+# Multiplicador de cooldown das skills de mobilidade (Botas Ariscas: 0.8 = -20%).
+func _mobility_cd_mult() -> float:
+	return 0.8 if _botas_ariscas_equipped else 1.0
+
+
 # ---------- Fenda Crepuscular (teleporte + corte) ----------
 
 func _fenda_cooldown() -> float:
-	return FENDA_COOLDOWNS_BY_LEVEL[clampi(fenda_level - 1, 0, FENDA_LEVEL_MAX - 1)]
+	return FENDA_COOLDOWNS_BY_LEVEL[clampi(fenda_level - 1, 0, FENDA_LEVEL_MAX - 1)] * _mobility_cd_mult()
 
 
 func _fenda_resolve_target(raw: Vector2) -> Vector2:
@@ -2301,6 +2320,7 @@ func _try_fenda() -> void:
 		is_drawing = false
 		sprite.speed_scale = 1.0
 	_count_active_skill_use()  # conta pra quest da skin Urban
+	stats_mobility_skill_uses += 1  # unlock Botas Ariscas (75 ativações)
 	var from_pos: Vector2 = global_position
 	# Trava a mira dos inimigos no ponto pré-blink (onde o player está agora). No
 	# combo L3 cada teleporte recongela no novo ponto de partida. Dura o blink +
@@ -3215,6 +3235,7 @@ func _try_start_dash() -> void:
 		is_drawing = false
 		sprite.speed_scale = 1.0
 	_count_active_skill_use()
+	stats_mobility_skill_uses += 1  # unlock Botas Ariscas (75 ativações)
 	# Direção: input atual; se não tiver, dash pra onde o sprite está virado.
 	var dir := Vector2(
 		Input.get_axis("move_left", "move_right"),
@@ -3323,7 +3344,7 @@ func _capacete_dodge_chance() -> float:
 func _esquivando_ability_cd_total() -> float:
 	if esquivando_level < ESQUIVANDO_ABILITY_MIN_LEVEL:
 		return 0.0
-	return ESQUIVANDO_ABILITY_CD_BY_LEVEL[mini(esquivando_level - 1, ESQUIVANDO_LEVEL_MAX - 1)]
+	return ESQUIVANDO_ABILITY_CD_BY_LEVEL[mini(esquivando_level - 1, ESQUIVANDO_LEVEL_MAX - 1)] * _mobility_cd_mult()
 
 
 # Buff combinado de move speed do Esquivando (stacks + skill do espaço).
@@ -3386,6 +3407,7 @@ func _try_start_esquivando_ability() -> void:
 	if _esquivando_ability_cd > 0.0:
 		return
 	_count_active_skill_use()
+	stats_mobility_skill_uses += 1  # unlock Botas Ariscas (75 ativações)
 	_esquivando_ability_buff_remaining = ESQUIVANDO_ABILITY_DURATION
 	_esquivando_ability_cd = _esquivando_ability_cd_total()
 	_iframes_remaining = maxf(_iframes_remaining, DASH_IFRAMES_DURATION)
@@ -3474,7 +3496,7 @@ func _adrenalina_atk_buff() -> float:
 
 
 func _adrenalina_cooldown() -> float:
-	return ADRENALINA_CD_BY_LEVEL[clampi(adrenalina_level - 1, 0, ADRENALINA_LEVEL_MAX - 1)]
+	return ADRENALINA_CD_BY_LEVEL[clampi(adrenalina_level - 1, 0, ADRENALINA_LEVEL_MAX - 1)] * _mobility_cd_mult()
 
 
 func _try_start_adrenalina_ability() -> void:
@@ -3483,6 +3505,7 @@ func _try_start_adrenalina_ability() -> void:
 	if _adrenalina_cd_remaining > 0.0:
 		return
 	_count_active_skill_use()
+	stats_mobility_skill_uses += 1  # unlock Botas Ariscas (75 ativações)
 	_adrenalina_skill_remaining = ADRENALINA_SKILL_DURATION
 	_adrenalina_cd_remaining = _adrenalina_cooldown()
 	_adrenalina_heal_last_shot = -1
@@ -3880,7 +3903,7 @@ func apply_upgrade(upgrade_id: String) -> void:
 				dash_unlocked.emit()
 			has_dash_auto_attack = dash_level >= 3
 			has_dash_double_arrow = dash_level >= 4
-			dash_cooldown = DASH_COOLDOWNS_BY_LEVEL[dash_level - 1]
+			dash_cooldown = DASH_COOLDOWNS_BY_LEVEL[dash_level - 1] * _mobility_cd_mult()
 			dash_cooldown_changed.emit(_dash_cd_remaining, dash_cooldown)
 		"ricochet_arrow":
 			# Lv1-4 da flecha de ricochete. Mecânica é resolvida em arrow.gd
@@ -3956,6 +3979,10 @@ func apply_upgrade(upgrade_id: String) -> void:
 				dash_unlocked.emit()  # reusa a barra de mobilidade
 			if adrenalina_level >= ADRENALINA_SKILL_MIN_LEVEL:
 				dash_cooldown_changed.emit(_adrenalina_cd_remaining, _adrenalina_cooldown())
+	# Botas Ariscas (item): skill de mobilidade já vem no L2 na 1ª aquisição — sobe
+	# +1 nível grátis assim que chega no L1. A recursão para no L2 (guard == 1).
+	if _botas_ariscas_equipped and upgrade_id in _MOBILITY_UPGRADE_IDS and get_upgrade_count(upgrade_id) == 1:
+		apply_upgrade(upgrade_id)
 	# Notifica HUD/listeners. Emitido SEMPRE no fim, independente do match.
 	upgrade_applied.emit(upgrade_id, get_upgrade_count(upgrade_id))
 
