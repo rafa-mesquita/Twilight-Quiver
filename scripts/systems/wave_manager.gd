@@ -1499,7 +1499,7 @@ func _apply_claudio_druida_scaling_if_applicable(inst: Node2D, scene_path: Strin
 # de pré-requisito).
 const FREE_UPGRADE_POOL: Array[Dictionary] = [
 	# Pool completo: todos os status, upgrades e pets podem cair como free
-	# (respeita pares exclusivos em runtime via _player_has_exclusive_counterpart).
+	# (respeita pares exclusivos em runtime via _player_blocks_upgrade).
 	# `name` aqui é uma translation key — _show_free_upgrade_popup chama tr() nela.
 	{"id": "hp", "name": "SHOP_HP_TITLE"},
 	{"id": "damage", "name": "SHOP_UPG_DAMAGE"},
@@ -1634,6 +1634,8 @@ func _play_buy_sfx() -> void:
 # que o player já tem. (Antes o filtro estava inline e desatualizado: faltava
 # spectral_arrow no grupo de tipo-de-flecha e adrenalina no de mobilidade.)
 const _UPGRADE_MUTEX_GROUPS: Array = [
+	# Elementais: só 1 por run (espelha wave_shop.EXCLUSIVE_PAIRS).
+	["fire_arrow", "curse_arrow", "chain_lightning", "ice_arrow", "stone_arrow", "tide_arrow"],
 	["perfuracao", "ricochet_arrow", "spectral_arrow"],  # tipo-de-flecha
 	["multi_arrow", "double_arrows"],                    # volley
 	["dash", "esquivando", "fenda", "adrenalina"],       # mobilidade (slot espaço)
