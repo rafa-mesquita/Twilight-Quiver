@@ -111,7 +111,7 @@ var multi_arrow_level: int = 0  # capa em 4 (níveis 1-4)
 var double_arrows_level: int = 0  # capa em 4 (níveis 1-4) — mutuamente exclusivo com multi_arrow
 var chain_lightning_level: int = 0  # capa em 4 (níveis 1-4)
 var move_speed_level: int = 0
-var life_steal_level: int = 0  # cada stack +5% chance e +10% heal nos drops de coração
+var life_steal_level: int = 0  # +5% chance/stack; cura 15/20/25/25% por nível; pull de curas só no L4
 var fire_arrow_level: int = 0  # elemental Fogo (excalidraw lv1-4)
 # Ordem dos rastros do Fogo escolhida no L2 (modal pós-compra na loja).
 # "player_first" (default, = ordem antiga) ou "arrow_first". Só afeta L2-L3:
@@ -550,7 +550,7 @@ var _capacete_veloz_equipped: bool = false
 # cooldown global (teto −50%). Setado por InventoryItems.apply_to_player. CDR lido
 # em cooldown_scale()/cooldown_drain_mult(); +5 HP somado em apply_upgrade("hp").
 var _essencia_vital_equipped: bool = false
-var _essencia_cdr_per_level: float = 0.10
+var _essencia_cdr_per_level: float = 0.07
 var _essencia_cdr_cap: float = 0.50
 var _essencia_hp_per_level: float = 5.0
 # Botas Ariscas (item): -20% de cooldown nas skills de mobilidade (dash/esquivando/
@@ -2232,9 +2232,9 @@ func _count_active_skill_use() -> void:
 const _MOBILITY_UPGRADE_IDS: Array[String] = ["dash", "esquivando", "fenda", "adrenalina"]
 
 
-# Multiplicador de cooldown das skills de mobilidade (Botas Ariscas: 0.8 = -20%).
+# Multiplicador de cooldown das skills de mobilidade (Botas Ariscas: 0.85 = -15%).
 func _mobility_cd_mult() -> float:
-	return 0.8 if _botas_ariscas_equipped else 1.0
+	return 0.85 if _botas_ariscas_equipped else 1.0
 
 
 # ---------- Fenda Crepuscular (teleporte + corte) ----------

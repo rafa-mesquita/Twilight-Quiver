@@ -15,10 +15,10 @@ const _IDLE_REGION: Rect2 = Rect2(0, 0, 32, 32)
 const CATALOG: Array[Dictionary] = [
 	{"cat": "skins", "kind": "skin", "id": "World_Cup", "price": 350, "desc": "LOJA_DESC_WORLD_CUP"},
 	{"cat": "skins", "kind": "part", "id": "Red_Hair", "slot": "hair", "price": 150, "name_key": "LOJA_NAME_RED_HAIR", "desc": "LOJA_DESC_RED_HAIR"},
-	{"cat": "itens", "kind": "item", "id": "midnight_dagger", "price": 750},
-	{"cat": "itens", "kind": "item", "id": "golden_bow", "price": 750},
-	{"cat": "itens", "kind": "item", "id": "cajado_crepusculo", "price": 400},
-	{"cat": "itens", "kind": "item", "id": "sanguinario", "price": 660},
+	{"cat": "itens", "kind": "item", "id": "midnight_dagger", "price": 600},
+	{"cat": "itens", "kind": "item", "id": "golden_bow", "price": 600},
+	{"cat": "itens", "kind": "item", "id": "cajado_crepusculo", "price": 350},
+	{"cat": "itens", "kind": "item", "id": "sanguinario", "price": 400},
 	{"cat": "itens", "kind": "item", "id": "chamado_da_matilha", "price": 200},
 	{"cat": "itens", "kind": "item", "id": "primavera_eterna", "price": 50},
 ]

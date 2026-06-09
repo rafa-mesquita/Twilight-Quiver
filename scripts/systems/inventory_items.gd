@@ -140,7 +140,7 @@ const ITEMS: Dictionary = {
 		"name": "ITEM_ESSENCIA_VITAL_NAME",
 		"desc": "ITEM_ESSENCIA_VITAL_DESC",
 		"icon": "res://assets/Hud/itens/essencia_vital.png",
-		"effect": {"type": "hp_status_bonus", "cdr_per_level": 0.10, "cdr_cap": 0.50, "hp_per_level": 5},
+		"effect": {"type": "hp_status_bonus", "cdr_per_level": 0.07, "cdr_cap": 0.50, "hp_per_level": 5},
 		"unlock": {"type": "quest", "reqs": [
 			{"stat": &"essencia_vital_unlock", "value": 1, "label": "ITEM_REQ_ESSENCIA_VITAL"},
 		]},
@@ -170,7 +170,7 @@ const ITEMS: Dictionary = {
 		"unlock": {"type": "shop"},
 	},
 	# Botas Ariscas: skills de mobilidade (dash/esquivando/fenda/adrenalina) já vêm
-	# no L2 na 1ª aquisição e têm −20% de cooldown. Efeito tipo "mobility_cdr" liga
+	# no L2 na 1ª aquisição e têm −15% de cooldown. Efeito tipo "mobility_cdr" liga
 	# a flag _botas_ariscas_equipped no player (que faz as duas coisas).
 	"botas_ariscas": {
 		"name": "ITEM_BOTAS_ARISCAS_NAME",
@@ -547,10 +547,10 @@ static func apply_to_player(player: Node) -> void:
 				# Essência Vital: liga o item e guarda os params (CDR por status de HP + HP extra).
 				if "_essencia_vital_equipped" in player:
 					player._essencia_vital_equipped = true
-					player._essencia_cdr_per_level = float(eff.get("cdr_per_level", 0.10))
+					player._essencia_cdr_per_level = float(eff.get("cdr_per_level", 0.07))
 					player._essencia_cdr_cap = float(eff.get("cdr_cap", 0.50))
 					player._essencia_hp_per_level = float(eff.get("hp_per_level", 5.0))
 			elif t == "mobility_cdr":
-				# Botas Ariscas: liga a flag (−20% CD de mobilidade + skill já vem L2).
+				# Botas Ariscas: liga a flag (−15% CD de mobilidade + skill já vem L2).
 				if "_botas_ariscas_equipped" in player:
 					player._botas_ariscas_equipped = true

@@ -2,9 +2,13 @@ class_name HeartDrop
 extends RefCounted
 
 # Helper estático pra inimigos dropar coração ao morrer.
-# Só dropa se o player tem `life_steal_level > 0`. Chance e heal_pct escalam:
-# - Stack 1: 12% chance, 20% heal
-# - Stack 4: 27% chance, 35% heal
+# Só dropa se o player tem `life_steal_level > 0`. A chance escala +5%/stack
+# (L1 12% → L4 27%). A cura é por nível (HEAL_PCT_BY_LEVEL), não-linear:
+# - L1 12% chance, 15% cura
+# - L2 17% chance, 20% cura
+# - L3 22% chance, 25% cura
+# - L4 27% chance, 25% cura (o L4 investe no pull de curas, não em +cura)
+# O pull/magnetismo das curas vive no heart.gd e só liga no L4.
 # Inseto NÃO chama (anti-exploit summoner farm), igual ao gold.
 # Inimigos do contexto boss (grupo "boss" ou "boss_minion") têm chance × 0.75
 # (25% mais raro) pra não virar fountain durante a boss fight. O mesmo
@@ -13,8 +17,9 @@ extends RefCounted
 const PICKUP_SPREAD: float = 14.0
 const BASE_CHANCE: float = 0.12
 const CHANCE_PER_STACK: float = 0.05
-const BASE_HEAL_PCT: float = 0.20
-const HEAL_PCT_PER_STACK: float = 0.05
+# Cura (% do HP máx) por nível do upgrade — índice = level - 1. Não-linear:
+# L4 repete a cura do L3 (o ganho do L4 é o pull de curas, ver heart.gd).
+const HEAL_PCT_BY_LEVEL: Array[float] = [0.15, 0.20, 0.25, 0.25]
 # Multiplier global pra drops em contexto boss (boss + minions). 0.75 = 25% mais raro.
 const BOSS_CONTEXT_DROP_MULTIPLIER: float = 0.75
 # Distância mínima de gold/coração já existente — evita pickups sobrepostos
@@ -38,7 +43,7 @@ static func drop_guaranteed(world: Node, scene: PackedScene, drop_position: Vect
 		level = player.get_upgrade_count("life_steal")
 	if level <= 0:
 		return
-	var heal_pct: float = BASE_HEAL_PCT + HEAL_PCT_PER_STACK * float(level - 1)
+	var heal_pct: float = _heal_pct_for_level(level)
 	for i in count:
 		# Boss = drop 25% mais raro: cada coração tem 75% de chance.
 		if randf() > BOSS_CONTEXT_DROP_MULTIPLIER:
@@ -48,6 +53,12 @@ static func drop_guaranteed(world: Node, scene: PackedScene, drop_position: Vect
 			heart.heal_pct = heal_pct
 		world.add_child(heart)
 		heart.global_position = _find_non_overlapping_position(world, drop_position)
+
+
+# Cura (% do HP máx) pro nível dado, com clamp nos limites do array.
+static func _heal_pct_for_level(level: int) -> float:
+	var idx: int = clampi(level - 1, 0, HEAL_PCT_BY_LEVEL.size() - 1)
+	return HEAL_PCT_BY_LEVEL[idx]
 
 
 static func try_drop(world: Node, scene: PackedScene, drop_position: Vector2,
@@ -67,7 +78,7 @@ static func try_drop(world: Node, scene: PackedScene, drop_position: Vector2,
 		chance *= BOSS_CONTEXT_DROP_MULTIPLIER
 	if randf() > chance:
 		return
-	var heal_pct: float = BASE_HEAL_PCT + HEAL_PCT_PER_STACK * float(level - 1)
+	var heal_pct: float = _heal_pct_for_level(level)
 	var heart: Node2D = scene.instantiate()
 	if "heal_pct" in heart:
 		heart.heal_pct = heal_pct

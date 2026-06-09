@@ -5,7 +5,7 @@ extends Area2D
 # player/inimigos), visual offsetado pra cima. Lifetime + bobbing + blink final
 # espelham o gold.
 
-@export var heal_pct: float = 0.20
+@export var heal_pct: float = 0.15
 @export var bob_amplitude: float = 1.5
 @export var bob_speed: float = 4.0
 @export var pickup_sound: AudioStream
@@ -20,15 +20,13 @@ const HOP_DURATION: float = 0.4
 const SILHOUETTE_SHADER: Shader = preload("res://shaders/silhouette.gdshader")
 # Indicador vermelho acima do coração — espelha o dourado do gold.
 const INDICATOR_COLOR: Color = Color(0.95, 0.25, 0.3, 1.0)
-# Life Steal L3+: coração persegue o player. Mesmo padrão do Imã de Gold.
-# L3 limita o pull ao raio MAGNET_RADIUS_L3 (decisão tática preservada).
-# L4 expande o raio (MAGNET_RADIUS_L4) mas NÃO puxa do mapa inteiro — sem isso
-# o coração vem voando do canto da arena e parece bug.
+# Life Steal L4: coração persegue o player dentro de MAGNET_RADIUS_L4 (apenas o
+# nível máximo puxa; L1-L3 não têm magnetismo). Raio limitado de propósito — sem
+# isso o coração vem voando do canto da arena e parece bug.
 # Speed mais lenta que o player (~120 walking) — jogador consegue interceptar
 # andando se quiser acelerar a coleta.
 const MAGNET_PULL_SPEED: float = 75.0
-const MAGNET_RADIUS_L3: float = 110.0
-const MAGNET_RADIUS_L4: float = 220.0
+const MAGNET_RADIUS_L4: float = 90.0
 # End-of-wave sweep usa um magnet ainda mais lento, e wave_manager chama um por
 # vez (próximo só inicia quando o anterior é coletado). Player pode interceptar
 # qualquer um andando — pickup normal via body_entered cura na hora.
@@ -97,7 +95,7 @@ func _process(delta: float) -> void:
 	if _picked:
 		return
 	_elapsed += delta
-	# Life Steal L3+: persegue o player (L3 só dentro do raio, L4 mapa todo).
+	# Life Steal L4: persegue o player dentro do raio (L1-L3 não puxam).
 	# Skip lifetime/hop/bob — coração magnetado não expira.
 	# End-wave magnet usa speed menor pra dar tempo do player ler/interceptar.
 	if _end_wave_magnet:
@@ -138,11 +136,10 @@ func _is_player_magnet_active() -> bool:
 	if _player_ref == null:
 		return false
 	var lvl: int = int(_player_ref.get("life_steal_level"))
-	if lvl < 3:
+	# Só o L4 puxa as curas; L1-L3 ficam paradas no chão.
+	if lvl < 4:
 		return false
-	# L4: raio expandido (mas não mapa inteiro — corações distantes não vinham
-	# voando do nada). L3: raio menor, decisão tática preservada.
-	var radius: float = MAGNET_RADIUS_L4 if lvl >= 4 else MAGNET_RADIUS_L3
+	var radius: float = MAGNET_RADIUS_L4
 	return global_position.distance_squared_to(_player_ref.global_position) <= radius * radius
 
 
