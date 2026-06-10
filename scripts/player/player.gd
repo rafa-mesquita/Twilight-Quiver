@@ -2316,8 +2316,9 @@ func ice_shatter_at(pos: Vector2) -> void:
 		_get_world().add_child(area)
 		if area is Node2D:
 			(area as Node2D).global_position = pos
-	# Flash azul da explosão de gelo.
-	_spawn_aoe_burst(pos, ICE_SHATTER_RADIUS, Color(0.5, 0.85, 1.0, 0.5))
+	# Flash azul-claro da explosão de gelo (bem visível, por cima da área de slow).
+	print("[diamante][gelo] explosao em ", pos)  # DEBUG TEMP — remover depois
+	_spawn_aoe_burst(pos, ICE_SHATTER_RADIUS * 1.6, Color(0.75, 0.95, 1.0, 0.9))
 
 
 # Burst visual (círculo que expande e some) pros AoE do diamante. `color` dá o tom.
