@@ -195,17 +195,15 @@ const ITEMS: Dictionary = {
 		],
 		"unlock": {"type": "shop"},
 	},
-	# Diamante de Primeira Classe: sorteia 1 dos 21 upgrades de build pra ficar turbinado
-	# a run inteira (marcado com 💎 na carta da loja). Em troca, desabilita todos os
-	# rerolls da loja. Unlock: passar da wave 14 sem usar nenhum reroll.
+	# Diamante de Eulária: sorteia 1 dos 21 upgrades de build pra ficar mais forte a run
+	# inteira (marcado com 💎 na carta da loja). Em troca, desabilita todos os rerolls da
+	# loja. Unlock: compra na loja de pétalas por 350 (ver loja_petalas.CATALOG).
 	"diamante_primeira_classe": {
 		"name": "ITEM_DIAMANTE_NAME",
 		"desc": "ITEM_DIAMANTE_DESC",
 		"icon": "res://assets/Hud/itens/diamante_primeira_classe.png",
 		"effect": {"type": "diamond_pick"},
-		"unlock": {"type": "quest", "reqs": [
-			{"stat": &"diamante_unlock_done", "value": 1, "label": "ITEM_REQ_DIAMANTE"},
-		]},
+		"unlock": {"type": "shop"},
 	},
 }
 
