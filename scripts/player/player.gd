@@ -1158,6 +1158,29 @@ func _build_volley() -> Array:
 	var shots: Array = []
 	if multi_arrow_level == 0 and double_arrows_level > 0:
 		return _build_double_arrows_volley(primary)
+	# Diamante: L3 vira o leque de 5 do L4; L4 vira 10 flechas em 360°.
+	# Montado aqui no volley pra Tilisko/elementais (que recebem `volley`)
+	# herdarem o mesmo conjunto de tiros automaticamente.
+	if is_diamond("multi_arrow"):
+		if multi_arrow_level == 4:
+			# 10 flechas distribuídas em 360° (a cada 36°), começando na mira.
+			# Frontal (i == 0) com dano cheio; as demais a 0.85 (laterais do L4).
+			var n: int = 10
+			for i in n:
+				var ang: float = primary.angle() + TAU * float(i) / float(n)
+				shots.append({
+					"dir": Vector2.from_angle(ang),
+					"dmg_mult": 1.0 if i == 0 else 0.85,
+				})
+			return shots
+		elif multi_arrow_level == 3:
+			# L3 dispara o leque de 5 do L4 atual (±15° e ±45°, extras 85%).
+			shots.append({"dir": primary, "dmg_mult": 1.0})
+			shots.append({"dir": primary.rotated(deg_to_rad(15.0)), "dmg_mult": 0.85})
+			shots.append({"dir": primary.rotated(deg_to_rad(-15.0)), "dmg_mult": 0.85})
+			shots.append({"dir": primary.rotated(deg_to_rad(45.0)), "dmg_mult": 0.85})
+			shots.append({"dir": primary.rotated(deg_to_rad(-45.0)), "dmg_mult": 0.85})
+			return shots
 	match multi_arrow_level:
 		0:
 			shots.append({"dir": primary, "dmg_mult": 1.0})
@@ -2357,7 +2380,9 @@ func _mobility_cd_mult() -> float:
 # ---------- Fenda Crepuscular (teleporte + corte) ----------
 
 func _fenda_cooldown() -> float:
-	return FENDA_COOLDOWNS_BY_LEVEL[clampi(fenda_level - 1, 0, FENDA_LEVEL_MAX - 1)] * _mobility_cd_mult()
+	# Diamante: cooldown ×0.8 (16 / 14.4 / 12.8 / 11.2s).
+	var diamond_mult: float = 0.8 if is_diamond("fenda") else 1.0
+	return FENDA_COOLDOWNS_BY_LEVEL[clampi(fenda_level - 1, 0, FENDA_LEVEL_MAX - 1)] * _mobility_cd_mult() * diamond_mult
 
 
 func _fenda_resolve_target(raw: Vector2) -> Vector2:
@@ -2467,8 +2492,8 @@ func _try_fenda() -> void:
 		sprite.speed_scale = 1.0
 		sprite.play("dash")
 	_play_fenda_sound()
-	# Corte no caminho percorrido (L2+).
-	if fenda_level >= 2:
+	# Corte no caminho percorrido (L2+; Diamante: já no L1).
+	if fenda_level >= 2 or is_diamond("fenda"):
 		_fenda_cut(from_pos, target)
 	# Combo (L3+): abre/continua a janela; senão dispara o cooldown.
 	if fenda_level >= 3:
@@ -2541,10 +2566,21 @@ func _update_fenda(delta: float) -> void:
 		dash_cooldown_changed.emit(_fenda_cd_remaining, _fenda_cooldown())
 
 
+# Dano do corte da Fenda. Diamante: ×1.2 e, no L1 (que hoje é 0), usa a base do
+# L2 (25) pra o corte já valer desde o L1.
+func _fenda_cut_damage() -> float:
+	var dmg: float = FENDA_CUT_DAMAGE_BY_LEVEL[clampi(fenda_level - 1, 0, FENDA_LEVEL_MAX - 1)]
+	if is_diamond("fenda"):
+		if dmg <= 0.0:
+			dmg = 25.0  # L1 ganha o dano-base do corte (FENDA_CUT_DAMAGE_BY_LEVEL[1])
+		dmg *= 1.2
+	return dmg
+
+
 func _fenda_cut(a: Vector2, b: Vector2) -> void:
 	# Mostra o rasgo (fica ~0.5s) e SÓ aplica o dano no FIM do cast (não instant).
 	# Inimigos que estiverem perto da linha a→b quando o corte "fecha" são atingidos.
-	var dmg: float = FENDA_CUT_DAMAGE_BY_LEVEL[clampi(fenda_level - 1, 0, FENDA_LEVEL_MAX - 1)]
+	var dmg: float = _fenda_cut_damage()
 	_spawn_fenda_slash_vfx(a, b)
 	if dmg <= 0.0:
 		return
@@ -2552,8 +2588,14 @@ func _fenda_cut(a: Vector2, b: Vector2) -> void:
 	var aa: Vector2 = a
 	var bb: Vector2 = b
 	var dd: float = dmg
+	var diamond: bool = is_diamond("fenda")
 	get_tree().create_timer(FENDA_CUT_CAST_TIME).timeout.connect(func() -> void:
 		_fenda_apply_cut_damage(aa, bb, dd)
+		# Diamante: dano em ÁREA no ponto de destino do teleporte (mesmo dano do
+		# corte). Reusa a hitbox do corte com um "segmento" degenerado (b→b), que
+		# vira um círculo de raio FENDA_CUT_WIDTH centrado no destino.
+		if diamond:
+			_fenda_apply_cut_damage(bb, bb, dd)
 	)
 
 
