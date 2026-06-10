@@ -480,14 +480,30 @@ const CRIT_KNOCKBACK_MULT: float = 2.0  # arrows on crit recebem 2× knockback
 var critical_chance_level: int = 0
 
 
+# Wrappers que aplicam o bônus do Diamante sobre as consts de crit.
+# Diamante: +0.20 de chance (teto 1.0) e +0.10 no bônus de dano crítico.
+func _crit_chance(lvl: int) -> float:
+	var c: float = CRIT_CHANCE_BY_LEVEL[lvl]
+	if is_diamond("critical_chance"):
+		c = minf(c + 0.20, 1.0)
+	return c
+
+
+func _crit_damage_bonus(lvl: int) -> float:
+	var b: float = CRIT_DAMAGE_BONUS_BY_LEVEL[lvl]
+	if is_diamond("critical_chance"):
+		b += 0.10
+	return b
+
+
 func roll_crit() -> Dictionary:
 	# Helper público: cada damage site chama isso pra decidir se o hit é crit.
 	# Retorna {"crit": bool, "mult": float}. mult=1.0 quando não crita.
 	if critical_chance_level <= 0:
 		return {"crit": false, "mult": 1.0}
 	var lvl: int = mini(critical_chance_level - 1, 3)
-	if randf() < CRIT_CHANCE_BY_LEVEL[lvl]:
-		return {"crit": true, "mult": 1.0 + CRIT_DAMAGE_BONUS_BY_LEVEL[lvl]}
+	if randf() < _crit_chance(lvl):
+		return {"crit": true, "mult": 1.0 + _crit_damage_bonus(lvl)}
 	return {"crit": false, "mult": 1.0}
 
 
@@ -504,8 +520,8 @@ func roll_crit_dot(base_dmg: float) -> Dictionary:
 	if critical_chance_level <= 0 or base_dmg <= 0.0:
 		return {"crit": false, "dmg": base_dmg}
 	var lvl: int = mini(critical_chance_level - 1, 3)
-	if randf() < CRIT_CHANCE_BY_LEVEL[lvl]:
-		var bonus: float = base_dmg * CRIT_DAMAGE_BONUS_BY_LEVEL[lvl]
+	if randf() < _crit_chance(lvl):
+		var bonus: float = base_dmg * _crit_damage_bonus(lvl)
 		if bonus < 1.0:
 			bonus = 1.0
 		return {"crit": true, "dmg": base_dmg + bonus}
@@ -1183,24 +1199,27 @@ func _build_double_arrows_volley(primary: Vector2) -> Array:
 	var shots: Array = []
 	var lvl: int = double_arrows_level
 	var count: int = 1
+	# Diamante: chances de proc ×1.3, teto 1.0
+	# L1: 50→65% | L2: 60→78% | L3: 75+45→90+58.5%(60) | L4: 90+60+5→95+75+12%
+	var d: bool = is_diamond("double_arrows")
 	match lvl:
 		1:
-			if randf() < 0.50:
+			if randf() < (0.65 if d else 0.50):
 				count = 2
 		2:
-			if randf() < 0.60:
+			if randf() < (0.78 if d else 0.60):
 				count = 2
 		3:
-			if randf() < 0.75:
+			if randf() < (minf(0.75 * 1.3, 1.0) if d else 0.75):
 				count = maxi(count, 2)
-			if randf() < 0.45:
+			if randf() < (minf(0.45 * 1.3, 1.0) if d else 0.45):
 				count = maxi(count, 3)
 		4:
-			if randf() < 0.90:
+			if randf() < (minf(0.90 * 1.3, 1.0) if d else 0.90):
 				count = maxi(count, 2)
-			if randf() < 0.60:
+			if randf() < (minf(0.60 * 1.3, 1.0) if d else 0.60):
 				count = maxi(count, 3)
-			if randf() < 0.05:
+			if randf() < (minf(0.05 * 1.3, 1.0) if d else 0.05):
 				count = maxi(count, 5)
 	# Dano da extra: NV1 a 70% (era 50% pré-buff); NV2+ a 100%.
 	var extra_dmg: float = 0.70 if lvl == 1 else 1.0
@@ -1272,7 +1291,8 @@ func _spawn_arrow(dir: Vector2, dmg_mult: float, is_pierce: bool, play_sound: bo
 		if "pierce_first_dmg_mult" in arrow:
 			var pierce_bonus_scale: float = 1.0 if is_primary else 0.60
 			arrow.pierce_first_dmg_mult = 1.0 + _perf_damage_bonus() * pierce_bonus_scale
-		if "hitbox_scale" in arrow and perfuracao_level >= 2:
+		# Diamante: hitbox 1.8× já no L1 (hoje só L2+).
+		if "hitbox_scale" in arrow and (perfuracao_level >= 2 or is_diamond("perfuracao")):
 			arrow.hitbox_scale = 1.8
 	if chain_lightning_level > 0:
 		if "chain_count" in arrow:
@@ -1476,20 +1496,28 @@ func _spectral_try_consume_kill() -> bool:
 
 
 # Quantas espectrais saem por burst, por nível (L1=1, L2=1, L3=2, L4=3).
+# Diamante: +1 espectral do L2 em diante (1 / 2 / 3 / 4).
 func _spectral_count() -> int:
+	var base: int = 1
 	match spectral_arrow_level:
-		3: return 2
-		4: return 3
-		_: return 1
+		3: base = 2
+		4: base = 3
+	if is_diamond("spectral_arrow") and spectral_arrow_level >= 2:
+		base += 1
+	return base
 
 
 # % do dano da flecha que matou (L1=50%, L2=75%, L3=75%, L4=85%).
+# Diamante: +10% de dano espectral em todos os níveis.
 func _spectral_pct() -> float:
+	var base: float = 0.0
 	match spectral_arrow_level:
-		1: return 0.50
-		2, 3: return 0.75
-		4: return 0.85
-		_: return 0.0
+		1: base = 0.50
+		2, 3: base = 0.75
+		4: base = 0.85
+	if is_diamond("spectral_arrow"):
+		base *= 1.10
+	return base
 
 
 # Carimba na flecha espectral SÓ os flags+params de efeito da flecha atual (mesmos
@@ -1673,7 +1701,8 @@ func _is_piercing_shot() -> bool:
 		return true
 	# L1-L2: a cada 3 ataques (counter 0→1→2 → 3º procca).
 	# L3: a cada 2 ataques (counter 0→1 → 2º procca).
-	var threshold: int = 1 if perfuracao_level >= 3 else 2
+	# Diamante: L1/L2 procc 1 ataque mais cedo (threshold 2→1, igual ao L3).
+	var threshold: int = 1 if (perfuracao_level >= 3 or is_diamond("perfuracao")) else 2
 	return _perf_shot_counter >= threshold
 
 
@@ -1759,12 +1788,15 @@ func _fire_area_scale() -> float:
 func _fire_burn_dps() -> float:
 	# Base por nível × multiplier global. tick_interval do BurnDoT é 0.5s, então
 	# +2 em dps = +1 dano por tick (balanceamento pedido pelo design).
+	# Diamante: dps de queima ×1.3 (8/9/12/16).
 	var base: float = 0.0
 	match fire_arrow_level:
 		1: base = 6.0
 		2: base = 7.0
 		3: base = 9.0
 		4: base = 12.0
+	if is_diamond("fire_arrow"):
+		base *= 1.3
 	return _apply_dmg_pct_to_dps(base * _fire_burn_multiplier())
 
 
@@ -1778,11 +1810,14 @@ func _fire_trail_dps() -> float:
 	# Lv2+ : DPS dos rastros de fogo (flecha E player — fonte única). Base por nível
 	# × multiplier global, escalando com Dano via _apply_dmg_pct_to_dps (igual à
 	# queimadura). Rastro é NEUTRO ao Cajado (is_skill=false default).
+	# Diamante: +40% de dano nos dois rastros (rastro de fogo + rastro da flecha).
 	var base: float = 0.0
 	match fire_arrow_level:
 		2: base = 3.0
 		3: base = 4.0
 		4: base = 5.0
+	if is_diamond("fire_arrow"):
+		base *= 1.4
 	return _apply_dmg_pct_to_dps(base * _fire_burn_multiplier())
 
 
@@ -2251,12 +2286,16 @@ func reset_stone_stun_token() -> void:
 
 
 func _perf_damage_bonus() -> float:
+	var base: float = 0.0
 	match perfuracao_level:
-		1: return 0.30
-		2: return 0.60
-		3: return 0.90
-		4: return 0.90
-	return 0.0
+		1: base = 0.30
+		2: base = 0.60
+		3: base = 0.90
+		4: base = 0.90
+	# Diamante: bônus de dano perfurante ×1.3 (+39%/+78%/+117%/+117%).
+	if is_diamond("perfuracao"):
+		base *= 1.3
+	return base
 
 
 func _use_skill() -> void:
