@@ -2656,6 +2656,10 @@ func _on_global_reroll() -> void:
 	if cost > 0 and not player.spend_gold(cost):
 		return
 	_global_rerolls_used += 1
+	# Diamante de Primeira Classe: registra que o player usou reroll nesta run
+	# (bloqueia o unlock do item).
+	if player != null and "reroll_used_this_run" in player:
+		player.reroll_used_this_run = true
 	# Telemetria: registra reroll com wave atual + custo + qual uso é esse.
 	if has_node("/root/Telemetry"):
 		var wm := get_tree().get_first_node_in_group("wave_manager")
@@ -2679,6 +2683,17 @@ func _on_global_reroll() -> void:
 func _refresh_global_reroll() -> void:
 	if global_reroll_btn == null:
 		return
+	# Diamante de Primeira Classe: sem rerolls. Esconde e desabilita o botão.
+	var pl_d := _get_player()
+	if pl_d != null and pl_d.has_method("get_diamond_upgrade_id") and pl_d.get_diamond_upgrade_id() != "":
+		global_reroll_btn.disabled = true
+		global_reroll_btn.visible = false
+		if global_reroll_cost != null:
+			global_reroll_cost.visible = false
+		return
+	global_reroll_btn.visible = true
+	if global_reroll_cost != null:
+		global_reroll_cost.visible = true
 	var maxed: bool = _global_rerolls_used >= MAX_GLOBAL_REROLLS
 	var cost: int = _next_global_reroll_cost()
 	var player := _get_player()

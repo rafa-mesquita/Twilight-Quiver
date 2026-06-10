@@ -570,3 +570,17 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 23
 text = "Relógio 100%: OFF"
 
+[node name="EquipDiamanteBtn" type="Button" parent="UtilityBar/Row"]
+custom_minimum_size = Vector2(0, 36)
+theme_override_colors/font_color = Color(0.6, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 23
+text = "Equipar Diamante"
+
+[node name="CycleDiamondBtn" type="Button" parent="UtilityBar/Row"]
+custom_minimum_size = Vector2(0, 36)
+theme_override_colors/font_color = Color(0.6, 0.85, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 23
+text = "Diamante: —"
+

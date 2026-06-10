@@ -4089,6 +4089,13 @@ func get_diamond_upgrade_id() -> String:
 	return _diamond_upgrade_id
 
 
+# DEV: força qual upgrade é o do diamante (e liga o flag). Usado pelo dev panel.
+func dev_set_diamond_upgrade(id: String) -> void:
+	_has_diamante = true
+	_diamond_upgrade_id = id
+	print("[dev][diamante] forcado: ", id)
+
+
 # Sorteia o upgrade do Diamante: dos 21, exclui os que algum item equipado já dá de
 # graça no início (start_status). Se sobrar vazio (improvável), fica sem diamante.
 func _roll_diamond_upgrade() -> void:

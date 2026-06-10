@@ -1670,8 +1670,14 @@ func _grant_free_random_upgrade() -> void:
 	# status (Adaga/Arco Dourado) já dão o status no L1 no início — o blocker de
 	# "já possui" cobre isso. Defensivo: roda após a wave 1 (player sem upgrade),
 	# mas via dev mode pode chegar com upgrades.
+	var diamond_id: String = ""
+	if player.has_method("get_diamond_upgrade_id"):
+		diamond_id = player.get_diamond_upgrade_id()
 	var pool: Array[Dictionary] = []
 	for entry in FREE_UPGRADE_POOL:
+		# Diamante de Primeira Classe: o upgrade sorteado nunca vem de graça.
+		if diamond_id != "" and String(entry.get("id", "")) == diamond_id:
+			continue
 		if not _player_blocks_upgrade(player, entry["id"]):
 			pool.append(entry)
 	if pool.is_empty():

@@ -93,6 +93,8 @@ func _ready() -> void:
 	_refresh_godmode_label()
 	$UtilityBar/Row/ClockDropBtn.pressed.connect(_toggle_clock_drop)
 	_refresh_clock_drop_label()
+	$UtilityBar/Row/EquipDiamanteBtn.pressed.connect(_dev_equip_diamante)
+	$UtilityBar/Row/CycleDiamondBtn.pressed.connect(_dev_cycle_diamond)
 	$UtilityBar/Row/OpenShopRouletteBtn.pressed.connect(_open_shop_with_roulette)
 	# Aplica snapshot de upgrades pendente (se botão "Renascer" foi clicado na
 	# run anterior). Defer pra rodar APÓS o player carregar na nova cena.
@@ -475,6 +477,31 @@ func _upgrade_btn(node_name: String) -> Button:
 	var root: Node = $Content/Scroll/VBox
 	var found: Node = root.find_child(node_name, true, false)
 	return found as Button
+
+
+var _dev_diamond_idx: int = -1
+
+
+func _dev_equip_diamante() -> void:
+	# Equipa o diamante_primeira_classe sem depender de unlock real (dev mode).
+	var eq: Array = InventoryItems.get_equipped()
+	if not ("diamante_primeira_classe" in eq):
+		eq.append("diamante_primeira_classe")
+		InventoryItems.set_equipped(eq)
+	var p := get_tree().get_first_node_in_group("player")
+	if p != null and "_has_diamante" in p:
+		p._has_diamante = true
+	print("[dev] Diamante equipado")
+
+
+func _dev_cycle_diamond() -> void:
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null or not p.has_method("dev_set_diamond_upgrade"):
+		return
+	_dev_diamond_idx = (_dev_diamond_idx + 1) % p.DIAMOND_ELIGIBLE.size()
+	var id: String = p.DIAMOND_ELIGIBLE[_dev_diamond_idx]
+	p.dev_set_diamond_upgrade(id)
+	$UtilityBar/Row/CycleDiamondBtn.text = "Diamante: " + id
 
 
 func _refresh_upgrade_buttons() -> void:
