@@ -1941,9 +1941,7 @@ func _ice_freeze_dps() -> float:
 
 func _stone_speed() -> float:
 	# "Pesada" — bem mais devagar que a flecha normal (220). Dá pra ver vindo.
-	# Diamante: remove o downgrade de velocidade (alcance normal).
-	if is_diamond("stone_arrow"):
-		return 220.0
+	# (O Diamante mantém a pedra lenta; só remove o downgrade de ALCANCE via lifetime.)
 	return 150.0
 
 
@@ -2145,9 +2143,9 @@ func _sync_sanguinario_overlay() -> void:
 
 func _stone_lifetime() -> float:
 	# 150 × 0.7 ≈ 105px de alcance (flecha normal = 330px → ~-68%).
-	# Diamante: usa alcance normal (220 × 4.0 = 880px, igual perfuração).
+	# Diamante: alcance NORMAL (150 × 2.2 ≈ 330px), mantendo a pedra lenta.
 	if is_diamond("stone_arrow"):
-		return 4.0
+		return 2.2
 	return 0.7
 
 
@@ -2156,7 +2154,7 @@ func _stone_extra_lifetime() -> float:
 	# 0.9 ≈ 135px) pra não cair em cima da primeira.
 	# Diamante: alcance normal junto da primária.
 	if is_diamond("stone_arrow"):
-		return 4.0
+		return 2.2
 	return 0.9
 
 
