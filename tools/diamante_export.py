@@ -66,16 +66,16 @@ def make_broche(item_img):
     bbox = item_img.getbbox()
     item = item_img.crop(bbox)
     iw, ih = item.size
-    pad = 7
+    pad = 6
     W, H = iw + 2 * pad, ih + 2 * pad
-    # Silhueta dilatada do alpha pra formar o halo.
+    # Halo BEM leve: dilata 1px, borra e baixa bastante o alpha (brilho sutil).
     alpha = item.getchannel("A")
-    dil = alpha.filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.MaxFilter(3))
+    dil = alpha.filter(ImageFilter.MaxFilter(3))
     big = Image.new("L", (W, H), 0)
     big.paste(dil, (pad, pad))
-    big = big.filter(ImageFilter.GaussianBlur(2.2))
-    # Reforca o nucleo do brilho (alpha um pouco mais forte perto do broche).
-    big = big.point(lambda a: min(255, int(a * 1.6)))
+    big = big.filter(ImageFilter.GaussianBlur(2.0))
+    # Glow discreto: teto baixo de opacidade (~30%).
+    big = big.point(lambda a: min(80, int(a * 0.32)))
     glow = Image.new("RGBA", (W, H), (255, 255, 255, 0))
     glow.putalpha(big)
     glow_rgb = Image.merge("RGBA", (

@@ -1564,7 +1564,8 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 		var _pl_d := _get_player()
 		if _pl_d != null and _pl_d.has_method("get_diamond_upgrade_id") \
 				and slot_id_str != "" and slot_id_str == _pl_d.get_diamond_upgrade_id():
-			desc_text = desc_text + "\n" + tr(_diamond_desc_key(slot_id_str))
+			# Linha do buff vai no TOPO da desc pra aparecer antes do "ver mais" truncar.
+			desc_text = tr(_diamond_desc_key(slot_id_str)) + "\n" + desc_text
 			_add_diamond_overlay(card)
 		desc_label.text = desc_text
 		desc_label.add_theme_color_override("font_color", desc_color)
@@ -1640,14 +1641,22 @@ func _add_diamond_overlay(card: Control) -> void:
 	badge.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Canto superior-direito: ~metade dentro da carta, ~metade fora.
+	# Canto superior-direito: ~metade dentro da carta, ~metade fora. ~72×72.
 	badge.anchor_left = 1.0
 	badge.anchor_right = 1.0
-	badge.offset_left = -34.0
-	badge.offset_top = -22.0
-	badge.offset_right = 24.0
-	badge.offset_bottom = 36.0
+	badge.offset_left = -42.0
+	badge.offset_top = -32.0
+	badge.offset_right = 30.0
+	badge.offset_bottom = 40.0
+	badge.pivot_offset = Vector2(36.0, 36.0)  # centro, pra o pulso escalar do meio
 	card.add_child(badge)
+	# Pulso leve e contínuo (escala 1.0 ↔ 1.12). O tween morre junto com o badge
+	# quando o card é reconstruído.
+	var tw := badge.create_tween().set_loops()
+	tw.tween_property(badge, "scale", Vector2(1.12, 1.12), 0.65) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(badge, "scale", Vector2.ONE, 0.65) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 # IDs de upgrade cujo título + desc devem ser centralizados horizontal e
@@ -3274,7 +3283,12 @@ func _show_card_tooltip(card: Control) -> void:
 			lines.append("[color=#6a5870]LV %d · %s[/color]" % [n, dt])
 		else:
 			lines.append("[color=#bfd4e8]LV %d · %s[/color]" % [n, dt])
-	var body: String = header + "\n" + cat_line + "\n" + "\n".join(lines)
+	# Diamante de Primeira Classe: linha do buff em destaque no topo do tooltip.
+	var diamond_line: String = ""
+	var p_dia := _get_player()
+	if p_dia != null and p_dia.has_method("get_diamond_upgrade_id") and card_id == p_dia.get_diamond_upgrade_id():
+		diamond_line = "[color=#9ad7ff]%s[/color]\n" % tr(_diamond_desc_key(card_id))
+	var body: String = header + "\n" + cat_line + diamond_line + "\n" + "\n".join(lines)
 	_augment_tooltip_label.text = body
 	_augment_tooltip.visible = true
 	_position_card_tooltip(card)
