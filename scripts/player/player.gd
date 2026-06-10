@@ -2269,7 +2269,7 @@ func _ice_area_lifetime() -> float:
 # CONGELADO. Explode no ponto da morte — dano em área + área de slow (reaproveita
 # o IceSlowArea, mesma usada pelo L2+ do gelo). Sem o diamante (is_diamond false),
 # o FreezeDebuff nem chama este método → comportamento idêntico ao atual.
-const ICE_SHATTER_RADIUS: float = 56.0
+const ICE_SHATTER_RADIUS: float = 44.0
 const ICE_SHATTER_BASE_DAMAGE: float = 16.0
 
 
@@ -2317,7 +2317,7 @@ func ice_shatter_at(pos: Vector2) -> void:
 		if area is Node2D:
 			(area as Node2D).global_position = pos
 	# Splash azul da explosão de gelo.
-	_spawn_aoe_effect(pos, ICE_SHATTER_RADIUS * 2.2, Color(0.7, 0.92, 1.0))
+	_spawn_aoe_effect(pos, ICE_SHATTER_RADIUS * 1.5, Color(0.3, 0.95, 1.0))
 
 
 # Sheet do efeito de área (3 frames de 31×31) reaproveitado pros AoE do diamante
