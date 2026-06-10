@@ -2301,9 +2301,9 @@ func ice_shatter_at(pos: Vector2) -> void:
 			CritFeedback.mark_next_hit_crit(e)
 		var was_alive: bool = (not ("hp" in e)) or float(e.hp) > 0.0
 		e.take_damage(final_dmg)
-		notify_damage_dealt_by_source(final_dmg, "ice_arrow")
+		notify_damage_dealt_by_source(final_dmg, "ice_shatter")
 		if was_alive and ("hp" in e) and float(e.hp) <= 0.0:
-			notify_kill_by_source("ice_arrow")
+			notify_kill_by_source("ice_shatter")
 	# Área de slow no ponto da explosão (slow em INIMIGOS → is_enemy_source=false).
 	if ICE_SHATTER_SLOW_AREA_SCENE != null:
 		var area: Node = ICE_SHATTER_SLOW_AREA_SCENE.instantiate()
@@ -2316,29 +2316,30 @@ func ice_shatter_at(pos: Vector2) -> void:
 		_get_world().add_child(area)
 		if area is Node2D:
 			(area as Node2D).global_position = pos
-	# Flash azul-claro da explosão de gelo (bem visível, por cima da área de slow).
-	print("[diamante][gelo] explosao em ", pos)  # DEBUG TEMP — remover depois
+	# Flash azul-claro da explosão de gelo.
 	_spawn_aoe_burst(pos, ICE_SHATTER_RADIUS * 1.6, Color(0.75, 0.95, 1.0, 0.9))
 
 
-# Burst visual (círculo que expande e some) pros AoE do diamante. `color` dá o tom.
+# Burst visual (explosão de partículas radiais) pros AoE do diamante. `color` dá o tom.
 func _spawn_aoe_burst(pos: Vector2, radius: float, color: Color) -> void:
-	var poly := Polygon2D.new()
-	var pts := PackedVector2Array()
-	var n: int = 24
-	for i in n:
-		var a: float = TAU * float(i) / float(n)
-		pts.append(Vector2(cos(a), sin(a)) * radius)
-	poly.polygon = pts
-	poly.color = color
-	poly.z_index = 60
-	_get_world().add_child(poly)
-	poly.global_position = pos
-	poly.scale = Vector2(0.35, 0.35)
-	var tw := poly.create_tween().set_parallel(true)
-	tw.tween_property(poly, "scale", Vector2.ONE, 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.tween_property(poly, "modulate:a", 0.0, 0.32)
-	tw.finished.connect(poly.queue_free)
+	var p := CPUParticles2D.new()
+	p.z_index = 60
+	p.one_shot = true
+	p.explosiveness = 1.0
+	p.amount = 26
+	p.lifetime = 0.5
+	p.direction = Vector2.RIGHT
+	p.spread = 180.0
+	p.gravity = Vector2.ZERO
+	p.initial_velocity_min = radius * 2.0
+	p.initial_velocity_max = radius * 4.0
+	p.scale_amount_min = 4.0
+	p.scale_amount_max = 7.0
+	p.color = color
+	_get_world().add_child(p)
+	p.global_position = pos
+	p.emitting = true
+	get_tree().create_timer(float(p.lifetime) + 0.3).timeout.connect(p.queue_free)
 
 
 func _chain_target_count() -> int:

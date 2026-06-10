@@ -168,6 +168,8 @@ DMG_PANEL_FIRE_DOT,Queimadura,Burn,Quemadura,Brûlure
 DMG_PANEL_FIRE_SKILL,Skill de Fogo,Fire Skill,Habilidad de Fuego,Compétence Feu
 DMG_PANEL_CURSE_DOT,Maldição (DoT),Curse (DoT),Maldición (DoT),Malédiction (DoT)
 DMG_PANEL_ICE_DOT,Gelo (DoT),Ice (DoT),Hielo (DoT),Glace (DoT)
+DMG_PANEL_ICE_SHATTER,Explosão de Gelo,Ice Shatter,Explosión de Hielo,Éclat de Glace
+DMG_PANEL_FENDA,Fenda,Rift,Fisura,Faille
 DMG_PANEL_CURSE_SKILL,Feixe da Maldição,Curse Beam,Rayo de Maldición,Rayon de Malédiction
 DMG_PANEL_CHAIN,Cadeia de Raios,Chain Lightning,Cadena Eléctrica,Chaîne d'Éclairs
 DMG_PANEL_CHAIN_AUTO,Auto-raio,Auto-bolt,Auto-rayo,Auto-éclair
