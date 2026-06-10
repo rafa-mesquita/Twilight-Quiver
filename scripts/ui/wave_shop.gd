@@ -715,10 +715,17 @@ func _status_title_for(id: String, target_level: int, fallback_name: String) -> 
 const STATUS_BASE_PRICE: int = 4
 
 
-func _status_price_for(_id: String, current_level: int) -> int:
+func _status_price_for(id: String, current_level: int) -> int:
 	# Todos os status: 4G base, dobra a cada nível (4, 8, 16, 32, 64, ...).
 	var lvl: int = maxi(current_level, 0)
-	return STATUS_BASE_PRICE * int(pow(2, lvl))
+	var price: int = STATUS_BASE_PRICE * int(pow(2, lvl))
+	# Nerf: itens que já começam dando esse status (Arco Dourado = Vel. Atk.,
+	# Adaga da Meia-Noite = Dano) fazem o respectivo status custar +1g em TODOS os
+	# níveis. (O status já vindo do item também é bloqueado do pacote de boas-vindas
+	# por _player_blocks_upgrade, então não vem outro de graça.)
+	if InventoryItems.start_granted_amount(id) > 0:
+		price += 1
+	return price
 
 
 func _roll_estrutura_slots() -> void:
