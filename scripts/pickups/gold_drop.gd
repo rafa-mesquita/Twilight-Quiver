@@ -21,12 +21,15 @@ static func try_drop(world: Node, scene: PackedScene, position: Vector2,
 		return
 	# Player com Chuva de Coins: bonus aditivo de drop chance escala por nível.
 	# L1 = +5%, L2 = +7%, L3+ = +9% (capa em L3 — L4 só puxa do mapa todo).
+	# Diamante: +1% extra por nível a partir do L2 (via gold_magnet_diamond_drop_bonus).
 	var player := world.get_tree().get_first_node_in_group("player")
 	if player != null:
 		var lvl: int = int(player.get("gold_magnet_level"))
 		if lvl >= 1:
 			chance += GOLD_MAGNET_BONUS_L1
 			chance += GOLD_MAGNET_BONUS_PER_LEVEL * float(mini(lvl - 1, 2))
+		if player.has_method("gold_magnet_diamond_drop_bonus"):
+			chance += float(player.gold_magnet_diamond_drop_bonus())
 	if randf() > chance:
 		return
 	var amount: int = randi_range(maxi(min_amount, 1), maxi(max_amount, min_amount))

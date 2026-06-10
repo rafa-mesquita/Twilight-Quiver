@@ -2929,9 +2929,12 @@ func _try_cast_tiger_claws() -> bool:
 		return false
 	# Embaralha e pega N (max = candidates.size()).
 	candidates.shuffle()
-	var target_count: int = mini(TIGER_CLAWS_TARGETS_BY_LEVEL[tiger_claws_level], candidates.size())
-	# Skill do player escala com stat "Dano".
-	var dmg: float = _apply_dmg_pct_to_dps(TIGER_CLAWS_DMG_PER_SCRATCH_BY_LEVEL[tiger_claws_level], true)
+	# Diamante: +1 alvo a partir do L2 (L1 fica 1; L2+ ganha +1).
+	var base_targets: int = TIGER_CLAWS_TARGETS_BY_LEVEL[tiger_claws_level]
+	var target_count: int = mini(base_targets + (1 if is_diamond("tiger_claws") and tiger_claws_level >= 2 else 0), candidates.size())
+	# Skill do player escala com stat "Dano". Diamante: +15% de dano por arranhão.
+	var dmg_base: float = _apply_dmg_pct_to_dps(TIGER_CLAWS_DMG_PER_SCRATCH_BY_LEVEL[tiger_claws_level], true)
+	var dmg: float = dmg_base * (1.15 if is_diamond("tiger_claws") else 1.0)
 	for i in target_count:
 		_spawn_tiger_claws_vfx(candidates[i], dmg)
 	return true
@@ -3451,7 +3454,11 @@ func _update_dash(delta: float) -> void:
 func _esquivando_stack_pct() -> float:
 	if esquivando_level <= 0:
 		return 0.0
-	return ESQUIVANDO_STACK_PCT_BY_LEVEL[mini(esquivando_level - 1, ESQUIVANDO_LEVEL_MAX - 1)]
+	var pct: float = ESQUIVANDO_STACK_PCT_BY_LEVEL[mini(esquivando_level - 1, ESQUIVANDO_LEVEL_MAX - 1)]
+	# Diamante: % por stack ×1.3.
+	if is_diamond("esquivando"):
+		pct *= 1.3
+	return pct
 
 
 func _esquivando_max_stacks() -> int:
@@ -3463,7 +3470,11 @@ func _esquivando_max_stacks() -> int:
 func _esquivando_dodge_chance() -> float:
 	if esquivando_level <= 0:
 		return 0.0
-	return ESQUIVANDO_DODGE_BY_LEVEL[mini(esquivando_level - 1, ESQUIVANDO_LEVEL_MAX - 1)]
+	var d: float = ESQUIVANDO_DODGE_BY_LEVEL[mini(esquivando_level - 1, ESQUIVANDO_LEVEL_MAX - 1)]
+	# Diamante: dodge ×1.5 — reflete tanto no gameplay quanto no stat "Esquiva" da loja.
+	if is_diamond("esquivando"):
+		d *= 1.5
+	return d
 
 
 # Capacete Veloz (item): +3% de dodge por nível de Armadura. 0 sem o item equipado.
@@ -3618,6 +3629,9 @@ func _adrenalina_move_buff() -> float:
 	if adrenalina_level <= 0:
 		return 0.0
 	var rate: float = ADRENALINA_MS_PER_HP_BY_LEVEL[mini(adrenalina_level - 1, ADRENALINA_LEVEL_MAX - 1)]
+	# Diamante: rate de move por HP perdido ×1.5 (o +5% fixo não é afetado).
+	if is_diamond("adrenalina"):
+		rate *= 1.5
 	var missing: float = maxf(ADRENALINA_HP_REF - hp, 0.0)
 	var buff: float = ADRENALINA_FLAT_MS + rate * missing
 	if adrenalina_level >= ADRENALINA_LEVEL_MAX and _adrenalina_skill_remaining > 0.0:
@@ -3629,7 +3643,11 @@ func _adrenalina_move_buff() -> float:
 func _adrenalina_atk_buff() -> float:
 	if adrenalina_level < ADRENALINA_SKILL_MIN_LEVEL or _adrenalina_skill_remaining <= 0.0:
 		return 0.0
-	return ADRENALINA_ATK_BY_LEVEL[mini(adrenalina_level - 1, ADRENALINA_LEVEL_MAX - 1)]
+	var atk: float = ADRENALINA_ATK_BY_LEVEL[mini(adrenalina_level - 1, ADRENALINA_LEVEL_MAX - 1)]
+	# Diamante: atk speed da skill ×1.3.
+	if is_diamond("adrenalina"):
+		atk *= 1.3
+	return atk
 
 
 func _adrenalina_cooldown() -> float:
@@ -4021,7 +4039,8 @@ func apply_upgrade(upgrade_id: String) -> void:
 			# bonus (gold_drop.gd lê o level via get_upgrade_count).
 			gold_magnet_level = mini(gold_magnet_level + 1, 4)
 			# Lv4 (puxe global): mantém a flag legada usada por gold.gd.
-			has_gold_magnet = gold_magnet_level >= 4
+			# Diamante: ativa o puxe já no L3.
+			has_gold_magnet = gold_magnet_level >= (3 if is_diamond("gold_magnet") else 4)
 		"dash":
 			# Refatorado pra 4 níveis. Cada nível atualiza cooldown + features.
 			# Lv1: dash básico cd 5s
@@ -4165,6 +4184,14 @@ func get_upgrade_count(upgrade_id: String) -> int:
 # True se `id` é o upgrade sorteado pelo Diamante de Primeira Classe.
 func is_diamond(id: String) -> bool:
 	return _diamond_upgrade_id != "" and _diamond_upgrade_id == id
+
+
+# Bônus de drop chance do Diamante na Chuva de Coins: +1% por nível a partir do L2.
+# Chamado por gold_drop.gd pra somar ao bônus base do upgrade.
+func gold_magnet_diamond_drop_bonus() -> float:
+	if not is_diamond("gold_magnet") or gold_magnet_level <= 1:
+		return 0.0
+	return 0.01 * float(gold_magnet_level - 1)
 
 
 func get_diamond_upgrade_id() -> String:
