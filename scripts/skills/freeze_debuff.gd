@@ -84,7 +84,9 @@ func _exit_tree() -> void:
 	if p == null or not is_instance_valid(p):
 		return
 	if p.has_method("is_diamond") and p.is_diamond("ice_arrow") and p.has_method("ice_shatter_at"):
-		p.ice_shatter_at(_last_pos)
+		# call_deferred: roda FORA do _exit_tree (teardown), num frame limpo — senão o
+		# add_child + tween do efeito visual não renderizam (dano já funcionava aqui).
+		p.call_deferred("ice_shatter_at", _last_pos)
 
 
 func _apply_freeze() -> void:
