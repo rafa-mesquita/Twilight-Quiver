@@ -1770,8 +1770,14 @@ func _graviton_explosion_damage() -> float:
 	# O throttle de 3s/inimigo é aplicado no graviton_pulse pra evitar que
 	# múltiplos pulsos (volley/ataques em sequência) empilhem dano no mesmo alvo.
 	# Escala com o stat "Dano" (arrow_damage_multiplier) — é skill do player.
-	if graviton_level >= 4:
-		return _apply_dmg_pct_to_dps(20.0)
+	# Diamante: explosão já a partir do L3, e +25% de dano no L4.
+	var diamond: bool = is_diamond("graviton")
+	var min_lvl: int = 3 if diamond else 4
+	if graviton_level >= min_lvl:
+		var base: float = 20.0
+		if diamond and graviton_level >= 4:
+			base *= 1.25
+		return _apply_dmg_pct_to_dps(base)
 	return 0.0
 
 
@@ -1935,6 +1941,9 @@ func _ice_freeze_dps() -> float:
 
 func _stone_speed() -> float:
 	# "Pesada" — bem mais devagar que a flecha normal (220). Dá pra ver vindo.
+	# Diamante: remove o downgrade de velocidade (alcance normal).
+	if is_diamond("stone_arrow"):
+		return 220.0
 	return 150.0
 
 
@@ -1946,8 +1955,12 @@ func _tide_speed() -> float:
 
 
 # Attack speed enquanto a Fúria da Maré ativa (escala por nível: L1=20/L2=25/L3=30%).
+# Diamante: L2 dá +10% a mais de atk speed (20→30%).
 func _mare_atk_buff() -> float:
-	return TIDE_ATK_SPEED_BY_LEVEL[clampi(tide_arrow_level, 0, 3)]
+	var base: float = TIDE_ATK_SPEED_BY_LEVEL[clampi(tide_arrow_level, 0, 3)]
+	if is_diamond("tide_arrow") and tide_arrow_level == 2:
+		base += 0.10
+	return base
 
 
 # +dano recebido por stack do debuff de Vulnerabilidade (L1=15%, L2+=30%).
@@ -2034,8 +2047,13 @@ func _spawn_tide_wave() -> void:
 
 
 # −15% em todo dano de flecha enquanto a Fúria da Maré está ativa (fator no dano).
+# Diamante: remove a penalidade (fator = 1.0 mesmo com a Maré ativa).
 func _mare_damage_factor() -> float:
-	return TIDE_DAMAGE_FACTOR if tide_arrow_level > 0 else 1.0
+	if tide_arrow_level <= 0:
+		return 1.0
+	if is_diamond("tide_arrow"):
+		return 1.0
+	return TIDE_DAMAGE_FACTOR
 
 
 # Cajado do Crepúsculo. Fator das flechas (0.70 equipado) e fator de skills+aliados
@@ -2127,12 +2145,18 @@ func _sync_sanguinario_overlay() -> void:
 
 func _stone_lifetime() -> float:
 	# 150 × 0.7 ≈ 105px de alcance (flecha normal = 330px → ~-68%).
+	# Diamante: usa alcance normal (220 × 4.0 = 880px, igual perfuração).
+	if is_diamond("stone_arrow"):
+		return 4.0
 	return 0.7
 
 
 func _stone_extra_lifetime() -> float:
 	# 2ª flecha / extras (Flechas Duplas / Multi): range um pouco maior (150 ×
 	# 0.9 ≈ 135px) pra não cair em cima da primeira.
+	# Diamante: alcance normal junto da primária.
+	if is_diamond("stone_arrow"):
+		return 4.0
 	return 0.9
 
 
@@ -2175,12 +2199,14 @@ func _stone_knockback() -> float:
 func _stone_stun_duration() -> float:
 	# Mesmo tempo do freeze do Gelo (2.0s) no Lv1; escala suave por nível.
 	# (Crítico ainda multiplica em cima disso no impacto.)
+	# Diamante: +1.0s em todos os níveis.
+	var bonus: float = 1.0 if is_diamond("stone_arrow") else 0.0
 	match stone_arrow_level:
-		1: return 2.0
-		2: return 2.3
-		3: return 2.6
-		4: return 3.0
-	return 2.0
+		1: return 2.0 + bonus
+		2: return 2.3 + bonus
+		3: return 2.6 + bonus
+		4: return 3.0 + bonus
+	return 2.0 + bonus
 
 
 func _spawn_frostwisp() -> void:
@@ -2216,10 +2242,12 @@ func _ice_area_lifetime() -> float:
 func _chain_target_count() -> int:
 	# Lv4 = "todos da área" — usa um número alto (1000) que é capado pelo
 	# tamanho real de candidates no arrow.
+	# Diamante: +1 alvo por nível (L4 já é infinito, mantém 1000).
+	var diamond_bonus: int = 1 if is_diamond("chain_lightning") else 0
 	match chain_lightning_level:
-		1: return 1
-		2: return 2
-		3: return 4
+		1: return 1 + diamond_bonus
+		2: return 2 + diamond_bonus
+		3: return 4 + diamond_bonus
 		4: return 1000
 	return 0
 
@@ -2800,10 +2828,12 @@ func _try_cast_chain_auto_bolt() -> bool:
 
 func _chain_auto_bolt_target_count() -> int:
 	# Alvos do auto-raio por nível da Cadeia de Raios: L2 → 1, L3 → 2, L4 → 3.
+	# Diamante: +1 alvo por nível (L2→2, L3→3, L4→4).
+	var diamond_bonus: int = 1 if is_diamond("chain_lightning") else 0
 	match chain_lightning_level:
-		2: return 1
-		3: return 2
-		_: return 3  # L4+ (capado em 4)
+		2: return 1 + diamond_bonus
+		3: return 2 + diamond_bonus
+		_: return 3 + diamond_bonus  # L4+ (capado em 4)
 
 
 # ---------- Boomerang (skill passiva auto-cast) ----------
@@ -2817,7 +2847,11 @@ func _update_boomerang(delta: float) -> void:
 	# Tenta castar. Se não tem inimigo, mantém cd zerado e tenta de novo no
 	# próximo frame até aparecer alvo.
 	if _try_cast_boomerang():
-		_boomerang_cd_remaining = BOOMERANG_CD_BY_LEVEL[mini(boomerang_level - 1, 3)]
+		# Diamante: cooldown ×0.7 (−30%).
+		var cd: float = BOOMERANG_CD_BY_LEVEL[mini(boomerang_level - 1, 3)]
+		if is_diamond("boomerang"):
+			cd *= 0.7
+		_boomerang_cd_remaining = cd
 
 
 func _try_cast_boomerang() -> bool:
@@ -2835,13 +2869,24 @@ func _try_cast_boomerang() -> bool:
 	if primary_dir.length_squared() < 0.001:
 		primary_dir = Vector2.RIGHT
 	var dmg: float = BOOMERANG_DAMAGE_BY_LEVEL[mini(boomerang_level - 1, 3)]
+	# Diamante: dano ×1.5.
+	if is_diamond("boomerang"):
+		dmg *= 1.5
 	# L1-L2: 1 boomerang. L3: 2 (alvo + 180°). L4: 4 (alvo + 180° + 90° + 270°).
+	# Diamante L4: 6 bumerangues (alvo + 180° + 60° + 120° + 240° + 300°).
 	_spawn_boomerang(primary_dir, dmg, rng)
 	if boomerang_level >= 3:
 		_spawn_boomerang(-primary_dir, dmg, rng)
 	if boomerang_level >= 4:
-		_spawn_boomerang(primary_dir.rotated(PI / 2.0), dmg, rng)
-		_spawn_boomerang(primary_dir.rotated(-PI / 2.0), dmg, rng)
+		if is_diamond("boomerang"):
+			# 6 bumerangues: os 2 já lançados + 4 extras em 60°/120°/240°/300°.
+			_spawn_boomerang(primary_dir.rotated(PI / 3.0), dmg, rng)
+			_spawn_boomerang(primary_dir.rotated(2.0 * PI / 3.0), dmg, rng)
+			_spawn_boomerang(primary_dir.rotated(4.0 * PI / 3.0), dmg, rng)
+			_spawn_boomerang(primary_dir.rotated(5.0 * PI / 3.0), dmg, rng)
+		else:
+			_spawn_boomerang(primary_dir.rotated(PI / 2.0), dmg, rng)
+			_spawn_boomerang(primary_dir.rotated(-PI / 2.0), dmg, rng)
 	return true
 
 
