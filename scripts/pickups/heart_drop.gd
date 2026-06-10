@@ -44,6 +44,9 @@ static func drop_guaranteed(world: Node, scene: PackedScene, drop_position: Vect
 	if level <= 0:
 		return
 	var heal_pct: float = _heal_pct_for_level(level)
+	# Diamante do Mestre da Cura 💎: cura por hit ×1.3.
+	if player.has_method("is_diamond") and player.is_diamond("life_steal"):
+		heal_pct *= 1.3
 	for i in count:
 		# Boss = drop 25% mais raro: cada coração tem 75% de chance.
 		if randf() > BOSS_CONTEXT_DROP_MULTIPLIER:
@@ -79,6 +82,9 @@ static func try_drop(world: Node, scene: PackedScene, drop_position: Vector2,
 	if randf() > chance:
 		return
 	var heal_pct: float = _heal_pct_for_level(level)
+	# Diamante do Mestre da Cura 💎: cura por hit ×1.3.
+	if player.has_method("is_diamond") and player.is_diamond("life_steal"):
+		heal_pct *= 1.3
 	var heart: Node2D = scene.instantiate()
 	if "heal_pct" in heart:
 		heart.heal_pct = heal_pct

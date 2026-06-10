@@ -155,6 +155,8 @@ const TIDE_DAMAGE_FACTOR: float = 0.84
 # Referência à Frostwisp spawnada no L3 (1 só por run).
 const FROSTWISP_SCENE: PackedScene = preload("res://scenes/allies/frostwisp.tscn")
 var _frostwisp: Node2D = null
+# Diamante do Fica Frio: área de slow reaproveitada na explosão de inimigo congelado.
+const ICE_SHATTER_SLOW_AREA_SCENE: PackedScene = preload("res://scenes/skills/ice_slow_area.tscn")
 var claudio_druida_level: int = 0  # aliado tank — cada compra "uppa" stats e custo
 # Tracking dos claudio_druidas com respawn nativo (não usa o sistema de structure
 # do wave_manager). Cada entry: {"instance", "last_pos", "dead_for"}.
@@ -2249,6 +2251,9 @@ func _spawn_frostwisp() -> void:
 	# é spawnar no L3 e buffar depois), aplica o +25% de dano de cara.
 	if ice_arrow_level >= 4 and _frostwisp.has_method("set_level4_bonus"):
 		_frostwisp.set_level4_bonus(true)
+	# Diamante do Fica Frio: +10% no dano da Frostwisp (compõe com o L4).
+	if is_diamond("ice_arrow") and _frostwisp.has_method("set_diamond_bonus"):
+		_frostwisp.set_diamond_bonus(true)
 
 
 func _ice_area_slow_factor() -> float:
@@ -2260,6 +2265,59 @@ func _ice_area_lifetime() -> float:
 	# Lv2: área dura 5.5s. Refresh aplicado por outras flechas que pousem
 	# na mesma região (cada uma spawna sua própria área, sobrepondo).
 	return 5.5
+
+
+# Diamante do Fica Frio 💎: chamado pelo FreezeDebuff quando um inimigo morre
+# CONGELADO. Explode no ponto da morte — dano em área + área de slow (reaproveita
+# o IceSlowArea, mesma usada pelo L2+ do gelo). Sem o diamante (is_diamond false),
+# o FreezeDebuff nem chama este método → comportamento idêntico ao atual.
+const ICE_SHATTER_RADIUS: float = 56.0
+const ICE_SHATTER_BASE_DAMAGE: float = 16.0
+
+
+func ice_shatter_at(pos: Vector2) -> void:
+	if not is_diamond("ice_arrow") or ice_arrow_level <= 0:
+		return
+	# Dano em área (escala com o stat Dano, igual ao DoT do gelo).
+	var dmg: float = _apply_dmg_pct_to_dps(ICE_SHATTER_BASE_DAMAGE)
+	var rsq: float = ICE_SHATTER_RADIUS * ICE_SHATTER_RADIUS
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not is_instance_valid(e) or not (e is Node2D):
+			continue
+		# Pula o próprio inimigo que morreu (já queue_freed) e qualquer já-morto,
+		# pra não re-disparar a death deles nem dar dano/kill em dobro.
+		if e.is_queued_for_deletion():
+			continue
+		if (e as Node).is_in_group("boss_shielded"):
+			continue
+		if not e.has_method("take_damage"):
+			continue
+		if "hp" in e and float(e.hp) <= 0.0:
+			continue
+		if (e as Node2D).global_position.distance_squared_to(pos) > rsq:
+			continue
+		var final_dmg: float = dmg
+		var crit: Dictionary = roll_crit()
+		if bool(crit.get("crit", false)):
+			final_dmg *= float(crit.get("mult", 1.0))
+			CritFeedback.mark_next_hit_crit(e)
+		var was_alive: bool = (not ("hp" in e)) or float(e.hp) > 0.0
+		e.take_damage(final_dmg)
+		notify_damage_dealt_by_source(final_dmg, "ice_arrow")
+		if was_alive and ("hp" in e) and float(e.hp) <= 0.0:
+			notify_kill_by_source("ice_arrow")
+	# Área de slow no ponto da explosão (slow em INIMIGOS → is_enemy_source=false).
+	if ICE_SHATTER_SLOW_AREA_SCENE != null:
+		var area: Node = ICE_SHATTER_SLOW_AREA_SCENE.instantiate()
+		if "is_enemy_source" in area:
+			area.is_enemy_source = false
+		if "slow_multiplier" in area:
+			area.slow_multiplier = _ice_area_slow_factor()
+		if "lifetime" in area:
+			area.lifetime = _ice_area_lifetime()
+		_get_world().add_child(area)
+		if area is Node2D:
+			(area as Node2D).global_position = pos
 
 
 func _chain_target_count() -> int:

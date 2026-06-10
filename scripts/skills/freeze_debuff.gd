@@ -27,6 +27,13 @@ var _anim_paused: bool = false
 var _ice_cube: Sprite2D = null
 var _cube_tween = null
 var _cracker_player: AudioStreamPlayer2D = null
+# Diamante do Fica Frio: última posição do inimigo congelado, cacheada por frame.
+# Usada pra disparar a explosão no ponto da morte (no _exit_tree o parent já pode
+# estar sendo deletado, então não dá pra ler a posição dele ali).
+var _last_pos: Vector2 = Vector2.ZERO
+# True quando o freeze terminou naturalmente (não foi morte do inimigo). Evita
+# disparar a explosão do diamante quando o gelo só expirou.
+var _expired_naturally: bool = false
 
 
 func _ready() -> void:
@@ -35,14 +42,21 @@ func _ready() -> void:
 	if parent == null or parent.is_in_group("cc_immune"):
 		queue_free()
 		return
+	if parent is Node2D:
+		_last_pos = (parent as Node2D).global_position
 	_apply_freeze()
 	_spawn_ice_cube()
 	_start_cracker_audio()
 
 
 func _process(delta: float) -> void:
+	# Cacheia a posição do inimigo enquanto vivo (pro diamante explodir no lugar).
+	var par: Node = get_parent()
+	if par != null and is_instance_valid(par) and par is Node2D:
+		_last_pos = (par as Node2D).global_position
 	_remaining -= delta
 	if _remaining <= 0.0:
+		_expired_naturally = true
 		_restore_speed()
 		_resume_animation()
 		_stop_cracker_audio()
@@ -55,6 +69,22 @@ func _process(delta: float) -> void:
 		_apply_tick()
 		if not is_inside_tree():
 			return
+
+
+func _exit_tree() -> void:
+	# Diamante do Fica Frio ("Fica Frio" 💎): se o freeze NÃO expirou sozinho, o
+	# inimigo morreu congelado (morte normal queue_frees o subtree inteiro, levando
+	# este debuff junto). Nesse caso, dispara a explosão de gelo no ponto da morte.
+	if _expired_naturally:
+		return
+	var tree := get_tree()
+	if tree == null:
+		return  # teardown da cena — sem explosão
+	var p := tree.get_first_node_in_group("player")
+	if p == null or not is_instance_valid(p):
+		return
+	if p.has_method("is_diamond") and p.is_diamond("ice_arrow") and p.has_method("ice_shatter_at"):
+		p.ice_shatter_at(_last_pos)
 
 
 func _apply_freeze() -> void:

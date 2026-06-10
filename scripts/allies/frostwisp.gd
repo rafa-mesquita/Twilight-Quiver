@@ -27,6 +27,8 @@ extends Node2D
 # L4 do Fica Frio: +25% no dano do Frostwisp (projeteis + campo). Aplicado em
 # cima do dano-base capturado no _ready (não compõe se chamado várias vezes).
 const LEVEL4_DAMAGE_MULT: float = 1.25
+# Diamante do Fica Frio: +10% no dano do Frostwisp (compõe com o L4).
+const DIAMOND_DAMAGE_MULT: float = 1.10
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -57,6 +59,7 @@ var _active_field: Node2D = null
 var _base_projectile_damage: float = 0.0
 var _base_field_dps: float = 0.0
 var _level4_bonus: bool = false
+var _diamond_bonus: bool = false  # +10% do diamante do Fica Frio
 
 
 func _ready() -> void:
@@ -240,8 +243,18 @@ func set_level4_bonus(active: bool) -> void:
 	_apply_damage_bonus()
 
 
+# Diamante do Fica Frio: +10% no dano. Chamado pelo player no spawn/level-up.
+func set_diamond_bonus(active: bool) -> void:
+	_diamond_bonus = active
+	_apply_damage_bonus()
+
+
 func _apply_damage_bonus() -> void:
-	var mult: float = LEVEL4_DAMAGE_MULT if _level4_bonus else 1.0
+	var mult: float = 1.0
+	if _level4_bonus:
+		mult *= LEVEL4_DAMAGE_MULT
+	if _diamond_bonus:
+		mult *= DIAMOND_DAMAGE_MULT
 	projectile_damage = _base_projectile_damage * mult
 	field_dps = _base_field_dps * mult
 

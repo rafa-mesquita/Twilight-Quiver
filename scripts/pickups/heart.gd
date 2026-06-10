@@ -137,7 +137,11 @@ func _is_player_magnet_active() -> bool:
 		return false
 	var lvl: int = int(_player_ref.get("life_steal_level"))
 	# Só o L4 puxa as curas; L1-L3 ficam paradas no chão.
-	if lvl < 4:
+	# Diamante do Mestre da Cura 💎: o pull começa já no L3.
+	var pull_level: int = 4
+	if _player_ref.has_method("is_diamond") and _player_ref.is_diamond("life_steal"):
+		pull_level = 3
+	if lvl < pull_level:
 		return false
 	var radius: float = MAGNET_RADIUS_L4
 	return global_position.distance_squared_to(_player_ref.global_position) <= radius * radius
@@ -169,6 +173,11 @@ func _on_body_entered(body: Node) -> void:
 	if "max_hp" in body:
 		heal_amount = body.max_hp * heal_pct
 	body.heal(heal_amount)
+	# Diamante do Mestre da Cura 💎: cada coração dá +7% de move speed por 1s.
+	# Reusa o buff temporário de move speed da capivara (mesma var lida na velocity).
+	if body.has_method("is_diamond") and body.is_diamond("life_steal") \
+			and body.has_method("apply_capivara_speed_buff"):
+		body.apply_capivara_speed_buff(0.07, 1.0)
 	_play_pickup_sound()
 	# Anim de coleta: sobe e some.
 	var t := create_tween().set_parallel(true)
