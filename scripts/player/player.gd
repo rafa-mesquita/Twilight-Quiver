@@ -2316,30 +2316,36 @@ func ice_shatter_at(pos: Vector2) -> void:
 		_get_world().add_child(area)
 		if area is Node2D:
 			(area as Node2D).global_position = pos
-	# Flash azul-claro da explosão de gelo.
-	_spawn_aoe_burst(pos, ICE_SHATTER_RADIUS * 1.6, Color(0.75, 0.95, 1.0, 0.9))
+	# Splash azul da explosão de gelo.
+	_spawn_aoe_effect(pos, ICE_SHATTER_RADIUS * 2.2, Color(0.7, 0.92, 1.0))
 
 
-# Burst visual (explosão de partículas radiais) pros AoE do diamante. `color` dá o tom.
-func _spawn_aoe_burst(pos: Vector2, radius: float, color: Color) -> void:
-	var p := CPUParticles2D.new()
-	p.z_index = 60
-	p.one_shot = true
-	p.explosiveness = 1.0
-	p.amount = 26
-	p.lifetime = 0.5
-	p.direction = Vector2.RIGHT
-	p.spread = 180.0
-	p.gravity = Vector2.ZERO
-	p.initial_velocity_min = radius * 2.0
-	p.initial_velocity_max = radius * 4.0
-	p.scale_amount_min = 4.0
-	p.scale_amount_max = 7.0
-	p.color = color
-	_get_world().add_child(p)
-	p.global_position = pos
-	p.emitting = true
-	get_tree().create_timer(float(p.lifetime) + 0.3).timeout.connect(p.queue_free)
+# Sheet do efeito de área (3 frames de 31×31) reaproveitado pros AoE do diamante
+# (explosão de gelo / corte da fenda). `tint` dá o tom (azul no gelo, roxo na fenda).
+const AOE_EFFECT_SHEET: Texture2D = preload("res://assets/effects/water/area_debuff.png")
+
+
+# Efeito de área (splash animado) no ponto do AoE. `diameter` = tamanho final em px.
+func _spawn_aoe_effect(pos: Vector2, diameter: float, tint: Color) -> void:
+	var frames := SpriteFrames.new()
+	frames.add_animation("play")
+	frames.set_animation_loop("play", false)
+	frames.set_animation_speed("play", 16.0)
+	for i in 3:
+		var at := AtlasTexture.new()
+		at.atlas = AOE_EFFECT_SHEET
+		at.region = Rect2(float(i) * 31.0, 0.0, 31.0, 31.0)
+		frames.add_frame("play", at)
+	var spr := AnimatedSprite2D.new()
+	spr.sprite_frames = frames
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	spr.modulate = tint
+	spr.z_index = 60
+	spr.scale = Vector2.ONE * (diameter / 31.0)
+	_get_world().add_child(spr)
+	spr.global_position = pos
+	spr.play("play")
+	spr.animation_finished.connect(spr.queue_free)
 
 
 func _chain_target_count() -> int:
@@ -2686,8 +2692,8 @@ func _fenda_cut(a: Vector2, b: Vector2) -> void:
 		# vira um círculo de raio FENDA_CUT_WIDTH centrado no destino.
 		if diamond:
 			_fenda_apply_cut_damage(bb, bb, dd)
-			# Burst roxo-escuro no ponto de destino.
-			_spawn_aoe_burst(bb, FENDA_CUT_WIDTH, Color(0.32, 0.08, 0.46, 0.55))
+			# Splash roxo escuro no ponto de destino (filtro roxo no efeito de água).
+			_spawn_aoe_effect(bb, FENDA_CUT_WIDTH * 2.6, Color(0.5, 0.14, 0.78))
 	)
 
 
