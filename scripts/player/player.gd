@@ -2318,6 +2318,28 @@ func ice_shatter_at(pos: Vector2) -> void:
 		_get_world().add_child(area)
 		if area is Node2D:
 			(area as Node2D).global_position = pos
+	# Flash azul da explosão de gelo.
+	_spawn_aoe_burst(pos, ICE_SHATTER_RADIUS, Color(0.5, 0.85, 1.0, 0.5))
+
+
+# Burst visual (círculo que expande e some) pros AoE do diamante. `color` dá o tom.
+func _spawn_aoe_burst(pos: Vector2, radius: float, color: Color) -> void:
+	var poly := Polygon2D.new()
+	var pts := PackedVector2Array()
+	var n: int = 24
+	for i in n:
+		var a: float = TAU * float(i) / float(n)
+		pts.append(Vector2(cos(a), sin(a)) * radius)
+	poly.polygon = pts
+	poly.color = color
+	poly.z_index = 60
+	_get_world().add_child(poly)
+	poly.global_position = pos
+	poly.scale = Vector2(0.35, 0.35)
+	var tw := poly.create_tween().set_parallel(true)
+	tw.tween_property(poly, "scale", Vector2.ONE, 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(poly, "modulate:a", 0.0, 0.32)
+	tw.finished.connect(poly.queue_free)
 
 
 func _chain_target_count() -> int:
@@ -2664,6 +2686,8 @@ func _fenda_cut(a: Vector2, b: Vector2) -> void:
 		# vira um círculo de raio FENDA_CUT_WIDTH centrado no destino.
 		if diamond:
 			_fenda_apply_cut_damage(bb, bb, dd)
+			# Burst roxo-escuro no ponto de destino.
+			_spawn_aoe_burst(bb, FENDA_CUT_WIDTH, Color(0.32, 0.08, 0.46, 0.55))
 	)
 
 
