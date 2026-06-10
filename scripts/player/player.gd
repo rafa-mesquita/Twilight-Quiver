@@ -579,8 +579,6 @@ var _botas_ariscas_equipped: bool = false
 # turbinado a run inteira. Vazio = sem o item. Setado em _roll_diamond_upgrade().
 var _diamond_upgrade_id: String = ""
 var _has_diamante: bool = false  # setado por InventoryItems.apply_to_player
-# Flag por-run pro unlock do Diamante: vira true em qualquer reroll global.
-var reroll_used_this_run: bool = false
 var attack_speed_multiplier: float = 1.0  # 1.0 base, +0.27 por stack
 var move_speed_multiplier: float = 1.0  # 1.0 base, +0.10 por stack
 # Conta ataques pra decidir quando proca a flecha perfurante (a cada 3 ataques).

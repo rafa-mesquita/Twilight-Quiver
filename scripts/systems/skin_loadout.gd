@@ -320,8 +320,6 @@ const STAT_LOW_HP_KILLS: StringName = &"low_hp_kills_total"
 # da wave 21. 0 = nunca venceu. Usado pelo leaderboard "tempo até o 21" enquanto
 # o ranking global (backend) não existe.
 const STAT_BEST_TIME_W21: StringName = &"best_time_to_w21_ms"
-# Flag (0/1): passou da wave 14 numa run sem usar reroll (unlock do Diamante).
-const STAT_DIAMANTE_UNLOCK: StringName = &"diamante_unlock_done"
 # Set de boss IDs já abatidos (persistente entre runs). Armazenado como string
 # CSV no settings.cfg porque ConfigFile só aceita primitivos.
 const _KEY_BOSSES_KILLED_SET: String = "bosses_killed_set"
@@ -908,10 +906,6 @@ static func record_run(run_stats: Dictionary) -> Array:
 	# Flag persistente: passou de um round sem disparo manual de flecha (unlock Sputnik).
 	if bool(run_stats.get("no_arrow_round", false)) and get_stat(STAT_NO_ARROW_ROUND) < 1:
 		set_stat(STAT_NO_ARROW_ROUND, 1)
-	# Flag persistente: passou da wave 14 sem usar reroll nesta run (unlock Diamante).
-	if int(run_stats.get("wave", 0)) > 14 and not bool(run_stats.get("reroll_used", false)) \
-			and get_stat(STAT_DIAMANTE_UNLOCK) < 1:
-		set_stat(STAT_DIAMANTE_UNLOCK, 1)
 	set_stat(STAT_RUNS_COMPLETED, get_stat(STAT_RUNS_COMPLETED) + 1)
 	if run_dmg_taken == 0 and run_wave >= 1:
 		set_stat(STAT_RUNS_NO_DAMAGE, get_stat(STAT_RUNS_NO_DAMAGE) + 1)
