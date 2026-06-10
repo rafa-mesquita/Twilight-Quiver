@@ -32,6 +32,7 @@ const ALLY_KILL_SOURCES: Array[String] = [
 #   "welcome_elemental_choice" — welcome upgrade vira escolha de elemental (wave_manager).
 #   "pet_slot"               — +`amount` slot(s) de aliado (lido por wave_shop).
 #   "gold_per_round"         — +`amount` gold no fim de cada round (lido por wave_manager).
+#   "diamond_pick"           — sorteia 1 upgrade pra ficar turbinado a run inteira (sem rerolls).
 const ITEMS: Dictionary = {
 	"midnight_dagger": {
 		"name": "ITEM_MIDNIGHT_DAGGER_NAME",
@@ -193,6 +194,18 @@ const ITEMS: Dictionary = {
 			{"type": "petal_drop_chance", "value": 0.02},
 		],
 		"unlock": {"type": "shop"},
+	},
+	# Diamante de Primeira Classe: sorteia 1 dos 21 upgrades de build pra ficar turbinado
+	# a run inteira (marcado com 💎 na carta da loja). Em troca, desabilita todos os
+	# rerolls da loja. Unlock: passar da wave 14 sem usar nenhum reroll.
+	"diamante_primeira_classe": {
+		"name": "ITEM_DIAMANTE_NAME",
+		"desc": "ITEM_DIAMANTE_DESC",
+		"icon": "res://assets/Hud/itens/diamante_primeira_classe.png",
+		"effect": {"type": "diamond_pick"},
+		"unlock": {"type": "quest", "reqs": [
+			{"stat": &"diamante_unlock_done", "value": 1, "label": "ITEM_REQ_DIAMANTE"},
+		]},
 	},
 }
 
@@ -554,3 +567,7 @@ static func apply_to_player(player: Node) -> void:
 				# Botas Ariscas: liga a flag (−15% CD de mobilidade + skill já vem L2).
 				if "_botas_ariscas_equipped" in player:
 					player._botas_ariscas_equipped = true
+			elif t == "diamond_pick":
+				# Diamante de Primeira Classe: liga a flag (sorteio feito em _roll_diamond_upgrade).
+				if "_has_diamante" in player:
+					player._has_diamante = true

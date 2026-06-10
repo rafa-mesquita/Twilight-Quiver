@@ -557,6 +557,12 @@ var _essencia_hp_per_level: float = 5.0
 # fenda/adrenalina) e elas já vêm no L2 na 1ª aquisição. Setado por
 # InventoryItems.apply_to_player. Lido em _mobility_cd_mult() e apply_upgrade.
 var _botas_ariscas_equipped: bool = false
+# Diamante de Primeira Classe (item): no início da run sorteia 1 upgrade pra ficar
+# turbinado a run inteira. Vazio = sem o item. Setado em _roll_diamond_upgrade().
+var _diamond_upgrade_id: String = ""
+var _has_diamante: bool = false  # setado por InventoryItems.apply_to_player
+# Flag por-run pro unlock do Diamante: vira true em qualquer reroll global.
+var reroll_used_this_run: bool = false
 var attack_speed_multiplier: float = 1.0  # 1.0 base, +0.27 por stack
 var move_speed_multiplier: float = 1.0  # 1.0 base, +0.10 por stack
 # Conta ataques pra decidir quando proca a flecha perfurante (a cada 3 ataques).
@@ -733,6 +739,7 @@ func _ready() -> void:
 	# início da run (ex: Adaga = +1 Dano, Arco Dourado = +1 Vel. Ataque). Antes
 	# do free upgrade da wave 1, que exclui status já dados por item.
 	InventoryItems.apply_to_player(self)
+	_roll_diamond_upgrade()  # sorteia o diamante (precisa dos itens já aplicados)
 	# Sanguinário (item): liga/desliga o buff de HP-baixo a cada mudança de HP.
 	# unbind(2) descarta os args (current, maximum) do hp_changed.
 	hp_changed.connect(_update_sanguinario_state.unbind(2))
@@ -1551,9 +1558,11 @@ func _fire_tilisko_shots(aim_dir: Vector2, is_pierce: bool, is_ricochet: bool, i
 		else:
 			target = _nearest_enemy_to_player()
 		# Direção pro alvo; sem inimigo → cai na mira do player (não trava o tiro).
+		# COM inimigo: mira PREDITIVA (lidera o alvo pela velocidade dele) — sem isso
+		# o pinguim mirava na posição atual e errava quase todo inimigo em movimento.
 		var dir: Vector2 = aim_dir
 		if target != null and is_instance_valid(target):
-			dir = ((target as Node2D).global_position - base_pos).normalized()
+			dir = _tilisko_predicted_dir(base_pos, target as Node2D)
 		# O pinguim vira pro lado do tiro e SOLTA a flecha no frame de release da anim
 		# (não no começo) — o spawn vai num callback disparado pela própria anim. Lê o
 		# muzzle no momento do disparo (ele ficou parado durante o tiro).
@@ -1578,6 +1587,39 @@ func _fire_tilisko_shots(aim_dir: Vector2, is_pierce: bool, is_ricochet: bool, i
 			t.shoot(dir, shoot_cb)
 		else:
 			shoot_cb.call()
+
+
+# Mira preditiva do Tilisko: intercepta o alvo usando a velocidade dele e a
+# velocidade do projétil (lead = vel * dist/speed, refinado 2x converge bem o
+# ponto de interceptação). Lead clampado pra não mirar absurdamente longe quando
+# o inimigo está rápido/distante. Lê posição/velocidade via AimTarget (respeita
+# o "congelamento" de mira da Fenda Crepuscular).
+const TILISKO_MAX_LEAD_DISTANCE: float = 220.0
+
+func _tilisko_predicted_dir(from: Vector2, target: Node2D) -> Vector2:
+	var tpos: Vector2 = AimTarget.pos(target)
+	var tvel: Vector2 = AimTarget.vel(target)
+	if tvel.length_squared() <= 1.0:
+		return (tpos - from).normalized()
+	var speed: float = maxf(_current_arrow_speed(), 1.0)
+	var predicted: Vector2 = tpos
+	for _i in 2:
+		var t: float = (predicted - from).length() / speed
+		predicted = tpos + tvel * t
+	var lead: Vector2 = predicted - tpos
+	if lead.length() > TILISKO_MAX_LEAD_DISTANCE:
+		predicted = tpos + lead.normalized() * TILISKO_MAX_LEAD_DISTANCE
+	return (predicted - from).normalized()
+
+
+# Velocidade efetiva da flecha atual (pra mira preditiva). Espelha a lógica de
+# velocidade em _spawn_arrow: pedra e maré sobrescrevem o speed padrão (220).
+func _current_arrow_speed() -> float:
+	if stone_arrow_level > 0:
+		return _stone_speed()
+	if tide_arrow_level > 0:
+		return _tide_speed()
+	return 220.0
 
 
 func _nearest_enemy_to_player() -> Node:
@@ -2230,6 +2272,14 @@ func _count_active_skill_use() -> void:
 
 # Botas Ariscas: ids das skills de mobilidade (bump pra L2 na 1ª aquisição).
 const _MOBILITY_UPGRADE_IDS: Array[String] = ["dash", "esquivando", "fenda", "adrenalina"]
+
+# Os 21 upgrades de build que o Diamante pode sortear (espelha UPGRADE_POOL do shop).
+const DIAMOND_ELIGIBLE: Array[String] = [
+	"perfuracao", "spectral_arrow", "multi_arrow", "double_arrows", "chain_lightning",
+	"life_steal", "gold_magnet", "dash", "esquivando", "fenda", "adrenalina",
+	"ricochet_arrow", "graviton", "fire_arrow", "curse_arrow", "ice_arrow",
+	"stone_arrow", "tide_arrow", "boomerang", "critical_chance", "tiger_claws",
+]
 
 
 # Multiplicador de cooldown das skills de mobilidade (Botas Ariscas: 0.85 = -15%).
@@ -3341,6 +3391,11 @@ func _capacete_dodge_chance() -> float:
 	return 0.0
 
 
+# Dodge TOTAL (0..1): Esquivando + Capacete Veloz. Exposto pra HUD mostrar o %.
+func get_dodge_chance() -> float:
+	return _esquivando_dodge_chance() + _capacete_dodge_chance()
+
+
 func _esquivando_ability_cd_total() -> float:
 	if esquivando_level < ESQUIVANDO_ABILITY_MIN_LEVEL:
 		return 0.0
@@ -4023,6 +4078,31 @@ func get_upgrade_count(upgrade_id: String) -> int:
 		"tiger_claws": return tiger_claws_level
 		"critical_chance": return critical_chance_level
 	return 0
+
+
+# True se `id` é o upgrade sorteado pelo Diamante de Primeira Classe.
+func is_diamond(id: String) -> bool:
+	return _diamond_upgrade_id != "" and _diamond_upgrade_id == id
+
+
+func get_diamond_upgrade_id() -> String:
+	return _diamond_upgrade_id
+
+
+# Sorteia o upgrade do Diamante: dos 21, exclui os que algum item equipado já dá de
+# graça no início (start_status). Se sobrar vazio (improvável), fica sem diamante.
+func _roll_diamond_upgrade() -> void:
+	if not _has_diamante:
+		return
+	var pool: Array[String] = []
+	for id in DIAMOND_ELIGIBLE:
+		if InventoryItems.start_granted_amount(id) > 0:
+			continue
+		pool.append(id)
+	if pool.is_empty():
+		return
+	_diamond_upgrade_id = pool[randi() % pool.size()]
+	print("[diamante] upgrade sorteado: ", _diamond_upgrade_id)
 
 
 func _clear_status_effects() -> void:
@@ -4768,6 +4848,11 @@ func cooldown_scale() -> float:
 		return 1.0
 	var cdr: float = minf(float(hp_upgrades) * _essencia_cdr_per_level, _essencia_cdr_cap)
 	return 1.0 - cdr
+
+
+# Redução de cooldown GLOBAL (0..0.5): só a Essência Vital. Exposto pra HUD.
+func get_cooldown_reduction() -> float:
+	return 1.0 - cooldown_scale()
 
 
 # Multiplicador da DRENAGEM de cooldown (>= 1.0; 2.0 no cap de -50%). Os _update_*

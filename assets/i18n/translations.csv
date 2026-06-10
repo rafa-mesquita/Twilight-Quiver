@@ -109,6 +109,7 @@ INVENTORY_MODE_SKINS,Skins,Skins,Skins,Skins
 INVENTORY_MODE_EQUIP,Equipamentos,Equipment,Equipamiento,Équipement
 INVENTORY_EQUIPPED,Equipado,Equipped,Equipado,Équipé
 INVENTORY_EQUIP,Equipar,Equip,Equipar,Équiper
+INVENTORY_DRAG_HINT,Arraste até 3 itens para os espaços,Drag up to 3 items into the slots,Arrastra hasta 3 objetos a las casillas,Glissez jusqu'à 3 objets dans les emplacements
 ITEM_MIDNIGHT_DAGGER_NAME,Adaga da Meia-Noite,Midnight Dagger,Daga de Medianoche,Dague de Minuit
 ITEM_MIDNIGHT_DAGGER_DESC,"Você começa a run com +1 nível de Dano, somando aos upgrades que comprar na loja.","You start the run with +1 Damage level, stacking with the upgrades you buy in the shop.","Empiezas la partida con +1 nivel de Daño, sumándose a las mejoras que compres en la tienda.","Vous commencez la partie avec +1 niveau de Dégâts, qui s'ajoute aux améliorations achetées en boutique."
 ITEM_GOLDEN_BOW_NAME,Arco Dourado,Golden Bow,Arco Dorado,Arc Doré
@@ -282,6 +283,8 @@ SHOP_STAT_DAMAGE,Dano,Damage,Daño,Dégâts
 SHOP_STAT_MOVE_SPEED,Vel. Mov.,Move,Vel. Mov.,Mvt.
 SHOP_STAT_ATTACK_SPEED,Vel. Atk.,Atk Speed,Vel. Atk.,Vit. Atq.
 SHOP_STAT_ARMOR,Armadura,Armor,Armadura,Armure
+SHOP_STAT_DODGE,Esquiva,Dodge,Evasión,Esquive
+SHOP_STAT_CDR,Recarga,Cooldown,Recarga,Recharge
 SHOP_BONUS_PLUS_ONE,BÔNUS +1!,BONUS +1!,¡BONUS +1!,BONUS +1 !
 SHOP_JOKER_NAME,Último Desejo,Last Wish,Último Deseo,Dernier Souhait
 SHOP_UPG_ELEMENTAL_ROULETTE,Roleta Elemental,Elemental Roulette,Ruleta Elemental,Roulette Élémentaire
@@ -464,8 +467,8 @@ SHOP_FENDA_DESC_1,Teleporta para o ponto do cursor (CD 20s),Teleport to the curs
 SHOP_FENDA_DESC_2,Cria um corte no caminho percorrido (25 de dano em quem for atingido) e CD reduzido para 18s,Creates a slash along the path traveled (25 damage to enemies hit) and CD reduced to 18s,Crea un corte en el camino recorrido (25 de daño a los enemigos alcanzados) y CD reducido a 18s,Crée une entaille sur le trajet (25 dégâts aux ennemis touchés) et CD réduit à 18s
 SHOP_FENDA_DESC_3,"Após teleportar, 1,3s para usar de novo — o corte rasga em até 3 pontos (acerta o mesmo inimigo várias vezes). CD reduzido para 16s","After teleporting, 1.3s to use again — the slash tears across up to 3 points (hits the same enemy multiple times). CD reduced to 16s","Tras teletransportarte, 1,3s para usar de nuevo — el corte rasga hasta 3 puntos (golpea al mismo enemigo varias veces). CD reducido a 16s","Après téléportation, 1,3s pour réutiliser — l'entaille déchire jusqu'à 3 points (touche le même ennemi plusieurs fois). CD réduit à 16s"
 SHOP_FENDA_DESC_4,CD reduzido para 14s e dano aumentado para 50,CD reduced to 14s and damage raised to 50,CD reducido a 14s y daño aumentado a 50,CD réduit à 14s et dégâts portés à 50
-SHOP_ADRENALINA_DESC_1,"Ganha +5% de velocidade de movimento — e quanto menor sua vida (abaixo de 100), mais rápido você fica.","Gain +5% movement speed — and the lower your health (below 100), the faster you move.","Ganas +5% de velocidad de movimiento — y cuanto menor tu vida (bajo 100), más rápido te mueves.","Gagne +5% de vitesse de déplacement — et plus votre vie est basse (sous 100), plus vous êtes rapide."
-SHOP_ADRENALINA_DESC_2,O ganho de velocidade por vida perdida aumenta: fica ainda mais veloz conforme apanha.,The speed gained per missing health increases: you get even faster as you take damage.,La velocidad ganada por vida perdida aumenta: te vuelves aún más rápido al recibir daño.,Le gain de vitesse par vie perdue augmente : vous accélérez encore plus en encaissant.
+SHOP_ADRENALINA_DESC_1,"Ganha +5% de velocidade de movimento e mais +0,5% para cada 1 de vida abaixo de 100.","Gain +5% movement speed, plus +0.5% for each 1 HP below 100.","Ganas +5% de velocidad de movimiento y +0,5% por cada 1 de vida bajo 100.","Gagne +5% de vitesse de déplacement, plus +0,5% par point de vie sous 100."
+SHOP_ADRENALINA_DESC_2,"O ganho por vida perdida sobe para +0,7% para cada 1 de vida abaixo de 100.","The gain per missing health rises to +0.7% for each 1 HP below 100.","La ganancia por vida perdida sube a +0,7% por cada 1 de vida bajo 100.","Le gain par vie perdue monte à +0,7% par point de vie sous 100."
 SHOP_ADRENALINA_DESC_3,"Espaço: por 5s, +15% de cadência de ataque e seus tiros curam 10 de vida ao acertar. Recarga 17s.","Space: for 5s, +15% attack speed and your shots heal 10 HP on hit. 17s cooldown.","Espacio: por 5s, +15% de cadencia de ataque y tus disparos curan 10 de vida al acertar. Recarga 17s.","Espace : pendant 5s, +15% de cadence de tir et vos tirs soignent 10 PV à l'impact. Recharge 17s."
 SHOP_ADRENALINA_DESC_4,A fúria também te dá +25% de velocidade e a cadência sobe pra +30% durante a skill. Recarga 15s.,The rush also grants +25% movement speed and attack speed rises to +30% during the skill. 15s cooldown.,La furia también da +25% de velocidad y la cadencia sube a +30% durante la habilidad. Recarga 15s.,La fureur donne aussi +25% de vitesse et la cadence monte à +30% pendant la compétence. Recharge 15s.
 SHOP_LIFE_STEAL_DESC_1,Inimigos têm 12% de chance de dropar uma cura de 15% do HP,Enemies have a 12% chance to drop a heal worth 15% HP,Los enemigos tienen 12% de probabilidad de soltar una cura del 15% de HP,Les ennemis ont 12% de chance de lâcher un soin de 15% des PV
@@ -555,3 +558,6 @@ ITEM_REQ_BOTAS_ARISCAS,Use o ativo de uma skill de mobilidade 75 vezes,Use a mob
 ITEM_PRIMAVERA_NAME,Primavera Eterna,Eternal Spring,Primavera Eterna,Printemps Éternel
 ITEM_PRIMAVERA_DESC,"Ganha +1 pétala no fim de cada round (com 30% de chance de ganhar 2), e a chance de cada inimigo dropar pétala sobe para 2%.","Gain +1 petal at the end of each round (with a 30% chance of 2), and each enemy's petal drop chance rises to 2%.","Ganas +1 pétalo al final de cada ronda (con 30% de probabilidad de 2), y la probabilidad de que cada enemigo suelte pétalo sube a 2%.","Gagnez +1 pétale à la fin de chaque manche (avec 30% de chance d'en gagner 2), et la chance que chaque ennemi lâche un pétale monte à 2%."
 HUD_BOTAS_L2_TITLE,NÍVEL 2 GRÁTIS!,FREE LEVEL 2!,¡NIVEL 2 GRATIS!,NIVEAU 2 GRATUIT !
+ITEM_DIAMANTE_NAME,Diamante de Primeira Classe,First-Class Diamond,Diamante de Primera Clase,Diamant de Première Classe
+ITEM_DIAMANTE_DESC,"No início da run, um upgrade aleatório fica turbinado a run inteira (marcado com 💎 na loja). Em troca, você não tem mais rerolls.","At run start, a random upgrade is supercharged for the whole run (marked 💎 in the shop). In exchange, you lose all rerolls.","Al inicio de la run, un upgrade aleatorio queda potenciado toda la run (marcado 💎 en la tienda). A cambio, pierdes los rerolls.","Au début de la run, une amélioration aléatoire est surchargée pour toute la run (marquée 💎 en boutique). En échange, vous perdez les rerolls."
+ITEM_REQ_DIAMANTE,Passe da wave 14 sem usar nenhum reroll,Reach past wave 14 without using any reroll,Supera la oleada 14 sin usar ningún reroll,Dépassez la vague 14 sans utiliser de reroll
