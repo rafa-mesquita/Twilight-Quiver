@@ -11,7 +11,7 @@ forte a run inteira, em troca de você perder os rerolls da loja. Alto risco, al
 |---|-------|---------|
 | 1 | **Sorteio no início da run** | Sorteia 1 dos 21 upgrades de build (`UPGRADE_POOL`), **excluindo** os que já vêm de graça de um item equipado (ver nota abaixo). Guardado em `_diamond_upgrade_id`, fixo até o fim da run. |
 | 2 | **Versão diamante** | Enquanto a run dura, o upgrade sorteado usa a versão turbinada em **todos os níveis (L1–L4)**. Tabela na seção 2. |
-| 3 | **Diamante na carta** | Quando o upgrade sorteado aparece na loja, a carta ganha um ícone de 💎 no canto. É assim que o jogador descobre qual foi (sem aviso prévio). |
+| 3 | **Diamante na carta** | Quando o upgrade sorteado aparece na loja, a carta ganha um ícone de 💎 no canto **e a descrição mostra o que o diamante melhora** (linha 💎 destacada no fim da desc), pra o jogador saber o buff antes de comprar. É assim que ele descobre qual foi (sem aviso prévio). |
 | 4 | **Sem rerolls** | Com o item equipado, o reroll global da loja fica desabilitado a run inteira. |
 | 5 | **Não vem de graça** | O upgrade sorteado sai da `FREE_UPGRADE_POOL` (boas-vindas / grants grátis): tem que ser comprado na loja. |
 
@@ -144,7 +144,7 @@ encaixa entre os 21; a regra é geral pra itens futuros.
 - **Estado:** um único `_diamond_upgrade_id: String` no player (vazio = sem diamante). Setado por `InventoryItems.apply_to_player` no início da run, sorteando da lista dos 21 menos os excluídos por itens.
 - **Aplicação:** cada versão diamante é lida no ponto onde aquele upgrade calcula o efeito (a maioria já tem função/const própria — ex: `_fire_burn_dps`, `CRIT_CHANCE_BY_LEVEL`, `DASH_COOLDOWNS_BY_LEVEL`). Quando o id bate com `_diamond_upgrade_id`, usa o valor/comportamento turbinado. Sem o item, comportamento idêntico ao atual.
 - **Mecânicas novas (🔧):** `multi_arrow` (leque 360° no L4), `ice_arrow` (explosão ao morrer congelado), `curse_arrow` (range infinito de propagação), `dash` (rastro no L1 + dano no L2), `fenda` (dano em área no destino), `life_steal` (move speed por coração) — essas exigem código novo, não só troca de constante. Vão num lote separado das que são só número.
-- **Loja:** no `_build_card`, se o id da carta == `_diamond_upgrade_id`, adiciona o overlay de 💎. Reroll global desabilitado se o item está equipado.
+- **Loja:** no `_build_card`, se o id da carta == `_diamond_upgrade_id`, adiciona o overlay de 💎 **e injeta uma linha de descrição do buff** (key `SHOP_DIAMANTE_DESC_<UPGRADE>` por upgrade — 21 textos curtos player-facing, ex: "💎 L4 dispara 10 flechas em 360°"). Reroll global desabilitado se o item está equipado.
 - **Boas-vindas:** `FREE_UPGRADE_POOL` exclui `_diamond_upgrade_id` na hora de sortear grant grátis.
 - **Unlock (stat novo):** flag `reroll_used_this_run` — zera no início de cada run, vira `true` em qualquer reroll global. A quest libera quando o player passa da wave 14 com a flag ainda `false`. (Stat persistente só registra o "feito"; a flag em si é por-run.)
 - **Faseável:** mecânica do item (sorteio + overlay 💎 + sem reroll + exclusões + unlock) primeiro; depois as 21 versões diamante em lotes (números → mecânicas novas).
