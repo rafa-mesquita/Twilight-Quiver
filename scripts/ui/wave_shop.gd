@@ -1560,6 +1560,12 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 		# par exclusivo, pra explicar pro jogador que escolher um bloqueia o outro.
 		if not is_placeholder and category == "upgrade" and UPGRADE_CATEGORIES.has(slot_id_str):
 			desc_text = "[%s]\n%s" % [tr(UPGRADE_CATEGORIES[slot_id_str]), desc_text]
+		# Diamante de Primeira Classe: injeta linha de buff na desc do upgrade sorteado.
+		var _pl_d := _get_player()
+		if _pl_d != null and _pl_d.has_method("get_diamond_upgrade_id") \
+				and slot_id_str != "" and slot_id_str == _pl_d.get_diamond_upgrade_id():
+			desc_text = desc_text + "\n" + tr(_diamond_desc_key(slot_id_str))
+			_add_diamond_overlay(card)
 		desc_label.text = desc_text
 		desc_label.add_theme_color_override("font_color", desc_color)
 		desc_label.modulate = Color.WHITE
@@ -1614,6 +1620,34 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 	# acontece num card com tooltip multi-nível, mostra um indicador no rodapé
 	# apontando pro hover (que já lista todos os níveis).
 	_refresh_more_hint(card)
+
+
+# Retorna a key i18n da linha de buff do Diamante para um upgrade.
+func _diamond_desc_key(id: String) -> String:
+	return "SHOP_DIAMANTE_DESC_" + id.to_upper()
+
+
+# Adiciona o broche 💎 no canto superior-direito do card (meio dentro/meio fora).
+# Guarda por nome pra não duplicar se _build_card for chamado múltiplas vezes.
+func _add_diamond_overlay(card: Control) -> void:
+	if card.get_node_or_null("DiamondBadge") != null:
+		return
+	card.clip_contents = false  # deixa o broche vazar pra fora da borda da carta
+	var badge := TextureRect.new()
+	badge.name = "DiamondBadge"
+	badge.texture = load("res://assets/Hud/itens/diamante_broche.png")
+	badge.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	badge.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Canto superior-direito: ~metade dentro da carta, ~metade fora.
+	badge.anchor_left = 1.0
+	badge.anchor_right = 1.0
+	badge.offset_left = -34.0
+	badge.offset_top = -22.0
+	badge.offset_right = 24.0
+	badge.offset_bottom = 36.0
+	card.add_child(badge)
 
 
 # IDs de upgrade cujo título + desc devem ser centralizados horizontal e

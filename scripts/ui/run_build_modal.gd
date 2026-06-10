@@ -207,6 +207,11 @@ func open(row: Dictionary) -> void:
 		_add_category_title(tr("LEADERBOARD_BUILD_CAT_ITEMS"))
 		_add_item_icons(items)
 
+	# Diamante de Primeira Classe: mostra qual upgrade foi turbinado nesta run.
+	var diamond_id: String = String(build.get("diamond_upgrade", ""))
+	if diamond_id != "":
+		_add_subtitle("💎 " + tr(_diamond_name_key(diamond_id)))
+
 
 # ───────────────────────── builders ─────────────────────────
 
@@ -274,6 +279,24 @@ func _add_item_icons(items: Array) -> void:
 		tex_rect.tooltip_text = tr(str(data.get("name", id)))
 		flow.add_child(tex_rect)
 	_content.add_child(flow)
+
+
+# Mapeia id de upgrade → key de nome i18n (reutiliza as do _CATEGORIES).
+# Ids com key diferente do padrão SHOP_UPG_<ID> são mapeados explicitamente.
+const _DIAMOND_NAME_KEYS: Dictionary = {
+	"spectral_arrow": "SHOP_UPG_SPECTRAL",
+	"ricochet_arrow": "SHOP_UPG_RICOCHET",
+}
+
+func _diamond_name_key(id: String) -> String:
+	if _DIAMOND_NAME_KEYS.has(id):
+		return _DIAMOND_NAME_KEYS[id]
+	# Busca no _CATEGORIES (já cobre os demais 19 upgrades do diamante).
+	for cat in _CATEGORIES:
+		for entry in cat["entries"]:
+			if entry[0] == id:
+				return entry[1]
+	return "SHOP_UPG_" + id.to_upper()
 
 
 func _add_none_label() -> void:

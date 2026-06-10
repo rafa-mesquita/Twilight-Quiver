@@ -2124,6 +2124,8 @@ func _collect_run_stats(wave_num: int) -> Dictionary:
 		# Tempo efetivo (só combate) até vencer o dual boss da wave 21. -1 = não
 		# chegou. Vai pro payload do leaderboard e pro recorde pessoal local.
 		"time_to_w21_ms": int(p.get("stats_time_to_w21_ms")) if p != null and "stats_time_to_w21_ms" in p else -1,
+		# Usado pelo record_run pra verificar unlock do Diamante (sem reroll na run).
+		"reroll_used": bool(p.get("reroll_used_this_run")) if p != null and "reroll_used_this_run" in p else false,
 		# Build da run (upgrades + itens equipados) pro modal do leaderboard.
 		"build": _collect_build(p),
 	}
@@ -2154,7 +2156,14 @@ func _collect_build(p: Node) -> Dictionary:
 			var lvl: int = int(p.get_upgrade_count(id))
 			if lvl > 0:
 				upgrades[id] = lvl
-	return {"upgrades": upgrades, "items": InventoryItems.get_equipped().duplicate()}
+	var diamond_id: String = ""
+	if p != null and p.has_method("get_diamond_upgrade_id"):
+		diamond_id = str(p.get_diamond_upgrade_id())
+	return {
+		"upgrades": upgrades,
+		"items": InventoryItems.get_equipped().duplicate(),
+		"diamond_upgrade": diamond_id,
+	}
 
 
 func _build_run_payload(nick: String) -> Dictionary:
