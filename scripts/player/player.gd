@@ -3997,6 +3997,9 @@ func heal(amount: float, by_ally: bool = false) -> void:
 	# qualquer outra fonte. Spawna +N verde acima do player como feedback.
 	if is_dead or amount <= 0.0:
 		return
+	# Sanguinário (item): todas as curas são 30% menos efetivas em você.
+	if _sanguinario_bonus > 0.0:
+		amount *= 0.7
 	var before: float = hp
 	hp = minf(hp + amount, max_hp)
 	var actual: float = hp - before
