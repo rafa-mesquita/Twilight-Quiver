@@ -1560,13 +1560,13 @@ func _build_card(card: Control, slot: Dictionary, target_level: int, category: S
 		# par exclusivo, pra explicar pro jogador que escolher um bloqueia o outro.
 		if not is_placeholder and category == "upgrade" and UPGRADE_CATEGORIES.has(slot_id_str):
 			desc_text = "[%s]\n%s" % [tr(UPGRADE_CATEGORIES[slot_id_str]), desc_text]
-		# Diamante de Primeira Classe: injeta linha de buff na desc do upgrade sorteado.
+		# Diamante de Eulária: injeta a linha "💎 Upgrade do diamante: <efeito>" no TOPO
+		# da desc (aparece antes do "ver mais" truncar). O 💎 vem do label; tira o do efeito.
 		var _pl_d := _get_player()
 		if _pl_d != null and _pl_d.has_method("get_diamond_upgrade_id") \
 				and slot_id_str != "" and slot_id_str == _pl_d.get_diamond_upgrade_id():
-			# Linha do buff vai no TOPO da desc pra aparecer antes do "ver mais" truncar.
-			desc_text = tr(_diamond_desc_key(slot_id_str)) + "\n" + desc_text
-			_add_diamond_overlay(card)
+			var eff: String = tr(_diamond_desc_key(slot_id_str)).trim_prefix("💎 ")
+			desc_text = (tr("SHOP_DIAMANTE_BUFF_THIS_RUN") % eff) + "\n" + desc_text
 		desc_label.text = desc_text
 		desc_label.add_theme_color_override("font_color", desc_color)
 		desc_label.modulate = Color.WHITE
@@ -1630,35 +1630,6 @@ func _diamond_desc_key(id: String) -> String:
 
 # Adiciona o broche 💎 no canto superior-direito do card (meio dentro/meio fora).
 # Guarda por nome pra não duplicar se _build_card for chamado múltiplas vezes.
-func _add_diamond_overlay(card: Control) -> void:
-	if card.get_node_or_null("DiamondBadge") != null:
-		return
-	card.clip_contents = false  # deixa o broche vazar pra fora da borda da carta
-	var badge := TextureRect.new()
-	badge.name = "DiamondBadge"
-	badge.texture = load("res://assets/Hud/itens/diamante_broche.png")
-	badge.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	badge.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Canto superior-direito: ~metade dentro da carta, ~metade fora. ~72×72.
-	badge.anchor_left = 1.0
-	badge.anchor_right = 1.0
-	badge.offset_left = -42.0
-	badge.offset_top = -32.0
-	badge.offset_right = 30.0
-	badge.offset_bottom = 40.0
-	badge.pivot_offset = Vector2(36.0, 36.0)  # centro, pra o pulso escalar do meio
-	card.add_child(badge)
-	# Pulso leve e contínuo (escala 1.0 ↔ 1.12). O tween morre junto com o badge
-	# quando o card é reconstruído.
-	var tw := badge.create_tween().set_loops()
-	tw.tween_property(badge, "scale", Vector2(1.12, 1.12), 0.65) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tw.tween_property(badge, "scale", Vector2.ONE, 0.65) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-
-
 # IDs de upgrade cujo título + desc devem ser centralizados horizontal e
 # verticalmente (em vez do layout default que deixa o título encostado à
 # direita pra dar espaço pra arte à esquerda).
@@ -3287,7 +3258,8 @@ func _show_card_tooltip(card: Control) -> void:
 	var diamond_line: String = ""
 	var p_dia := _get_player()
 	if p_dia != null and p_dia.has_method("get_diamond_upgrade_id") and card_id == p_dia.get_diamond_upgrade_id():
-		diamond_line = "[color=#9ad7ff]%s[/color]\n" % tr(_diamond_desc_key(card_id))
+		var eff_d: String = tr(_diamond_desc_key(card_id)).trim_prefix("💎 ")
+		diamond_line = "[color=#9ad7ff]%s[/color]\n" % (tr("SHOP_DIAMANTE_BUFF_THIS_RUN") % eff_d)
 	var body: String = header + "\n" + cat_line + diamond_line + "\n" + "\n".join(lines)
 	_augment_tooltip_label.text = body
 	_augment_tooltip.visible = true

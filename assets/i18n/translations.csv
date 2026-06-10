@@ -582,5 +582,5 @@ SHOP_DIAMANTE_DESC_FENDA,💎 -20% cooldown e dano em área no destino,💎 -20%
 SHOP_DIAMANTE_DESC_ADRENALINA,💎 +50% move por HP perdido e +30% atk speed na skill,💎 +50% move per missing HP and +30% atk speed on skill,💎 +50% mov. por vida perdida y +30% vel. ataque en la habilidad,💎 +50% de vitesse par PV perdu et +30% de cadence sur la compétence
 SHOP_DIAMANTE_DESC_LIFE_STEAL,💎 +30% de cura; puxa corações no L3 e coração dá move speed,💎 +30% heal; pulls hearts from L3; hearts give move speed,💎 +30% curación; atrae corazones desde L3 y dan vel. mov.,💎 +30% de soin; attire les cœurs dès le N3 et donnent de la vitesse
 SHOP_DIAMANTE_DESC_GOLD_MAGNET,💎 puxa moedas no L3 e +1% de drop por nível,💎 pulls coins from L3 and +1% drop per level,💎 atrae monedas desde L3 y +1% de drop por nivel,💎 attire les pièces dès le N3 et +1% de butin par niveau
-SHOP_DIAMANTE_BUFF_THIS_RUN,💎 Upgrade com diamante da run: %s,💎 Run's diamond upgrade: %s,💎 Upgrade con diamante de la run: %s,💎 Amélioration au diamant de la run : %s
+SHOP_DIAMANTE_BUFF_THIS_RUN,💎 Upgrade do diamante: %s,💎 Diamond upgrade: %s,💎 Upgrade del diamante: %s,💎 Amélioration du diamant : %s
 SHOP_DIAMANTE_NO_BUFF,💎 Nenhum upgrade sorteado nesta run,💎 No upgrade rolled this run,💎 Ningún upgrade sorteado esta run,💎 Aucune amélioration tirée cette run
