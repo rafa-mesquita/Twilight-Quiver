@@ -2371,6 +2371,16 @@ const DIAMOND_ELIGIBLE: Array[String] = [
 	"stone_arrow", "tide_arrow", "boomerang", "critical_chance", "tiger_claws",
 ]
 
+# Grupos exclusivos (1 por run) — ESPELHA EXCLUSIVE_PAIRS do wave_shop.gd. Usado pra
+# o grant de boas-vindas não ocupar a categoria do upgrade do diamante (senão ele
+# ficaria bloqueado na loja e nunca apareceria). Manter em sincronia com o shop.
+const _DIAMOND_EXCLUSIVE_GROUPS: Array = [
+	["fire_arrow", "curse_arrow", "chain_lightning", "ice_arrow", "stone_arrow", "tide_arrow"],
+	["perfuracao", "ricochet_arrow", "spectral_arrow"],
+	["multi_arrow", "double_arrows"],
+	["dash", "esquivando", "fenda", "adrenalina"],
+]
+
 
 # Multiplicador de cooldown das skills de mobilidade (Botas Ariscas: 0.85 = -15%).
 func _mobility_cd_mult() -> float:
@@ -4247,6 +4257,18 @@ func gold_magnet_diamond_drop_bonus() -> float:
 
 func get_diamond_upgrade_id() -> String:
 	return _diamond_upgrade_id
+
+
+# Grupo exclusivo (ids) do upgrade do diamante, incluindo ele mesmo. Vazio se o
+# diamante não está num grupo (ou sem item). O grant de boas-vindas exclui esses
+# ids pra não bloquear o upgrade turbinado na loja.
+func get_diamond_exclusive_group() -> Array:
+	if _diamond_upgrade_id == "":
+		return []
+	for g in _DIAMOND_EXCLUSIVE_GROUPS:
+		if _diamond_upgrade_id in g:
+			return g.duplicate()
+	return [_diamond_upgrade_id]
 
 
 # DEV: força qual upgrade é o do diamante (e liga o flag). Usado pelo dev panel.

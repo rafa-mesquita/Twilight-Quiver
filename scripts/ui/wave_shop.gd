@@ -4004,6 +4004,16 @@ func _on_item_hovered(id: String, chip: Control) -> void:
 		var p := _get_player()
 		var granted: int = int(p.stats_arcane_dividend_gold) if p != null and "stats_arcane_dividend_gold" in p else 0
 		extra = "\n\n[color=#ffd36b]%s[/color]" % (tr("SHOP_ARCANE_GRANTED") % granted)
+	# Diamante de Eulária: mostra qual upgrade foi sorteado pra ficar turbinado nesta run.
+	if id == "diamante_primeira_classe":
+		var p_d := _get_player()
+		var dia: String = ""
+		if p_d != null and p_d.has_method("get_diamond_upgrade_id"):
+			dia = String(p_d.get_diamond_upgrade_id())
+		if dia != "":
+			extra = "\n\n[color=#9ad7ff]%s[/color]" % (tr("SHOP_DIAMANTE_BUFF_THIS_RUN") % tr(_augment_title_for(dia)))
+		else:
+			extra = "\n\n[color=#9ad7ff]%s[/color]" % tr("SHOP_DIAMANTE_NO_BUFF")
 	_augment_tooltip_label.text = "[b]%s[/b]\n\n%s%s" % [title, desc, extra]
 	_augment_tooltip.visible = true
 	var chip_global: Vector2 = chip.get_global_rect().position
