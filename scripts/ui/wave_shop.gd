@@ -402,6 +402,19 @@ const _STATS_CARD_ROWS: Array[Dictionary] = [
 	{"id": "armor", "label": "SHOP_STAT_ARMOR"},
 ]
 
+# Seções do StatsCard abaixo do StatsBox e seu offset_top ORIGINAL (do .tscn). Cada
+# linha derivada (Esquiva/Recarga) empurra todas elas pra baixo em _STATS_DERIVED_ROW_H.
+const _STATS_DERIVED_ROW_H: float = 30.0
+const _STATS_CARD_BASE_BOTTOM: float = 970.0  # offset_bottom original do StatsCard
+const _STATS_SECTION_BASE_Y: Dictionary = {
+	"UpgradesHeader": 560.0,
+	"SlotsBox": 620.0,
+	"PetsHeader": 720.0,
+	"ItemsHeader": 720.0,
+	"PetsBox": 764.0,
+	"ItemsBox": 764.0,
+}
+
 const BUY_SOUND: AudioStream = preload("res://audios/effects/buy_1.mp3")
 const NEXT_WAVE_SOUND: AudioStream = preload("res://audios/effects/Next wave.mp3")
 
@@ -2742,6 +2755,39 @@ func _refresh_stats_card() -> void:
 			lvl = int(p.get_upgrade_count(id))
 		var gain_text: String = _get_stat_gain_text(id, lvl, p)
 		stats_box.add_child(_build_stat_line(lbl_key, lvl, gain_text))
+	# Stats DERIVADOS (sem nível): só aparecem em runs que têm a fonte —
+	# Esquiva (Esquivando/Capacete) e Recarga (CDR global da Essência Vital).
+	var n_derived: int = 0
+	if p != null and p.has_method("get_dodge_chance"):
+		var dodge: float = float(p.get_dodge_chance())
+		if dodge > 0.0:
+			stats_box.add_child(_build_derived_stat_line("SHOP_STAT_DODGE", "%d%%" % roundi(dodge * 100.0)))
+			n_derived += 1
+	if p != null and p.has_method("get_cooldown_reduction"):
+		var cdr: float = float(p.get_cooldown_reduction())
+		if cdr > 0.0:
+			stats_box.add_child(_build_derived_stat_line("SHOP_STAT_CDR", "-%d%%" % roundi(cdr * 100.0)))
+			n_derived += 1
+	# Empurra as seções de baixo (UPGRADES/ALIADOS/ITENS) conforme as linhas extras,
+	# pra não sobreporem o StatsBox que cresceu.
+	_reflow_stats_card_sections(n_derived)
+
+
+# Move as seções abaixo do StatsBox pra baixo em (n_derived × altura de linha).
+# Sempre parte do offset_top ORIGINAL, então também volta ao lugar quando n_derived=0.
+func _reflow_stats_card_sections(n_derived: int) -> void:
+	if stats_box == null:
+		return
+	var card := stats_box.get_parent() as Control
+	if card == null:
+		return
+	var shift: float = float(n_derived) * _STATS_DERIVED_ROW_H
+	# Cresce o quadro junto (cabe no viewport) pra os itens não colarem na borda.
+	card.offset_bottom = _STATS_CARD_BASE_BOTTOM + shift
+	for sec_name in _STATS_SECTION_BASE_Y:
+		var node := card.get_node_or_null(NodePath(sec_name)) as Control
+		if node != null:
+			node.position.y = float(_STATS_SECTION_BASE_Y[sec_name]) + shift
 
 
 # Calcula o ganho do stat sobre o base atual do player. HP/dmg/move/atk-speed
@@ -2795,9 +2841,9 @@ func _refresh_pets_box() -> void:
 			var lvl: int = int(p.get_upgrade_count(id))
 			if lvl > 0:
 				owned.append({"id": id, "lvl": lvl})
-	# Renderiza até MAX_DISTINCT_PETS slots: comprados primeiro, depois padding
-	# vazio.
-	for i in PETS_DISPLAY_SLOTS:
+	# Renderiza até o cap EFETIVO de slots (2 base, +1 com "Adote Mais Um"):
+	# comprados primeiro, depois padding vazio. Sem o item, o 3º slot nem aparece.
+	for i in _effective_pet_cap():
 		if i < owned.size():
 			var entry: Dictionary = owned[i]
 			pets_box.add_child(_build_mini_owned_chip(String(entry["id"]), int(entry["lvl"]), hud, true))
@@ -2904,6 +2950,31 @@ func _build_stat_line(label_key: String, lvl: int, gain_text: String) -> Control
 	value.add_theme_font_override("font", load("res://font/Silver.ttf"))
 	value.add_theme_font_size_override("font_size", 25)
 	value.add_theme_color_override("font_color", accent_color)
+	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	row.add_child(value)
+	return row
+
+
+# Linha de stat DERIVADO (dodge/CDR): label + % à direita, sem coluna de ★N
+# (não têm "nível"). O % ocupa a largura das colunas ganho+valor (110+70) pra
+# alinhar com as outras linhas.
+func _build_derived_stat_line(label_key: String, value_text: String) -> Control:
+	var row := HBoxContainer.new()
+	row.custom_minimum_size = Vector2(0, 24)
+	var label := Label.new()
+	label.text = label_key
+	label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_INHERIT
+	label.add_theme_font_override("font", load("res://font/Silver.ttf"))
+	label.add_theme_font_size_override("font_size", 25)
+	label.add_theme_color_override("font_color", Color(0.85, 0.82, 0.95, 1.0))
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(label)
+	var value := Label.new()
+	value.text = value_text
+	value.custom_minimum_size = Vector2(180, 0)
+	value.add_theme_font_override("font", load("res://font/Silver.ttf"))
+	value.add_theme_font_size_override("font_size", 25)
+	value.add_theme_color_override("font_color", Color(0.62, 0.95, 0.62, 1.0))
 	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	row.add_child(value)
 	return row

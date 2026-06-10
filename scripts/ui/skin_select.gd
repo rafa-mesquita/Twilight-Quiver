@@ -884,12 +884,28 @@ func _build_equip_panel() -> void:
 	_equip_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_equip_panel.add_theme_constant_override("separation", 24)
 	edit.add_child(_equip_panel)
-	# Coluna VERTICAL dos 3 slots (à direita do preview da skin).
+	# Coluna VERTICAL dos 3 slots (à direita do preview da skin), com a mensagem
+	# de instrução em cima dos slots.
+	var slots_col := VBoxContainer.new()
+	slots_col.name = "SlotsColumn"
+	slots_col.add_theme_constant_override("separation", 10)
+	slots_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	_equip_panel.add_child(slots_col)
+	var hint := Label.new()
+	hint.text = "INVENTORY_DRAG_HINT"  # Control auto-traduz
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint.custom_minimum_size = Vector2(140, 0)
+	if _font != null:
+		hint.add_theme_font_override("font", _font)
+	hint.add_theme_font_size_override("font_size", 18)
+	hint.modulate = Color(0.78, 0.74, 0.92, 0.85)
+	slots_col.add_child(hint)
 	var slots_row := VBoxContainer.new()
 	slots_row.name = "SlotsRow"
 	slots_row.add_theme_constant_override("separation", 14)
 	slots_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	_equip_panel.add_child(slots_row)
+	slots_col.add_child(slots_row)
 	# Área de itens possuídos à DIREITA dos slots (drop zone pra desequipar).
 	var owned_panel := PanelContainer.new()
 	owned_panel.name = "OwnedPanel"
@@ -917,7 +933,7 @@ func _refresh_equip_ui() -> void:
 	# Limpa qualquer highlight de drop preso (ex.: após soltar no pool).
 	_drop_highlighted = null
 	_clear_drop_highlights()
-	var slots_row: Node = _equip_panel.get_node("SlotsRow")
+	var slots_row: Node = _equip_panel.get_node("SlotsColumn/SlotsRow")
 	for c in slots_row.get_children():
 		c.queue_free()
 	var equipped: Array = InventoryItems.get_equipped()
@@ -1087,6 +1103,9 @@ func _make_item_card(id: String, unlocked: bool) -> Control:
 func _make_slot(idx: int, equipped_id: String) -> Control:
 	var slot := PanelContainer.new()
 	slot.custom_minimum_size = Vector2(104, 104)
+	# Mantém 104×104 (quadrado) e centra — senão o VBox da coluna estica o slot
+	# pra largura da instrução (140px) e o ícone deforma na horizontal.
+	slot.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	slot.add_theme_stylebox_override("panel", _slot_stylebox(false))
 	slot.set_drag_forwarding(Callable(), _slot_can_drop, _slot_drop.bind(idx))
 	if equipped_id != "":
@@ -1224,7 +1243,7 @@ func _pool_stylebox(highlight: bool) -> StyleBoxFlat:
 func _set_slots_highlight(on: bool) -> void:
 	if _equip_panel == null:
 		return
-	var slots_row := _equip_panel.get_node_or_null("SlotsRow")
+	var slots_row := _equip_panel.get_node_or_null("SlotsColumn/SlotsRow")
 	if slots_row == null:
 		return
 	for c in slots_row.get_children():
@@ -1263,7 +1282,7 @@ func _drop_target_under_mouse() -> Control:
 		return null
 	var mp: Vector2 = get_global_mouse_position()
 	if _drag_source == "owned":
-		var sr := _equip_panel.get_node_or_null("SlotsRow")
+		var sr := _equip_panel.get_node_or_null("SlotsColumn/SlotsRow")
 		if sr != null:
 			for c in sr.get_children():
 				var pc := c as PanelContainer

@@ -1139,32 +1139,31 @@ func _process(delta: float) -> void:
 	_update_boss_hp_bar()
 	_poll_skin_unlocks(delta)
 	_update_run_timer_label()
-	# Se o player passar atrás da HUD (canto do mapa), translúcido pra ver através.
-	if not hud_frame.visible:
-		return
+	# Se o player passar atrás de algum elemento da HUD, deixa translúcido pra ver
+	# através. NÃO gateia em hud_frame.visible — o quadro decorativo antigo fica
+	# escondido nesta HUD, mas as barras e a coluna de aprimoramentos continuam.
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if player == null or not is_instance_valid(player):
 		return
-	# Posição do player na tela calculada manualmente via câmera. Não usar
-	# get_global_transform_with_canvas() — em alguns setups (stretch viewport +
-	# CanvasLayer da HUD) ela retorna coords inconsistentes com get_global_rect()
-	# dos Controls da HUD. Com cálculo manual garantimos que ambos estão no mesmo
-	# espaço de pixels do viewport (1920×1080 com stretch viewport).
-	var camera := player.get_viewport().get_camera_2d()
-	var zoom: Vector2 = camera.zoom if camera != null else Vector2.ONE
-	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
-	var camera_world_pos: Vector2 = camera.get_screen_center_position() if camera != null else Vector2.ZERO
-	var player_screen: Vector2 = (player.global_position - camera_world_pos) * zoom + viewport_size * 0.5
-	var player_size := Vector2(32, 32) * zoom
-	var player_rect := Rect2(player_screen + Vector2(-16, -32) * zoom, player_size)
-	# Considera intersecção com HudFrame, HpBar OU BossHpBar — player atrás de
-	# qualquer um ativa o fade translúcido. BossHpBar é especialmente importante
-	# na wave 14 (Duskrose) onde a barra desce pro rodapé e cobre área jogável.
-	var overlaps: bool = hud_frame.get_global_rect().intersects(player_rect)
-	if not overlaps and hp_bar != null:
+	# Posição do player no MESMO espaço de pixels dos Controls da HUD via canvas
+	# transform (método canônico — bate com get_global_rect() em qualquer stretch/zoom).
+	var p_canvas: Vector2 = player.get_global_transform_with_canvas().origin
+	var player_rect := Rect2(p_canvas - Vector2(16, 32), Vector2(32, 48))
+	# Intersecção com cada elemento VISÍVEL: HudFrame, HpBar, BossHpBar ou a coluna
+	# de aprimoramentos. BossHpBar importa na wave 14 (Duskrose), onde a barra desce
+	# pro rodapé e cobre área jogável.
+	var overlaps: bool = false
+	if hud_frame.visible:
+		overlaps = hud_frame.get_global_rect().intersects(player_rect)
+	if not overlaps and hp_bar != null and hp_bar.visible:
 		overlaps = hp_bar.get_global_rect().intersects(player_rect)
 	if not overlaps and boss_hp_bar != null and boss_hp_bar.visible:
 		overlaps = boss_hp_bar.get_global_rect().intersects(player_rect)
+	# Coluna de aprimoramentos (lado direito): estreita (~80px), então o rect é
+	# alargado 80px à esquerda pra disparar quando o player chega sob/perto dos chips.
+	if not overlaps and upgrade_column_vbox != null and upgrade_column_vbox.get_child_count() > 0:
+		var col_rect: Rect2 = upgrade_column_vbox.get_global_rect().grow_individual(80.0, 24.0, 0.0, 24.0)
+		overlaps = col_rect.intersects(player_rect)
 	var new_target: float = HUD_TRANSPARENT_ALPHA if overlaps else HUD_OPAQUE_ALPHA
 	if not is_equal_approx(new_target, _hud_alpha_target):
 		_hud_alpha_target = new_target
@@ -1179,6 +1178,9 @@ func _process(delta: float) -> void:
 		if boss_hp_bar != null:
 			var boss_target: float = _boss_bar_alpha_for(overlaps)
 			_hud_alpha_tween.tween_property(boss_hp_bar, "modulate:a", boss_target, HUD_ALPHA_FADE)
+		# Mesmo fade na coluna de aprimoramentos quando o player passa por cima dela.
+		if upgrade_column_vbox != null:
+			_hud_alpha_tween.tween_property(upgrade_column_vbox, "modulate:a", new_target, HUD_ALPHA_FADE)
 
 
 func flash_screen(color: Color = Color(0, 0, 0, 1), peak_alpha: float = 0.95, strobe_duration: float = 2.0, fade_duration: float = 1.0) -> void:
