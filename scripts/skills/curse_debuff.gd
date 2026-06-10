@@ -253,7 +253,10 @@ func _propagate_to_nearest(origin: Vector2, exclude: Node, count: int, tree: Sce
 	if tree == null:
 		return
 	var candidates: Array = []
-	var radius_sq: float = PROPAGATION_RADIUS * PROPAGATION_RADIUS
+	# Diamante: propagação com range infinito (raio enorme em vez de 75px).
+	var p_for_range: Node = _cached_player if _cached_player != null and is_instance_valid(_cached_player) else (tree.get_first_node_in_group("player") if tree != null else null)
+	var effective_radius: float = 99999.0 if (p_for_range != null and p_for_range.has_method("is_diamond") and p_for_range.is_diamond("curse_arrow")) else PROPAGATION_RADIUS
+	var radius_sq: float = effective_radius * effective_radius
 	for e in tree.get_nodes_in_group("enemy"):
 		if not is_instance_valid(e) or not (e is Node2D):
 			continue

@@ -10,6 +10,8 @@ extends Node
 # o death path normal do enemy (kill_effect, queue_free, etc).
 
 const DURATION: float = 12.0
+# Diamante: aliados convertidos duram mais (25s).
+const DURATION_DIAMOND: float = 25.0
 
 var _dps: float = 0.0
 var _triggered_death: bool = false
@@ -23,7 +25,13 @@ func _ready() -> void:
 	if not ("max_hp" in parent) or float(parent.max_hp) <= 0.0:
 		queue_free()
 		return
-	_dps = float(parent.max_hp) / DURATION
+	# Diamante: se curse_arrow é o upgrade do diamante, aliado dura 25s.
+	var effective_duration: float = DURATION
+	if is_inside_tree():
+		var p: Node = get_tree().get_first_node_in_group("player")
+		if p != null and p.has_method("is_diamond") and p.is_diamond("curse_arrow"):
+			effective_duration = DURATION_DIAMOND
+	_dps = float(parent.max_hp) / effective_duration
 
 
 func _process(delta: float) -> void:

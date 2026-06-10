@@ -1717,9 +1717,11 @@ func _is_ricochet_shot() -> bool:
 
 func _ricochet_max_hops() -> int:
 	# L1/L2: 1 ricochete. L3+: 2 ricochetes.
-	if ricochet_arrow_level >= 3:
-		return 2
-	return 1
+	# Diamante: +1 pulo em todos os níveis (2/2/3/3).
+	var hops: int = 2 if ricochet_arrow_level >= 3 else 1
+	if is_diamond("ricochet_arrow"):
+		hops += 1
+	return hops
 
 
 func _ricochet_max_splits() -> int:
@@ -3395,8 +3397,8 @@ func _try_start_dash() -> void:
 	_play_dash_sound()
 	dash_cooldown_changed.emit(_dash_cd_remaining, dash_cooldown)
 	# Trilha de poder: dropa primeiro segmento + reseta marker pra próximos.
-	# Lv2+ do dash consolidado.
-	if dash_level >= 2:
+	# Lv2+ do dash consolidado. Diamante: ativa já no L1.
+	if dash_level >= 2 or (dash_level >= 1 and is_diamond("dash")):
 		_dash_last_trail_pos = global_position
 		_spawn_dash_trail_segment()
 	# Auto-attack: dispara flecha no inimigo mais próximo após delay
@@ -3434,7 +3436,8 @@ func _update_dash(delta: float) -> void:
 	if _is_dashing:
 		_dash_time_left -= delta
 		# Drop trail segments periodicamente conforme o player anda durante dash.
-		if dash_level >= 2:
+		# Diamante: ativa o trail já no L1.
+		if dash_level >= 2 or (dash_level >= 1 and is_diamond("dash")):
 			var moved: float = global_position.distance_to(_dash_last_trail_pos)
 			if moved >= DASH_TRAIL_SPACING:
 				_spawn_dash_trail_segment()
@@ -3748,7 +3751,11 @@ func _spawn_dash_trail_segment() -> void:
 	var seg: Node = DASH_TRAIL_SCENE.instantiate()
 	if "damage_per_second" in seg:
 		# Dano cresce com dash_level (lv2 = base, lv3+ ganha bonus).
-		seg.damage_per_second = DASH_TRAIL_DPS_BASE + DASH_TRAIL_DPS_PER_STACK * float(maxi(dash_level - 2, 0))
+		# Diamante: +50% de dano no rastro a partir do L2.
+		var base_dps: float = DASH_TRAIL_DPS_BASE + DASH_TRAIL_DPS_PER_STACK * float(maxi(dash_level - 2, 0))
+		if is_diamond("dash") and dash_level >= 2:
+			base_dps *= 1.5
+		seg.damage_per_second = base_dps
 	_get_world().add_child(seg)
 	if seg is Node2D:
 		(seg as Node2D).global_position = global_position
@@ -4059,7 +4066,9 @@ func apply_upgrade(upgrade_id: String) -> void:
 				dash_unlocked.emit()
 			has_dash_auto_attack = dash_level >= 3
 			has_dash_double_arrow = dash_level >= 4
-			dash_cooldown = DASH_COOLDOWNS_BY_LEVEL[dash_level - 1] * _mobility_cd_mult()
+			# Diamante: cooldown ×0.7 (4.4/3.7/3.4/3.0s).
+			var _dash_diamond_mult: float = 0.7 if is_diamond("dash") else 1.0
+			dash_cooldown = DASH_COOLDOWNS_BY_LEVEL[dash_level - 1] * _mobility_cd_mult() * _dash_diamond_mult
 			dash_cooldown_changed.emit(_dash_cd_remaining, dash_cooldown)
 		"ricochet_arrow":
 			# Lv1-4 da flecha de ricochete. Mecânica é resolvida em arrow.gd
