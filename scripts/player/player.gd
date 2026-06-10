@@ -2325,27 +2325,32 @@ func ice_shatter_at(pos: Vector2) -> void:
 const AOE_EFFECT_SHEET: Texture2D = preload("res://assets/effects/water/area_debuff.png")
 
 
-# Efeito de área (splash animado) no ponto do AoE. `diameter` = tamanho final em px.
+# Efeito de área no ponto do AoE. `diameter` = tamanho final em px. Usa Sprite2D +
+# AtlasTexture (mesmo padrão do corte da fenda, que renderiza certo) animando os 3
+# frames do sheet via tween e somindo no fim.
 func _spawn_aoe_effect(pos: Vector2, diameter: float, tint: Color) -> void:
-	var frames := SpriteFrames.new()
-	frames.add_animation("play")
-	frames.set_animation_loop("play", false)
-	frames.set_animation_speed("play", 16.0)
-	for i in 3:
-		var at := AtlasTexture.new()
-		at.atlas = AOE_EFFECT_SHEET
-		at.region = Rect2(float(i) * 31.0, 0.0, 31.0, 31.0)
-		frames.add_frame("play", at)
-	var spr := AnimatedSprite2D.new()
-	spr.sprite_frames = frames
+	if AOE_EFFECT_SHEET == null:
+		return
+	var atlas := AtlasTexture.new()
+	atlas.atlas = AOE_EFFECT_SHEET
+	atlas.region = Rect2(0.0, 0.0, 31.0, 31.0)
+	var spr := Sprite2D.new()
+	spr.texture = atlas
 	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	spr.modulate = tint
 	spr.z_index = 60
 	spr.scale = Vector2.ONE * (diameter / 31.0)
 	_get_world().add_child(spr)
 	spr.global_position = pos
-	spr.play("play")
-	spr.animation_finished.connect(spr.queue_free)
+	# Cicla os 3 frames (surge → expande) e some.
+	var tw := spr.create_tween()
+	tw.tween_interval(0.06)
+	tw.tween_callback(func() -> void: atlas.region = Rect2(31.0, 0.0, 31.0, 31.0))
+	tw.tween_interval(0.06)
+	tw.tween_callback(func() -> void: atlas.region = Rect2(62.0, 0.0, 31.0, 31.0))
+	tw.tween_interval(0.08)
+	tw.tween_property(spr, "modulate:a", 0.0, 0.2)
+	tw.tween_callback(spr.queue_free)
 
 
 func _chain_target_count() -> int:
