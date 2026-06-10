@@ -1,7 +1,19 @@
-# Diamante de Primeira Classe — Design
+# Diamante de Eulária — Design
 
 Item equipável (1 dos 3 slots de inventário) que sorteia **um** upgrade pra ficar mais
 forte a run inteira, em troca de você perder os rerolls da loja. Alto risco, alta recompensa.
+
+---
+
+## 0. Atualizações na implementação (divergências do design original)
+
+- **Nome:** "Diamante de Eulária" (era "de Primeira Classe"). Id interno segue `diamante_primeira_classe`.
+- **Unlock:** compra na **loja de pétalas por 350** (`loja_petalas.CATALOG`), não mais a quest "wave 14 sem reroll". O código do unlock-por-quest foi removido.
+- **Carta:** sem broche/ícone — o emoji 💎 no texto basta. A linha fica **"💎 Upgrade do diamante: \<efeito\>"** no topo da desc, no tooltip da carta e no hover do item.
+- **Boas-vindas:** não ocupa a **categoria exclusiva** do upgrade do diamante (ex: elementais), pra ele nunca ficar bloqueado na loja. (`get_diamond_exclusive_group` no player + filtro no `_grant_free_random_upgrade`.)
+- **Hover no item da loja:** mostra qual upgrade foi sorteado nesta run.
+- **Correções de base (resumo antigo estava errado):** Garras de Tigre real é 1/2/3/4 → diamante **1/3/4/5**. Gráviton explode **só no L4** → diamante explode no **L3** + **L4 +25%**.
+- **VFX:** burst azul na explosão do gelo, burst roxo-escuro no AoE da fenda. As duas instâncias de dano entram no stats/TAB (fontes `ice_arrow` / `fenda`).
 
 ---
 
